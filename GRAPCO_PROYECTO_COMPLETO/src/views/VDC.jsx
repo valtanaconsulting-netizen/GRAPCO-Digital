@@ -1,0 +1,2237 @@
+// src/views/ingeniero/VDC.jsx
+// Módulo VDC · Last Planner System
+// - Plan Semanal: registrar compromisos por capataz
+// - Cierre semanal: marcar cumplido / no cumplido + razón (RNC)
+// - Dashboard: PPC tendencia + Pareto RNC + diagnóstico
+
+import React, { useState, useEffect, useMemo } from 'react';
+import { db } from '../firebaseConfig';
+import {
+  collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy,
+} from 'firebase/firestore';
+import {
+  ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, ReferenceLine, BarChart, Bar, Cell, ComposedChart,
+} from 'recharts';
+import { BASE, inp } from '../utils/styles';
+import {
+  RNC_CATEGORIAS, RNC_LABELS, RNC_COLORS, RNC_ICONS,
+  calcularPPCSemanal, calcularParetoRNC, diagnosticarPPC,
+  compromisoId, obtenerSemana as obtSem,
+  RESTRICCION_TIPOS, RESTRICCION_TIPOS_MAP, RESTRICCION_ESTADOS,
+  calcularEstadoRestriccion, calcularKPIRestricciones,
+  sugerirLecciones, calcularKPILecciones,
+  restriccionId, leccionId, diasEntre, fmtFechaCorta,
+  DIAS_SEMANA, NIVELES_PROG, TIPOS_CUMPLIMIENTO,
+  fechasDeSemana, generarLookahead, calcularPPCDiario, construirJerarquiaLPS,
+} from '../utils/helpers';
+import { FECHA_INICIO_PROYECTO } from '../utils/constants';
+import Modal from '../components/Modal';
+import PlanDiario from './PlanDiario';
+import TableroLPS from './TableroLPS';
+import Sectorizacion from './Sectorizacion';
+import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
+
+const obtenerSemana = (f) => obtSem(f, FECHA_INICIO_PROYECTO);
+
+export default function VDC({
+  cuadrillasActivas,
+  cuadrillasDB = {},
+  planesDiarios = [],
+  historial = [],
+  isMobile,
+  showToast,
+}) {
+  const [tab, setTab] = useState('tablero');
+  const [compromisos, setCompromisos] = useState([]);
+  const [restricciones, setRestricciones] = useState([]);
+  const [lecciones, setLecciones] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [semanaActiva, setSemanaActiva] = useState(obtenerSemana(new Date().toISOString().split('T')[0]));
+
+  const [modalNuevo, setModalNuevo] = useState(null);
+  const [modalCierre, setModalCierre] = useState(null);
+  const [modalRestriccion, setModalRestriccion] = useState(null);   // { editando } | null
+  const [modalLeccion, setModalLeccion] = useState(null);           // { editando, fromSugerencia? } | null
+  const [formNuevo, setFormNuevo] = useState({ actividad: '', metradoComprometido: '', observacion: '' });
+  const [formCierre, setFormCierre] = useState({ metradoEjecutado: '', cumplido: true, rncCategoria: '', rncDescripcion: '' });
+  const [formRestriccion, setFormRestriccion] = useState({
+    actividad: '', tipoFlujo: 'materiales', descripcion: '',
+    responsable: '', fechaCompromisoLiberacion: '', impacto: 'medio', estado: 'pendiente',
+  });
+  const [formLeccion, setFormLeccion] = useState({
+    titulo: '', categoria: 'materiales', descripcion: '', accionRecomendada: '',
+  });
+
+  // ── Suscripción Firebase (filtradas por proyecto activo) ──
+  const { filtrarPorContexto } = useProyectoActivo();
+  useEffect(() => {
+    try {
+      const q = query(collection(db, 'PPC_Compromisos'), orderBy('semana', 'desc'));
+      return onSnapshot(q, snap => {
+        try {
+          const todos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          setCompromisos(filtrarPorContexto(todos));
+          setLoading(false);
+        } catch (e) { console.warn('[snap PPC]', e); }
+      });
+    } catch (e) { console.warn('[useEffect PPC]', e); setLoading(false); }
+  }, [filtrarPorContexto]);
+
+  useEffect(() => {
+    try {
+      return onSnapshot(collection(db, 'VDC_Restricciones'), snap => {
+        try {
+          const todos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          setRestricciones(filtrarPorContexto(todos));
+        }
+        catch (e) { console.warn('[snap Restr]', e); }
+      });
+    } catch (e) { console.warn('[useEffect Restr]', e); }
+  }, [filtrarPorContexto]);
+
+  useEffect(() => {
+    try {
+      return onSnapshot(collection(db, 'VDC_Lecciones'), snap => {
+        try {
+          const todos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          setLecciones(filtrarPorContexto(todos));
+        }
+        catch (e) { console.warn('[snap Lecc]', e); }
+      });
+    } catch (e) { console.warn('[useEffect Lecc]', e); }
+  }, [filtrarPorContexto]);
+
+  // ── Datos calculados ──
+  const ppcSemanal = useMemo(() => calcularPPCSemanal(compromisos), [compromisos]);
+  const pareto = useMemo(() => calcularParetoRNC(compromisos), [compromisos]);
+  const diag = useMemo(() => diagnosticarPPC(ppcSemanal, 4), [ppcSemanal]);
+
+  const compromisosSemanaActiva = useMemo(
+    () => compromisos.filter(c => c.semana === semanaActiva),
+    [compromisos, semanaActiva]
+  );
+
+  const semanasDisponibles = useMemo(() => {
+    const set = new Set();
+    compromisos.forEach(c => set.add(c.semana));
+    set.add(semanaActiva);
+    set.add(semanaActiva + 1);
+    return Array.from(set).sort((a, b) => b - a);
+  }, [compromisos, semanaActiva]);
+
+  // ── CRUD compromisos ──
+  const guardarNuevo = async () => {
+    if (!modalNuevo) return;
+    if (!formNuevo.actividad.trim()) return showToast('Ingresa la actividad', 'warning');
+    const met = parseFloat(formNuevo.metradoComprometido);
+    if (isNaN(met) || met <= 0) return showToast('Metrado inválido', 'warning');
+
+    try {
+      await addDoc(collection(db, 'PPC_Compromisos'), {
+        semana: modalNuevo.semana,
+        capataz: modalNuevo.capataz,
+        actividad: formNuevo.actividad.trim().toUpperCase(),
+        metradoComprometido: met,
+        metradoEjecutado: null,
+        cumplido: null,
+        rncCategoria: null,
+        rncDescripcion: null,
+        observacion: formNuevo.observacion || '',
+        creadoEn: new Date(),
+        cerradoEn: null,
+      });
+      setModalNuevo(null);
+      setFormNuevo({ actividad: '', metradoComprometido: '', observacion: '' });
+      showToast('✅ Compromiso registrado', 'success');
+    } catch (e) {
+      showToast(`Error: ${e.message}`, 'error');
+    }
+  };
+
+  const guardarCierre = async () => {
+    if (!modalCierre) return;
+    const ejec = parseFloat(formCierre.metradoEjecutado);
+    if (isNaN(ejec) || ejec < 0) return showToast('Metrado ejecutado inválido', 'warning');
+    if (!formCierre.cumplido && !formCierre.rncCategoria)
+      return showToast('Selecciona la razón de no cumplimiento', 'warning');
+
+    try {
+      await updateDoc(doc(db, 'PPC_Compromisos', modalCierre.id), {
+        metradoEjecutado: ejec,
+        cumplido: formCierre.cumplido,
+        rncCategoria: formCierre.cumplido ? null : formCierre.rncCategoria,
+        rncDescripcion: formCierre.cumplido ? null : formCierre.rncDescripcion,
+        cerradoEn: new Date(),
+      });
+      setModalCierre(null);
+      setFormCierre({ metradoEjecutado: '', cumplido: true, rncCategoria: '', rncDescripcion: '' });
+      showToast(formCierre.cumplido ? '✅ Cumplido registrado' : '⚠️ Incumplimiento registrado', 'success');
+    } catch (e) {
+      showToast(`Error: ${e.message}`, 'error');
+    }
+  };
+
+  const eliminarCompromiso = async (id) => {
+    if (!window.confirm('¿Eliminar este compromiso? No se puede deshacer.')) return;
+    try {
+      await deleteDoc(doc(db, 'PPC_Compromisos', id));
+      showToast('Compromiso eliminado', 'info');
+    } catch (e) {
+      showToast(`Error: ${e.message}`, 'error');
+    }
+  };
+
+  const abrirCierre = (c) => {
+    setFormCierre({
+      metradoEjecutado: c.metradoEjecutado != null ? String(c.metradoEjecutado) : String(c.metradoComprometido),
+      cumplido: c.cumplido != null ? c.cumplido : true,
+      rncCategoria: c.rncCategoria || '',
+      rncDescripcion: c.rncDescripcion || '',
+    });
+    setModalCierre(c);
+  };
+
+  if (loading) {
+    return (
+      <div style={{ background: BASE.white, borderRadius: '14px', padding: '60px', textAlign: 'center' }}>
+        <p style={{ color: BASE.muted, fontSize: '13px' }}>⏳ Cargando datos VDC...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      {/* Header VDC compacto */}
+      <div style={{
+        background: BASE.white,
+        borderRadius: '10px',
+        border: `1px solid ${BASE.border}`,
+        borderLeft: `4px solid ${BASE.gold}`,
+        padding: '10px 16px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '13px', fontWeight: '800', color: BASE.navy, letterSpacing: '0.2px' }}>
+            VDC · Last Planner System
+          </span>
+          <span style={{ fontSize: '11px', color: BASE.muted, fontWeight: '600' }}>
+            {compromisos.length} compromisos · {ppcSemanal.length} semanas
+          </span>
+        </div>
+        {diag.promedio !== null && (
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: '8px',
+            background: `${diag.color}15`, color: diag.color,
+            padding: '4px 12px', borderRadius: '999px',
+            border: `1px solid ${diag.color}55`,
+          }}>
+            <span style={{ fontSize: '9px', fontWeight: '800', letterSpacing: '0.6px', opacity: 0.85 }}>PPC PROMEDIO</span>
+            <span style={{ fontSize: '14px', fontWeight: '900', fontFamily: 'var(--grapco-font-mono, monospace)' }}>
+              {diag.promedioPct}%
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Tabs · Flujo Last Planner System
+          1) LAP (lookahead 6 sem) → 2) Análisis Restricciones → 3) Prog Semanal →
+          4) Ejecución Diaria → 5) PPC global → 6) RNC → 7) Lecciones */}
+      <div style={{
+        background: BASE.white,
+        border: `1px solid ${BASE.border}`,
+        borderRadius: '12px',
+        padding: '8px',
+      }}>
+        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+          {[
+            { id: 'tablero',       l: '🟦 Tablero (Power BI)',     group: 'ctrl' },
+            { id: 'sectorizacion', l: '🧱 Sectorización · Tren',    group: 'plan' },
+            { id: 'lap',           l: '🔭 LAP · Lookahead 6 sem',  group: 'plan' },
+            { id: 'restricciones', l: '🚧 Análisis Restricciones', group: 'plan' },
+            { id: 'progsem',       l: '📋 Programación Semanal',   group: 'plan' },
+            { id: 'plandiario',    l: '📅 Plan Diario',            group: 'exec' },
+            { id: 'ejecdia',       l: '🏗️ Ejecución Diaria',       group: 'exec' },
+            { id: 'plan',          l: '✏️ Compromisos (CRUD)',     group: 'exec' },
+            { id: 'dashboard',     l: '📊 PPC Dashboard',          group: 'ctrl' },
+            { id: 'rnc',           l: '🔍 RNC Pareto',             group: 'ctrl' },
+            { id: 'lecciones',     l: '📚 Lecciones',              group: 'ctrl' },
+          ].map(t => {
+            const activo = tab === t.id;
+            const colorGrp = t.group === 'plan' ? BASE.gold : t.group === 'exec' ? BASE.green : BASE.navy;
+            return (
+              <button key={t.id} onClick={() => setTab(t.id)} style={{
+                padding: '9px 14px',
+                borderRadius: '8px',
+                border: 'none',
+                background: activo ? `linear-gradient(135deg, ${colorGrp}, ${colorGrp}dd)` : BASE.bgSoft,
+                color: activo ? '#fff' : BASE.muted,
+                fontSize: '11px',
+                fontWeight: '800',
+                cursor: 'pointer',
+                boxShadow: activo ? `0 4px 12px ${colorGrp}55` : 'none',
+                whiteSpace: 'nowrap',
+                transition: '0.15s',
+              }}>{t.l}</button>
+            );
+          })}
+        </div>
+        <p style={{ fontSize: '10px', color: BASE.muted, marginTop: '8px', paddingLeft: '6px', fontStyle: 'italic' }}>
+          🟡 PROGRAMACIÓN  ·  🟢 EJECUCIÓN  ·  🔵 CONTROL — Flujo LPS oficial Ballard 2020
+        </p>
+      </div>
+
+      {/* === TABLERO CONSOLIDADO (Power BI) === */}
+      {tab === 'tablero' && (
+        <TableroLPS
+          compromisos={compromisos}
+          restricciones={restricciones}
+          ppcSemanal={ppcSemanal}
+          pareto={pareto}
+          diag={diag}
+          semanaActiva={semanaActiva}
+        />
+      )}
+
+      {/* === SECTORIZACIÓN · TREN DE ACTIVIDADES === */}
+      {tab === 'sectorizacion' && (
+        <Sectorizacion showToast={showToast} />
+      )}
+
+      {/* === LAP · LOOKAHEAD 6 SEMANAS === */}
+      {tab === 'lap' && (
+        <LookaheadView
+          compromisos={compromisos}
+          restricciones={restricciones}
+          semanaActiva={semanaActiva}
+        />
+      )}
+
+      {/* === PROGRAMACIÓN SEMANAL (formato Excel S0/S1/S2) === */}
+      {tab === 'progsem' && (
+        <ProgramacionSemanalLPS
+          semanaActiva={semanaActiva}
+          setSemanaActiva={setSemanaActiva}
+          semanasDisponibles={semanasDisponibles}
+          compromisos={compromisos}
+        />
+      )}
+
+      {/* === PLAN DIARIO (asignación día a día de cuadrillas a actividades) === */}
+      {tab === 'plandiario' && (
+        <PlanDiario
+          planesDiarios={planesDiarios}
+          cuadrillasActivas={cuadrillasActivas}
+          cuadrillasDB={cuadrillasDB}
+          historial={historial}
+          isMobile={isMobile}
+          showToast={showToast}
+        />
+      )}
+
+      {/* === EJECUCIÓN DIARIA (replica imagen 1: SI/NO + PPC%) === */}
+      {tab === 'ejecdia' && (
+        <EjecucionDiariaLPS
+          semanaActiva={semanaActiva}
+          setSemanaActiva={setSemanaActiva}
+          semanasDisponibles={semanasDisponibles}
+          compromisos={compromisos}
+        />
+      )}
+
+      {/* === DASHBOARD === */}
+      {tab === 'dashboard' && (
+        <DashboardPPC ppcSemanal={ppcSemanal} pareto={pareto} diag={diag} compromisos={compromisos} />
+      )}
+
+      {/* === PLAN SEMANAL === */}
+      {tab === 'plan' && (
+        <PlanSemanal
+          semanaActiva={semanaActiva}
+          setSemanaActiva={setSemanaActiva}
+          semanasDisponibles={semanasDisponibles}
+          compromisosSemana={compromisosSemanaActiva}
+          cuadrillasActivas={cuadrillasActivas}
+          onAgregar={(capataz) => setModalNuevo({ semana: semanaActiva, capataz })}
+          onCerrar={abrirCierre}
+          onEliminar={eliminarCompromiso}
+          isMobile={isMobile}
+        />
+      )}
+
+      {/* === RNC === */}
+      {tab === 'rnc' && (
+        <AnalisisRNC pareto={pareto} compromisos={compromisos} />
+      )}
+
+      {/* === RESTRICCIONES === */}
+      {tab === 'restricciones' && (
+        <Restricciones
+          restricciones={restricciones}
+          onNueva={() => {
+            setFormRestriccion({
+              actividad: '', tipoFlujo: 'materiales', descripcion: '',
+              responsable: '', fechaCompromisoLiberacion: '', impacto: 'medio', estado: 'pendiente',
+            });
+            setModalRestriccion({ editando: null });
+          }}
+          onEditar={(r) => {
+            setFormRestriccion({
+              actividad: r.actividad || '',
+              tipoFlujo: r.tipoFlujo || 'materiales',
+              descripcion: r.descripcion || '',
+              responsable: r.responsable || '',
+              fechaCompromisoLiberacion: r.fechaCompromisoLiberacion || '',
+              impacto: r.impacto || 'medio',
+              estado: r.estado || 'pendiente',
+            });
+            setModalRestriccion({ editando: r });
+          }}
+          onLiberar={async (r) => {
+            try {
+              await updateDoc(doc(db, 'VDC_Restricciones', r.id), {
+                estado: 'liberada',
+                fechaLiberacionReal: new Date().toISOString().split('T')[0],
+                liberadoEn: new Date(),
+              });
+              showToast('✅ Restricción liberada', 'success');
+            } catch (e) { showToast(`Error: ${e.message}`, 'error'); }
+          }}
+          onEliminar={async (r) => {
+            if (!window.confirm(`¿Eliminar la restricción "${r.actividad}"?`)) return;
+            try {
+              await deleteDoc(doc(db, 'VDC_Restricciones', r.id));
+              showToast('🗑️ Restricción eliminada', 'info');
+            } catch (e) { showToast(`Error: ${e.message}`, 'error'); }
+          }}
+        />
+      )}
+
+      {/* === LECCIONES === */}
+      {tab === 'lecciones' && (
+        <Lecciones
+          lecciones={lecciones}
+          sugerencias={sugerirLecciones(compromisos, lecciones)}
+          onNueva={(prefill) => {
+            setFormLeccion({
+              titulo: prefill?.titulo || '',
+              categoria: prefill?.categoria || 'materiales',
+              descripcion: prefill?.descripcion || '',
+              accionRecomendada: '',
+            });
+            setModalLeccion({ editando: null, fromSugerencia: !!prefill });
+          }}
+          onEditar={(l) => {
+            setFormLeccion({
+              titulo: l.titulo || '',
+              categoria: l.categoria || 'materiales',
+              descripcion: l.descripcion || '',
+              accionRecomendada: l.accionRecomendada || '',
+            });
+            setModalLeccion({ editando: l, fromSugerencia: false });
+          }}
+          onEliminar={async (l) => {
+            if (!window.confirm(`¿Eliminar la lección "${l.titulo}"?`)) return;
+            try {
+              await deleteDoc(doc(db, 'VDC_Lecciones', l.id));
+              showToast('🗑️ Lección eliminada', 'info');
+            } catch (e) { showToast(`Error: ${e.message}`, 'error'); }
+          }}
+        />
+      )}
+
+      {/* MODAL: Restricción nueva/editar */}
+      {modalRestriccion && (
+        <Modal
+          title={modalRestriccion.editando ? `✏️ Editar restricción` : `🚧 Nueva restricción`}
+          onClose={() => setModalRestriccion(null)} maxW="540px">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div>
+              <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>ACTIVIDAD AFECTADA</label>
+              <input type="text" value={formRestriccion.actividad}
+                onChange={e => setFormRestriccion(p => ({ ...p, actividad: e.target.value }))}
+                placeholder="Ej: VACIADO LOSA EJE B"
+                style={inp({ marginTop: '4px' })} />
+            </div>
+            <div>
+              <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', marginBottom: '6px', display: 'block' }}>
+                TIPO DE FLUJO LEAN (7 flujos)
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '6px' }}>
+                {RESTRICCION_TIPOS.map(t => {
+                  const sel = formRestriccion.tipoFlujo === t.id;
+                  return (
+                    <button key={t.id} type="button" onClick={() => setFormRestriccion(p => ({ ...p, tipoFlujo: t.id }))}
+                      style={{
+                        padding: '10px 12px',
+                        background: sel ? t.color + '22' : '#fff',
+                        color: sel ? t.color : BASE.muted,
+                        border: `1.5px solid ${sel ? t.color : BASE.border}`,
+                        borderRadius: '8px', fontWeight: sel ? '800' : '600', fontSize: '11px',
+                        cursor: 'pointer', textAlign: 'left',
+                      }}>
+                      <span style={{ fontSize: '14px', marginRight: '4px' }}>{t.icon}</span>
+                      {t.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div>
+              <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>DESCRIPCIÓN DETALLADA</label>
+              <textarea value={formRestriccion.descripcion}
+                onChange={e => setFormRestriccion(p => ({ ...p, descripcion: e.target.value }))}
+                placeholder="Detalle qué falta o qué impide ejecutar la actividad"
+                style={inp({ marginTop: '4px', height: '60px', resize: 'vertical' })} />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>RESPONSABLE</label>
+                <input type="text" value={formRestriccion.responsable}
+                  onChange={e => setFormRestriccion(p => ({ ...p, responsable: e.target.value }))}
+                  placeholder="Quien lo levantará"
+                  style={inp({ marginTop: '4px' })} />
+              </div>
+              <div>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>COMPROMISO LIBERACIÓN</label>
+                <input type="date" value={formRestriccion.fechaCompromisoLiberacion}
+                  onChange={e => setFormRestriccion(p => ({ ...p, fechaCompromisoLiberacion: e.target.value }))}
+                  style={inp({ marginTop: '4px' })} />
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>IMPACTO</label>
+                <select value={formRestriccion.impacto}
+                  onChange={e => setFormRestriccion(p => ({ ...p, impacto: e.target.value }))}
+                  style={inp({ marginTop: '4px' })}>
+                  <option value="bajo">🟢 Bajo</option>
+                  <option value="medio">🟡 Medio</option>
+                  <option value="alto">🔴 Alto</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>ESTADO</label>
+                <select value={formRestriccion.estado}
+                  onChange={e => setFormRestriccion(p => ({ ...p, estado: e.target.value }))}
+                  style={inp({ marginTop: '4px' })}>
+                  <option value="pendiente">Pendiente</option>
+                  <option value="en_proceso">En proceso</option>
+                  <option value="liberada">Liberada</option>
+                </select>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+              <button onClick={() => setModalRestriccion(null)} style={{
+                flex: 1, padding: '12px', background: BASE.bgSoft, border: `1px solid ${BASE.border}`,
+                color: BASE.muted, borderRadius: '10px', fontWeight: '700', cursor: 'pointer', fontSize: '13px',
+              }}>Cancelar</button>
+              <button onClick={async () => {
+                if (!formRestriccion.actividad.trim()) return showToast('Ingresa la actividad', 'warning');
+                try {
+                  const datos = {
+                    ...formRestriccion,
+                    actividad: formRestriccion.actividad.trim().toUpperCase(),
+                    actualizadoEn: new Date(),
+                  };
+                  if (formRestriccion.estado === 'liberada' && !modalRestriccion.editando?.fechaLiberacionReal) {
+                    datos.fechaLiberacionReal = new Date().toISOString().split('T')[0];
+                    datos.liberadoEn = new Date();
+                  }
+                  if (modalRestriccion.editando) {
+                    await updateDoc(doc(db, 'VDC_Restricciones', modalRestriccion.editando.id), datos);
+                    showToast('✅ Restricción actualizada', 'success');
+                  } else {
+                    await addDoc(collection(db, 'VDC_Restricciones'), { ...datos, creadoEn: new Date() });
+                    showToast('✅ Restricción registrada', 'success');
+                  }
+                  setModalRestriccion(null);
+                } catch (e) { showToast(`Error: ${e.message}`, 'error'); }
+              }} style={{
+                flex: 2, padding: '12px',
+                background: `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`,
+                color: '#fff', border: 'none', borderRadius: '10px',
+                fontWeight: '800', cursor: 'pointer', fontSize: '13px',
+                boxShadow: `0 4px 12px ${BASE.gold}55`,
+              }}>{modalRestriccion.editando ? '💾 Actualizar' : '🚧 Registrar restricción'}</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* MODAL: Lección nueva/editar */}
+      {modalLeccion && (
+        <Modal
+          title={modalLeccion.editando ? `✏️ Editar lección` : (modalLeccion.fromSugerencia ? `💡 Crear lección desde sugerencia` : `📚 Nueva lección aprendida`)}
+          onClose={() => setModalLeccion(null)} maxW="520px">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div>
+              <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>TÍTULO</label>
+              <input type="text" value={formLeccion.titulo}
+                onChange={e => setFormLeccion(p => ({ ...p, titulo: e.target.value }))}
+                placeholder="Ej: Programar entregas de cemento con 48h de anticipación"
+                style={inp({ marginTop: '4px' })} />
+            </div>
+            <div>
+              <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', marginBottom: '6px', display: 'block' }}>
+                CATEGORÍA (asociada a tipo RNC)
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '6px' }}>
+                {RNC_CATEGORIAS.map(c => {
+                  const sel = formLeccion.categoria === c.id;
+                  return (
+                    <button key={c.id} type="button" onClick={() => setFormLeccion(p => ({ ...p, categoria: c.id }))}
+                      style={{
+                        padding: '8px 10px',
+                        background: sel ? c.color + '22' : '#fff',
+                        color: sel ? c.color : BASE.muted,
+                        border: `1.5px solid ${sel ? c.color : BASE.border}`,
+                        borderRadius: '8px', fontWeight: sel ? '800' : '600', fontSize: '11px',
+                        cursor: 'pointer', textAlign: 'left',
+                      }}>
+                      <span style={{ fontSize: '13px', marginRight: '3px' }}>{c.icon}</span>
+                      {c.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div>
+              <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>QUÉ PASÓ (descripción del problema)</label>
+              <textarea value={formLeccion.descripcion}
+                onChange={e => setFormLeccion(p => ({ ...p, descripcion: e.target.value }))}
+                placeholder="El problema que se identificó y por qué ocurría"
+                style={inp({ marginTop: '4px', height: '60px', resize: 'vertical' })} />
+            </div>
+            <div>
+              <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>ACCIÓN RECOMENDADA</label>
+              <textarea value={formLeccion.accionRecomendada}
+                onChange={e => setFormLeccion(p => ({ ...p, accionRecomendada: e.target.value }))}
+                placeholder="Qué hacer en proyectos futuros para evitar este problema"
+                style={inp({ marginTop: '4px', height: '70px', resize: 'vertical' })} />
+            </div>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+              <button onClick={() => setModalLeccion(null)} style={{
+                flex: 1, padding: '12px', background: BASE.bgSoft, border: `1px solid ${BASE.border}`,
+                color: BASE.muted, borderRadius: '10px', fontWeight: '700', cursor: 'pointer', fontSize: '13px',
+              }}>Cancelar</button>
+              <button onClick={async () => {
+                if (!formLeccion.titulo.trim()) return showToast('Ingresa el título', 'warning');
+                try {
+                  const datos = { ...formLeccion, titulo: formLeccion.titulo.trim(), actualizadoEn: new Date() };
+                  if (modalLeccion.editando) {
+                    await updateDoc(doc(db, 'VDC_Lecciones', modalLeccion.editando.id), datos);
+                    showToast('✅ Lección actualizada', 'success');
+                  } else {
+                    await addDoc(collection(db, 'VDC_Lecciones'), { ...datos, creadoEn: new Date() });
+                    showToast('📚 Lección guardada', 'success');
+                  }
+                  setModalLeccion(null);
+                } catch (e) { showToast(`Error: ${e.message}`, 'error'); }
+              }} style={{
+                flex: 2, padding: '12px',
+                background: `linear-gradient(135deg, ${BASE.green}, ${BASE.greenDark})`,
+                color: '#fff', border: 'none', borderRadius: '10px',
+                fontWeight: '800', cursor: 'pointer', fontSize: '13px',
+                boxShadow: `0 4px 12px ${BASE.green}55`,
+              }}>{modalLeccion.editando ? '💾 Actualizar' : '📚 Guardar lección'}</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* MODAL: Nuevo compromiso */}
+      {modalNuevo && (
+        <Modal title={`➕ Nuevo compromiso · Semana ${modalNuevo.semana} · ${modalNuevo.capataz}`}
+          onClose={() => setModalNuevo(null)} maxW="500px">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div>
+              <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>ACTIVIDAD</label>
+              <input type="text" value={formNuevo.actividad}
+                onChange={e => setFormNuevo(p => ({ ...p, actividad: e.target.value }))}
+                placeholder="Ej: ENCOFRADO COLUMNAS EJE A"
+                style={inp({ marginTop: '4px' })} />
+            </div>
+            <div>
+              <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>METRADO COMPROMETIDO</label>
+              <input type="number" step="0.01" min="0" value={formNuevo.metradoComprometido}
+                onChange={e => setFormNuevo(p => ({ ...p, metradoComprometido: e.target.value }))}
+                placeholder="Ej: 25.5" inputMode="decimal"
+                style={inp({ marginTop: '4px', fontSize: '16px', fontWeight: '700' })} />
+            </div>
+            <div>
+              <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>OBSERVACIÓN (opcional)</label>
+              <textarea value={formNuevo.observacion}
+                onChange={e => setFormNuevo(p => ({ ...p, observacion: e.target.value }))}
+                placeholder="Restricciones identificadas, materiales requeridos..."
+                style={inp({ marginTop: '4px', height: '60px', resize: 'vertical' })} />
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={() => setModalNuevo(null)} style={{
+                flex: 1, padding: '12px', background: BASE.bgSoft, border: `1px solid ${BASE.border}`,
+                color: BASE.muted, borderRadius: '10px', fontWeight: '700', cursor: 'pointer', fontSize: '13px',
+              }}>Cancelar</button>
+              <button onClick={guardarNuevo} style={{
+                flex: 2, padding: '12px',
+                background: `linear-gradient(135deg, ${BASE.green}, ${BASE.greenDark})`,
+                color: '#fff', border: 'none', borderRadius: '10px',
+                fontWeight: '800', cursor: 'pointer', fontSize: '13px',
+                boxShadow: `0 4px 12px ${BASE.green}55`,
+              }}>💾 Guardar compromiso</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* MODAL: Cierre de compromiso */}
+      {modalCierre && (
+        <Modal title={`🏁 Cerrar compromiso · ${modalCierre.actividad}`}
+          onClose={() => setModalCierre(null)} maxW="520px">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ background: BASE.bgSoft, borderRadius: '8px', padding: '10px 14px' }}>
+              <p style={{ fontSize: '11px', color: BASE.muted }}>
+                <strong>Capataz:</strong> {modalCierre.capataz} · <strong>Comprometido:</strong> {modalCierre.metradoComprometido}
+              </p>
+            </div>
+
+            <div>
+              <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>
+                METRADO EJECUTADO REAL
+              </label>
+              <input type="number" step="0.01" min="0" value={formCierre.metradoEjecutado}
+                onChange={e => setFormCierre(p => ({ ...p, metradoEjecutado: e.target.value }))}
+                inputMode="decimal"
+                style={inp({ marginTop: '4px', fontSize: '16px', fontWeight: '700' })} />
+            </div>
+
+            <div>
+              <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', marginBottom: '6px', display: 'block' }}>
+                ¿SE CUMPLIÓ EL COMPROMISO?
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <button onClick={() => setFormCierre(p => ({ ...p, cumplido: true }))}
+                  style={{
+                    padding: '14px',
+                    background: formCierre.cumplido ? BASE.green : '#fff',
+                    color: formCierre.cumplido ? '#fff' : BASE.muted,
+                    border: `2px solid ${formCierre.cumplido ? BASE.green : BASE.border}`,
+                    borderRadius: '10px', fontWeight: '800', cursor: 'pointer', fontSize: '13px',
+                  }}>
+                  ✅ Sí, cumplido
+                </button>
+                <button onClick={() => setFormCierre(p => ({ ...p, cumplido: false }))}
+                  style={{
+                    padding: '14px',
+                    background: !formCierre.cumplido ? BASE.red : '#fff',
+                    color: !formCierre.cumplido ? '#fff' : BASE.muted,
+                    border: `2px solid ${!formCierre.cumplido ? BASE.red : BASE.border}`,
+                    borderRadius: '10px', fontWeight: '800', cursor: 'pointer', fontSize: '13px',
+                  }}>
+                  ❌ No cumplido
+                </button>
+              </div>
+            </div>
+
+            {!formCierre.cumplido && (
+              <>
+                <div>
+                  <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', marginBottom: '6px', display: 'block' }}>
+                    RAZÓN DE NO CUMPLIMIENTO (RNC)
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '6px' }}>
+                    {RNC_CATEGORIAS.map(cat => {
+                      const sel = formCierre.rncCategoria === cat.id;
+                      return (
+                        <button key={cat.id} onClick={() => setFormCierre(p => ({ ...p, rncCategoria: cat.id }))}
+                          style={{
+                            padding: '10px 12px',
+                            background: sel ? cat.color + '22' : '#fff',
+                            color: sel ? cat.color : BASE.muted,
+                            border: `1.5px solid ${sel ? cat.color : BASE.border}`,
+                            borderRadius: '8px', fontWeight: sel ? '800' : '600', fontSize: '11px',
+                            cursor: 'pointer', textAlign: 'left',
+                          }}>
+                          <span style={{ fontSize: '14px', marginRight: '4px' }}>{cat.icon}</span>
+                          {cat.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div>
+                  <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>
+                    DESCRIPCIÓN DETALLADA (opcional)
+                  </label>
+                  <textarea value={formCierre.rncDescripcion}
+                    onChange={e => setFormCierre(p => ({ ...p, rncDescripcion: e.target.value }))}
+                    placeholder="Ej: El acero llegó el martes en lugar del lunes por demora del proveedor"
+                    style={inp({ marginTop: '4px', height: '60px', resize: 'vertical', fontSize: '12px' })} />
+                </div>
+              </>
+            )}
+
+            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+              <button onClick={() => setModalCierre(null)} style={{
+                flex: 1, padding: '12px', background: BASE.bgSoft, border: `1px solid ${BASE.border}`,
+                color: BASE.muted, borderRadius: '10px', fontWeight: '700', cursor: 'pointer', fontSize: '13px',
+              }}>Cancelar</button>
+              <button onClick={guardarCierre} style={{
+                flex: 2, padding: '12px',
+                background: formCierre.cumplido
+                  ? `linear-gradient(135deg, ${BASE.green}, ${BASE.greenDark})`
+                  : `linear-gradient(135deg, ${BASE.red}, #b91c1c)`,
+                color: '#fff', border: 'none', borderRadius: '10px',
+                fontWeight: '800', cursor: 'pointer', fontSize: '13px',
+              }}>🏁 Cerrar compromiso</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════
+// SUB-VISTAS
+// ════════════════════════════════════════════════
+
+function DashboardPPC({ ppcSemanal, pareto, diag, compromisos }) {
+  if (ppcSemanal.length === 0) {
+    return (
+      <div style={{
+        background: BASE.white, borderRadius: '14px',
+        border: `2px dashed ${BASE.border}`, padding: '60px 24px', textAlign: 'center',
+      }}>
+        <p style={{ fontSize: '36px', marginBottom: '12px' }}>📊</p>
+        <p style={{ fontSize: '14px', fontWeight: '700', color: BASE.navy }}>
+          Sin compromisos registrados aún
+        </p>
+        <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '6px' }}>
+          Empieza creando un Plan Semanal en la pestaña <strong>📅 Plan Semanal</strong>.
+        </p>
+      </div>
+    );
+  }
+
+  const ultimos8 = ppcSemanal.slice(-8);
+  const cumplidos = compromisos.filter(c => c.cumplido === true).length;
+  const incumplidos = compromisos.filter(c => c.cumplido === false).length;
+  const pendientes = compromisos.filter(c => c.cumplido === null).length;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      {/* Diagnóstico */}
+      <div style={{
+        background: diag.color + '12',
+        border: `1px solid ${diag.color}55`,
+        borderLeft: `5px solid ${diag.color}`,
+        borderRadius: '12px',
+        padding: '14px 18px',
+      }}>
+        <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.8px', marginBottom: '4px' }}>
+          DIAGNÓSTICO LEAN
+        </p>
+        <p style={{ fontSize: '15px', fontWeight: '800', color: diag.color }}>
+          {diag.diagnostico}
+        </p>
+      </div>
+
+      {/* KPIs */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
+        {[
+          { l: 'COMPROMISOS', v: compromisos.length, c: BASE.navy, sub: 'Total registrados' },
+          { l: 'CUMPLIDOS', v: cumplidos, c: BASE.greenDark, sub: `${compromisos.length > 0 ? Math.round((cumplidos / compromisos.length) * 100) : 0}% del total` },
+          { l: 'NO CUMPLIDOS', v: incumplidos, c: BASE.red, sub: 'Generaron RNC' },
+          { l: 'PENDIENTES', v: pendientes, c: BASE.gold, sub: 'Por cerrar' },
+        ].map(k => (
+          <div key={k.l} style={{
+            background: BASE.white, borderRadius: '12px',
+            border: `1px solid ${BASE.border}`, padding: '14px 16px',
+          }}>
+            <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>{k.l}</p>
+            <p style={{ fontSize: '24px', fontWeight: '900', color: k.c, marginTop: '4px' }}>{k.v}</p>
+            <p style={{ fontSize: '10px', color: BASE.muted, marginTop: '2px' }}>{k.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Curva PPC */}
+      <div style={{ background: BASE.white, borderRadius: '14px', border: `1px solid ${BASE.border}`, padding: '18px 22px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+          <div style={{ width: '4px', height: '20px', background: BASE.gold, borderRadius: '2px' }} />
+          <h3 style={{ fontSize: '14px', fontWeight: '800', color: BASE.navy }}>
+            EVOLUCIÓN PPC POR SEMANA
+          </h3>
+        </div>
+        <p style={{ fontSize: '11px', color: BASE.muted, marginLeft: '14px', marginBottom: '14px' }}>
+          % Plan Cumplido. Meta benchmark Lean: ≥ 80%
+        </p>
+        <ResponsiveContainer width="100%" height={280}>
+          <LineChart data={ultimos8} margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+            <XAxis dataKey="semana" tick={{ fontSize: 11, fill: BASE.muted, fontWeight: 600 }}
+              tickFormatter={v => `S${v}`} />
+            <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: BASE.muted }}
+              tickFormatter={v => `${v}%`} />
+            <Tooltip
+              contentStyle={{ background: '#fff', border: `1px solid ${BASE.border}`, borderRadius: '8px', fontSize: '12px' }}
+              formatter={(v, name) => name === 'PPC' ? [`${v}%`, 'PPC'] : [v, name]}
+            />
+            <ReferenceLine y={80} stroke={BASE.green} strokeDasharray="5 3"
+              label={{ value: 'Meta 80%', fill: BASE.green, fontSize: 10, position: 'right' }} />
+            <Line type="monotone" dataKey="ppcPct" name="PPC"
+              stroke={BASE.gold} strokeWidth={3}
+              dot={{ r: 5, fill: BASE.gold, strokeWidth: 2, stroke: '#fff' }}
+              activeDot={{ r: 8, strokeWidth: 2, stroke: '#fff' }} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Mini Pareto RNC */}
+      {pareto.items.length > 0 && (
+        <div style={{ background: BASE.white, borderRadius: '14px', border: `1px solid ${BASE.border}`, padding: '18px 22px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+            <div style={{ width: '4px', height: '20px', background: BASE.red, borderRadius: '2px' }} />
+            <h3 style={{ fontSize: '14px', fontWeight: '800', color: BASE.navy }}>
+              TOP CAUSAS DE NO CUMPLIMIENTO
+            </h3>
+          </div>
+          <p style={{ fontSize: '11px', color: BASE.muted, marginLeft: '14px', marginBottom: '14px' }}>
+            Top 3 causas representan el {Math.round(pareto.top3Pct)}% del total
+            {pareto.top3Pct > 60 && <span style={{ color: BASE.red, fontWeight: '700' }}> · ⚠️ Concentración alta, atacar estas causas primero</span>}
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {pareto.items.slice(0, 5).map((item, i) => (
+              <div key={item.categoria} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '20px' }}>{item.icon}</span>
+                <span style={{ fontSize: '13px', fontWeight: '700', color: BASE.text, minWidth: '120px' }}>
+                  {item.label}
+                </span>
+                <div style={{ flex: 1, height: '20px', background: BASE.bgSoft, borderRadius: '4px', position: 'relative', overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%', width: `${item.pct}%`,
+                    background: item.color, borderRadius: '4px',
+                    transition: 'width 0.4s',
+                  }} />
+                </div>
+                <span style={{ fontSize: '12px', fontWeight: '800', color: item.color, minWidth: '50px', textAlign: 'right' }}>
+                  {item.count} · {Math.round(item.pct)}%
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PlanSemanal({ semanaActiva, setSemanaActiva, semanasDisponibles, compromisosSemana, cuadrillasActivas, onAgregar, onCerrar, onEliminar, isMobile }) {
+  const capataces = Object.keys(cuadrillasActivas || {});
+  const compromisosPorCapataz = useMemo(() => {
+    const m = {};
+    capataces.forEach(c => { m[c] = []; });
+    compromisosSemana.forEach(c => {
+      if (!m[c.capataz]) m[c.capataz] = [];
+      m[c.capataz].push(c);
+    });
+    return m;
+  }, [compromisosSemana, capataces]);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      {/* Selector de semana */}
+      <div style={{
+        background: BASE.white, borderRadius: '12px',
+        border: `1px solid ${BASE.border}`, padding: '14px 18px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap',
+      }}>
+        <div>
+          <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>SEMANA ACTIVA</p>
+          <p style={{ fontSize: '20px', fontWeight: '900', color: BASE.navy, marginTop: '2px' }}>
+            Semana {semanaActiva}
+          </p>
+        </div>
+        <select value={semanaActiva} onChange={e => setSemanaActiva(parseInt(e.target.value))}
+          style={inp({ width: 'auto', fontSize: '13px', fontWeight: '700' })}>
+          {semanasDisponibles.map(s => <option key={s} value={s}>Semana {s}</option>)}
+        </select>
+      </div>
+
+      {capataces.length === 0 ? (
+        <div style={{ background: BASE.white, borderRadius: '14px', padding: '40px', textAlign: 'center', border: `2px dashed ${BASE.border}` }}>
+          <p style={{ fontSize: '13px', color: BASE.muted }}>No hay cuadrillas registradas. Crea cuadrillas en Personal.</p>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(380px, 1fr))', gap: '12px' }}>
+          {capataces.map(capataz => {
+            const lista = compromisosPorCapataz[capataz] || [];
+            const cumplidos = lista.filter(c => c.cumplido === true).length;
+            const incumplidos = lista.filter(c => c.cumplido === false).length;
+            const pendientes = lista.filter(c => c.cumplido === null).length;
+            const ppc = (cumplidos + incumplidos) > 0 ? cumplidos / (cumplidos + incumplidos) : null;
+
+            return (
+              <div key={capataz} style={{
+                background: BASE.white, borderRadius: '12px',
+                border: `1px solid ${BASE.border}`, padding: '14px 16px',
+              }}>
+                {/* Header capataz */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', paddingBottom: '10px', borderBottom: `1px solid ${BASE.border}` }}>
+                  <div>
+                    <p style={{ fontSize: '13px', fontWeight: '800', color: BASE.navy }}>{capataz}</p>
+                    <p style={{ fontSize: '10px', color: BASE.muted, marginTop: '2px' }}>
+                      {lista.length} compromiso{lista.length !== 1 ? 's' : ''}
+                      {ppc !== null && <> · PPC <strong style={{ color: ppc >= 0.8 ? BASE.greenDark : BASE.red }}>{Math.round(ppc * 100)}%</strong></>}
+                    </p>
+                  </div>
+                  <button onClick={() => onAgregar(capataz)} style={{
+                    padding: '7px 12px', background: BASE.gold, color: '#fff',
+                    border: 'none', borderRadius: '8px', fontSize: '11px', fontWeight: '800',
+                    cursor: 'pointer', boxShadow: `0 2px 6px ${BASE.gold}55`,
+                  }}>+ Compromiso</button>
+                </div>
+
+                {/* Lista */}
+                {lista.length === 0 ? (
+                  <p style={{ textAlign: 'center', padding: '20px 10px', fontSize: '12px', color: BASE.muted, fontStyle: 'italic' }}>
+                    Sin compromisos para esta semana
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {lista.map(c => {
+                      const estado = c.cumplido === true ? 'cumplido'
+                        : c.cumplido === false ? 'incumplido' : 'pendiente';
+                      const bgEstado = estado === 'cumplido' ? BASE.greenLight
+                        : estado === 'incumplido' ? BASE.redLight : BASE.bgSoft;
+                      const colorEstado = estado === 'cumplido' ? BASE.greenDark
+                        : estado === 'incumplido' ? BASE.red : BASE.muted;
+                      const iconEstado = estado === 'cumplido' ? '✅' : estado === 'incumplido' ? '❌' : '⏳';
+
+                      return (
+                        <div key={c.id} style={{
+                          background: bgEstado, borderRadius: '8px', padding: '10px 12px',
+                          border: `1px solid ${colorEstado}33`,
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '14px' }}>{iconEstado}</span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <p style={{ fontSize: '12px', fontWeight: '700', color: BASE.text, lineHeight: 1.3 }}>
+                                {c.actividad}
+                              </p>
+                              <p style={{ fontSize: '10px', color: BASE.muted, marginTop: '2px' }}>
+                                Comp.: <strong>{c.metradoComprometido}</strong>
+                                {c.metradoEjecutado != null && <> · Ejec.: <strong>{c.metradoEjecutado}</strong></>}
+                                {c.rncCategoria && <> · {RNC_ICONS[c.rncCategoria]} {RNC_LABELS[c.rncCategoria]}</>}
+                              </p>
+                            </div>
+                            <div style={{ display: 'flex', gap: '4px' }}>
+                              <button onClick={() => onCerrar(c)} style={{
+                                padding: '5px 10px', background: '#fff', border: `1px solid ${BASE.border}`,
+                                borderRadius: '6px', fontSize: '11px', fontWeight: '700', cursor: 'pointer',
+                                color: BASE.navy,
+                              }}>{estado === 'pendiente' ? 'Cerrar' : 'Editar'}</button>
+                              <button onClick={() => onEliminar(c.id)} style={{
+                                padding: '5px 8px', background: BASE.redLight, border: 'none',
+                                borderRadius: '6px', fontSize: '11px', fontWeight: '700', cursor: 'pointer',
+                                color: BASE.red,
+                              }}>🗑️</button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AnalisisRNC({ pareto, compromisos }) {
+  if (pareto.items.length === 0) {
+    return (
+      <div style={{
+        background: BASE.white, borderRadius: '14px',
+        border: `2px dashed ${BASE.border}`, padding: '60px 24px', textAlign: 'center',
+      }}>
+        <p style={{ fontSize: '36px', marginBottom: '12px' }}>🎉</p>
+        <p style={{ fontSize: '14px', fontWeight: '700', color: BASE.navy }}>
+          ¡Sin razones de no cumplimiento registradas!
+        </p>
+        <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '6px' }}>
+          Esto es excelente noticia o aún no se han cerrado compromisos no cumplidos.
+        </p>
+      </div>
+    );
+  }
+
+  // Datos para gráfico Pareto (combo)
+  const datosGrafico = pareto.items.map(i => ({
+    label: i.label,
+    count: i.count,
+    acum: Math.round(i.acumPct),
+    color: i.color,
+  }));
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      {/* Pareto chart */}
+      <div style={{ background: BASE.white, borderRadius: '14px', border: `1px solid ${BASE.border}`, padding: '18px 22px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+          <div style={{ width: '4px', height: '20px', background: BASE.red, borderRadius: '2px' }} />
+          <h3 style={{ fontSize: '14px', fontWeight: '800', color: BASE.navy }}>
+            DIAGRAMA DE PARETO · CAUSAS DE NO CUMPLIMIENTO
+          </h3>
+        </div>
+        <p style={{ fontSize: '11px', color: BASE.muted, marginLeft: '14px', marginBottom: '14px' }}>
+          Total {pareto.total} incumplimientos. Top 3 causas: {Math.round(pareto.top3Pct)}% del problema.
+        </p>
+        <ResponsiveContainer width="100%" height={320}>
+          <ComposedChart data={datosGrafico} margin={{ top: 10, right: 40, left: 10, bottom: 60 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+            <XAxis dataKey="label" tick={{ fontSize: 10, fill: BASE.muted, fontWeight: 600 }}
+              angle={-25} textAnchor="end" interval={0} height={80} />
+            <YAxis yAxisId="left" tick={{ fontSize: 11, fill: BASE.muted }}
+              label={{ value: 'Frecuencia', angle: -90, position: 'insideLeft', style: { fontSize: 10, fill: BASE.muted } }} />
+            <YAxis yAxisId="right" orientation="right" domain={[0, 100]}
+              tick={{ fontSize: 11, fill: BASE.muted }} tickFormatter={v => `${v}%`}
+              label={{ value: '% Acum.', angle: 90, position: 'insideRight', style: { fontSize: 10, fill: BASE.muted } }} />
+            <Tooltip contentStyle={{ background: '#fff', border: `1px solid ${BASE.border}`, borderRadius: '8px', fontSize: '12px' }} />
+            <Bar yAxisId="left" dataKey="count" radius={[6, 6, 0, 0]}>
+              {datosGrafico.map((d, i) => <Cell key={i} fill={d.color} />)}
+            </Bar>
+            <Line yAxisId="right" type="monotone" dataKey="acum" name="% Acumulado"
+              stroke={BASE.navy} strokeWidth={3}
+              dot={{ r: 5, fill: BASE.navy, strokeWidth: 2, stroke: '#fff' }} />
+            <ReferenceLine yAxisId="right" y={80} stroke={BASE.green} strokeDasharray="5 3"
+              label={{ value: '80%', fill: BASE.green, fontSize: 10 }} />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Detalle textual de incumplimientos recientes */}
+      <div style={{ background: BASE.white, borderRadius: '14px', border: `1px solid ${BASE.border}`, padding: '18px 22px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+          <div style={{ width: '4px', height: '20px', background: BASE.gold, borderRadius: '2px' }} />
+          <h3 style={{ fontSize: '14px', fontWeight: '800', color: BASE.navy }}>
+            INCUMPLIMIENTOS RECIENTES
+          </h3>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {compromisos
+            .filter(c => c.cumplido === false)
+            .sort((a, b) => (b.cerradoEn?.seconds || 0) - (a.cerradoEn?.seconds || 0))
+            .slice(0, 8)
+            .map(c => (
+              <div key={c.id} style={{ background: BASE.bgSoft, borderRadius: '10px', padding: '10px 14px', borderLeft: `4px solid ${RNC_COLORS[c.rncCategoria] || BASE.muted}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '16px' }}>{RNC_ICONS[c.rncCategoria] || '📌'}</span>
+                  <span style={{ fontSize: '11px', fontWeight: '800', color: RNC_COLORS[c.rncCategoria] || BASE.muted, letterSpacing: '0.3px' }}>
+                    {RNC_LABELS[c.rncCategoria] || 'Sin categoría'}
+                  </span>
+                  <span style={{ fontSize: '10px', color: BASE.muted }}>·</span>
+                  <span style={{ fontSize: '11px', color: BASE.muted }}>S{c.semana} · {c.capataz}</span>
+                </div>
+                <p style={{ fontSize: '12px', fontWeight: '700', color: BASE.text }}>
+                  {c.actividad}
+                </p>
+                {c.rncDescripcion && (
+                  <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '3px', fontStyle: 'italic' }}>
+                    "{c.rncDescripcion}"
+                  </p>
+                )}
+              </div>
+            ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+// SUB-COMPONENTE: RESTRICCIONES (Lookahead Lean)
+// ════════════════════════════════════════════════════════════════
+
+function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar }) {
+  const kpi = useMemo(() => calcularKPIRestricciones(restricciones), [restricciones]);
+  const [filtroEstado, setFiltroEstado] = useState('todos');
+
+  const filtradas = useMemo(() => {
+    const lista = kpi.lista;
+    if (filtroEstado === 'todos') return lista;
+    return lista.filter(r => r._estado === filtroEstado);
+  }, [kpi.lista, filtroEstado]);
+
+  const ordenadas = useMemo(
+    () => [...filtradas].sort((a, b) => {
+      // vencidas primero, después por fecha de compromiso ascendente
+      const orden = { vencida: 0, en_proceso: 1, pendiente: 2, liberada: 3 };
+      const oa = orden[a._estado] ?? 9, ob = orden[b._estado] ?? 9;
+      if (oa !== ob) return oa - ob;
+      return (a.fechaCompromisoLiberacion || '').localeCompare(b.fechaCompromisoLiberacion || '');
+    }),
+    [filtradas]
+  );
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      {/* KPIs Restricciones */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
+        {[
+          { l: 'TOTAL', v: kpi.total, c: BASE.navy, sub: 'Restricciones registradas' },
+          { l: 'PENDIENTES', v: kpi.pendientes + kpi.enProceso, c: BASE.gold, sub: `${kpi.enProceso} en proceso` },
+          { l: 'LIBERADAS', v: kpi.liberadas, c: BASE.greenDark, sub: kpi.pctLiberadasATiempo !== null ? `${Math.round(kpi.pctLiberadasATiempo)}% a tiempo` : '' },
+          { l: 'VENCIDAS', v: kpi.vencidas, c: BASE.red, sub: kpi.vencidas > 0 ? '⚠️ Atención inmediata' : 'Sin vencidas' },
+          { l: 'PRÓXIMAS A VENCER', v: kpi.proximasAVencer.length, c: BASE.gold, sub: 'En 7 días' },
+        ].map(k => (
+          <div key={k.l} style={{
+            background: BASE.white, borderRadius: '12px',
+            border: `1px solid ${BASE.border}`, padding: '14px 16px', boxShadow: BASE.shadowSm,
+          }}>
+            <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>{k.l}</p>
+            <p style={{ fontSize: '24px', fontWeight: '900', color: k.c, marginTop: '4px' }}>{k.v}</p>
+            <p style={{ fontSize: '10px', color: BASE.muted, marginTop: '2px' }}>{k.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Distribución por flujo Lean */}
+      <div style={{ background: BASE.white, borderRadius: '14px', border: `1px solid ${BASE.border}`, padding: '18px 22px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+          <div style={{ width: '4px', height: '20px', background: BASE.gold, borderRadius: '2px' }} />
+          <h3 style={{ fontSize: '14px', fontWeight: '800', color: BASE.navy }}>
+            DISTRIBUCIÓN POR FLUJO LEAN
+          </h3>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '8px' }}>
+          {RESTRICCION_TIPOS.map(t => {
+            const count = kpi.porTipo[t.id] || 0;
+            const pct = kpi.total > 0 ? (count / kpi.total) * 100 : 0;
+            return (
+              <div key={t.id} style={{
+                background: count > 0 ? t.color + '12' : BASE.bgSoft,
+                border: `1px solid ${count > 0 ? t.color + '55' : BASE.border}`,
+                borderRadius: '10px', padding: '10px 12px',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '16px' }}>{t.icon}</span>
+                  <span style={{ fontSize: '10px', fontWeight: '800', color: t.color, letterSpacing: '0.4px' }}>
+                    {t.label.toUpperCase()}
+                  </span>
+                </div>
+                <p style={{ fontSize: '20px', fontWeight: '900', color: count > 0 ? t.color : BASE.muted, marginTop: '4px' }}>
+                  {count}
+                </p>
+                <p style={{ fontSize: '9px', color: BASE.muted, marginTop: '2px' }}>
+                  {Math.round(pct)}% del total
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Acciones + filtro */}
+      <div style={{
+        background: BASE.white, borderRadius: '12px',
+        border: `1px solid ${BASE.border}`, padding: '12px 16px',
+        display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap',
+      }}>
+        <button onClick={onNueva} style={{
+          padding: '9px 16px',
+          background: `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`,
+          color: '#fff', border: 'none', borderRadius: '8px',
+          fontSize: '12px', fontWeight: '800', cursor: 'pointer',
+          boxShadow: `0 3px 10px ${BASE.gold}55`,
+        }}>+ Nueva restricción</button>
+
+        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+          {[
+            { id: 'todos',      l: 'Todas' },
+            { id: 'vencida',    l: '🔴 Vencidas' },
+            { id: 'pendiente',  l: '⏳ Pendientes' },
+            { id: 'en_proceso', l: '🔄 En proceso' },
+            { id: 'liberada',   l: '✅ Liberadas' },
+          ].map(f => (
+            <button key={f.id} onClick={() => setFiltroEstado(f.id)} style={{
+              padding: '7px 12px', borderRadius: '8px', border: 'none',
+              background: filtroEstado === f.id ? BASE.navy : '#e2e8f0',
+              color: filtroEstado === f.id ? '#fff' : BASE.muted,
+              fontSize: '11px', fontWeight: '700', cursor: 'pointer',
+            }}>{f.l}</button>
+          ))}
+        </div>
+
+        <span style={{ fontSize: '11px', color: BASE.muted, marginLeft: 'auto' }}>
+          {ordenadas.length} de {kpi.total}
+        </span>
+      </div>
+
+      {/* Lista de restricciones */}
+      {ordenadas.length === 0 ? (
+        <div style={{
+          background: BASE.white, borderRadius: '14px',
+          border: `2px dashed ${BASE.border}`, padding: '40px 24px', textAlign: 'center',
+        }}>
+          <p style={{ fontSize: '32px', marginBottom: '10px' }}>🚧</p>
+          <p style={{ fontSize: '13px', color: BASE.muted }}>
+            {kpi.total === 0
+              ? 'No hay restricciones aún. Comienza registrando las que identifiques en el lookahead.'
+              : 'No hay restricciones que coincidan con este filtro.'}
+          </p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {ordenadas.map(r => {
+            const tipo = RESTRICCION_TIPOS_MAP[r.tipoFlujo] || { icon: '📌', label: 'Otro', color: BASE.muted };
+            const estadoCfg = RESTRICCION_ESTADOS[r._estado] || RESTRICCION_ESTADOS.pendiente;
+            const dias = r.fechaCompromisoLiberacion
+              ? diasEntre(new Date().toISOString().split('T')[0], r.fechaCompromisoLiberacion)
+              : null;
+
+            return (
+              <div key={r.id} style={{
+                background: BASE.white, borderRadius: '12px',
+                border: `1px solid ${BASE.border}`,
+                borderLeft: `5px solid ${tipo.color}`,
+                padding: '14px 16px',
+                display: 'grid',
+                gridTemplateColumns: '1fr auto',
+                gap: '12px',
+                alignItems: 'center',
+              }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '16px' }}>{tipo.icon}</span>
+                    <span style={{
+                      fontSize: '9px', fontWeight: '800', letterSpacing: '0.6px',
+                      color: tipo.color, textTransform: 'uppercase',
+                    }}>{tipo.label}</span>
+                    <span style={{
+                      background: estadoCfg.bg, color: estadoCfg.color,
+                      padding: '2px 8px', borderRadius: '12px',
+                      fontSize: '9px', fontWeight: '900', letterSpacing: '0.4px',
+                    }}>{estadoCfg.label}</span>
+                    {r.impacto === 'alto' && (
+                      <span style={{ background: '#fee2e2', color: '#dc2626', padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: '800' }}>
+                        🔴 ALTO
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ fontSize: '13px', fontWeight: '800', color: BASE.text }}>
+                    {r.actividad}
+                  </p>
+                  {r.descripcion && (
+                    <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '3px', lineHeight: 1.4 }}>
+                      {r.descripcion}
+                    </p>
+                  )}
+                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '6px', fontSize: '10px', color: BASE.muted }}>
+                    {r.responsable && <span>👤 <strong>{r.responsable}</strong></span>}
+                    {r.fechaCompromisoLiberacion && (
+                      <span style={{ color: dias !== null && dias < 0 && r._estado !== 'liberada' ? BASE.red : BASE.muted, fontWeight: dias !== null && dias < 0 ? '700' : '600' }}>
+                        📅 {fmtFechaCorta(r.fechaCompromisoLiberacion)}
+                        {dias !== null && r._estado !== 'liberada' && (
+                          <span style={{ marginLeft: '4px' }}>
+                            ({dias < 0 ? `vencida hace ${Math.abs(dias)}d` : dias === 0 ? 'hoy' : `en ${dias}d`})
+                          </span>
+                        )}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                  {r._estado !== 'liberada' && (
+                    <button onClick={() => onLiberar(r)} title="Liberar" style={{
+                      padding: '7px 10px', background: BASE.green, color: '#fff',
+                      border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: '800', cursor: 'pointer',
+                    }}>✅</button>
+                  )}
+                  <button onClick={() => onEditar(r)} title="Editar" style={{
+                    padding: '7px 10px', background: BASE.bgSoft, color: BASE.navy,
+                    border: `1px solid ${BASE.border}`, borderRadius: '6px',
+                    fontSize: '11px', fontWeight: '800', cursor: 'pointer',
+                  }}>✏️</button>
+                  <button onClick={() => onEliminar(r)} title="Eliminar" style={{
+                    padding: '7px 10px', background: '#fee2e2', color: BASE.red,
+                    border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: '800', cursor: 'pointer',
+                  }}>🗑️</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+// SUB-COMPONENTE: LECCIONES APRENDIDAS
+// ════════════════════════════════════════════════════════════════
+
+function Lecciones({ lecciones, sugerencias, onNueva, onEditar, onEliminar }) {
+  const kpi = useMemo(() => calcularKPILecciones(lecciones), [lecciones]);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      {/* KPIs */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px' }}>
+        <div style={{ background: BASE.white, borderRadius: '12px', border: `1px solid ${BASE.border}`, padding: '14px 16px', boxShadow: BASE.shadowSm }}>
+          <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>LECCIONES TOTALES</p>
+          <p style={{ fontSize: '28px', fontWeight: '900', color: BASE.navy, marginTop: '4px' }}>{kpi.total}</p>
+          <p style={{ fontSize: '10px', color: BASE.muted, marginTop: '2px' }}>Documentadas</p>
+        </div>
+        <div style={{ background: BASE.white, borderRadius: '12px', border: `1px solid ${BASE.border}`, padding: '14px 16px', boxShadow: BASE.shadowSm }}>
+          <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>SUGERENCIAS PENDIENTES</p>
+          <p style={{ fontSize: '28px', fontWeight: '900', color: sugerencias.length > 0 ? BASE.gold : BASE.greenDark, marginTop: '4px' }}>
+            {sugerencias.length}
+          </p>
+          <p style={{ fontSize: '10px', color: BASE.muted, marginTop: '2px' }}>
+            {sugerencias.length > 0 ? 'Categorías con ≥3 incidentes' : 'Todo documentado'}
+          </p>
+        </div>
+        <div style={{ background: BASE.white, borderRadius: '12px', border: `1px solid ${BASE.border}`, padding: '14px 16px', boxShadow: BASE.shadowSm }}>
+          <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>CATEGORÍA MÁS DOCUMENTADA</p>
+          {kpi.masAplicada.length > 0 ? (
+            <>
+              <p style={{ fontSize: '14px', fontWeight: '900', color: BASE.navy, marginTop: '4px' }}>
+                {RNC_ICONS[kpi.masAplicada[0].categoria]} {RNC_LABELS[kpi.masAplicada[0].categoria]}
+              </p>
+              <p style={{ fontSize: '10px', color: BASE.muted, marginTop: '2px' }}>
+                {kpi.masAplicada[0].count} lecciones
+              </p>
+            </>
+          ) : (
+            <p style={{ fontSize: '12px', color: BASE.muted, marginTop: '6px' }}>Aún sin datos</p>
+          )}
+        </div>
+      </div>
+
+      {/* SUGERENCIAS AUTOMÁTICAS */}
+      {sugerencias.length > 0 && (
+        <div style={{
+          background: `linear-gradient(135deg, ${BASE.gold}10, ${BASE.gold}05)`,
+          border: `1.5px solid ${BASE.gold}55`,
+          borderLeft: `5px solid ${BASE.goldDark}`,
+          borderRadius: '14px', padding: '16px 20px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <span style={{ fontSize: '18px' }}>💡</span>
+            <h3 style={{ fontSize: '13px', fontWeight: '900', color: BASE.goldDark, letterSpacing: '0.4px' }}>
+              SUGERENCIAS AUTOMÁTICAS — Categorías con ≥3 incidentes RNC sin lección documentada
+            </h3>
+          </div>
+          <p style={{ fontSize: '11px', color: BASE.muted, marginBottom: '12px', marginLeft: '26px' }}>
+            El sistema detectó patrones recurrentes. Crea una lección para evitar que el problema se repita.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {sugerencias.map(s => (
+              <div key={s.categoria} style={{
+                background: BASE.white, borderRadius: '10px', padding: '12px 14px',
+                border: `1px solid ${BASE.border}`,
+                display: 'grid', gridTemplateColumns: '1fr auto', gap: '10px', alignItems: 'center',
+              }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '16px' }}>{RNC_ICONS[s.categoria]}</span>
+                    <span style={{ fontSize: '12px', fontWeight: '900', color: RNC_COLORS[s.categoria] }}>
+                      {RNC_LABELS[s.categoria]}
+                    </span>
+                    <span style={{
+                      background: BASE.red, color: '#fff',
+                      padding: '2px 8px', borderRadius: '12px',
+                      fontSize: '9px', fontWeight: '900', letterSpacing: '0.4px',
+                    }}>
+                      {s.incidentes} incidentes
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '11px', color: BASE.muted, lineHeight: 1.4 }}>
+                    Últimos casos: {s.ejemplos.map(e => `${e.actividad} (S${e.semana})`).join(', ')}
+                  </p>
+                </div>
+                <button onClick={() => onNueva({
+                  titulo: `Evitar problemas de ${RNC_LABELS[s.categoria].toLowerCase()}`,
+                  categoria: s.categoria,
+                  descripcion: `Se detectaron ${s.incidentes} incidentes en la categoría ${RNC_LABELS[s.categoria]} en el proyecto.`,
+                })} style={{
+                  padding: '8px 14px',
+                  background: BASE.goldDark, color: '#fff',
+                  border: 'none', borderRadius: '8px',
+                  fontSize: '11px', fontWeight: '800', cursor: 'pointer', whiteSpace: 'nowrap',
+                }}>
+                  📝 Crear lección
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Botón nueva lección manual */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <button onClick={() => onNueva()} style={{
+          padding: '10px 18px',
+          background: `linear-gradient(135deg, ${BASE.green}, ${BASE.greenDark})`,
+          color: '#fff', border: 'none', borderRadius: '10px',
+          fontSize: '12px', fontWeight: '800', cursor: 'pointer',
+          boxShadow: `0 3px 10px ${BASE.green}55`,
+        }}>+ Nueva lección manual</button>
+        <span style={{ fontSize: '11px', color: BASE.muted }}>
+          Documenta aprendizajes para que el equipo los use en proyectos futuros
+        </span>
+      </div>
+
+      {/* Lista de lecciones */}
+      {lecciones.length === 0 ? (
+        <div style={{
+          background: BASE.white, borderRadius: '14px',
+          border: `2px dashed ${BASE.border}`, padding: '50px 24px', textAlign: 'center',
+        }}>
+          <p style={{ fontSize: '36px', marginBottom: '10px' }}>📚</p>
+          <p style={{ fontSize: '14px', fontWeight: '700', color: BASE.navy }}>
+            Sin lecciones aprendidas registradas
+          </p>
+          <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '6px' }}>
+            Documenta aquí los aprendizajes del proyecto para evitar repetir errores.
+          </p>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '12px' }}>
+          {lecciones.map(l => {
+            const cat = RNC_CATEGORIAS.find(c => c.id === l.categoria) || { icon: '📌', label: 'Otro', color: BASE.muted };
+            return (
+              <div key={l.id} style={{
+                background: BASE.white, borderRadius: '12px',
+                border: `1px solid ${BASE.border}`,
+                borderTop: `4px solid ${cat.color}`,
+                padding: '16px 18px',
+                position: 'relative',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '18px' }}>{cat.icon}</span>
+                  <span style={{
+                    fontSize: '9px', fontWeight: '800', letterSpacing: '0.6px',
+                    color: cat.color, textTransform: 'uppercase',
+                  }}>
+                    {cat.label}
+                  </span>
+                </div>
+                <h4 style={{ fontSize: '14px', fontWeight: '900', color: BASE.navy, marginBottom: '8px', lineHeight: 1.3 }}>
+                  {l.titulo}
+                </h4>
+                {l.descripcion && (
+                  <div style={{ marginBottom: '8px' }}>
+                    <p style={{ fontSize: '9px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.4px', marginBottom: '2px' }}>
+                      ¿QUÉ PASÓ?
+                    </p>
+                    <p style={{ fontSize: '11px', color: BASE.text, lineHeight: 1.5 }}>
+                      {l.descripcion}
+                    </p>
+                  </div>
+                )}
+                {l.accionRecomendada && (
+                  <div style={{
+                    background: BASE.greenLight, borderRadius: '8px',
+                    padding: '8px 10px', marginTop: '8px',
+                    borderLeft: `3px solid ${BASE.green}`,
+                  }}>
+                    <p style={{ fontSize: '9px', fontWeight: '800', color: BASE.greenDark, letterSpacing: '0.4px', marginBottom: '2px' }}>
+                      ✅ ACCIÓN RECOMENDADA
+                    </p>
+                    <p style={{ fontSize: '11px', color: BASE.greenDark, lineHeight: 1.5, fontWeight: '600' }}>
+                      {l.accionRecomendada}
+                    </p>
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: '4px', marginTop: '12px', justifyContent: 'flex-end' }}>
+                  <button onClick={() => onEditar(l)} style={{
+                    padding: '5px 10px', background: BASE.bgSoft, color: BASE.navy,
+                    border: `1px solid ${BASE.border}`, borderRadius: '6px',
+                    fontSize: '10px', fontWeight: '800', cursor: 'pointer',
+                  }}>✏️ Editar</button>
+                  <button onClick={() => onEliminar(l)} style={{
+                    padding: '5px 10px', background: '#fee2e2', color: BASE.red,
+                    border: 'none', borderRadius: '6px',
+                    fontSize: '10px', fontWeight: '800', cursor: 'pointer',
+                  }}>🗑️</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+// HELPER: Botón de impresión (común a todas las vistas LPS)
+// ════════════════════════════════════════════════════════════════
+function BotonImprimir({ titulo }) {
+  const [generandoPDF, setGenerandoPDF] = useState(false);
+
+  const descargarPDF = async () => {
+    try {
+      setGenerandoPDF(true);
+      const { exportarTablaDOMaPDF } = await import('../utils/pdfExport');
+      // Buscar la primera tabla LPS visible en el DOM
+      const tabla = document.querySelector('main table, section table, [data-lps-table]');
+      if (!tabla) {
+        window.print();  // fallback
+        return;
+      }
+      await exportarTablaDOMaPDF({
+        tablaSelector: 'main table, section table, [data-lps-table]',
+        titulo,
+        nombreArchivo: titulo.replace(/[^a-z0-9]+/gi, '_').toLowerCase() + '.pdf',
+        orientacion: 'landscape',
+      });
+    } catch (err) {
+      console.error('Error generando PDF:', err);
+      window.print();  // fallback a impresión nativa
+    } finally {
+      setGenerandoPDF(false);
+    }
+  };
+
+  return (
+    <div style={{ display: 'inline-flex', gap: '6px' }}>
+      <button onClick={() => window.print()} style={{
+        padding: '8px 14px',
+        background: BASE.white, color: BASE.navy,
+        border: `1.5px solid ${BASE.border}`, borderRadius: '8px',
+        fontSize: '11px', fontWeight: '800', cursor: 'pointer',
+        display: 'inline-flex', alignItems: 'center', gap: '6px',
+      }} title={`Imprimir: ${titulo}`}>
+        🖨️ Imprimir
+      </button>
+      <button onClick={descargarPDF} disabled={generandoPDF} style={{
+        padding: '8px 14px',
+        background: generandoPDF ? BASE.bgSoft : `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`,
+        color: generandoPDF ? BASE.muted : '#fff',
+        border: `1.5px solid ${generandoPDF ? BASE.border : BASE.gold}`,
+        borderRadius: '8px',
+        fontSize: '11px', fontWeight: '800',
+        cursor: generandoPDF ? 'wait' : 'pointer',
+        display: 'inline-flex', alignItems: 'center', gap: '6px',
+        boxShadow: generandoPDF ? 'none' : `0 4px 12px ${BASE.gold}55`,
+      }} title={`Descargar PDF: ${titulo}`}>
+        {generandoPDF ? '⏳ Generando...' : '📥 Descargar PDF'}
+      </button>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+// SUB-COMPONENTE: LAP · LOOKAHEAD A 6 SEMANAS
+// Muestra ventana móvil de 6 semanas con actividades planificadas
+// ════════════════════════════════════════════════════════════════
+function LookaheadView({ compromisos, restricciones, semanaActiva }) {
+  const semanas = useMemo(
+    () => generarLookahead(semanaActiva, 6, '2025-12-01'),
+    [semanaActiva]
+  );
+
+  // Agrupa compromisos en las 6 semanas del lookahead
+  const compromisosPorSemana = useMemo(() => {
+    const mapa = {};
+    semanas.forEach(s => { mapa[s.numero] = []; });
+    (compromisos || []).forEach(c => {
+      if (mapa[c.semana]) mapa[c.semana].push(c);
+    });
+    return mapa;
+  }, [compromisos, semanas]);
+
+  // Cuenta restricciones que afectan cada semana
+  const restriccionesPorSemana = useMemo(() => {
+    const mapa = {};
+    semanas.forEach(s => { mapa[s.numero] = 0; });
+    (restricciones || []).forEach(r => {
+      if (!r.fechaCompromisoLiberacion) return;
+      // Calcular semana aproximada de la fecha de compromiso
+      const fechaInicio = new Date('2025-12-01T00:00:00');
+      const fechaCompromiso = new Date(r.fechaCompromisoLiberacion + 'T00:00:00');
+      if (isNaN(fechaCompromiso)) return;
+      const semanaCompromiso = Math.ceil((fechaCompromiso - fechaInicio) / (1000 * 60 * 60 * 24 * 7)) + 1;
+      if (mapa[semanaCompromiso] !== undefined && r.estado !== 'liberada') {
+        mapa[semanaCompromiso] += 1;
+      }
+    });
+    return mapa;
+  }, [restricciones, semanas]);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        <div>
+          <h3 style={{ fontSize: '16px', fontWeight: '900', color: BASE.navy }}>
+            🔭 LOOKAHEAD · 6 semanas hacia adelante
+          </h3>
+          <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
+            Ventana móvil de planificación. Cada actividad debe tener restricciones liberadas
+            antes de bajar al Plan Semanal.
+          </p>
+        </div>
+        <BotonImprimir titulo="Lookahead 6 semanas" />
+      </div>
+
+      {/* Grid de 6 semanas */}
+      <div style={{
+        background: BASE.white, borderRadius: '14px',
+        border: `1px solid ${BASE.border}`, overflow: 'hidden',
+        boxShadow: BASE.shadowSm,
+      }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', minWidth: '900px' }}>
+            <thead>
+              <tr>
+                {semanas.map((s, idx) => {
+                  const esActual = idx === 0;
+                  const restriccionesPend = restriccionesPorSemana[s.numero] || 0;
+                  return (
+                    <th key={s.numero} style={{
+                      padding: '14px 10px',
+                      background: esActual
+                        ? `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`
+                        : `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
+                      color: '#fff',
+                      borderRight: `1px solid ${BASE.border}`,
+                      textAlign: 'center',
+                      width: `${100 / 6}%`,
+                    }}>
+                      <p style={{ fontSize: '10px', fontWeight: '800', letterSpacing: '0.6px' }}>
+                        {esActual ? '⭐ SEMANA ACTUAL' : `+ ${idx} sem`}
+                      </p>
+                      <p style={{ fontSize: '18px', fontWeight: '900', marginTop: '4px' }}>
+                        {s.label}
+                      </p>
+                      <p style={{ fontSize: '10px', opacity: 0.85, marginTop: '4px' }}>
+                        {s.dias[0].dia}/{s.dias[0].mes} – {s.dias[6].dia}/{s.dias[6].mes}
+                      </p>
+                      {restriccionesPend > 0 && (
+                        <span style={{
+                          display: 'inline-block', marginTop: '6px',
+                          padding: '2px 8px', background: BASE.red, color: '#fff',
+                          borderRadius: '12px', fontSize: '9px', fontWeight: '900',
+                        }}>
+                          🚧 {restriccionesPend} restric.
+                        </span>
+                      )}
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                {semanas.map(s => {
+                  const lista = compromisosPorSemana[s.numero] || [];
+                  const cumplidos = lista.filter(c => c.cumplido === true).length;
+                  const incumplidos = lista.filter(c => c.cumplido === false).length;
+                  return (
+                    <td key={s.numero} style={{
+                      padding: '12px',
+                      borderRight: `1px solid ${BASE.border}`,
+                      verticalAlign: 'top',
+                      minHeight: '300px',
+                      background: BASE.white,
+                    }}>
+                      {lista.length === 0 ? (
+                        <p style={{ fontSize: '11px', color: BASE.mutedSoft, fontStyle: 'italic', textAlign: 'center', padding: '20px 0' }}>
+                          Sin compromisos planificados
+                        </p>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <p style={{ fontSize: '9px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.5px', marginBottom: '4px' }}>
+                            {lista.length} {lista.length === 1 ? 'compromiso' : 'compromisos'}
+                            {cumplidos > 0 && <span style={{ color: BASE.greenDark }}> · ✅ {cumplidos}</span>}
+                            {incumplidos > 0 && <span style={{ color: BASE.red }}> · ❌ {incumplidos}</span>}
+                          </p>
+                          {lista.slice(0, 5).map(c => {
+                            const colorBorde = c.cumplido === true ? BASE.green : c.cumplido === false ? BASE.red : BASE.gold;
+                            return (
+                              <div key={c.id} style={{
+                                background: BASE.bgSoft,
+                                borderLeft: `3px solid ${colorBorde}`,
+                                padding: '6px 8px',
+                                borderRadius: '4px',
+                              }}>
+                                <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.text, lineHeight: 1.3 }}>
+                                  {c.actividad}
+                                </p>
+                                <p style={{ fontSize: '9px', color: BASE.muted, marginTop: '2px' }}>
+                                  👷 {c.capataz} · {c.metradoComprometido} und
+                                </p>
+                              </div>
+                            );
+                          })}
+                          {lista.length > 5 && (
+                            <p style={{ fontSize: '9px', color: BASE.muted, fontStyle: 'italic', textAlign: 'center' }}>
+                              + {lista.length - 5} más...
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Leyenda */}
+      <div style={{
+        background: BASE.bgSoft, borderRadius: '10px',
+        padding: '12px 16px', fontSize: '11px', color: BASE.muted, lineHeight: 1.6,
+      }}>
+        <strong style={{ color: BASE.navy }}>📖 Cómo leer el Lookahead:</strong>
+        <span style={{ marginLeft: '6px' }}>
+          Ventana de 6 semanas con actividades comprometidas. La <strong style={{ color: BASE.gold }}>semana actual</strong> es
+          la que se está ejecutando. Cada barra es un compromiso. <strong style={{ color: BASE.greenDark }}>Verde</strong> = cumplido,
+          <strong style={{ color: BASE.red }}> rojo</strong> = no cumplido, <strong style={{ color: BASE.gold }}> amarillo</strong> = pendiente.
+          Las restricciones pendientes deben liberarse <strong>antes</strong> de que la actividad llegue a la semana actual.
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+// SUB-COMPONENTE: PROGRAMACIÓN SEMANAL (formato Excel S0/S1/S2)
+// Replica imagen 2: tabla con días lun-dom + colores S0/S1/S2 por celda
+// ════════════════════════════════════════════════════════════════
+function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, semanasDisponibles, compromisos }) {
+  const dias = useMemo(() => fechasDeSemana(semanaActiva, '2025-12-01'), [semanaActiva]);
+  const compromisosSem = useMemo(
+    () => compromisos.filter(c => c.semana === semanaActiva),
+    [compromisos, semanaActiva]
+  );
+  const jerarquia = useMemo(() => construirJerarquiaLPS(compromisosSem), [compromisosSem]);
+
+  // Función para determinar el "nivel de programación" S0/S1/S2 de una celda día
+  const nivelCelda = (compromiso, diaIdx) => {
+    if (!compromiso) return null;
+    // Lógica simple: si el compromiso está cumplido, marcar todos los días con S0
+    // Si no cumplido, S2 (urgente / atrasado)
+    // Si pendiente, S1
+    // En implementación real: usar c.diasProgramados[fecha]
+    if (compromiso.diasProgramados && compromiso.diasProgramados[dias[diaIdx]?.fecha]) {
+      return compromiso.diasProgramados[dias[diaIdx].fecha];
+    }
+    if (compromiso.cumplido === true) return 'S0';
+    if (compromiso.cumplido === false) return 'S2';
+    return 'S1';
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      {/* Cabecera */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        <div>
+          <h3 style={{ fontSize: '16px', fontWeight: '900', color: BASE.navy }}>
+            📋 PROGRAMACIÓN SEMANAL · Semana {semanaActiva}
+          </h3>
+          <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
+            Distribución día a día de compromisos. Replica del formato Excel maestro.
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <select value={semanaActiva} onChange={e => setSemanaActiva(parseInt(e.target.value))}
+            style={inp({ width: 'auto', fontSize: '12px', fontWeight: '700', padding: '8px 12px' })}>
+            {semanasDisponibles.map(s => <option key={s} value={s}>Semana {s}</option>)}
+          </select>
+          <BotonImprimir titulo={`Programación Semana ${semanaActiva}`} />
+        </div>
+      </div>
+
+      {/* Tabla replica Excel */}
+      <div style={{
+        background: BASE.white, borderRadius: '14px',
+        border: `1px solid ${BASE.border}`, overflow: 'hidden',
+        boxShadow: BASE.shadowSm,
+      }}>
+        {/* Header dorado del Excel */}
+        <div style={{
+          background: BASE.lpsHeader, padding: '12px 18px',
+          borderBottom: `2px solid ${BASE.gold}`,
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px',
+        }}>
+          <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy, letterSpacing: '1px' }}>
+            PROGRAMACION SEMANAL — GRAPCO PROYECTO
+          </p>
+          <p style={{ fontSize: '11px', fontWeight: '700', color: BASE.navy }}>
+            SEMANA {semanaActiva} · INICIO {dias[0]?.fecha}
+          </p>
+        </div>
+
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', minWidth: '900px' }}>
+            <thead>
+              <tr style={{ background: BASE.navy }}>
+                <th style={{ padding: '10px 8px', color: '#fff', fontSize: '10px', fontWeight: '900', letterSpacing: '0.4px', textAlign: 'left', width: '60px' }}>COD</th>
+                <th style={{ padding: '10px 8px', color: '#fff', fontSize: '10px', fontWeight: '900', letterSpacing: '0.4px', textAlign: 'left', minWidth: '280px' }}>ACTIVIDAD</th>
+                <th style={{ padding: '10px 8px', color: '#fff', fontSize: '10px', fontWeight: '900', letterSpacing: '0.4px', textAlign: 'center', width: '60px' }}>RESP.</th>
+                <th style={{ padding: '10px 8px', color: '#fff', fontSize: '10px', fontWeight: '900', letterSpacing: '0.4px', textAlign: 'center', width: '50px' }}>UND</th>
+                {dias.map(d => (
+                  <th key={d.id} style={{
+                    padding: '10px 6px', background: BASE.gold, color: '#fff',
+                    fontSize: '10px', fontWeight: '900', letterSpacing: '0.4px',
+                    textAlign: 'center', borderLeft: `1px solid ${BASE.goldDark}`,
+                    width: '52px',
+                  }}>
+                    <p>{d.mes}</p>
+                    <p style={{ fontSize: '14px', fontWeight: '900', marginTop: '2px' }}>{d.dia}</p>
+                    <p style={{ fontSize: '9px', opacity: 0.9, marginTop: '2px' }}>{d.label}</p>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {jerarquia.length === 0 ? (
+                <tr>
+                  <td colSpan={4 + dias.length} style={{ padding: '40px', textAlign: 'center', color: BASE.muted, fontSize: '12px' }}>
+                    Sin compromisos para esta semana. Crea compromisos en la pestaña <strong>✏️ Compromisos (CRUD)</strong>.
+                  </td>
+                </tr>
+              ) : (
+                jerarquia.map((fila, idx) => {
+                  if (fila.tipo === 'frente') {
+                    return (
+                      <tr key={`${idx}_${fila.nombre}`} style={{ background: BASE.lpsBand }}>
+                        <td colSpan={4 + dias.length} style={{ padding: '8px 10px', color: BASE.gold, fontSize: '10px', fontWeight: '900', letterSpacing: '0.6px' }}>
+                          [{fila.nivel}] {fila.nombre}
+                        </td>
+                      </tr>
+                    );
+                  }
+                  if (fila.tipo === 'partida') {
+                    return (
+                      <tr key={`${idx}_${fila.nombre}`} style={{ background: BASE.lpsBandSoft }}>
+                        <td colSpan={4 + dias.length} style={{ padding: '6px 14px', color: BASE.navy, fontSize: '10px', fontWeight: '800', letterSpacing: '0.5px' }}>
+                          {fila.nivel} · {fila.nombre}
+                        </td>
+                      </tr>
+                    );
+                  }
+                  if (fila.tipo === 'subpartida') {
+                    return (
+                      <tr key={`${idx}_${fila.nombre}`} style={{ background: BASE.lpsBandSofter }}>
+                        <td colSpan={4 + dias.length} style={{ padding: '5px 22px', color: BASE.muted, fontSize: '10px', fontWeight: '700', letterSpacing: '0.4px' }}>
+                          {fila.nivel} · {fila.nombre}
+                        </td>
+                      </tr>
+                    );
+                  }
+                  // Fila ACTIVIDAD
+                  const c = fila.actividad;
+                  return (
+                    <tr key={c.id} style={{ background: BASE.white, borderBottom: `1px solid ${BASE.borderSoft}` }}>
+                      <td style={{ padding: '8px 8px', fontSize: '9px', fontWeight: '800', color: BASE.gold, fontFamily: 'monospace', textAlign: 'center' }}>
+                        ACT
+                      </td>
+                      <td style={{ padding: '8px 14px 8px 28px', fontSize: '11px', color: BASE.text }}>
+                        {c.actividad}
+                      </td>
+                      <td style={{ padding: '8px', textAlign: 'center', fontSize: '10px', fontWeight: '700', color: BASE.muted }}>
+                        {(c.capataz || '').slice(0, 2).toUpperCase()}
+                      </td>
+                      <td style={{ padding: '8px', textAlign: 'center', fontSize: '10px', color: BASE.muted }}>
+                        UND
+                      </td>
+                      {dias.map((d, didx) => {
+                        const nivel = nivelCelda(c, didx);
+                        const cfg = nivel ? NIVELES_PROG[nivel] : null;
+                        return (
+                          <td key={d.id} style={{
+                            padding: '8px 0', textAlign: 'center',
+                            borderLeft: `1px solid ${BASE.borderSoft}`,
+                            background: cfg ? cfg.color : 'transparent',
+                            color: cfg ? cfg.text : 'transparent',
+                            fontSize: '10px', fontWeight: '900',
+                          }}>
+                            {cfg ? cfg.label : ''}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Leyenda */}
+      <div style={{
+        background: BASE.bgSoft, borderRadius: '10px', padding: '12px 16px',
+        display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'center',
+        fontSize: '11px',
+      }}>
+        <strong style={{ color: BASE.navy }}>📖 Leyenda:</strong>
+        {Object.entries(NIVELES_PROG).map(([k, v]) => (
+          <span key={k} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{
+              padding: '2px 8px', background: v.color, color: v.text,
+              borderRadius: '4px', fontWeight: '900', fontSize: '10px',
+            }}>{v.label}</span>
+            <span style={{ color: BASE.muted, fontSize: '10px' }}>{v.desc}</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+// SUB-COMPONENTE: EJECUCIÓN DIARIA (replica imagen 1)
+// Tabla con SI/NO/TIPO + columna PPC% por actividad
+// ════════════════════════════════════════════════════════════════
+function EjecucionDiariaLPS({ semanaActiva, setSemanaActiva, semanasDisponibles, compromisos }) {
+  const dias = useMemo(() => fechasDeSemana(semanaActiva, '2025-12-01'), [semanaActiva]);
+  const compromisosSem = useMemo(
+    () => compromisos.filter(c => c.semana === semanaActiva),
+    [compromisos, semanaActiva]
+  );
+  const jerarquia = useMemo(() => construirJerarquiaLPS(compromisosSem), [compromisosSem]);
+
+  // PPC global de la semana
+  const cumplidos = compromisosSem.filter(c => c.cumplido === true).length;
+  const cerrados = compromisosSem.filter(c => c.cumplido !== null).length;
+  const ppcSemanal = cerrados > 0 ? cumplidos / cerrados : null;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        <div>
+          <h3 style={{ fontSize: '16px', fontWeight: '900', color: BASE.navy }}>
+            📅 EJECUCIÓN DIARIA · Semana {semanaActiva}
+          </h3>
+          <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
+            Análisis de cumplimiento día a día con % de avance ejecutado (PPC).
+            {ppcSemanal !== null && (
+              <span style={{ marginLeft: '8px', color: ppcSemanal >= 0.8 ? BASE.greenDark : BASE.red, fontWeight: '900' }}>
+                · PPC semana: {Math.round(ppcSemanal * 100)}%
+              </span>
+            )}
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <select value={semanaActiva} onChange={e => setSemanaActiva(parseInt(e.target.value))}
+            style={inp({ width: 'auto', fontSize: '12px', fontWeight: '700', padding: '8px 12px' })}>
+            {semanasDisponibles.map(s => <option key={s} value={s}>Semana {s}</option>)}
+          </select>
+          <BotonImprimir titulo={`Ejecución Diaria Semana ${semanaActiva}`} />
+        </div>
+      </div>
+
+      <div style={{
+        background: BASE.white, borderRadius: '14px',
+        border: `1px solid ${BASE.border}`, overflow: 'hidden',
+        boxShadow: BASE.shadowSm,
+      }}>
+        {/* Header LPS dorado */}
+        <div style={{
+          background: BASE.lpsHeader, padding: '12px 18px',
+          borderBottom: `2px solid ${BASE.gold}`,
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px',
+        }}>
+          <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy, letterSpacing: '1px' }}>
+            PROGRAMACION DE PLAN CUMPLIDO — Semana {semanaActiva}
+          </p>
+          <p style={{ fontSize: '11px', fontWeight: '700', color: BASE.navy }}>
+            INICIO {dias[0]?.fecha}
+          </p>
+        </div>
+
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', minWidth: '1100px' }}>
+            <thead>
+              <tr style={{ background: BASE.navy }}>
+                <th style={{ padding: '10px 8px', color: '#fff', fontSize: '10px', fontWeight: '900', letterSpacing: '0.4px', textAlign: 'left', width: '60px' }}>COD</th>
+                <th style={{ padding: '10px 8px', color: '#fff', fontSize: '10px', fontWeight: '900', letterSpacing: '0.4px', textAlign: 'left', minWidth: '260px' }}>ACTIVIDAD</th>
+                {dias.map(d => (
+                  <th key={d.id} style={{
+                    padding: '8px 6px', background: BASE.gold, color: '#fff',
+                    fontSize: '10px', fontWeight: '900',
+                    textAlign: 'center', borderLeft: `1px solid ${BASE.goldDark}`,
+                    width: '50px',
+                  }}>
+                    <p>{d.mes}</p>
+                    <p style={{ fontSize: '13px', fontWeight: '900', marginTop: '2px' }}>{d.dia}</p>
+                    <p style={{ fontSize: '9px', opacity: 0.9 }}>{d.label}</p>
+                  </th>
+                ))}
+                {/* Análisis de cumplimiento */}
+                <th colSpan="3" style={{
+                  padding: '8px', background: BASE.lpsHeader, color: BASE.navy,
+                  fontSize: '10px', fontWeight: '900', textAlign: 'center',
+                  borderLeft: `2px solid ${BASE.navy}`,
+                }}>
+                  ANALISIS DE<br/>CUMPLIMIENTO
+                </th>
+                <th style={{
+                  padding: '8px', background: BASE.lpsHeader, color: BASE.navy,
+                  fontSize: '10px', fontWeight: '900', textAlign: 'center',
+                  borderLeft: `1px solid ${BASE.navy}`,
+                  minWidth: '90px',
+                }}>
+                  PORCENTAJE<br/>AVANCE (PPC%)
+                </th>
+              </tr>
+              <tr style={{ background: BASE.bgSoft }}>
+                <th colSpan={2 + dias.length}></th>
+                <th style={{ padding: '6px', fontSize: '9px', fontWeight: '900', color: BASE.greenDark, textAlign: 'center', borderLeft: `2px solid ${BASE.navy}` }}>SI</th>
+                <th style={{ padding: '6px', fontSize: '9px', fontWeight: '900', color: BASE.red, textAlign: 'center' }}>NO</th>
+                <th style={{ padding: '6px', fontSize: '9px', fontWeight: '900', color: BASE.muted, textAlign: 'center' }}>TIPO</th>
+                <th style={{ padding: '6px', borderLeft: `1px solid ${BASE.border}` }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {jerarquia.length === 0 ? (
+                <tr>
+                  <td colSpan={2 + dias.length + 4} style={{ padding: '40px', textAlign: 'center', color: BASE.muted, fontSize: '12px' }}>
+                    Sin compromisos. Crea uno en <strong>✏️ Compromisos (CRUD)</strong>.
+                  </td>
+                </tr>
+              ) : (
+                jerarquia.map((fila, idx) => {
+                  const colTotal = 2 + dias.length + 4;
+                  if (fila.tipo === 'frente') {
+                    return (
+                      <tr key={`${idx}_${fila.nombre}`} style={{ background: BASE.lpsBand }}>
+                        <td colSpan={colTotal} style={{ padding: '8px 10px', color: BASE.gold, fontSize: '10px', fontWeight: '900', letterSpacing: '0.6px' }}>
+                          [{fila.nivel}] {fila.nombre}
+                        </td>
+                      </tr>
+                    );
+                  }
+                  if (fila.tipo === 'partida') {
+                    return (
+                      <tr key={`${idx}_${fila.nombre}`} style={{ background: BASE.lpsBandSoft }}>
+                        <td colSpan={colTotal} style={{ padding: '6px 14px', color: BASE.navy, fontSize: '10px', fontWeight: '800' }}>
+                          {fila.nivel} · {fila.nombre}
+                        </td>
+                      </tr>
+                    );
+                  }
+                  if (fila.tipo === 'subpartida') {
+                    return (
+                      <tr key={`${idx}_${fila.nombre}`} style={{ background: BASE.lpsBandSofter }}>
+                        <td colSpan={colTotal} style={{ padding: '5px 22px', color: BASE.muted, fontSize: '10px', fontWeight: '700' }}>
+                          {fila.nivel} · {fila.nombre}
+                        </td>
+                      </tr>
+                    );
+                  }
+                  // ACTIVIDAD
+                  const c = fila.actividad;
+                  // Compute PPC ratio: si cumplido, 100%; si no, 0%; si pendiente, --
+                  const ppcRatio = c.cumplido === true ? 1 : c.cumplido === false ? 0 : null;
+                  const ppcColor = ppcRatio === 1 ? BASE.lpsCompletado : ppcRatio === 0 ? BASE.lpsPendiente : BASE.lpsBloqueado;
+                  const ppcText = ppcRatio === 1 ? '100%' : ppcRatio === 0 ? '0%' : '—';
+                  // Si parcial (metradoEjecutado > 0 pero no cumplido), calcular
+                  let ppcShow = ppcText;
+                  if (c.metradoEjecutado != null && c.metradoComprometido > 0) {
+                    const ratio = Math.min(1, c.metradoEjecutado / c.metradoComprometido);
+                    ppcShow = `${Math.round(ratio * 100)}%`;
+                  }
+                  return (
+                    <tr key={c.id} style={{ background: BASE.white, borderBottom: `1px solid ${BASE.borderSoft}` }}>
+                      <td style={{ padding: '8px 8px', fontSize: '9px', fontWeight: '800', color: BASE.gold, fontFamily: 'monospace', textAlign: 'center' }}>
+                        {c.cumplido === true ? '✓' : c.cumplido === false ? '✗' : '○'}
+                      </td>
+                      <td style={{ padding: '8px 14px 8px 28px', fontSize: '11px', color: BASE.text }}>
+                        {c.actividad}
+                      </td>
+                      {dias.map((d, didx) => {
+                        // Marcar día con color según estado del compromiso
+                        const cfg = c.cumplido === true
+                          ? { color: BASE.lpsS0, text: BASE.lpsS0Text, label: 'S0' }
+                          : c.cumplido === false
+                          ? { color: BASE.lpsS2, text: BASE.lpsS2Text, label: 'S2' }
+                          : { color: 'transparent', text: 'transparent', label: '' };
+                        return (
+                          <td key={d.id} style={{
+                            padding: '8px 0', textAlign: 'center',
+                            borderLeft: `1px solid ${BASE.borderSoft}`,
+                            background: cfg.color,
+                            color: cfg.text,
+                            fontSize: '10px', fontWeight: '900',
+                          }}>
+                            {cfg.label}
+                          </td>
+                        );
+                      })}
+                      {/* SI / NO / TIPO */}
+                      <td style={{ padding: '8px 0', textAlign: 'center', borderLeft: `2px solid ${BASE.border}` }}>
+                        {c.cumplido === true && <span style={{ color: BASE.greenDark, fontWeight: '900' }}>X</span>}
+                      </td>
+                      <td style={{ padding: '8px 0', textAlign: 'center' }}>
+                        {c.cumplido === false && <span style={{ color: BASE.red, fontWeight: '900' }}>X</span>}
+                      </td>
+                      <td style={{ padding: '8px 4px', textAlign: 'center', fontSize: '9px', color: BASE.muted, fontWeight: '800' }}>
+                        {c.rncCategoria ? RNC_LABELS[c.rncCategoria]?.slice(0, 4) : ''}
+                      </td>
+                      {/* PPC% */}
+                      <td style={{
+                        padding: '10px 8px', textAlign: 'center',
+                        background: ppcColor,
+                        color: BASE.text,
+                        fontSize: '11px', fontWeight: '900',
+                        borderLeft: `1px solid ${BASE.border}`,
+                      }}>
+                        {ppcShow}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Resumen PPC */}
+      {ppcSemanal !== null && (
+        <div style={{
+          background: BASE.white, borderRadius: '14px',
+          border: `1px solid ${BASE.border}`, padding: '18px 22px',
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px',
+        }}>
+          <div>
+            <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>PPC SEMANA {semanaActiva}</p>
+            <p style={{ fontSize: '36px', fontWeight: '900', color: ppcSemanal >= 0.8 ? BASE.greenDark : ppcSemanal >= 0.65 ? BASE.gold : BASE.red, lineHeight: 1, marginTop: '4px' }}>
+              {Math.round(ppcSemanal * 100)}%
+            </p>
+            <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '6px' }}>
+              {cumplidos} de {cerrados} compromisos
+            </p>
+          </div>
+          <div style={{ borderLeft: `1px solid ${BASE.border}`, paddingLeft: '14px' }}>
+            <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>META BENCHMARK</p>
+            <p style={{ fontSize: '20px', fontWeight: '900', color: BASE.navy, marginTop: '8px' }}>≥ 80%</p>
+            <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '6px' }}>Lean Construction Institute</p>
+          </div>
+          <div style={{ borderLeft: `1px solid ${BASE.border}`, paddingLeft: '14px' }}>
+            <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>DIAGNÓSTICO</p>
+            <p style={{ fontSize: '13px', fontWeight: '800', color: BASE.navy, marginTop: '8px', lineHeight: 1.4 }}>
+              {ppcSemanal >= 0.85 ? '🌟 Excelente. Equipo Lean maduro.' :
+               ppcSemanal >= 0.80 ? '✅ Cumple benchmark LCI.' :
+               ppcSemanal >= 0.65 ? '⚠️ Margen de mejora.' :
+               '🚨 Crítico — variabilidad alta.'}
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

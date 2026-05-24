@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📚 Capitulo 22 · Panel Ejecutivo + Gantt + PETs WBS · GRAPCO Tesis</title>
+<style>
+  :root { --navy:#1e3a5f; --gold:#f59e0b; --green:#16a34a; --red:#dc2626;
+    --blue:#2563eb; --purple:#7c3aed; --indigo:#6366f1; --teal:#0d9488; --pink:#ec4899;
+    --bg:#f8fafc; --white:#fff; --border:#e2e8f0; --text:#1e293b; --muted:#64748b; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', -apple-system, sans-serif; color: var(--text); background: var(--bg); line-height: 1.7; font-size: 15px; }
+  header { background: linear-gradient(135deg, var(--navy), #0f1a2e); color: #fff; padding: 60px 40px 70px; border-bottom: 5px solid var(--gold); }
+  header .inner { max-width: 1100px; margin: 0 auto; }
+  header .badge { display: inline-block; background: rgba(245,158,11,0.2); border: 1px solid var(--gold); color: var(--gold); padding: 6px 16px; border-radius: 20px; font-size: 11px; font-weight: 800; letter-spacing: 1.2px; margin-bottom: 14px; }
+  header h1 { font-size: 38px; font-weight: 900; line-height: 1.15; margin-bottom: 10px; letter-spacing: -0.5px; }
+  header .sub { font-size: 16px; opacity: 0.9; max-width: 750px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 50px 40px 80px; }
+  section { margin-bottom: 60px; }
+  section h2 { font-size: 28px; font-weight: 900; color: var(--navy); margin-bottom: 16px; padding-left: 18px; border-left: 6px solid var(--gold); }
+  section h3 { font-size: 19px; font-weight: 800; color: var(--navy); margin: 24px 0 10px; }
+  section h4 { font-size: 15px; font-weight: 800; color: var(--navy); margin: 16px 0 8px; }
+  p { margin-bottom: 12px; }
+  ul, ol { margin-left: 24px; margin-bottom: 12px; line-height: 1.85; }
+  li { margin-bottom: 4px; }
+  code { background: var(--bg); padding: 2px 8px; border-radius: 4px; font-size: 12px; color: var(--navy); font-weight: 700; font-family: 'Consolas', monospace; }
+  table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(15,23,42,0.05); margin: 14px 0; font-size: 13px; }
+  th { background: var(--navy); color: #fff; padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; }
+  td { padding: 10px 16px; border-bottom: 1px solid var(--border); }
+  tr:nth-child(even) td { background: #f8fafc; }
+  td.cat { font-weight: 900; color: var(--navy); }
+  .callout { border-radius: 12px; padding: 16px 22px; margin: 16px 0; border-left: 5px solid; }
+  .callout.tip { background: #ede9fe; border-color: var(--purple); color: #5b21b6; }
+  .callout.success { background: #dcfce7; border-color: var(--green); color: #15803d; }
+  .callout.info { background: #dbeafe; border-color: var(--blue); color: var(--navy); }
+  .highlight { background: linear-gradient(135deg, var(--navy), #0f1a2e); color: #fff; border-radius: 14px; padding: 24px 28px; margin: 22px 0; border-left: 5px solid var(--gold); }
+  .highlight h3 { color: var(--gold); border: none; padding: 0; margin-bottom: 10px; font-size: 20px; }
+  .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin: 18px 0; }
+  .feature { background: var(--white); border: 1px solid var(--border); border-top: 4px solid var(--indigo); border-radius: 12px; padding: 18px 20px; }
+  .feature.gold { border-top-color: var(--gold); }
+  .feature.purple { border-top-color: var(--purple); }
+  .feature.green { border-top-color: var(--green); }
+  .feature.pink { border-top-color: var(--pink); }
+  .feature.teal { border-top-color: var(--teal); }
+  .feature .ico { font-size: 26px; margin-bottom: 8px; }
+  .feature h4 { font-size: 15px; font-weight: 900; color: var(--navy); margin-bottom: 6px; }
+  .feature p { font-size: 12.5px; color: var(--muted); line-height: 1.55; margin: 0; }
+  pre { background: #0f172a; color: #e2e8f0; padding: 16px 20px; border-radius: 10px; font-family: 'Consolas', monospace; font-size: 12px; line-height: 1.6; overflow-x: auto; margin: 12px 0; border-left: 4px solid var(--gold); }
+  pre .c { color: #94a3b8; } pre .k { color: #fbbf24; } pre .s { color: #86efac; } pre .t { color: #7dd3fc; }
+  footer { background: var(--navy); color: rgba(255,255,255,0.78); padding: 36px 40px; text-align: center; font-size: 13px; border-top: 5px solid var(--gold); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="inner">
+    <span class="badge">📚 CAPITULO 22 · BLOQUE 22</span>
+    <h1>Panel Ejecutivo de Gerencia + Gantt + PETs vinculados al WBS</h1>
+    <p class="sub">Cierra la integración del sistema con la vista del Director de Operaciones, el Gantt visual del Plan Maestro y los Procedimientos Escritos de Trabajo Seguro vinculados a actividades WBS.</p>
+  </div>
+</header>
+
+<main>
+
+<section>
+  <h2>22.1 Resumen ejecutivo del bloque</h2>
+  <p>
+    El Bloque 22 cierra el ciclo de funcionalidades clave del proyecto añadiendo 3 vistas de alto impacto:
+  </p>
+  <div class="feature-grid">
+    <div class="feature gold">
+      <div class="ico">🏛️</div>
+      <h4>Panel Ejecutivo de Gerencia</h4>
+      <p>Vista integral del Director de Operaciones. Cruza datos de Plan Maestro, APUs, Tareos, Kardex, Calidad, LPS y Valorizaciones en una sola pantalla.</p>
+    </div>
+    <div class="feature teal">
+      <div class="ico">📊</div>
+      <h4>Gantt Visual</h4>
+      <p>Línea de tiempo del Plan Maestro con barras coloreadas según estado, avance real superpuesto, dependencias entre actividades y marcador "HOY".</p>
+    </div>
+    <div class="feature pink">
+      <div class="ico">📜</div>
+      <h4>PETs vinculados al WBS</h4>
+      <p>Cada PET se vincula a actividades WBS específicas. Los operarios firman digitalmente que leyeron y entendieron el procedimiento.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>22.2 Panel Ejecutivo de Gerencia</h2>
+
+  <h3>22.2.1 Justificación</h3>
+  <p>
+    En empresas grandes de construcción, el Director de Operaciones necesita una vista que cruce <strong>todas las dimensiones del proyecto</strong> en una sola pantalla. No quiere abrir 6 sistemas distintos. Esta es la <strong>vista WOW</strong> que demuestra el valor del sistema integrado.
+  </p>
+
+  <h3>22.2.2 Componentes</h3>
+  <ol>
+    <li><strong>4 KPIs financieros principales</strong> — Margen real, CPI, SPI, EAC al cierre</li>
+    <li><strong>Avance físico global</strong> — % avance + barra de progreso</li>
+    <li><strong>EVM completo</strong> — BAC, PV, EV, AC, VAC con interpretación</li>
+    <li><strong>5 pilares laterales</strong> — Calidad, LPS, Materiales, OT, Tareos</li>
+    <li><strong>Alertas críticas</strong> — NCs críticas, margen negativo, CPI/SPI bajos, partidas en pérdida</li>
+    <li><strong>Partidas estrella</strong> — Las que aportan más al margen</li>
+  </ol>
+
+  <h3>22.2.3 Cálculos automáticos</h3>
+  <p>El panel ejecuta en tiempo real:</p>
+  <pre><span class="c">// PPC (Last Planner System)</span>
+<span class="t">PPC</span> = compromisos cumplidos / compromisos totales × 100
+
+<span class="c">// % liberación calidad</span>
+<span class="t">% Liberación</span> = protocolos liberados / total protocolos × 100
+
+<span class="c">// Detección de alertas críticas</span>
+<span class="k">if</span> (margenReal &lt; 0)         <span class="t">→ ALERTA CRÍTICA FINANCIERO</span>
+<span class="k">if</span> (CPI &lt; 0.85)             <span class="t">→ ALERTA ALTO COSTO</span>
+<span class="k">if</span> (SPI &lt; 0.85)             <span class="t">→ ALERTA ALTO CRONOGRAMA</span>
+<span class="k">if</span> (NCs criticas &gt; 0)       <span class="t">→ ALERTA CRÍTICO CALIDAD</span></pre>
+</section>
+
+<section>
+  <h2>22.3 Gantt Visual del Plan Maestro</h2>
+
+  <h3>22.3.1 Implementación SVG</h3>
+  <p>
+    El Gantt está implementado con <strong>SVG nativo</strong> (sin librerías externas). Esto garantiza:
+  </p>
+  <ul>
+    <li>Cero dependencias adicionales</li>
+    <li>Personalización total del look (colores GRAPCO)</li>
+    <li>Performance excelente (renderiza 100+ actividades sin lag)</li>
+    <li>Exportable a PDF/imagen sin esfuerzo adicional</li>
+  </ul>
+
+  <h3>22.3.2 Características visuales</h3>
+  <table>
+    <thead><tr><th>Elemento</th><th>Comportamiento</th></tr></thead>
+    <tbody>
+      <tr><td class="cat">Barra programada</td><td>Color según estado (no_iniciada, programada, en_ejecución, completada)</td></tr>
+      <tr><td class="cat">Barra avance real</td><td>Superpuesta en color dorado, ancho proporcional al % avance</td></tr>
+      <tr><td class="cat">Dependencias</td><td>Líneas L con flecha, conectan fin de predecesora con inicio de sucesora</td></tr>
+      <tr><td class="cat">Marcador HOY</td><td>Línea roja vertical con label, ubica el "ahora" en el cronograma</td></tr>
+      <tr><td class="cat">Tooltip</td><td>Al pasar mouse: código, descripción, fechas, metrado, % avance, predecesoras</td></tr>
+      <tr><td class="cat">Escala adaptativa</td><td>6/12/24 px por día según duración total del proyecto</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout success">
+    <strong>✅ Gantt 100% funcional sin librerías externas.</strong> Renderiza desde la colección PlanMaestro de Firestore en tiempo real.
+  </div>
+</section>
+
+<section>
+  <h2>22.4 PETs vinculados al WBS</h2>
+
+  <h3>22.4.1 Innovación: PET ↔ WBS</h3>
+  <p>
+    Tradicionalmente, los PETs son documentos genéricos en PDF. Esta plataforma los <strong>vincula explícitamente a códigos WBS</strong>. Esto permite:
+  </p>
+  <ul>
+    <li>Saber qué actividades requieren cada PET</li>
+    <li>Bloquear el avance si el operario no firmó el PET correspondiente (futuro)</li>
+    <li>Auditoría: ¿quién firmó qué PET y cuándo?</li>
+    <li>Control de versiones del PET</li>
+  </ul>
+
+  <h3>22.4.2 Estructura del PET</h3>
+  <pre><span class="k">{</span>
+  <span class="t">codigo</span>: <span class="s">"PET-005"</span>,
+  <span class="t">titulo</span>: <span class="s">"Vaciado de columnas con bomba estacionaria"</span>,
+  <span class="t">version</span>: <span class="v">2</span>,
+  <span class="t">alcance</span>: <span class="s">"..."</span>,
+  <span class="t">riesgosClave</span>: <span class="s">"Caída a desnivel, golpes, atrapamientos"</span>,
+  <span class="t">epp</span>: <span class="s">"Casco, lentes, guantes, arnes con doble linea de vida"</span>,
+  <span class="t">secuenciaTrabajo</span>: <span class="s">"1. Inspeccionar EPP\n2. Verificar encofrado..."</span>,
+  <span class="t">aplicaActividadesWBS</span>: [<span class="s">"02.01.003"</span>, <span class="s">"02.01.004"</span>],
+  <span class="t">firmasOperarios</span>: [
+    { <span class="t">uid</span>, <span class="t">nombre</span>, <span class="t">email</span>, <span class="t">fecha</span> }
+  ],
+  <span class="t">estado</span>: <span class="s">"vigente"</span>
+<span class="k">}</span></pre>
+
+  <h3>22.4.3 Flujo de firma digital</h3>
+  <ol>
+    <li>Calidad/Ingeniero/Admin <strong>crea el PET</strong> con su contenido y selecciona las actividades WBS aplicables</li>
+    <li>Capataz/Subcontratista <strong>ve los PETs</strong> de las actividades que va a ejecutar</li>
+    <li>Antes de iniciar, hace <strong>click en "Firmar"</strong> declarando que leyó y entendió</li>
+    <li>El sistema registra <code>firmasOperarios[]</code> con su uid, email, nombre y timestamp</li>
+    <li>Auditoría disponible: cualquiera puede ver "Firmado por X, el dia Y"</li>
+  </ol>
+</section>
+
+<section>
+  <h2>22.5 Cifras del bloque</h2>
+
+  <table>
+    <thead><tr><th>Concepto</th><th>Cantidad</th></tr></thead>
+    <tbody>
+      <tr><td>Archivos nuevos creados</td><td>3 (GanttPlanMaestro, PETsView, PanelGerencia)</td></tr>
+      <tr><td>Archivos modificados</td><td>3 (PlanMaestroPanel, App.jsx, firestore.rules)</td></tr>
+      <tr><td>Líneas de código nuevas</td><td>1,761 líneas</td></tr>
+      <tr><td>Validación AST</td><td>✅ 100% pasado</td></tr>
+      <tr><td>Nuevas tabs en App</td><td>2 (Panel Gerencia, PETs)</td></tr>
+      <tr><td>Subtab nueva en Plan Maestro</td><td>1 (Gantt)</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>22.6 Para tu sustentación — el cierre maestro</h2>
+
+  <div class="highlight">
+    <h3>📢 El argumento final</h3>
+    <p>
+      "GRAPCO Produc-App ahora ofrece la <strong>vista del Director de Operaciones</strong>: una sola pantalla que cruza el avance físico, el margen real, los indicadores EVM, el PPC del Last Planner System, las No Conformidades de Calidad, el consumo de Materiales y las Valorizaciones contractuales. Cuando el director abre el panel a las 7 AM, sabe inmediatamente si la obra está rentable o no, dónde están las partidas críticas, y qué decisiones tomar. Adicionalmente, el Gantt visual permite ver toda la programación con dependencias y avance real, y los PETs vinculados al WBS aseguran que cada operario firme digitalmente que entendió el procedimiento antes de ejecutar la actividad. <strong>Esto es lo que las empresas grandes peruanas tienen distribuido en 5 sistemas diferentes; aquí está unificado en uno solo</strong>."
+    </p>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <p style="font-weight: 900; color: var(--gold); letter-spacing: 2px; font-size: 16px; margin-bottom: 6px;">GRAPCO PRODUC-APP</p>
+  <p>Capitulo 22 · Bloque 22 · Panel Ejecutivo + Gantt + PETs WBS</p>
+  <p style="opacity: 0.7; margin-top: 6px;">UNI Lima · Tesis 2026</p>
+</footer>
+
+</body>
+</html>

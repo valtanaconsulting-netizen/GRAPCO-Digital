@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manual de Usuario · GRAPCO Produc-App</title>
+<style>
+  :root {
+    --navy: #1e3a5f; --navy-dark: #152a47;
+    --gold: #f59e0b; --gold-dark: #d97706; --gold-light: #fef3c7;
+    --green: #16a34a; --green-dark: #15803d; --green-light: #dcfce7;
+    --red: #dc2626; --red-light: #fee2e2;
+    --bg: #f8fafc; --white: #fff; --border: #e2e8f0;
+    --text: #1e293b; --muted: #64748b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: "Inter", system-ui, sans-serif; color: var(--text); background: var(--bg); line-height: 1.7; font-size: 15px; }
+
+  header.hero {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 100%);
+    color: #fff; padding: 70px 40px 50px;
+    border-bottom: 5px solid var(--gold);
+    position: relative; overflow: hidden;
+  }
+  header.hero::before { content: ''; position: absolute; top: -100px; right: -100px; width: 360px; height: 360px; border-radius: 50%; background: var(--gold); opacity: 0.12; filter: blur(60px); }
+  header.hero .inner { max-width: 1100px; margin: 0 auto; position: relative; z-index: 2; text-align: center; }
+  header.hero .badge { display: inline-block; padding: 6px 16px; background: rgba(245,158,11,0.2); border: 1px solid var(--gold); border-radius: 30px; color: var(--gold); font-size: 11px; font-weight: 800; letter-spacing: 1.6px; margin-bottom: 16px; }
+  header.hero h1 { font-size: 46px; font-weight: 900; margin-bottom: 14px; letter-spacing: -0.6px; line-height: 1.1; }
+  header.hero .subtitle { font-size: 18px; opacity: 0.85; max-width: 740px; margin: 0 auto; line-height: 1.5; }
+
+  /* Selector de rol */
+  .role-selector { max-width: 1100px; margin: -30px auto 0; padding: 0 40px; position: relative; z-index: 10; }
+  .role-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 700px) { .role-tabs { grid-template-columns: 1fr; } }
+  .role-tab { background: var(--white); border-radius: 16px; padding: 22px; cursor: pointer; transition: all 0.2s; text-decoration: none; color: var(--text); border-top: 5px solid; box-shadow: 0 8px 24px rgba(15,23,42,0.08); }
+  .role-tab:hover { transform: translateY(-3px); box-shadow: 0 16px 32px rgba(15,23,42,0.12); }
+  .role-tab.cap { border-top-color: var(--green); }
+  .role-tab.ing { border-top-color: var(--gold); }
+  .role-tab.adm { border-top-color: var(--red); }
+  .role-tab .ico { font-size: 36px; margin-bottom: 10px; }
+  .role-tab h3 { font-size: 17px; font-weight: 900; color: var(--navy); margin-bottom: 4px; }
+  .role-tab p { font-size: 12px; color: var(--muted); }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 50px 40px 60px; }
+
+  section { margin-bottom: 70px; scroll-margin-top: 24px; }
+  section .role-header { padding: 22px 28px; border-radius: 16px; margin-bottom: 28px; color: #fff; }
+  section .role-header.cap { background: linear-gradient(135deg, #16a34a, #15803d); }
+  section .role-header.ing { background: linear-gradient(135deg, #f59e0b, #d97706); }
+  section .role-header.adm { background: linear-gradient(135deg, #dc2626, #991b1b); }
+  section .role-header h2 { font-size: 28px; font-weight: 900; margin-bottom: 6px; }
+  section .role-header p { font-size: 14px; opacity: 0.9; }
+
+  h3 { font-size: 22px; font-weight: 900; color: var(--navy); margin: 30px 0 12px; padding-left: 14px; border-left: 4px solid var(--gold); }
+  h4 { font-size: 15px; font-weight: 800; color: var(--navy); margin: 22px 0 10px; }
+
+  p { margin-bottom: 12px; }
+
+  .steps { counter-reset: step; padding: 0; list-style: none; margin: 14px 0; }
+  .steps li { counter-increment: step; padding: 16px 18px 16px 64px; background: var(--white); border-radius: 12px; margin-bottom: 10px; position: relative; border-left: 4px solid var(--gold); box-shadow: 0 1px 3px rgba(15,23,42,0.04); }
+  .steps li::before { content: counter(step); position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background: var(--gold); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px; }
+  .steps li strong { color: var(--navy); }
+
+  .callout { border-radius: 12px; padding: 14px 18px; margin: 16px 0; border-left: 5px solid; }
+  .callout.tip { background: var(--gold-light); border-color: var(--gold-dark); }
+  .callout.warn { background: var(--red-light); border-color: var(--red); color: #7f1d1d; }
+  .callout.info { background: #eff6ff; border-color: var(--navy); color: var(--navy); }
+  .callout strong { font-weight: 900; }
+
+  .check-list { list-style: none; padding: 0; }
+  .check-list li { padding: 8px 0 8px 30px; position: relative; font-size: 14px; }
+  .check-list li::before { content: '✅'; position: absolute; left: 0; top: 8px; }
+
+  .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 14px 0; }
+  .feature-card { background: var(--white); border-radius: 12px; border: 1px solid var(--border); padding: 16px; }
+  .feature-card .ico { font-size: 24px; margin-bottom: 6px; }
+  .feature-card h5 { font-size: 14px; font-weight: 800; color: var(--navy); margin-bottom: 4px; }
+  .feature-card p { font-size: 12px; color: var(--muted); margin: 0; }
+
+  table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(15,23,42,0.05); margin: 14px 0; font-size: 13px; }
+  th { background: var(--navy); color: #fff; padding: 12px 14px; text-align: left; font-size: 11px; font-weight: 800; }
+  td { padding: 11px 14px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+  tr:nth-child(even) td { background: #f8fafc; }
+
+  kbd { display: inline-block; padding: 3px 8px; background: var(--bg); border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 5px; font-family: 'Consolas', monospace; font-size: 11px; font-weight: 700; color: var(--navy); }
+
+  .faq { background: var(--white); border-radius: 12px; padding: 0; overflow: hidden; box-shadow: 0 1px 3px rgba(15,23,42,0.04); margin-bottom: 10px; }
+  .faq summary { padding: 14px 18px; font-weight: 800; color: var(--navy); cursor: pointer; list-style: none; display: flex; align-items: center; gap: 10px; font-size: 14px; }
+  .faq summary::before { content: '▸'; color: var(--gold); transition: transform 0.2s; }
+  .faq[open] summary::before { transform: rotate(90deg); }
+  .faq[open] { border-left: 4px solid var(--gold); }
+  .faq .answer { padding: 0 18px 14px 38px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+  .faq .answer code { background: var(--bg); padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+
+  footer { background: var(--navy); color: rgba(255,255,255,0.75); padding: 36px 40px; text-align: center; font-size: 12px; border-top: 4px solid var(--gold); }
+  footer .logo { font-size: 18px; font-weight: 900; color: var(--gold); letter-spacing: 2px; margin-bottom: 8px; }
+
+  @media (max-width: 700px) {
+    header.hero { padding: 50px 24px 40px; }
+    header.hero h1 { font-size: 28px; }
+    main { padding: 30px 24px; }
+    h3 { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="inner">
+    <span class="badge">📖 MANUAL DE USUARIO</span>
+    <h1>Cómo usar GRAPCO Produc-App</h1>
+    <p class="subtitle">
+      Guía operativa por rol. Si eres capataz, ingeniero o admin, encuentra exactamente lo que necesitas
+      saber para usar la plataforma todos los días.
+    </p>
+  </div>
+</header>
+
+<div class="role-selector">
+  <div class="role-tabs">
+    <a href="#capataz" class="role-tab cap">
+      <div class="ico">👷</div>
+      <h3>Capataz</h3>
+      <p>Reporta producción diaria desde el celular en obra</p>
+    </a>
+    <a href="#ingeniero" class="role-tab ing">
+      <div class="ico">📊</div>
+      <h3>Ingeniero</h3>
+      <p>Analiza CPI, planifica con LPS, vincula con BIM</p>
+    </a>
+    <a href="#admin" class="role-tab adm">
+      <div class="ico">🛡️</div>
+      <h3>Admin</h3>
+      <p>Gestiona usuarios, audita y configura el sistema</p>
+    </a>
+  </div>
+</div>
+
+<main>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- ROL: CAPATAZ -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<section id="capataz">
+  <div class="role-header cap">
+    <h2>👷 Manual del Capataz</h2>
+    <p>Reportar producción diaria, tomar fotos, hacer Carta Balance.</p>
+  </div>
+
+  <h3>Primer acceso (única vez)</h3>
+  <ol class="steps">
+    <li><strong>Recibirás un email + contraseña</strong> de tu administrador. Si no, pídelos.</li>
+    <li><strong>Abre la app</strong> en tu celular en la URL que te indique tu administrador.</li>
+    <li><strong>Inicia sesión</strong> con email y contraseña.</li>
+    <li><strong>Instala la app</strong> en tu celular: cuando aparezca el banner "📲 Instalar GRAPCO" toca <strong>INSTALAR</strong>. Funciona como app nativa.</li>
+  </ol>
+
+  <div class="callout tip">
+    <strong>💡 Por qué instalarla:</strong> acceso directo desde tu pantalla de inicio, funciona sin internet (modo offline), carga más rápido, no se confunde con el navegador.
+  </div>
+
+  <h3>Tu día típico de trabajo</h3>
+
+  <h4>1. Al llegar a obra (mañana)</h4>
+  <ol class="steps">
+    <li><strong>Abre GRAPCO</strong> desde el ícono de tu pantalla de inicio.</li>
+    <li><strong>Inicia sesión</strong> si no recuerdas tu sesión.</li>
+    <li><strong>Verás tu dashboard</strong> con los registros que ya hiciste y el botón "Nuevo registro".</li>
+  </ol>
+
+  <h4>2. Durante el día — Crear registro de producción</h4>
+  <ol class="steps">
+    <li>Toca <strong>"➕ Nuevo registro"</strong>.</li>
+    <li><strong>Selecciona la fecha</strong> (por defecto, hoy).</li>
+    <li><strong>Elige la partida</strong>: ej. "Albañilería", "Encofrado", "Excavación".</li>
+    <li><strong>Selecciona la subpartida y actividad</strong>: el sistema te muestra opciones según la partida.</li>
+    <li><strong>Indica la unidad</strong>: m, m², m³, kg, etc.</li>
+    <li><strong>Ingresa el metrado</strong> realizado: ej. 45.5 m².</li>
+    <li><strong>Ingresa las HH</strong> (horas-hombre normales y extras): ej. 14 HN, 2 HE.</li>
+    <li><strong>Selecciona la cuadrilla</strong> que ejecutó el trabajo.</li>
+    <li><strong>Ingresa observaciones</strong> si hay algo destacable (clima, problemas, etc.).</li>
+  </ol>
+
+  <h4>3. Tomar fotos del trabajo</h4>
+  <ol class="steps">
+    <li>En el registro, toca la sección <strong>📷 Fotografías</strong>.</li>
+    <li>Toca <strong>"Tomar foto"</strong> — abre tu cámara.</li>
+    <li>Toma la foto del frente de trabajo o avance ejecutado.</li>
+    <li>La foto se comprime automáticamente (no consume mucho dato).</li>
+    <li>Puedes subir hasta 20 fotos por registro.</li>
+  </ol>
+
+  <div class="callout tip">
+    <strong>📸 Las fotos sirven como evidencia:</strong> el ingeniero las verá al revisar tu reporte y para validaciones del cliente.
+  </div>
+
+  <h4>4. Tareo de personal</h4>
+  <ol class="steps">
+    <li>En el mismo registro, baja a la sección <strong>👷 Tareo</strong>.</li>
+    <li>Marca quiénes trabajaron en esta actividad.</li>
+    <li>Indica las horas por persona (HN y HE).</li>
+    <li>Si alguien no estuvo, déjalo sin marcar.</li>
+  </ol>
+
+  <h4>5. Guardar como borrador o subir</h4>
+  <p>Tienes dos opciones:</p>
+  <ul class="check-list">
+    <li><strong>💾 Guardar borrador</strong> — solo para ti, no aparece aún en el dashboard del ingeniero. Ideal si te falta algo.</li>
+    <li><strong>📤 Subir registro</strong> — confirma y envía. El ingeniero ya lo verá. Una vez subido <strong>solo el admin puede borrarlo</strong>.</li>
+  </ul>
+
+  <h3>Carta Balance — medir productividad real</h3>
+  <p>La Carta Balance es una técnica para medir cuánto tiempo de cada hora se dedica a trabajo productivo vs. tiempos muertos.</p>
+
+  <ol class="steps">
+    <li>Desde el menú principal, toca <strong>📊 Carta Balance</strong>.</li>
+    <li><strong>Configura la medición</strong>: actividad a observar, cuadrilla, duración (típicamente 30-60 min).</li>
+    <li>Toca <strong>▶️ Iniciar</strong>. Aparece un cronómetro y un panel para registrar observaciones.</li>
+    <li>Cada cierto tiempo (cada 30 segundos por ejemplo), <strong>marca qué está haciendo cada obrero</strong>: TP (trabajo productivo), TC (contributorio), TNC (no contributorio).</li>
+    <li>Cuando termine la medición, toca <strong>📤 Guardar</strong>.</li>
+    <li>El ingeniero podrá analizar los resultados.</li>
+  </ol>
+
+  <h3>Atajos útiles</h3>
+  <table>
+    <thead><tr><th>Acción</th><th>Cómo</th></tr></thead>
+    <tbody>
+      <tr><td>Cambiar tema (claro/oscuro)</td><td>Toca el ☀️/🌙 en la barra superior</td></tr>
+      <tr><td>Cerrar sesión</td><td>Toca <strong>SALIR</strong> arriba a la derecha</td></tr>
+      <tr><td>Ver mis registros pasados</td><td>El listado aparece automáticamente al iniciar sesión</td></tr>
+      <tr><td>Editar borrador</td><td>Toca el registro que dice "BORRADOR"</td></tr>
+      <tr><td>Recuperar trabajo si se cae internet</td><td>Tus borradores se guardan localmente. No los pierdes.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>FAQ Capataz</h3>
+  <details class="faq">
+    <summary>Subí un registro con un error. ¿Cómo lo corrijo?</summary>
+    <div class="answer">Mientras la app no esté en modo "solo lectura" para tu rol, puedes editar tus registros. Toca el registro en la lista, modifica los campos y vuelve a subir. Si está bloqueado para edición, contacta al ingeniero o admin.</div>
+  </details>
+  <details class="faq">
+    <summary>No tengo internet en obra. ¿Funciona?</summary>
+    <div class="answer">Si la app está instalada como PWA, sigue funcionando para llenar el formulario y guardar como borrador. Cuando vuelvas a tener señal, sube el registro tocando "📤 Subir".</div>
+  </details>
+  <details class="faq">
+    <summary>Las fotos consumen muchos datos. ¿Cómo reducirlo?</summary>
+    <div class="answer">La app comprime automáticamente las fotos antes de subirlas. Una foto típica de 4MB queda en ~300KB. Si igual quieres ahorrar, espera a tener WiFi para subir el registro.</div>
+  </details>
+  <details class="faq">
+    <summary>¿Mis datos se pierden si cambio de celular?</summary>
+    <div class="answer">No. Todo está en la nube (Firebase). Inicia sesión con tu mismo email en el celular nuevo y verás todos tus registros.</div>
+  </details>
+  <details class="faq">
+    <summary>Olvidé mi contraseña.</summary>
+    <div class="answer">Pide al administrador que la regenere. Por ahora no hay "olvidé contraseña" automático (próxima versión).</div>
+  </details>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- ROL: INGENIERO -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<section id="ingeniero">
+  <div class="role-header ing">
+    <h2>📊 Manual del Ingeniero</h2>
+    <p>Analizar productividad, planificar con LPS, gestionar BIM.</p>
+  </div>
+
+  <h3>Tu pantalla principal: el Dashboard analítico</h3>
+  <p>Al iniciar sesión verás 5 grupos de pestañas:</p>
+
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="ico">📊</div>
+      <h5>PRODUCCIÓN</h5>
+      <p>Auditoría · CPI + EAC · Control Gerencial</p>
+    </div>
+    <div class="feature-card">
+      <div class="ico">✍️</div>
+      <h5>PLANIFICACIÓN</h5>
+      <p>Last Planner System completo</p>
+    </div>
+    <div class="feature-card">
+      <div class="ico">📈</div>
+      <h5>ANÁLISIS</h5>
+      <p>Curva-S · Gráficos · Tendencias · BIM</p>
+    </div>
+    <div class="feature-card">
+      <div class="ico">👥</div>
+      <h5>GESTIÓN</h5>
+      <p>Tareo · Personal</p>
+    </div>
+    <div class="feature-card">
+      <div class="ico">🎓</div>
+      <h5>TESIS</h5>
+      <p>Impacto académico del proyecto</p>
+    </div>
+  </div>
+
+  <h3>La barra de comando superior</h3>
+  <p>Siempre visible muestra el <strong>CPI Global</strong> con etiqueta semántica:</p>
+  <ul class="check-list">
+    <li><strong style="color:#16a34a;">EXCELENTE</strong> · CPI ≥ 0.95</li>
+    <li><strong style="color:#d97706;">ACEPTABLE</strong> · CPI entre 0.85-0.95</li>
+    <li><strong style="color:#dc2626;">CRÍTICO</strong> · CPI &lt; 0.85</li>
+  </ul>
+  <p>Hover sobre "CPI GLOBAL" o "EFICIENCIA" para ver el tooltip con la fórmula y explicación.</p>
+
+  <h3>Casos de uso comunes</h3>
+
+  <h4>1. Revisar producción de la semana</h4>
+  <ol class="steps">
+    <li>Pestaña <strong>📊 PRODUCCIÓN → Auditoría</strong>.</li>
+    <li>Verás todos los registros del último período en una tabla con: fecha, partida, actividad, metrado, HH, IP Real, IP Meta, CPI, fotos.</li>
+    <li>Filtra por capataz, partida o fecha si necesitas.</li>
+    <li>Click en una fila para ver detalle (incluyendo fotos).</li>
+  </ol>
+
+  <h4>2. Analizar CPI y proyección de costos</h4>
+  <ol class="steps">
+    <li>Pestaña <strong>📊 PRODUCCIÓN → CPI + EAC</strong>.</li>
+    <li>Verás los KPIs Earned Value Management:
+      <ul class="check-list">
+        <li><strong>PV</strong> (Planned Value): valor planificado a la fecha</li>
+        <li><strong>EV</strong> (Earned Value): valor ganado real</li>
+        <li><strong>AC</strong> (Actual Cost): costo real ejecutado</li>
+        <li><strong>CPI = EV/AC</strong>: eficiencia de costo</li>
+        <li><strong>SPI = EV/PV</strong>: eficiencia de cronograma</li>
+        <li><strong>EAC = BAC/CPI</strong>: estimación al término</li>
+      </ul>
+    </li>
+    <li>Si el CPI baja, el EAC sube. Decisión: ¿reasignar recursos? ¿revisar productividad de cierta cuadrilla?</li>
+  </ol>
+
+  <h4>3. Planificar con Last Planner System</h4>
+  <p>Toca <strong>✍️ PLANIFICACIÓN → Last Planner System</strong>. Tiene 8 sub-pestañas:</p>
+
+  <table>
+    <thead><tr><th>Etapa</th><th>Sub-pestaña</th><th>Qué hacer</th></tr></thead>
+    <tbody>
+      <tr><td rowspan="3">🟡 PROGRAMACIÓN</td><td>🔭 LAP</td><td>Lookahead de 6 semanas: pre-planeación de actividades</td></tr>
+      <tr><td>🚧 Restricciones</td><td>Identificar bloqueos antes de planificar (materiales, info, RRHH)</td></tr>
+      <tr><td>📋 Programación Semanal</td><td>Pasar actividades sin restricciones a la semana</td></tr>
+      <tr><td rowspan="2">🟢 EJECUCIÓN</td><td>📅 Diaria</td><td>Plan diario alineado con la semana</td></tr>
+      <tr><td>✏️ Compromisos</td><td>Compromisos por día/responsable</td></tr>
+      <tr><td rowspan="3">🔵 CONTROL</td><td>📊 PPC</td><td>Percent Plan Complete: cumplimiento semanal</td></tr>
+      <tr><td>🔍 RNC</td><td>Razones de No Cumplimiento (Pareto)</td></tr>
+      <tr><td>📚 Lecciones</td><td>Aprendizajes para futuras planificaciones</td></tr>
+    </tbody>
+  </table>
+
+  <h4>4. Trabajar con BIM</h4>
+  <ol class="steps">
+    <li>Pestaña <strong>📈 ANÁLISIS → 🏗️ Modelo BIM</strong>.</li>
+    <li><strong>Sub-pestaña "📤 Subir Modelo"</strong> — arrastra un archivo <code>.rvt</code> o haz click para seleccionar.</li>
+    <li>Espera la traducción a SVF2 (5-30 min según tamaño).</li>
+    <li>Cuando esté <strong>✅ Listo</strong>, toca el ícono 👁️.</li>
+    <li>Se abre el visor 3D. Click en cualquier elemento del modelo.</li>
+    <li>El panel lateral te muestra:
+      <ul class="check-list">
+        <li>GUID del elemento</li>
+        <li>Si está vinculado: actividad GRAPCO + partida</li>
+        <li>Si no está vinculado: ve a "Fase 1 · Vinculación" y créalo</li>
+      </ul>
+    </li>
+  </ol>
+
+  <h3>Atajos de teclado (power users)</h3>
+  <p>Presiona <kbd>Ctrl</kbd> + <kbd>K</kbd> (Windows) o <kbd>Cmd</kbd> + <kbd>K</kbd> (Mac) para abrir el <strong>Command Palette</strong>:</p>
+
+  <ul class="check-list">
+    <li>Escribe "dash" → Ir al Dashboard</li>
+    <li>Escribe "plan" → Ir a Plan Diario</li>
+    <li>Escribe "cpi" → Ver explicación del CPI</li>
+    <li>Escribe "logout" → Cerrar sesión</li>
+    <li><kbd>Esc</kbd> para cerrar la paleta</li>
+  </ul>
+
+  <h3>Exportar reportes</h3>
+  <p>En cada vista de auditoría/control gerencial encontrarás botones:</p>
+  <ul class="check-list">
+    <li><strong>📊 Excel</strong> — exporta tabla completa con formato</li>
+    <li><strong>📥 PDF</strong> — exporta vista actual a PDF descargable</li>
+    <li><strong>🖨️ Imprimir</strong> — abre diálogo de impresión del navegador</li>
+  </ul>
+
+  <h3>FAQ Ingeniero</h3>
+  <details class="faq">
+    <summary>Mi CPI bajó. ¿Cómo identifico la causa?</summary>
+    <div class="answer">Ve a Control Gerencial → Matriz de IP. Verás qué partidas tienen IP Real &lt; IP Meta. Filtra esas partidas en Auditoría para ver qué cuadrillas/registros las generaron. Cruza con RNC del LPS para ver si hay un patrón.</div>
+  </details>
+  <details class="faq">
+    <summary>El modelo BIM tarda mucho en traducir.</summary>
+    <div class="answer">Es normal: 5-30 min según tamaño. Modelos grandes (>100 MB) pueden tardar más. Mientras esperas, puedes seguir usando el resto de la app. La notificación "🎉 Modelo listo" te avisa.</div>
+  </details>
+  <details class="faq">
+    <summary>¿Puedo modificar la tarifa de Hora Normal?</summary>
+    <div class="answer">Eso es config global del sistema. Solo el admin lo cambia desde Panel Admin → Configuración. Si necesitas el cambio, pídelo.</div>
+  </details>
+  <details class="faq">
+    <summary>Quiero presentar un reporte al cliente.</summary>
+    <div class="answer">Ve a Curva-S, ajusta el período al deseado, click en 🖨️ Imprimir o 📥 PDF. El reporte sale formateado para presentación con KPIs en headers.</div>
+  </details>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- ROL: ADMIN -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<section id="admin">
+  <div class="role-header adm">
+    <h2>🛡️ Manual del Administrador</h2>
+    <p>Gestionar usuarios, audita operaciones, ajusta configuración del sistema.</p>
+  </div>
+
+  <h3>Acceder al Panel Admin</h3>
+  <p>Cuando inicies sesión como admin, verás un botón extra <strong>🛡️ Administración</strong> en la sub-navegación. Cliquéalo.</p>
+
+  <h3>5 sub-vistas del panel</h3>
+  <table>
+    <thead><tr><th>Vista</th><th>Cuándo usarla</th></tr></thead>
+    <tbody>
+      <tr><td>📊 Resumen</td><td>Vistazo rápido del estado del sistema (KPIs + actividad reciente)</td></tr>
+      <tr><td>👥 Usuarios</td><td>Crear, editar rol, desactivar o eliminar usuarios</td></tr>
+      <tr><td>🕵️ Auditoría</td><td>Investigar quién hizo qué y cuándo</td></tr>
+      <tr><td>⚙️ Configuración</td><td>Ajustar tarifas, factores HE, metas CPI/PPC, jornada</td></tr>
+      <tr><td>💚 Salud sistema</td><td>Diagnóstico técnico (Firestore, APS, navegador)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Tareas comunes</h3>
+
+  <h4>Crear un nuevo usuario</h4>
+  <ol class="steps">
+    <li>Panel Admin → <strong>👥 Usuarios</strong>.</li>
+    <li>Click <strong>➕ NUEVO USUARIO</strong>.</li>
+    <li>Llena: email, nombre (opcional), rol (capataz/ingeniero/admin).</li>
+    <li>Para la contraseña: click <strong>🎲 Generar</strong> para una contraseña segura aleatoria.</li>
+    <li>Click <strong>CREAR USUARIO</strong>.</li>
+    <li><strong>Copia la contraseña</strong> y compártela con el usuario por canal seguro (no email plano).</li>
+  </ol>
+
+  <div class="callout warn">
+    <strong>⚠️ Asignación de roles:</strong>
+    <ul style="margin-top:6px;">
+      <li><strong>capataz</strong> — la mayoría. Solo reporta producción.</li>
+      <li><strong>ingeniero</strong> — analistas. Acceso al dashboard completo.</li>
+      <li><strong>admin</strong> — solo 1-2 personas (gerente proyecto + tú). Control total.</li>
+    </ul>
+  </div>
+
+  <h4>Cambiar rol de un usuario</h4>
+  <ol class="steps">
+    <li>En la tabla de usuarios, click en el ícono <strong>✏️</strong> de la fila.</li>
+    <li>Selecciona el nuevo rol.</li>
+    <li>Confirma. El cambio queda en auditoría.</li>
+  </ol>
+
+  <h4>Desactivar un usuario (sin borrar)</h4>
+  <ol class="steps">
+    <li>Click en el ícono <strong>🚫</strong> en la fila del usuario.</li>
+    <li>Confirma. El usuario será deslogueado inmediatamente y no podrá acceder.</li>
+    <li>Puedes reactivarlo después con el ícono ✓.</li>
+  </ol>
+
+  <h4>Eliminar un usuario (CUIDADO — irreversible)</h4>
+  <ol class="steps">
+    <li>Click en el ícono <strong>🗑️</strong>.</li>
+    <li>Lee la advertencia. Confirma.</li>
+    <li>Se borra: cuenta de auth + perfil + el usuario no puede recuperar nada.</li>
+  </ol>
+
+  <h4>Investigar una operación sospechosa</h4>
+  <ol class="steps">
+    <li>Panel Admin → <strong>🕵️ Auditoría</strong>.</li>
+    <li>Filtra por acción: ej. <code>eliminacion_registro</code>, <code>admin_cambiar_rol</code>.</li>
+    <li>O filtra por UID (parcial).</li>
+    <li>Expande cada evento para ver detalles JSON: qué cambió exactamente.</li>
+  </ol>
+
+  <h4>Ajustar tarifas o metas globales</h4>
+  <ol class="steps">
+    <li>Panel Admin → <strong>⚙️ Configuración</strong>.</li>
+    <li>Modifica los campos. Verás un highlight dorado: "⚠️ Hay cambios sin guardar".</li>
+    <li>Click <strong>💾 GUARDAR CAMBIOS</strong>. Se aplica a TODA la organización inmediatamente.</li>
+    <li>Si te arrepientes antes de guardar: <strong>↶ Descartar</strong>.</li>
+  </ol>
+
+  <div class="callout tip">
+    <strong>💡 Cambios de tarifa:</strong> recalculan automáticamente todos los costos del dashboard de los ingenieros. No necesitas notificar a nadie.
+  </div>
+
+  <h4>Diagnóstico cuando "algo no anda"</h4>
+  <ol class="steps">
+    <li>Panel Admin → <strong>💚 Salud sistema</strong>.</li>
+    <li>Click <strong>🔄 Correr de nuevo</strong> para chequeos en vivo.</li>
+    <li>Mira los 7 servicios: Firestore, Service Worker, PWA, almacenamiento, conexión, APS, localStorage.</li>
+    <li>Cualquier ❌ rojo → ese es el problema. Latencia &gt; 800ms = problema de red.</li>
+    <li>Si Firestore tarda mucho, probablemente Firebase está saturado — espera unos minutos.</li>
+  </ol>
+
+  <h3>Buenas prácticas de admin</h3>
+  <ul class="check-list">
+    <li><strong>Nunca compartas tu cuenta</strong>. Cada admin debe tener su propio email.</li>
+    <li><strong>Mínimo 2 admins</strong>: si te quedas sin acceso, alguien más puede recuperarte.</li>
+    <li><strong>Revisa la auditoría</strong> al menos una vez por semana.</li>
+    <li><strong>Desactiva en lugar de eliminar</strong>: facilita auditorías históricas.</li>
+    <li><strong>Cambios de configuración</strong>: avisa al equipo antes de tocar tarifas o metas.</li>
+    <li><strong>Backup mensual</strong>: Firebase Console → Firestore → Export. Guarda en disco propio.</li>
+  </ul>
+
+  <h3>FAQ Admin</h3>
+  <details class="faq">
+    <summary>¿Cómo creo el primer admin?</summary>
+    <div class="answer">El primer admin se crea manualmente desde Firebase Console (ver README). De ahí en adelante, los siguientes admins se crean desde el Panel Admin.</div>
+  </details>
+  <details class="faq">
+    <summary>Un usuario fue desactivado por error.</summary>
+    <div class="answer">Panel Admin → Usuarios → encuentra al usuario (verás "Inactivo") → click ✓. Se reactiva. La próxima vez que ingrese podrá usar la app normal.</div>
+  </details>
+  <details class="faq">
+    <summary>Veo errores raros en Auditoría como <code>error_no_capturado</code>.</summary>
+    <div class="answer">Son errores que el ErrorBoundary capturó. Expande el evento para ver el stack trace y reportarlo al equipo de desarrollo. Es normal que aparezcan ocasionalmente.</div>
+  </details>
+  <details class="faq">
+    <summary>¿Puedo cambiar el nombre de "PTARI" por otro proyecto?</summary>
+    <div class="answer">Sí. Panel Admin → Configuración → "Nombre del proyecto activo" → escribe el nuevo. Aparecerá en reportes y exports automáticamente.</div>
+  </details>
+  <details class="faq">
+    <summary>¿Cómo migro a otro Firebase project?</summary>
+    <div class="answer">Firebase Console → Export → descarga datos. Crea proyecto nuevo, configura .env con las nuevas credenciales, importa los datos. Despliega. Aviso: las URLs de modelos APS quedan asociadas al bucket original.</div>
+  </details>
+</section>
+
+</main>
+
+<footer>
+  <div class="logo">GRAPCO SAC</div>
+  <p>Manual de Usuario · GRAPCO Produc-App · Mayo 2026</p>
+  <p style="margin-top:8px;opacity:0.6;">Si encuentras una sección poco clara, repórtalo a tu administrador para mejorarla.</p>
+</footer>
+
+</body>
+</html>

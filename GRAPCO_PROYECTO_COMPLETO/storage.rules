@@ -1,0 +1,55 @@
+// ════════════════════════════════════════════════════════════════════════════
+// storage.rules — MODO DEV/BYPASS (acceso abierto)
+//
+// ⚠️  ATENCIÓN: ESTAS REGLAS PERMITEN LECTURA Y ESCRITURA SIN AUTENTICACIÓN.
+//     Solo deben usarse en desarrollo / pruebas internas.
+//     NO desplegar a producción con datos reales.
+//
+// Para volver a las reglas originales seguras:
+//   1) Reemplaza este archivo con storage.rules.original.bak
+//   2) firebase deploy --only storage
+//
+// Para desplegar este modo bypass:
+//   firebase deploy --only storage
+// ════════════════════════════════════════════════════════════════════════════
+
+rules_version = '2';
+
+// Storage GRAPCO 2026 — modelo de seguridad sano sin ser excesivamente granular.
+//   • Lectura: solo autenticados (no más URLs públicas indiscriminadas)
+//   • Escritura: autenticado + máx 15 MB + sólo imágenes o PDFs
+//   • Excepción Avatars: dueño únicamente
+//
+// Paths actualmente usados por el código:
+//   Avatars/, registros/, NCs/, ProtocolosCALFOR/, Ensayos/, Protocolos/,
+//   protocolos/firmas/, Incidencias/, Sustento/, ATS/, Inspecciones/,
+//   kardex/firmas/, rdo/firmas/
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ── /Avatars/{uid}.{ext} — fotos de perfil ──
+    // Lectura abierta (avatares pueden mostrarse en cualquier UI cliente).
+    // Escritura SOLO por el dueño, máx 5 MB, sólo imágenes.
+    match /Avatars/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null
+                && fileName.split('.')[0] == request.auth.uid
+                && request.resource.size < 5 * 1024 * 1024
+                && request.resource.contentType.matches('image/.*');
+    }
+
+    // ── Catch-all: registros, calidad, materiales, incidencias, firmas, etc. ──
+    // Lectura: cualquier usuario autenticado (para mostrar fotos del proyecto).
+    // Escritura: autenticado + ≤ 15 MB + image/* o application/pdf.
+    match /{allPaths=**} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth != null
+                && request.resource.size < 15 * 1024 * 1024
+                && (
+                  request.resource.contentType.matches('image/.*') ||
+                  request.resource.contentType == 'application/pdf'
+                );
+    }
+  }
+}

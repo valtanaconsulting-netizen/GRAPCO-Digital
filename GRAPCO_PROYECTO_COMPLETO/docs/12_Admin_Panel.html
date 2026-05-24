@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capítulo 13 · Panel de Administración · GRAPCO Produc-App</title>
+<style>
+  :root {
+    --navy: #1e3a5f; --navy-dark: #152a47;
+    --gold: #f59e0b; --gold-dark: #d97706; --gold-light: #fef3c7;
+    --green: #16a34a; --green-dark: #15803d; --green-light: #dcfce7;
+    --red: #dc2626; --red-light: #fee2e2;
+    --bg: #f8fafc; --white: #fff; --border: #e2e8f0;
+    --text: #1e293b; --muted: #64748b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: "Inter", system-ui, sans-serif; color: var(--text); background: var(--bg); line-height: 1.65; font-size: 15px; }
+
+  header.hero {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 100%);
+    color: #fff; padding: 60px 40px;
+    border-bottom: 5px solid var(--gold);
+    position: relative; overflow: hidden;
+  }
+  header.hero::before { content: ''; position: absolute; top: -100px; right: -100px; width: 360px; height: 360px; border-radius: 50%; background: var(--gold); opacity: 0.12; filter: blur(60px); }
+  header.hero .inner { max-width: 1200px; margin: 0 auto; position: relative; z-index: 2; }
+  header.hero .badge { display: inline-block; padding: 6px 16px; background: rgba(245,158,11,0.2); border: 1px solid var(--gold); border-radius: 30px; color: var(--gold); font-size: 11px; font-weight: 800; letter-spacing: 1.6px; margin-bottom: 16px; }
+  header.hero h1 { font-size: 42px; font-weight: 900; margin-bottom: 14px; letter-spacing: -0.6px; line-height: 1.15; }
+  header.hero .subtitle { font-size: 17px; opacity: 0.85; max-width: 740px; line-height: 1.5; font-weight: 500; }
+  header.hero .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 18px; margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.15); }
+  header.hero .stat { background: rgba(255,255,255,0.05); padding: 14px 18px; border-radius: 10px; border: 1px solid rgba(245,158,11,0.2); }
+  header.hero .stat .num { font-size: 26px; font-weight: 900; color: var(--gold); line-height: 1; }
+  header.hero .stat .lbl { font-size: 11px; opacity: 0.8; margin-top: 6px; }
+
+  nav.toc { background: var(--white); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(15,23,42,0.05); }
+  nav.toc .inner { max-width: 1200px; margin: 0 auto; padding: 0 40px; display: flex; gap: 4px; overflow-x: auto; }
+  nav.toc a { padding: 16px 14px; color: var(--muted); text-decoration: none; font-size: 12px; font-weight: 700; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.15s; }
+  nav.toc a:hover { color: var(--navy); border-bottom-color: var(--gold); }
+
+  main { max-width: 1200px; margin: 0 auto; padding: 60px 40px 80px; }
+  section { margin-bottom: 70px; scroll-margin-top: 80px; }
+  section h2 { font-size: 30px; font-weight: 900; color: var(--navy); margin-bottom: 10px; letter-spacing: -0.4px; display: flex; align-items: center; gap: 14px; }
+  section h2 .num { width: 44px; height: 44px; background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #fff; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; box-shadow: 0 6px 16px rgba(245,158,11,0.3); }
+  section .lead { font-size: 16px; color: var(--muted); margin-bottom: 28px; padding-left: 58px; line-height: 1.6; }
+  section h3 { font-size: 19px; font-weight: 800; color: var(--navy); margin: 30px 0 12px; padding-left: 14px; border-left: 4px solid var(--gold); }
+
+  pre { background: #0f172a; color: #e2e8f0; padding: 16px 18px; border-radius: 10px; font-family: 'Consolas', monospace; font-size: 12px; line-height: 1.55; overflow-x: auto; margin: 12px 0; border-left: 4px solid var(--gold); }
+  pre .c { color: #94a3b8; } pre .k { color: #fbbf24; } pre .s { color: #86efac; }
+
+  code { background: var(--bg); padding: 2px 8px; border-radius: 4px; font-size: 12.5px; color: var(--navy); font-weight: 700; font-family: 'Consolas', monospace; }
+
+  .callout { border-radius: 12px; padding: 16px 20px; margin: 18px 0; border-left: 5px solid; }
+  .callout.info { background: #eff6ff; border-color: var(--navy); color: var(--navy); }
+  .callout.gold { background: var(--gold-light); border-color: var(--gold-dark); color: var(--gold-dark); }
+  .callout.success { background: var(--green-light); border-color: var(--green-dark); color: var(--green-dark); }
+  .callout.danger { background: var(--red-light); border-color: var(--red); color: var(--red); }
+
+  table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(15,23,42,0.05); margin: 14px 0; font-size: 13px; }
+  th { background: var(--navy); color: #fff; padding: 13px 16px; text-align: left; font-size: 11px; font-weight: 800; letter-spacing: 0.4px; }
+  td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  td code { font-size: 11px; }
+
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+  .feature { background: var(--white); border-radius: 14px; border: 1px solid var(--border); padding: 22px 24px; border-top: 4px solid var(--gold); transition: all 0.2s; }
+  .feature:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(15,23,42,0.06); }
+  .feature .ico { font-size: 32px; margin-bottom: 12px; }
+  .feature h4 { font-size: 16px; font-weight: 900; color: var(--navy); margin-bottom: 8px; }
+  .feature p { font-size: 13px; color: var(--muted); line-height: 1.55; }
+
+  .check-list { list-style: none; }
+  .check-list li { padding: 10px 0 10px 36px; position: relative; font-size: 14px; border-bottom: 1px solid var(--border); }
+  .check-list li:last-child { border-bottom: none; }
+  .check-list li::before { content: '✅'; position: absolute; left: 0; top: 11px; }
+
+  .steps { counter-reset: step; padding: 0; list-style: none; }
+  .steps li { counter-increment: step; padding: 14px 18px 14px 64px; background: var(--white); border-radius: 10px; margin-bottom: 10px; position: relative; border-left: 4px solid var(--gold); }
+  .steps li::before { content: counter(step); position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background: var(--gold); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px; }
+  .steps li strong { color: var(--navy); }
+
+  .role-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media (max-width: 700px) { .role-grid { grid-template-columns: 1fr; } }
+  .role { padding: 16px; border-radius: 12px; text-align: center; font-weight: 900; }
+  .role .perms { font-size: 11px; font-weight: 600; margin-top: 8px; line-height: 1.5; }
+  .role.admin { background: #fee2e2; color: var(--red); border: 2px solid var(--red); }
+  .role.ing { background: var(--gold-light); color: var(--gold-dark); border: 2px solid var(--gold); }
+  .role.cap { background: var(--green-light); color: var(--green-dark); border: 2px solid var(--green); }
+
+  footer { background: var(--navy); color: rgba(255,255,255,0.75); padding: 36px 40px; text-align: center; font-size: 12px; border-top: 4px solid var(--gold); }
+  footer .logo { font-size: 18px; font-weight: 900; color: var(--gold); letter-spacing: 2px; margin-bottom: 8px; }
+
+  @media (max-width: 700px) {
+    header.hero { padding: 40px 24px; }
+    header.hero h1 { font-size: 28px; }
+    main { padding: 40px 24px; }
+    section h2 { font-size: 23px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="inner">
+    <span class="badge">🛡️ CAPÍTULO 13 · ADMINISTRACIÓN</span>
+    <h1>Panel de Administración completo</h1>
+    <p class="subtitle">
+      Decimotercera iteración: panel de administración nativo dentro de la app. Cierra el círculo de seguridad del Bloque 12 — el admin ya no necesita ir a Firebase Console manualmente para gestionar usuarios, ver auditoría o ajustar configuración.
+    </p>
+    <div class="stats">
+      <div class="stat"><div class="num">5</div><div class="lbl">Sub-vistas</div></div>
+      <div class="stat"><div class="num">4</div><div class="lbl">Cloud Functions admin</div></div>
+      <div class="stat"><div class="num">7</div><div class="lbl">Health checks</div></div>
+      <div class="stat"><div class="num">~1.4k</div><div class="lbl">Líneas de código</div></div>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="inner">
+    <a href="#panorama">📋 Panorama</a>
+    <a href="#resumen">📊 Resumen</a>
+    <a href="#usuarios">👥 Usuarios</a>
+    <a href="#auditoria">🕵️ Auditoría</a>
+    <a href="#config">⚙️ Configuración</a>
+    <a href="#salud">💚 Salud</a>
+    <a href="#functions">☁️ Cloud Functions</a>
+    <a href="#deploy">🚀 Despliegue</a>
+  </div>
+</nav>
+
+<main>
+
+<section id="panorama">
+  <h2><span class="num">📋</span> Panorama del bloque</h2>
+  <p class="lead">
+    El panel de administración aparece como un módulo más en la barra superior, pero solo
+    visible para usuarios con rol <code>admin</code>. Por debajo, está protegido por
+    <code>&lt;RoleGuard&gt;</code> y por las reglas Firestore — un usuario no admin no podría
+    acceder ni aunque manipule la URL.
+  </p>
+
+  <h3>Las 5 sub-vistas del panel</h3>
+  <div class="grid-2">
+    <div class="feature"><div class="ico">📊</div><h4>Resumen</h4><p>9 KPIs del sistema en tiempo real (usuarios, registros, modelos BIM, eventos auditoría) + actividad reciente.</p></div>
+    <div class="feature"><div class="ico">👥</div><h4>Usuarios</h4><p>CRUD completo: crear, editar rol, activar/desactivar, eliminar. Búsqueda y filtros por rol.</p></div>
+    <div class="feature"><div class="ico">🕵️</div><h4>Auditoría</h4><p>Visor del log <code>Auditoria_Seguridad</code> con filtros por acción, UID y búsqueda libre.</p></div>
+    <div class="feature"><div class="ico">⚙️</div><h4>Configuración</h4><p>Editor de tarifas, factores HE, metas CPI/PPC, jornada laboral. Detecta cambios sin guardar.</p></div>
+    <div class="feature"><div class="ico">💚</div><h4>Salud sistema</h4><p>7 health checks: Firestore, Service Worker, PWA, almacenamiento, conexión, APS, localStorage.</p></div>
+  </div>
+</section>
+
+<section id="resumen">
+  <h2><span class="num">1</span> Resumen — KPIs del sistema</h2>
+  <p class="lead">
+    Vista general que carga al entrar al panel. Usa <code>getCountFromServer()</code> de Firestore
+    para contar documentos sin descargarlos (eficiente).
+  </p>
+
+  <h3>9 KPIs que se calculan</h3>
+  <table>
+    <thead><tr><th>KPI</th><th>Origen</th><th>Uso</th></tr></thead>
+    <tbody>
+      <tr><td>👥 Usuarios total + activos</td><td><code>Usuarios</code></td><td>Tamaño del equipo</td></tr>
+      <tr><td>📋 Registros de campo</td><td><code>Registros_Campo</code></td><td>Volumen de actividad</td></tr>
+      <tr><td>👷 Cuadrillas</td><td><code>Cuadrillas</code></td><td>Maestro de equipos</td></tr>
+      <tr><td>🧑 Personal</td><td><code>Personal</code></td><td>Personas registradas</td></tr>
+      <tr><td>⚖️ Cartas balance</td><td><code>Cartas_Balance</code></td><td>Mediciones realizadas</td></tr>
+      <tr><td>🏗️ Modelos BIM</td><td><code>BIM_Modelos</code></td><td>Subidos a APS</td></tr>
+      <tr><td>🔗 Vínculos WBS↔BIM</td><td><code>BIM_Vinculos</code></td><td>Trazabilidad BIM</td></tr>
+      <tr><td>🕵️ Eventos auditoría</td><td><code>Auditoria_Seguridad</code></td><td>Operaciones registradas</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Actividad reciente</h3>
+  <p>Debajo de los KPIs, los últimos 8 eventos del log con icono semántico, UID truncado y timestamp.</p>
+</section>
+
+<section id="usuarios">
+  <h2><span class="num">2</span> Gestión de Usuarios</h2>
+  <p class="lead">
+    CRUD completo. Las operaciones críticas (crear, cambiar rol, eliminar) van por
+    Cloud Functions con verificación de rol server-side — no se puede falsear desde el
+    cliente.
+  </p>
+
+  <h3>Operaciones disponibles</h3>
+  <ul class="check-list">
+    <li><strong>Listar</strong> — tiempo real con <code>onSnapshot</code>, búsqueda por nombre/email, filtro por rol</li>
+    <li><strong>Crear</strong> — modal con email, nombre, contraseña (con generador automático), rol</li>
+    <li><strong>Cambiar rol</strong> — modal con 3 opciones visuales (capataz/ingeniero/admin)</li>
+    <li><strong>Desactivar/Reactivar</strong> — soft delete (<code>activo: false</code>). Al desactivar, también revoca tokens (deslogueo inmediato)</li>
+    <li><strong>Eliminar permanentemente</strong> — hard delete: borra cuenta Auth + perfil Firestore</li>
+  </ul>
+
+  <h3>Protecciones contra errores graves</h3>
+  <ul class="check-list">
+    <li>No te puedes desactivar a ti mismo (lo previene Cloud Function)</li>
+    <li>No te puedes eliminar a ti mismo</li>
+    <li>No puedes quitarte el rol admin a ti mismo</li>
+    <li>Confirmación explícita antes de eliminar (texto requiere "OK")</li>
+    <li>Cada operación queda registrada en <code>Auditoria_Seguridad</code></li>
+  </ul>
+
+  <h3>Roles y permisos</h3>
+  <div class="role-grid">
+    <div class="role admin">
+      🛡️ ADMIN
+      <div class="perms">
+        Control total<br>+ Gestión de usuarios<br>+ Borrar registros<br>+ Ver auditoría
+      </div>
+    </div>
+    <div class="role ing">
+      📊 INGENIERO
+      <div class="perms">
+        Dashboard analítico<br>+ Editar configuración<br>+ Plan diario / LPS<br>+ BIM
+      </div>
+    </div>
+    <div class="role cap">
+      👷 CAPATAZ
+      <div class="perms">
+        Reporte de campo<br>+ Sus borradores<br>+ Carta Balance<br>+ Subir fotos
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="auditoria">
+  <h2><span class="num">3</span> Visor de Auditoría</h2>
+  <p class="lead">
+    Lectura del log <code>Auditoria_Seguridad</code> con filtros y vista expandible por evento.
+  </p>
+
+  <h3>Filtros disponibles</h3>
+  <ul class="check-list">
+    <li><strong>Búsqueda libre</strong> — texto en acción, UID o detalles</li>
+    <li><strong>Filtro por acción</strong> — dropdown con todas las acciones únicas detectadas</li>
+    <li><strong>Filtro por UID parcial</strong> — útil para investigar a un usuario específico</li>
+  </ul>
+
+  <h3>Carga eficiente</h3>
+  <p>Carga los últimos 150 eventos en orden cronológico inverso (más reciente arriba). Cada evento es expandible para ver el JSON completo con detalles, userAgent y fuente (cliente vs admin_panel).</p>
+
+  <h3>Acciones que se loguean</h3>
+  <pre>login_exitoso        login_fallido        login_bloqueado_cuenta_inactiva
+logout              registro_usuario     admin_crear_usuario
+admin_cambiar_rol   admin_desactivar_usuario   admin_reactivar_usuario
+admin_eliminar_usuario   subida_modelo_bim   eliminacion_modelo_bim
+eliminacion_registro   export_datos_masivo</pre>
+</section>
+
+<section id="config">
+  <h2><span class="num">4</span> Configuración del sistema</h2>
+  <p class="lead">
+    Editor del documento <code>Configuracion/global</code>. Cambios afectan TODA la organización.
+  </p>
+
+  <h3>Parámetros editables</h3>
+  <table>
+    <thead><tr><th>Sección</th><th>Campo</th><th>Default</th></tr></thead>
+    <tbody>
+      <tr><td rowspan="4">💰 Tarifas</td><td>Tarifa Hora Normal</td><td>S/ 8.50</td></tr>
+      <tr><td>Tarifa Hora Extra</td><td>S/ 12.75</td></tr>
+      <tr><td>Factor HE sobre HN</td><td>1.5×</td></tr>
+      <tr><td>Símbolo monetario</td><td>S/</td></tr>
+      <tr><td rowspan="2">🎯 Metas</td><td>Meta CPI</td><td>1.0</td></tr>
+      <tr><td>Meta PPC (LPS)</td><td>0.8</td></tr>
+      <tr><td rowspan="2">⏰ Jornada</td><td>Horas por jornada</td><td>8.5</td></tr>
+      <tr><td>Días por semana</td><td>6</td></tr>
+      <tr><td>🏗️ Proyecto</td><td>Nombre del proyecto activo</td><td>PTARI</td></tr>
+    </tbody>
+  </table>
+
+  <h3>UX inteligente</h3>
+  <ul class="check-list">
+    <li>Detecta cambios sin guardar y los marca con highlight dorado</li>
+    <li>Footer sticky con botón "Guardar" que solo se activa si hay cambios</li>
+    <li>Botón "Descartar" para volver a los valores originales</li>
+    <li>Cada cambio agrega <code>modificadoEn</code> + <code>modificadoPor</code> al documento</li>
+  </ul>
+</section>
+
+<section id="salud">
+  <h2><span class="num">5</span> Salud del sistema (Health Checks)</h2>
+  <p class="lead">
+    Diagnóstico automático del estado de toda la infraestructura. Útil para diagnóstico rápido cuando algo "no anda bien".
+  </p>
+
+  <h3>7 chequeos automáticos</h3>
+  <table>
+    <thead><tr><th>Check</th><th>Verifica</th><th>Latencia esperada</th></tr></thead>
+    <tbody>
+      <tr><td>🔥 Firestore (lectura)</td><td>Conectividad y latencia con la BD</td><td>&lt; 200 ms</td></tr>
+      <tr><td>⚙️ Service Worker</td><td>SW registrado y activo</td><td>—</td></tr>
+      <tr><td>📱 PWA</td><td>Si está instalada (display-mode standalone)</td><td>—</td></tr>
+      <tr><td>💾 Almacenamiento navegador</td><td>Cuota usada vs total disponible</td><td>—</td></tr>
+      <tr><td>🌐 Conexión a internet</td><td>navigator.onLine</td><td>—</td></tr>
+      <tr><td>☁️ APS Cloud Functions</td><td>Backend alcanzable</td><td>&lt; 800 ms</td></tr>
+      <tr><td>🗄️ localStorage</td><td>Disponible (no en modo privado)</td><td>—</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Información del navegador (debugging)</h3>
+  <p>Sección adicional con: plataforma, user agent, idioma, resolución, viewport, DPR, memoria del dispositivo, cores de CPU. Útil cuando un usuario reporta un bug — admin le pide screenshot de esta sección y tiene contexto técnico.</p>
+</section>
+
+<section id="functions">
+  <h2><span class="num">6</span> Cloud Functions del Admin Panel</h2>
+  <p class="lead">
+    4 funciones HTTP nuevas que verifican rol admin server-side antes de hacer cualquier cosa.
+  </p>
+
+  <table>
+    <thead><tr><th>Function</th><th>Hace</th><th>Audita como</th></tr></thead>
+    <tbody>
+      <tr><td><code>adminCrearUsuario</code></td><td>Crea cuenta Firebase Auth + perfil Firestore con rol</td><td><code>admin_crear_usuario</code></td></tr>
+      <tr><td><code>adminCambiarRol</code></td><td>Modifica el campo <code>rol</code> del documento usuario</td><td><code>admin_cambiar_rol</code></td></tr>
+      <tr><td><code>adminDesactivarUsuario</code></td><td>Cambia <code>activo</code> + revoca refresh tokens</td><td><code>admin_desactivar_usuario</code></td></tr>
+      <tr><td><code>adminEliminarUsuario</code></td><td>Borra cuenta Auth + perfil Firestore (HARD)</td><td><code>admin_eliminar_usuario</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Verificación server-side de rol admin</h3>
+  <pre><span class="c">// El cliente envía Authorization: Bearer &lt;idToken&gt;</span>
+<span class="c">// El backend lo verifica y carga el perfil:</span>
+
+<span class="k">const</span> requireAdmin = <span class="k">async</span> (req) =&gt; {
+  <span class="k">const</span> idToken = req.get(<span class="s">'Authorization'</span>).slice(<span class="s">'Bearer '</span>.length);
+  <span class="k">const</span> decoded = <span class="k">await</span> admin.auth().verifyIdToken(idToken);
+  <span class="k">const</span> perfil = <span class="k">await</span> admin.firestore().doc(<span class="s">`Usuarios/${decoded.uid}`</span>).get();
+  <span class="k">if</span> (perfil.data().rol !== <span class="s">'admin'</span> || perfil.data().activo === <span class="k">false</span>) {
+    <span class="k">throw new</span> Error(<span class="s">'Acceso denegado: solo admins'</span>);
+  }
+  <span class="k">return</span> { uid: decoded.uid };
+};</pre>
+
+  <div class="callout info">
+    <strong>🔒 Defensa en profundidad:</strong> Aunque las reglas Firestore ya validan, las
+    Cloud Functions también validan. Si las reglas tuvieran un bug, las funciones siguen
+    seguras (y viceversa). Capas redundantes.
+  </div>
+</section>
+
+<section id="deploy">
+  <h2><span class="num">🚀</span> Cómo desplegar este bloque</h2>
+
+  <h3>Archivos nuevos a crear</h3>
+  <pre>src/views/admin/AdminPanel.jsx
+src/views/admin/ResumenAdmin.jsx
+src/views/admin/GestionUsuarios.jsx
+src/views/admin/VisorAuditoria.jsx
+src/views/admin/ConfigSistema.jsx
+src/views/admin/SaludSistema.jsx
+src/utils/adminClient.js
+functions/admin.js                    <span class="c">// backend</span></pre>
+
+  <h3>Archivos modificados</h3>
+  <pre>src/App.jsx                           <span class="c">// + import AdminPanel + módulo 'admin'</span>
+functions/index.js                    <span class="c">// + exports de admin.js</span></pre>
+
+  <h3>Pasos en orden</h3>
+  <ol class="steps">
+    <li><strong>Crea la carpeta</strong> <code>src/views/admin/</code> y copia los 6 archivos JSX</li>
+    <li><strong>Copia</strong> <code>src/utils/adminClient.js</code></li>
+    <li><strong>Reemplaza</strong> <code>src/App.jsx</code> con la versión del Bloque 13</li>
+    <li><strong>En el backend:</strong> copia <code>functions_admin.js</code> a <code>functions/admin.js</code></li>
+    <li><strong>Edita</strong> <code>functions/index.js</code> y agrega al final:
+      <pre style="margin:8px 0 0;font-size:11px;"><span class="k">const</span> adminFns = require(<span class="s">'./admin'</span>);
+exports.adminCrearUsuario = adminFns.adminCrearUsuario;
+exports.adminCambiarRol = adminFns.adminCambiarRol;
+exports.adminDesactivarUsuario = adminFns.adminDesactivarUsuario;
+exports.adminEliminarUsuario = adminFns.adminEliminarUsuario;</pre>
+    </li>
+    <li><strong>Despliega backend:</strong> <code>firebase deploy --only functions</code></li>
+    <li><strong>Build frontend:</strong> <code>npm run build</code></li>
+    <li><strong>Deploy frontend:</strong> <code>firebase deploy --only hosting</code></li>
+    <li><strong>Login como admin</strong> y verifica que aparece la pestaña 🛡️ Administración</li>
+    <li><strong>Prueba</strong> cada sub-vista: Resumen, Usuarios, Auditoría, Configuración, Salud</li>
+  </ol>
+
+  <div class="callout success">
+    <strong>🎉 Con este bloque, GRAPCO Produc-App es una plataforma de producto profesional completa.</strong>
+    Tienes gestión de usuarios, observabilidad, configuración centralizada y diagnóstico — todo
+    sin tocar Firebase Console nunca más.
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">📚</span> 13 capítulos del proyecto</h2>
+  <p class="lead">Tu documentación ejecutiva acumulada hasta este bloque:</p>
+
+  <table>
+    <thead><tr><th style="width:5%">#</th><th>Capítulo</th><th style="width:20%">Bloque</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Plan Implementación VDC</td><td>3</td></tr>
+      <tr><td>2</td><td>Informe Estado Plataforma</td><td>3</td></tr>
+      <tr><td>3</td><td>Dossier KPIs y Adopción</td><td>5</td></tr>
+      <tr><td>4</td><td>Guía Rediseño UI</td><td>6</td></tr>
+      <tr><td>5</td><td>Integración BIM</td><td>7</td></tr>
+      <tr><td>6</td><td>Resumen Bloque 8</td><td>8</td></tr>
+      <tr><td>7</td><td>Setup APS</td><td>9</td></tr>
+      <tr><td>8</td><td>Capítulo 10 · Sistema Diseño</td><td>10</td></tr>
+      <tr><td>9</td><td>Capítulo 11 · UX Avanzada</td><td>11</td></tr>
+      <tr><td>10</td><td>Storybook Componentes</td><td>11</td></tr>
+      <tr><td>11</td><td>Capítulo 12 · Seguridad</td><td>12</td></tr>
+      <tr style="background:var(--gold-light) !important;"><td><strong>12</strong></td><td><strong>Capítulo 13 · Panel Administración ⭐</strong></td><td><strong>13</strong></td></tr>
+    </tbody>
+  </table>
+</section>
+
+</main>
+
+<footer>
+  <div class="logo">GRAPCO SAC</div>
+  <p>Capítulo 13 · Panel de Administración · Mayo 2026</p>
+  <p style="margin-top:8px;opacity:0.6;">Documentación viva del proyecto GRAPCO Produc-App</p>
+</footer>
+
+</body>
+</html>

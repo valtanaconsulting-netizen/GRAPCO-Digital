@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dossier KPIs · Resultados · Adopción · GRAPCO Produc-App</title>
+<style>
+  :root {
+    --navy: #1e3a5f; --navy-dark: #152a47; --navy-light: #2c4969;
+    --gold: #f59e0b; --gold-dark: #d97706; --gold-light: #fef3c7;
+    --green: #16a34a; --green-dark: #15803d; --green-light: #dcfce7;
+    --red: #dc2626; --red-light: #fee2e2;
+    --purple: #7c3aed; --purple-light: #ede9fe;
+    --bg: #f8fafc; --white: #ffffff; --border: #e2e8f0;
+    --text: #1e293b; --muted: #64748b;
+    --font: "Inter", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font); color: var(--text); background: var(--bg);
+    line-height: 1.6; font-size: 15px;
+  }
+
+  /* HERO */
+  header.hero {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 100%);
+    color: #fff; padding: 60px 40px 80px;
+    position: relative; overflow: hidden;
+  }
+  header.hero::before {
+    content: ''; position: absolute; top: -150px; right: -120px;
+    width: 380px; height: 380px; border-radius: 50%;
+    background: var(--gold); opacity: 0.15; filter: blur(60px);
+  }
+  header.hero::after {
+    content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+    height: 6px; background: linear-gradient(90deg, var(--gold), var(--gold-dark), var(--gold));
+  }
+  header.hero .inner { max-width: 1200px; margin: 0 auto; position: relative; z-index: 2; }
+  header.hero .badge {
+    display: inline-block; padding: 6px 14px;
+    background: rgba(245, 158, 11, 0.2); border: 1px solid var(--gold);
+    border-radius: 30px; color: var(--gold);
+    font-size: 11px; font-weight: 800; letter-spacing: 1.5px; margin-bottom: 16px;
+  }
+  header.hero h1 {
+    font-size: 44px; font-weight: 900; line-height: 1.1;
+    margin-bottom: 14px; letter-spacing: -0.6px;
+  }
+  header.hero .subtitle {
+    font-size: 18px; opacity: 0.85; max-width: 760px;
+    line-height: 1.55; margin-bottom: 24px;
+  }
+  header.hero .meta {
+    display: flex; gap: 28px; flex-wrap: wrap;
+    font-size: 12px; opacity: 0.7;
+    border-top: 1px solid rgba(255,255,255,0.15);
+    padding-top: 18px; margin-top: 28px;
+  }
+
+  /* TOC NAV */
+  nav.toc {
+    background: var(--white); border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 12px rgba(15,23,42,0.05);
+  }
+  nav.toc .inner {
+    max-width: 1200px; margin: 0 auto; padding: 0 40px;
+    display: flex; gap: 4px; overflow-x: auto;
+  }
+  nav.toc a {
+    padding: 16px 12px; color: var(--muted); text-decoration: none;
+    font-size: 12px; font-weight: 700; white-space: nowrap;
+    border-bottom: 3px solid transparent; transition: all 0.15s;
+  }
+  nav.toc a:hover { color: var(--navy); border-bottom-color: var(--gold); }
+
+  main { max-width: 1200px; margin: 0 auto; padding: 50px 40px 80px; }
+  section { margin-bottom: 64px; scroll-margin-top: 80px; }
+  section h2 {
+    font-size: 30px; font-weight: 900; color: var(--navy);
+    margin-bottom: 8px; letter-spacing: -0.5px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  section h2 .num {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    color: #fff; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 900;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
+  }
+  section .lead {
+    font-size: 15px; color: var(--muted);
+    margin-bottom: 28px; padding-left: 52px; line-height: 1.65;
+  }
+  section h3 {
+    font-size: 20px; font-weight: 800; color: var(--navy);
+    margin: 30px 0 12px; padding-left: 14px;
+    border-left: 4px solid var(--gold);
+  }
+  section p { margin-bottom: 14px; }
+
+  /* GRIDS */
+  .grid { display: grid; gap: 16px; }
+  .grid-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .grid-3 { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .grid-4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+  /* KPI HERO (números grandes navy + dorado) */
+  .kpi-hero {
+    background: linear-gradient(135deg, var(--navy), var(--navy-dark));
+    color: #fff; border-radius: 16px; padding: 22px;
+    position: relative; overflow: hidden;
+    box-shadow: 0 6px 20px rgba(15,23,42,0.1);
+  }
+  .kpi-hero::after {
+    content: ''; position: absolute; top: 0; right: 0;
+    width: 6px; height: 100%; background: var(--gold);
+  }
+  .kpi-hero .label {
+    font-size: 10px; font-weight: 800; color: var(--gold);
+    letter-spacing: 1.3px; margin-bottom: 8px;
+  }
+  .kpi-hero .value {
+    font-size: 38px; font-weight: 900; line-height: 1;
+  }
+  .kpi-hero .sub { font-size: 12px; opacity: 0.78; margin-top: 8px; }
+  .kpi-hero .target {
+    font-size: 10px; font-weight: 800; color: var(--gold);
+    margin-top: 10px; padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.15);
+    letter-spacing: 0.5px;
+  }
+
+  /* KPI cards alternativos (más planos) */
+  .kpi-card {
+    background: var(--white); border-radius: 14px;
+    border: 1px solid var(--border); padding: 22px;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(15,23,42,0.06); }
+  .kpi-card .top {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+  }
+  .kpi-card .icon { font-size: 22px; }
+  .kpi-card .name {
+    font-size: 11px; font-weight: 800; color: var(--muted);
+    letter-spacing: 0.8px;
+  }
+  .kpi-card .big {
+    font-size: 30px; font-weight: 900; color: var(--navy); line-height: 1;
+  }
+  .kpi-card .desc {
+    font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.5;
+  }
+  .kpi-card .benchmark {
+    background: var(--gold-light); color: var(--gold-dark);
+    padding: 4px 8px; border-radius: 6px;
+    font-size: 10px; font-weight: 800;
+    margin-top: 10px; display: inline-block;
+  }
+  .kpi-card.green .big { color: var(--green-dark); }
+  .kpi-card.green .icon-bg { background: var(--green-light); }
+  .kpi-card.purple .big { color: var(--purple); }
+
+  /* TIMELINE FASES */
+  .timeline {
+    position: relative; padding-left: 36px; margin-top: 28px;
+  }
+  .timeline::before {
+    content: ''; position: absolute;
+    left: 14px; top: 0; bottom: 0; width: 2px;
+    background: linear-gradient(180deg, var(--gold), var(--gold-dark));
+  }
+  .timeline-item { position: relative; margin-bottom: 32px; }
+  .timeline-item::before {
+    content: ''; position: absolute;
+    left: -29px; top: 6px;
+    width: 18px; height: 18px;
+    background: var(--gold); border-radius: 50%;
+    border: 3px solid var(--white);
+    box-shadow: 0 0 0 2px var(--gold);
+  }
+  .timeline-item .phase-tag {
+    display: inline-block; padding: 4px 12px;
+    background: var(--gold-light); color: var(--gold-dark);
+    border-radius: 20px;
+    font-size: 10px; font-weight: 800; letter-spacing: 0.6px;
+    margin-bottom: 8px;
+  }
+  .timeline-item h4 {
+    font-size: 17px; font-weight: 900; color: var(--navy);
+    margin-bottom: 8px;
+  }
+  .timeline-item .week-label {
+    font-size: 11px; color: var(--muted); font-weight: 700;
+  }
+  .timeline-item ul { margin: 12px 0 0 18px; }
+  .timeline-item li { font-size: 13px; margin-bottom: 5px; line-height: 1.5; }
+
+  /* TABLA */
+  table {
+    width: 100%; border-collapse: collapse; background: var(--white);
+    border-radius: 12px; overflow: hidden;
+    box-shadow: 0 1px 3px rgba(15,23,42,0.06);
+    margin: 16px 0; font-size: 13px;
+  }
+  th {
+    background: var(--navy); color: #fff;
+    padding: 14px 16px; text-align: left;
+    font-size: 11px; font-weight: 800; letter-spacing: 0.5px;
+  }
+  td {
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
+  }
+  tr:nth-child(even) td { background: #f8fafc; }
+  tr:last-child td { border-bottom: none; }
+
+  /* PIPELINE de fases */
+  .pipeline {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 8px; margin: 22px 0;
+  }
+  .pipeline-stage {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 14px;
+    text-align: center; position: relative;
+  }
+  .pipeline-stage::after {
+    content: '→'; position: absolute;
+    right: -14px; top: 50%; transform: translateY(-50%);
+    color: var(--gold); font-size: 22px; font-weight: 900;
+  }
+  .pipeline-stage:last-child::after { display: none; }
+  .pipeline-stage .num {
+    font-size: 28px; font-weight: 900; color: var(--gold);
+  }
+  .pipeline-stage .name {
+    font-size: 11px; font-weight: 800; color: var(--navy);
+    letter-spacing: 0.4px; margin-top: 6px;
+  }
+  .pipeline-stage .when {
+    font-size: 10px; color: var(--muted);
+    margin-top: 6px; font-style: italic;
+  }
+
+  /* CALLOUTS */
+  .callout {
+    border-radius: 12px; padding: 18px 22px; margin: 18px 0;
+    border-left: 5px solid;
+  }
+  .callout.info { background: #eff6ff; border-color: var(--navy); color: var(--navy); }
+  .callout.success { background: var(--green-light); border-color: var(--green-dark); color: var(--green-dark); }
+  .callout.warning { background: var(--gold-light); border-color: var(--gold-dark); color: var(--gold-dark); }
+  .callout.gold {
+    background: linear-gradient(135deg, var(--gold-light), #fff8e6);
+    border-color: var(--gold-dark); color: var(--gold-dark);
+  }
+  .callout strong { font-weight: 800; }
+
+  /* COMPARATIVA visual */
+  .compare-row {
+    display: grid; grid-template-columns: 200px 1fr 1fr;
+    gap: 0; border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+    margin-bottom: 8px; background: var(--white);
+  }
+  .compare-row .feat {
+    background: #f8fafc; padding: 14px 18px;
+    font-size: 12px; font-weight: 800; color: var(--navy);
+    border-right: 1px solid var(--border);
+  }
+  .compare-row .col {
+    padding: 14px 18px; font-size: 13px;
+    border-right: 1px solid var(--border);
+  }
+  .compare-row .col:last-child { border-right: none; }
+  .compare-row .col.win {
+    background: var(--green-light); color: var(--green-dark); font-weight: 700;
+  }
+  .compare-row .col.lose {
+    background: var(--red-light); color: var(--red); font-weight: 700;
+  }
+  .compare-header {
+    display: grid; grid-template-columns: 200px 1fr 1fr;
+    background: var(--navy); color: #fff;
+    border-radius: 12px 12px 0 0; margin-bottom: 0;
+  }
+  .compare-header > div {
+    padding: 14px 18px; font-size: 12px; font-weight: 900;
+    letter-spacing: 0.5px; text-align: center;
+  }
+  .compare-header > div:first-child { text-align: left; }
+
+  /* FOOTER */
+  footer {
+    background: var(--navy); color: rgba(255,255,255,0.75);
+    padding: 40px; text-align: center; font-size: 12px;
+    border-top: 4px solid var(--gold);
+  }
+  footer .logo {
+    font-size: 18px; font-weight: 900; color: var(--gold);
+    letter-spacing: 2px; margin-bottom: 8px;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 800px) {
+    header.hero { padding: 40px 24px 60px; }
+    header.hero h1 { font-size: 30px; }
+    main { padding: 30px 24px 60px; }
+    section h2 { font-size: 22px; }
+    .pipeline { grid-template-columns: repeat(2, 1fr); }
+    .pipeline-stage::after { display: none; }
+    .compare-row, .compare-header { grid-template-columns: 1fr; }
+  }
+  @media print {
+    nav.toc { display: none; }
+    body { background: #fff; }
+    .timeline-item, .kpi-hero, .kpi-card, table { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="inner">
+    <span class="badge">📊 DOSSIER EJECUTIVO</span>
+    <h1>KPIs, Resultados Esperados y Plan de Adopción</h1>
+    <p class="subtitle">
+      Documento estratégico que cuantifica el valor que GRAPCO Produc-App entrega en proyectos
+      reales de construcción civil: indicadores con benchmarks de la industria, retorno de
+      inversión proyectado, plan de implementación de 90 días y comparativa frente a soluciones
+      comerciales.
+    </p>
+    <div class="meta">
+      <span><strong>Audiencia:</strong> Gerencia · Comité de Tesis · Equipo de Obra</span>
+      <span><strong>Versión:</strong> 1.0 · Mayo 2026</span>
+      <span><strong>Páginas:</strong> 8 secciones</span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="inner">
+    <a href="#kpis-principales">1. KPIs principales</a>
+    <a href="#kpis-secundarios">2. KPIs secundarios</a>
+    <a href="#resultados">3. Resultados esperados</a>
+    <a href="#roi">4. ROI proyectado</a>
+    <a href="#adopcion">5. Plan de adopción 90 días</a>
+    <a href="#capacitacion">6. Plan de capacitación</a>
+    <a href="#comparativa">7. Comparativa comercial</a>
+    <a href="#casos-uso">8. Casos de uso</a>
+    <a href="#faq">9. FAQ</a>
+  </div>
+</nav>
+
+<main>
+
+<section id="kpis-principales">
+  <h2><span class="num">1</span> KPIs principales que la plataforma entrega</h2>
+  <p class="lead">
+    Indicadores clave alineados con metodologías PMBOK, Lean Construction y VDC (Stanford CIFE).
+    Todos se calculan automáticamente a partir del tareo diario de los capataces, sin captura
+    adicional de datos.
+  </p>
+
+  <div class="grid grid-3">
+    <div class="kpi-hero">
+      <div class="label">CPI · COST PERFORMANCE INDEX</div>
+      <div class="value">≥ 0.95</div>
+      <div class="sub">Eficiencia HH meta vs real. &gt; 1.0 = bajo presupuesto.</div>
+      <div class="target">📊 Benchmark PMI: ≥ 0.90 aceptable</div>
+    </div>
+    <div class="kpi-hero">
+      <div class="label">SPI · SCHEDULE PERFORMANCE</div>
+      <div class="value">≥ 0.90</div>
+      <div class="sub">Adherencia al cronograma planeado.</div>
+      <div class="target">📊 Benchmark PMI: ≥ 0.85 aceptable</div>
+    </div>
+    <div class="kpi-hero">
+      <div class="label">PPC · PERCENT PLAN COMPLETE</div>
+      <div class="value">≥ 80%</div>
+      <div class="sub">% Compromisos del Plan Semanal cumplidos.</div>
+      <div class="target">📊 Benchmark LCI: ≥ 80% maduro · ≥ 65% aceptable</div>
+    </div>
+  </div>
+
+  <h3>Indicadores complementarios EVM</h3>
+  <div class="grid grid-4">
+    <div class="kpi-card green">
+      <div class="top"><span class="icon">💰</span><span class="name">CV · COST VARIANCE</span></div>
+      <div class="big">+ HH</div>
+      <div class="desc">Diferencia EV − AC. Positivo = ahorro acumulado de horas-hombre.</div>
+      <div class="benchmark">Ideal: positivo creciente</div>
+    </div>
+    <div class="kpi-card">
+      <div class="top"><span class="icon">⏱️</span><span class="name">SV · SCHEDULE VARIANCE</span></div>
+      <div class="big">≥ 0</div>
+      <div class="desc">Diferencia EV − PV. Si es negativo, hay atraso vs cronograma.</div>
+      <div class="benchmark">Ideal: ≥ 0 ó tendencia positiva</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="top"><span class="icon">🔮</span><span class="name">EAC · ESTIMATE AT COMPLETION</span></div>
+      <div class="big">≤ BAC</div>
+      <div class="desc">Costo proyectado al término. Calculado como BAC ÷ CPI.</div>
+      <div class="benchmark">Alerta si EAC &gt; BAC × 1.10</div>
+    </div>
+    <div class="kpi-card">
+      <div class="top"><span class="icon">🎯</span><span class="name">VAC · VARIANCE AT COMPLETION</span></div>
+      <div class="big">≥ 0</div>
+      <div class="desc">Ahorro/sobrecosto proyectado al fin de proyecto.</div>
+      <div class="benchmark">Negativo = sobrecosto previsto</div>
+    </div>
+  </div>
+</section>
+
+<section id="kpis-secundarios">
+  <h2><span class="num">2</span> KPIs secundarios — Procesos Lean</h2>
+  <p class="lead">
+    Métricas operativas del módulo VDC que miden la salud del proceso de planificación,
+    no sólo del resultado. Indispensables para el ciclo de mejora continua.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:32%">Indicador</th>
+        <th style="width:14%">Meta</th>
+        <th style="width:18%">Frecuencia</th>
+        <th>Qué señala</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>📊 PPC Promedio (4 semanas)</strong></td>
+        <td>≥ 80%</td>
+        <td>Semanal</td>
+        <td>Capacidad de ejecutar lo planificado. Bajo = variabilidad descontrolada.</td>
+      </tr>
+      <tr>
+        <td><strong>🔍 Top 3 RNC concentración</strong></td>
+        <td>≤ 60%</td>
+        <td>Mensual</td>
+        <td>Si las 3 primeras causas explican &lt; 60%, el problema está disperso. &gt; 60% = atacar focalizado.</td>
+      </tr>
+      <tr>
+        <td><strong>🚧 % Restricciones liberadas a tiempo</strong></td>
+        <td>≥ 90%</td>
+        <td>Semanal</td>
+        <td>Disciplina del lookahead. Bajo = sesiones ICE no funcionan.</td>
+      </tr>
+      <tr>
+        <td><strong>📚 Lecciones aprendidas activas</strong></td>
+        <td>≥ 5 por trimestre</td>
+        <td>Trimestral</td>
+        <td>Maduración del aprendizaje organizacional.</td>
+      </tr>
+      <tr>
+        <td><strong>👷 Cuadrillas con CPI &lt; 0.85</strong></td>
+        <td>≤ 1 de 5</td>
+        <td>Semanal</td>
+        <td>Distribución de la productividad. Alta concentración = problema sistémico.</td>
+      </tr>
+      <tr>
+        <td><strong>⚠️ Alertas automáticas/semana</strong></td>
+        <td>Tendencia ↓</td>
+        <td>Semanal</td>
+        <td>Las alertas deben disminuir mes a mes (madurez del control).</td>
+      </tr>
+      <tr>
+        <td><strong>💰 Sobrecosto en S/ acumulado</strong></td>
+        <td>≤ 5% BAC</td>
+        <td>Semanal</td>
+        <td>Indicador para sponsor/cliente. Calculado en HE 60/100 + tarifas reales.</td>
+      </tr>
+      <tr>
+        <td><strong>🎯 IP Real vs IP Meta</strong></td>
+        <td>Δ ≤ 0</td>
+        <td>Semanal</td>
+        <td>Si el IP Real consistentemente supera al Meta, hay que actualizar el APU.</td>
+      </tr>
+      <tr>
+        <td><strong>📋 Compromisos sin cerrar</strong></td>
+        <td>0 al cierre semana</td>
+        <td>Diaria</td>
+        <td>Disciplina del LPS. &gt; 0 lunes = la semana arrancó sin balance.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="resultados">
+  <h2><span class="num">3</span> Resultados esperados en proyectos</h2>
+  <p class="lead">
+    Estimaciones basadas en estudios de Lean Construction Institute, Stanford CIFE
+    y casos peruanos comparables (Graña y Montero, COSAPI). Aplican a obras de tamaño
+    medio (BAC entre 1 y 10 millones USD) implementando la plataforma desde el inicio.
+  </p>
+
+  <h3>Resultados cuantitativos esperados</h3>
+  <div class="grid grid-3">
+    <div class="kpi-card green">
+      <div class="top"><span class="icon">⏱️</span><span class="name">REDUCCIÓN HH DESPERDICIADAS</span></div>
+      <div class="big">10–25%</div>
+      <div class="desc">Menos horas en reprocesos, esperas y trabajos no productivos.</div>
+      <div class="benchmark">📚 Fuente: LCI Benchmark 2020</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="top"><span class="icon">📉</span><span class="name">REDUCCIÓN VARIABILIDAD</span></div>
+      <div class="big">30–50%</div>
+      <div class="desc">CPI semanal con menos picos extremos · cronograma más predecible.</div>
+      <div class="benchmark">📚 Fuente: Ballard 2000 LPS</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="top"><span class="icon">🎯</span><span class="name">MEJORA EN PPC</span></div>
+      <div class="big">+20–35 pp</div>
+      <div class="desc">Pasar de PPC ~50% (sin LPS) a ~75–85% (con LPS maduro) en 3-6 meses.</div>
+      <div class="benchmark">📚 Fuente: CIFE Working Papers</div>
+    </div>
+    <div class="kpi-card">
+      <div class="top"><span class="icon">📋</span><span class="name">REDUCCIÓN RFI ABIERTOS</span></div>
+      <div class="big">40–60%</div>
+      <div class="desc">Lookahead 6 semanas anticipa restricciones de información.</div>
+      <div class="benchmark">📚 Indirecto · vía gestión de restricciones</div>
+    </div>
+    <div class="kpi-card">
+      <div class="top"><span class="icon">💰</span><span class="name">AHORRO HE 60/100</span></div>
+      <div class="big">15–30%</div>
+      <div class="desc">Mejor planificación = menos horas extra de emergencia.</div>
+      <div class="benchmark">📚 Estimación CAPECO 2023</div>
+    </div>
+    <div class="kpi-card">
+      <div class="top"><span class="icon">📊</span><span class="name">MEJORA EN CPI</span></div>
+      <div class="big">+0.10 a +0.20</div>
+      <div class="desc">De CPI 0.80 a CPI 0.95–1.00 en proyectos con disciplina LPS.</div>
+      <div class="benchmark">📚 Casos peruanos documentados</div>
+    </div>
+  </div>
+
+  <h3>Resultados cualitativos esperados</h3>
+  <div class="grid grid-2">
+    <div class="kpi-card">
+      <div class="top"><span class="icon">🤝</span><span class="name">CULTURA</span></div>
+      <p style="font-size:13px;color:var(--text);line-height:1.6;">
+        Equipo de obra adopta vocabulario común (PPC, CPI, RNC). Decisiones se toman con datos
+        en sesiones ICE, no con la "intuición del residente".
+      </p>
+    </div>
+    <div class="kpi-card">
+      <div class="top"><span class="icon">📱</span><span class="name">DIGITALIZACIÓN</span></div>
+      <p style="font-size:13px;color:var(--text);line-height:1.6;">
+        Capataces operan desde celular sin Excel. Información llega a oficina en tiempo real,
+        no al final de cada semana cargada manualmente.
+      </p>
+    </div>
+    <div class="kpi-card">
+      <div class="top"><span class="icon">🎓</span><span class="name">APRENDIZAJE</span></div>
+      <p style="font-size:13px;color:var(--text);line-height:1.6;">
+        Lecciones aprendidas no se pierden al cerrar el proyecto. Se acumulan y se aplican en
+        las siguientes obras de GRAPCO.
+      </p>
+    </div>
+    <div class="kpi-card">
+      <div class="top"><span class="icon">🛡️</span><span class="name">TRAZABILIDAD</span></div>
+      <p style="font-size:13px;color:var(--text);line-height:1.6;">
+        Auditoría completa: quién registró qué, cuándo, por qué se incumplió. Útil ante reclamos,
+        liquidaciones y procesos legales.
+      </p>
+    </div>
+  </div>
+
+  <div class="callout success">
+    <strong>📈 Caso GRAPCO PTARI proyectado:</strong> con un BAC estimado de 16,480 HH (proyecto actual)
+    y un CPI inicial de 0.72, alcanzar CPI de 0.90 al término representa un ahorro de
+    aproximadamente <strong>4,121 HH equivalentes a S/ 105,094</strong> (a tarifa promedio S/25.50).
+    Sólo este ahorro paga la implementación de la plataforma 50 veces sobre.
+  </div>
+</section>
+
+<section id="roi">
+  <h2><span class="num">4</span> ROI proyectado por proyecto</h2>
+  <p class="lead">
+    Modelo financiero conservador para una obra promedio de GRAPCO. Inversión = costo
+    de implementación interna (no licencias). Retorno = HH ahorradas × tarifa MO.
+  </p>
+
+  <h3>Análisis para una obra de referencia</h3>
+  <table>
+    <thead>
+      <tr><th style="width:50%">Concepto</th><th style="width:25%">Sin plataforma</th><th>Con GRAPCO Produc-App</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Plazo proyecto (semanas)</strong></td>
+        <td>26</td>
+        <td>26 (igual)</td>
+      </tr>
+      <tr>
+        <td><strong>HH presupuestadas (BAC)</strong></td>
+        <td>16,480</td>
+        <td>16,480</td>
+      </tr>
+      <tr>
+        <td><strong>CPI esperado al término</strong></td>
+        <td style="color:var(--red);font-weight:800;">0.72</td>
+        <td style="color:var(--green-dark);font-weight:800;">0.90</td>
+      </tr>
+      <tr>
+        <td><strong>HH reales necesarias (EAC = BAC ÷ CPI)</strong></td>
+        <td>22,889</td>
+        <td>18,311</td>
+      </tr>
+      <tr>
+        <td><strong>HH desperdiciadas</strong></td>
+        <td>6,409</td>
+        <td>1,831</td>
+      </tr>
+      <tr>
+        <td><strong>Costo MO desperdiciado (@ S/25.50/h)</strong></td>
+        <td>S/ 163,430</td>
+        <td>S/ 46,690</td>
+      </tr>
+      <tr style="background:var(--green-light);">
+        <td><strong>AHORRO POR PROYECTO</strong></td>
+        <td colspan="2" style="font-weight:900;color:var(--green-dark);font-size:16px;">
+          + S/ 116,740
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Inversión vs retorno</h3>
+  <div class="grid grid-3">
+    <div class="kpi-hero">
+      <div class="label">INVERSIÓN ESTIMADA</div>
+      <div class="value">S/ 8,000</div>
+      <div class="sub">Capacitación + soporte 3 meses + mejoras</div>
+    </div>
+    <div class="kpi-hero">
+      <div class="label">AHORRO PROYECTADO</div>
+      <div class="value">S/ 116,740</div>
+      <div class="sub">Solo en HH desperdiciadas, una obra</div>
+    </div>
+    <div class="kpi-hero">
+      <div class="label">ROI</div>
+      <div class="value">14.6×</div>
+      <div class="sub">Por cada S/ invertido, retorna S/ 14.60</div>
+    </div>
+  </div>
+
+  <div class="callout gold">
+    <strong>💡 Nota metodológica:</strong> El ROI de 14.6× es conservador y considera sólo HH
+    directamente medibles. No incluye beneficios indirectos (reducción de RFI, menores reclamos
+    contractuales, mejor reputación con cliente, retención de talento) que típicamente duplican
+    el retorno cuantificable.
+  </div>
+
+  <h3>Punto de equilibrio</h3>
+  <p>
+    Recuperación de la inversión proyectada en aproximadamente <strong>4 a 6 semanas</strong> de
+    operación. A partir de la semana 7, todo es ahorro neto. Por eso recomendamos implementar
+    al inicio del proyecto y no a mitad de obra.
+  </p>
+</section>
+
+<section id="adopcion">
+  <h2><span class="num">5</span> Plan de adopción 90 días</h2>
+  <p class="lead">
+    Roadmap secuencial de implementación. Cada fase entrega valor desde el primer día y no
+    requiere completar las siguientes para generar retorno.
+  </p>
+
+  <div class="pipeline">
+    <div class="pipeline-stage">
+      <div class="num">1</div>
+      <div class="name">FUNDACIÓN</div>
+      <div class="when">Días 1–14</div>
+    </div>
+    <div class="pipeline-stage">
+      <div class="num">2</div>
+      <div class="name">CONTROL</div>
+      <div class="when">Días 15–45</div>
+    </div>
+    <div class="pipeline-stage">
+      <div class="num">3</div>
+      <div class="name">VDC LEAN</div>
+      <div class="when">Días 46–75</div>
+    </div>
+    <div class="pipeline-stage">
+      <div class="num">4</div>
+      <div class="name">MADUREZ</div>
+      <div class="when">Días 76–90</div>
+    </div>
+  </div>
+
+  <div class="timeline">
+    <div class="timeline-item">
+      <span class="phase-tag">FASE 1 · DÍAS 1–14</span>
+      <h4>Fundación · Tareo digital y datos maestros</h4>
+      <p class="week-label">Tiempo del equipo: ~6 horas/semana del residente, ~30 min/día por capataz</p>
+      <ul>
+        <li><strong>Día 1–3:</strong> configurar Firebase, instalar PWA en celulares de capataces, crear cuentas.</li>
+        <li><strong>Día 4–7:</strong> capacitar a 3-5 capataces clave en registro diario, validar 1 semana piloto.</li>
+        <li><strong>Día 8–14:</strong> migrar el resto del equipo, configurar tarifas de MO en Personal, importar cuadrillas.</li>
+        <li><strong>Resultado:</strong> 100% del tareo digital al cierre de la fase. Adiós Excel manual.</li>
+      </ul>
+    </div>
+
+    <div class="timeline-item">
+      <span class="phase-tag">FASE 2 · DÍAS 15–45</span>
+      <h4>Control · CPI, EAC y reportes ejecutivos</h4>
+      <p class="week-label">Tiempo del equipo: ~4 horas/semana del residente, sin tiempo extra capataz</p>
+      <ul>
+        <li><strong>Semana 3:</strong> activar análisis CPI + EAC. Primera revisión semanal con gerencia.</li>
+        <li><strong>Semana 4:</strong> primera curva-S EVM con datos reales. Comparativa contra proyectos pasados.</li>
+        <li><strong>Semana 5:</strong> empezar a usar exportaciones Excel para informes a cliente y oficina central.</li>
+        <li><strong>Semana 6:</strong> activar Control Gerencial (Reporte Tareos, HH Variaciones, Matriz IP).</li>
+        <li><strong>Resultado:</strong> control en tiempo real reemplaza informes Excel mensuales.</li>
+      </ul>
+    </div>
+
+    <div class="timeline-item">
+      <span class="phase-tag">FASE 3 · DÍAS 46–75</span>
+      <h4>VDC Lean · Last Planner System y Restricciones</h4>
+      <p class="week-label">Tiempo del equipo: +1 hora/semana ICE Session, ~15 min/día por capataz</p>
+      <ul>
+        <li><strong>Semana 7:</strong> primera ICE Session con plan semanal de compromisos. Cierre primer PPC.</li>
+        <li><strong>Semana 8:</strong> empezar registro de RNC (razones de no cumplimiento) en cierres semanales.</li>
+        <li><strong>Semana 9:</strong> activar módulo de Restricciones — primer lookahead con análisis de 7 flujos.</li>
+        <li><strong>Semana 10:</strong> primer Pareto RNC en revisión mensual. Identificar top 3 causas.</li>
+        <li><strong>Resultado:</strong> equipo entrenado en Lean Construction operando.</li>
+      </ul>
+    </div>
+
+    <div class="timeline-item">
+      <span class="phase-tag">FASE 4 · DÍAS 76–90</span>
+      <h4>Madurez · Lecciones aprendidas y mejora continua</h4>
+      <p class="week-label">Tiempo del equipo: 30 min/semana revisión KPIs, sin tiempo extra capataz</p>
+      <ul>
+        <li><strong>Semana 11:</strong> primer ciclo completo de lecciones aprendidas. Documentar top 5 categorías RNC.</li>
+        <li><strong>Semana 12:</strong> auditoría de calidad de datos: validar consistencia entre HH planilla y campo.</li>
+        <li><strong>Semana 13:</strong> presentación gerencial con KPIs reales de 90 días, comparativa antes/después.</li>
+        <li><strong>Cierre:</strong> sistema operando autonómamente, equipo es autosuficiente.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout warning">
+    <strong>⚠️ Anti-patrón a evitar:</strong> intentar activar todos los módulos en la primera
+    semana. Es la receta para que el equipo se sature y abandone. Cada fase debe consolidarse
+    antes de avanzar a la siguiente.
+  </div>
+</section>
+
+<section id="capacitacion">
+  <h2><span class="num">6</span> Plan de capacitación</h2>
+  <p class="lead">
+    El factor crítico de éxito es la disciplina humana, no la tecnología. Capacitación
+    estructurada por rol con material reutilizable.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:18%">Rol</th>
+        <th style="width:14%">Duración</th>
+        <th style="width:16%">Formato</th>
+        <th>Contenido</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>👷 Capataz</strong></td>
+        <td>2 horas</td>
+        <td>Práctica en obra</td>
+        <td>Login PWA, registro tareo diario, validación legal jornada, sincronizar borradores. Foco: rapidez y simpleza.</td>
+      </tr>
+      <tr>
+        <td><strong>📐 Residente</strong></td>
+        <td>4 horas</td>
+        <td>Aula + sistema</td>
+        <td>Dashboard ingeniero, análisis CPI/EAC, alertas, exportaciones Excel, gestión de personal, configuración tarifas.</td>
+      </tr>
+      <tr>
+        <td><strong>📊 Of. Técnica</strong></td>
+        <td>3 horas</td>
+        <td>Aula</td>
+        <td>EVM/Curva-S, Control Gerencial, Matriz IP, validación contra APU, lectura de informes ejecutivos.</td>
+      </tr>
+      <tr>
+        <td><strong>🎯 VDC Champion</strong></td>
+        <td>8 horas</td>
+        <td>Workshop</td>
+        <td>Last Planner System completo, sesiones ICE, gestión de restricciones, RNC, lecciones aprendidas. Líder del proceso.</td>
+      </tr>
+      <tr>
+        <td><strong>🏢 Gerencia</strong></td>
+        <td>1 hora</td>
+        <td>Demo ejecutiva</td>
+        <td>Tour por dashboard de impacto, KPIs principales, lectura de informes para cliente.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Material de soporte recomendado</h3>
+  <div class="grid grid-3">
+    <div class="kpi-card">
+      <div class="top"><span class="icon">📹</span><span class="name">VIDEOS CORTOS</span></div>
+      <p style="font-size:12px;color:var(--muted);">10 videos de ≤ 3 min cada uno: registro de tareo, cierre semanal LPS, lectura de Curva-S, etc.</p>
+    </div>
+    <div class="kpi-card">
+      <div class="top"><span class="icon">📘</span><span class="name">MANUAL DE BOLSILLO</span></div>
+      <p style="font-size:12px;color:var(--muted);">PDF impreso de 1 hoja por rol con los pasos críticos. Para capataces que no consultan apps.</p>
+    </div>
+    <div class="kpi-card">
+      <div class="top"><span class="icon">💬</span><span class="name">GRUPO DE WHATSAPP</span></div>
+      <p style="font-size:12px;color:var(--muted);">Soporte directo durante los primeros 30 días. Respuesta en menos de 4 horas.</p>
+    </div>
+  </div>
+</section>
+
+<section id="comparativa">
+  <h2><span class="num">7</span> Comparativa frente a soluciones comerciales</h2>
+  <p class="lead">
+    Análisis funcional y económico vs los productos más usados en construcción. Foco en
+    el contexto peruano y proyectos de tamaño medio (≤ 10 millones USD).
+  </p>
+
+  <div class="compare-header">
+    <div>Capacidad / Característica</div>
+    <div>GRAPCO Produc-App</div>
+    <div>Procore / Primavera</div>
+  </div>
+  <div class="compare-row">
+    <div class="feat">Costo licencia anual</div>
+    <div class="col win">S/ 0 — código propio</div>
+    <div class="col lose">USD 8,000 – 30,000+</div>
+  </div>
+  <div class="compare-row">
+    <div class="feat">Tiempo de implementación</div>
+    <div class="col win">14–30 días</div>
+    <div class="col lose">3–6 meses + consultoría</div>
+  </div>
+  <div class="compare-row">
+    <div class="feat">Adaptación a regulación PE</div>
+    <div class="col win">Nativa (HE 60/100, jornada 8.5h)</div>
+    <div class="col lose">Configuración manual</div>
+  </div>
+  <div class="compare-row">
+    <div class="feat">Validación legal jornada</div>
+    <div class="col win">Bloqueo automático &gt; 12h</div>
+    <div class="col">Configurable</div>
+  </div>
+  <div class="compare-row">
+    <div class="feat">Análisis EVM (PMBOK)</div>
+    <div class="col">CPI, SPI, EAC, VAC</div>
+    <div class="col">CPI, SPI, EAC, VAC, ETC</div>
+  </div>
+  <div class="compare-row">
+    <div class="feat">Last Planner System nativo</div>
+    <div class="col win">Sí, con catálogo RNC</div>
+    <div class="col">Add-on extra (USD)</div>
+  </div>
+  <div class="compare-row">
+    <div class="feat">Modelo BIM 3D/4D</div>
+    <div class="col lose">No (Fase 4 roadmap)</div>
+    <div class="col win">Integración BIM 360, Revit</div>
+  </div>
+  <div class="compare-row">
+    <div class="feat">App móvil para capataces</div>
+    <div class="col">PWA instalable</div>
+    <div class="col">App nativa iOS/Android</div>
+  </div>
+  <div class="compare-row">
+    <div class="feat">Personalización código</div>
+    <div class="col win">100% (open source)</div>
+    <div class="col lose">Limitada a APIs</div>
+  </div>
+  <div class="compare-row">
+    <div class="feat">Soporte multiproyecto</div>
+    <div class="col lose">No (en roadmap)</div>
+    <div class="col win">Sí</div>
+  </div>
+  <div class="compare-row">
+    <div class="feat">Curva de aprendizaje capataz</div>
+    <div class="col win">Bajo (UI optimizada en español)</div>
+    <div class="col">Medio-alto</div>
+  </div>
+
+  <div class="callout info">
+    <strong>📝 Conclusión honesta:</strong> Procore y Primavera son superiores para empresas
+    grandes con presupuestos &gt; USD 50M y múltiples proyectos simultáneos. Para una empresa
+    como GRAPCO (proyectos medianos, foco en Perú), la plataforma propia entrega 80% del valor
+    a 5% del costo. Para BIM 4D y multiproyecto, una migración futura es viable cuando el
+    portafolio justifique la inversión.
+  </div>
+</section>
+
+<section id="casos-uso">
+  <h2><span class="num">8</span> Casos de uso por tipo de proyecto</h2>
+  <p class="lead">
+    Aplicabilidad de la plataforma según las características del proyecto. Algunos perfiles
+    aprovechan más unas funcionalidades que otras.
+  </p>
+
+  <div class="grid grid-2">
+    <div class="kpi-card">
+      <div class="top"><span class="icon">🏗️</span><span class="name">EDIFICACIÓN MULTIFAMILIAR</span></div>
+      <h4 style="font-size:14px;color:var(--navy);margin:6px 0;">Aprovechamiento: 95%</h4>
+      <p style="font-size:12px;color:var(--text);line-height:1.5;">
+        Repetitividad alta entre pisos = ideal para LPS y aprendizaje semana a semana.
+        Cuadrillas estables = ranking de cuadrillas relevante. Recomendado todo el stack.
+      </p>
+    </div>
+    <div class="kpi-card">
+      <div class="top"><span class="icon">🏭</span><span class="name">OBRA INDUSTRIAL (PTAR, planta)</span></div>
+      <h4 style="font-size:14px;color:var(--navy);margin:6px 0;">Aprovechamiento: 85%</h4>
+      <p style="font-size:12px;color:var(--text);line-height:1.5;">
+        Caso GRAPCO PTARI. Alta variabilidad de partidas = matriz IP muy útil. Restricciones
+        de información (planos especializados) = lookahead crítico.
+      </p>
+    </div>
+    <div class="kpi-card">
+      <div class="top"><span class="icon">🛣️</span><span class="name">OBRAS LINEALES (carretera)</span></div>
+      <h4 style="font-size:14px;color:var(--navy);margin:6px 0;">Aprovechamiento: 70%</h4>
+      <p style="font-size:12px;color:var(--text);line-height:1.5;">
+        Buena para tareo y CPI. PPC útil para frentes paralelos. Modo offline (aún no implementado)
+        sería crítico — recomendado priorizar Bloque 6.
+      </p>
+    </div>
+    <div class="kpi-card">
+      <div class="top"><span class="icon">🏥</span><span class="name">OBRAS HOSPITALARIAS</span></div>
+      <h4 style="font-size:14px;color:var(--navy);margin:6px 0;">Aprovechamiento: 90%</h4>
+      <p style="font-size:12px;color:var(--text);line-height:1.5;">
+        Alta complejidad de IIEE/IISS = matriz IP crítica para detectar APUs irreales. Trazabilidad
+        legal valiosa ante posibles reclamos del MINSA o cliente público.
+      </p>
+    </div>
+    <div class="kpi-card">
+      <div class="top"><span class="icon">🔄</span><span class="name">MANTENIMIENTO / REMODELACIÓN</span></div>
+      <h4 style="font-size:14px;color:var(--navy);margin:6px 0;">Aprovechamiento: 60%</h4>
+      <p style="font-size:12px;color:var(--text);line-height:1.5;">
+        Plazo corto y baja repetitividad reducen el ROI del LPS. Útil para tareo y costos pero
+        EVM/Curva-S aporta poco si el proyecto dura &lt; 8 semanas.
+      </p>
+    </div>
+    <div class="kpi-card">
+      <div class="top"><span class="icon">🏘️</span><span class="name">URBANIZACIÓN / VIVIENDA SOCIAL</span></div>
+      <h4 style="font-size:14px;color:var(--navy);margin:6px 0;">Aprovechamiento: 95%</h4>
+      <p style="font-size:12px;color:var(--text);line-height:1.5;">
+        Repetitividad extrema = lecciones aprendidas se capitalizan rápido. Recomendado activar
+        todo el stack y formalizar manual de operaciones.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <h2><span class="num">9</span> Preguntas frecuentes de implementación</h2>
+
+  <h3>¿Funciona sin internet en obra?</h3>
+  <p>
+    Hoy parcialmente: la PWA cachea la interfaz. La <strong>escritura sin red está en roadmap</strong>
+    (Bloque 6 propuesto). Para obras con conectividad débil, se recomienda Wi-Fi en oficina técnica
+    y registro al final del día. Modo offline real con IndexedDB es la siguiente prioridad técnica.
+  </p>
+
+  <h3>¿Cuánto tarda el residente en habituar al equipo?</h3>
+  <p>
+    Capataces dominan el tareo diario en <strong>2-3 días</strong>. Residente domina el dashboard
+    en <strong>1 semana</strong>. La adopción de Last Planner System (compromisos semanales) tarda
+    <strong>4-6 semanas</strong> hasta que el equipo lo internaliza como rutina.
+  </p>
+
+  <h3>¿Qué pasa si nos resistimos al PPC y los compromisos semanales?</h3>
+  <p>
+    Se puede usar la plataforma sólo para tareo + CPI + EVM sin activar el módulo VDC. Sigue
+    siendo valiosa, pero pierde el ~40% del valor estratégico. La recomendación es probar VDC
+    durante 4 semanas y dejar que los datos hablen.
+  </p>
+
+  <h3>¿Los datos son seguros?</h3>
+  <p>
+    <strong>Hoy: NO al 100%.</strong> Las reglas de seguridad de Firebase están abiertas
+    (<code>allow read, write: if true</code>). Esta es la deuda técnica más urgente del sistema.
+    Antes de poner datos sensibles, hay que cerrar este punto. Trabajo estimado: 2 días.
+  </p>
+
+  <h3>¿Se puede usar en varios proyectos a la vez?</h3>
+  <p>
+    Hoy una instancia = un proyecto. Para multiproyecto se requiere agregar selector de proyecto
+    activo y filtros por proyecto en todas las consultas. Está en el roadmap pero no es prioritario
+    si GRAPCO maneja 1-2 obras simultáneas máximo.
+  </p>
+
+  <h3>¿Qué pasa si la plataforma falla un día?</h3>
+  <p>
+    Firebase tiene SLA del 99.95%. En caso de caída prolongada, el capataz puede registrar en
+    papel y subir al día siguiente. La PWA mostrará la última información cacheada. La pérdida
+    máxima esperada sería 24h de datos en escenario peor caso.
+  </p>
+
+  <h3>¿Cómo migramos los datos cuando termine el proyecto?</h3>
+  <p>
+    Dos vías: (1) Exportar a Excel toda la información usando los reportes integrados — al cierre
+    de obra, eso es suficiente para liquidación. (2) El backup completo de Firestore se descarga
+    en formato JSON y queda como activo de GRAPCO para futuros análisis o auditorías.
+  </p>
+</section>
+
+</main>
+
+<footer>
+  <div class="logo">GRAPCO SAC</div>
+  <p>Dossier de KPIs, Resultados Esperados y Plan de Adopción · v1.0 · Mayo 2026</p>
+  <p style="margin-top:8px;opacity:0.6;">Documento estratégico para ejecutivos, equipo técnico y comité de tesis.</p>
+</footer>
+
+</body>
+</html>

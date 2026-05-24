@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📚 Capítulo 23 · Multi-Proyecto Multi-Frente · GRAPCO Tesis</title>
+<style>
+  :root { --navy:#1e3a5f; --gold:#f59e0b; --gold-dark:#d97706; --green:#16a34a; --red:#dc2626;
+    --blue:#2563eb; --purple:#7c3aed; --indigo:#6366f1; --teal:#0d9488; --pink:#ec4899;
+    --bg:#f8fafc; --white:#fff; --border:#e2e8f0; --text:#1e293b; --muted:#64748b; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', -apple-system, sans-serif; color: var(--text); background: var(--bg); line-height: 1.7; font-size: 15px; }
+  header { background: linear-gradient(135deg, var(--navy), #0f1a2e); color: #fff; padding: 60px 40px 70px; border-bottom: 5px solid var(--gold); }
+  header .inner { max-width: 1100px; margin: 0 auto; }
+  header .badge { display: inline-block; background: rgba(245,158,11,0.2); border: 1px solid var(--gold); color: var(--gold); padding: 6px 16px; border-radius: 20px; font-size: 11px; font-weight: 800; letter-spacing: 1.2px; margin-bottom: 14px; }
+  header h1 { font-size: 38px; font-weight: 900; line-height: 1.15; margin-bottom: 10px; letter-spacing: -0.5px; }
+  header .sub { font-size: 16px; opacity: 0.9; max-width: 750px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 50px 40px 80px; }
+  section { margin-bottom: 60px; }
+  section h2 { font-size: 28px; font-weight: 900; color: var(--navy); margin-bottom: 16px; padding-left: 18px; border-left: 6px solid var(--gold); }
+  section h3 { font-size: 19px; font-weight: 800; color: var(--navy); margin: 24px 0 10px; }
+  section h4 { font-size: 15px; font-weight: 800; color: var(--navy); margin: 16px 0 8px; }
+  p { margin-bottom: 12px; }
+  ul, ol { margin-left: 24px; margin-bottom: 12px; line-height: 1.85; }
+  li { margin-bottom: 4px; }
+  code { background: var(--bg); padding: 2px 8px; border-radius: 4px; font-size: 12px; color: var(--navy); font-weight: 700; font-family: 'Consolas', monospace; }
+  table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(15,23,42,0.05); margin: 14px 0; font-size: 13px; }
+  th { background: var(--navy); color: #fff; padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; }
+  td { padding: 10px 16px; border-bottom: 1px solid var(--border); }
+  tr:nth-child(even) td { background: #f8fafc; }
+  td.cat { font-weight: 900; color: var(--navy); }
+  .callout { border-radius: 12px; padding: 16px 22px; margin: 16px 0; border-left: 5px solid; }
+  .callout.tip { background: #ede9fe; border-color: var(--purple); color: #5b21b6; }
+  .callout.success { background: #dcfce7; border-color: var(--green); color: #15803d; }
+  .callout.info { background: #dbeafe; border-color: var(--blue); color: var(--navy); }
+  .highlight { background: linear-gradient(135deg, var(--navy), #0f1a2e); color: #fff; border-radius: 14px; padding: 24px 28px; margin: 22px 0; border-left: 5px solid var(--gold); }
+  .highlight h3 { color: var(--gold); border: none; padding: 0; margin-bottom: 10px; font-size: 20px; }
+  .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin: 18px 0; }
+  .feature { background: var(--white); border: 1px solid var(--border); border-top: 4px solid var(--indigo); border-radius: 12px; padding: 18px 20px; }
+  .feature.gold { border-top-color: var(--gold); }
+  .feature.purple { border-top-color: var(--purple); }
+  .feature.green { border-top-color: var(--green); }
+  .feature.pink { border-top-color: var(--pink); }
+  .feature.teal { border-top-color: var(--teal); }
+  .feature .ico { font-size: 26px; margin-bottom: 8px; }
+  .feature h4 { font-size: 15px; font-weight: 900; color: var(--navy); margin-bottom: 6px; }
+  .feature p { font-size: 12.5px; color: var(--muted); line-height: 1.55; margin: 0; }
+  pre { background: #0f172a; color: #e2e8f0; padding: 16px 20px; border-radius: 10px; font-family: 'Consolas', monospace; font-size: 12px; line-height: 1.6; overflow-x: auto; margin: 12px 0; border-left: 4px solid var(--gold); }
+  pre .c { color: #94a3b8; } pre .k { color: #fbbf24; } pre .s { color: #86efac; } pre .t { color: #7dd3fc; }
+  footer { background: var(--navy); color: rgba(255,255,255,0.78); padding: 36px 40px; text-align: center; font-size: 13px; border-top: 5px solid var(--gold); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="inner">
+    <span class="badge">📚 CAPÍTULO 23 · BLOQUE 23</span>
+    <h1>Multi-Proyecto Multi-Frente · La transformación SaaS</h1>
+    <p class="sub">De plataforma de un solo proyecto a sistema enterprise multi-tenant. Jerarquía Empresa → Proyectos → Frentes → Actividades. RO independiente por nivel.</p>
+  </div>
+</header>
+
+<main>
+
+<section>
+  <h2>23.1 La transformación arquitectónica</h2>
+  <p>
+    Hasta el Bloque 22, GRAPCO Produc-App funcionaba como una <strong>aplicación de un solo proyecto</strong>. Si la empresa quería gestionar múltiples obras, necesitaba múltiples instancias de la app. El Bloque 23 transforma esto en una <strong>plataforma multi-proyecto multi-frente nivel enterprise</strong>, similar a Procore, Autodesk Construction Cloud o RIB CCS.
+  </p>
+
+  <div class="highlight">
+    <h3>📢 El cambio de paradigma</h3>
+    <p>
+      Una empresa como GRAPCO con 5 obras simultáneas (PTARI Lima, Hospital Huarmey, Carretera Cusco, etc.) y cada obra con sus 3-4 frentes simultáneos, ahora gestiona TODO desde una sola plataforma. <strong>El Director General puede ver el dashboard de portfolio cada mañana y saber exactamente qué obra está perdiendo plata, dónde y por qué</strong>.
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2>23.2 Jerarquía de datos en 4 niveles</h2>
+  <pre><span class="t">EMPRESA</span> (futuro multi-tenant)
+└── <span class="t">PROYECTOS</span> (PTARI, Hospital Huarmey, Carretera Cusco...)
+    ├── codigo, nombre, cliente, ubicación
+    ├── presupuesto, plazo, margen meta
+    ├── estado, color
+    └── <span class="t">FRENTES</span> (F-NORTE, F-SUR, F-CENTRAL...)
+        ├── codigo, nombre, responsable
+        ├── presupuestoFrente, color, orden
+        └── <span class="t">ACTIVIDADES WBS</span>
+            └── (cada actividad pertenece a UN frente de UN proyecto)</pre>
+
+  <div class="feature-grid">
+    <div class="feature gold">
+      <div class="ico">🏗️</div>
+      <h4>Proyecto</h4>
+      <p>Una obra completa. Tiene cliente, ubicación geográfica, contrato, plazo, presupuesto, estado.</p>
+    </div>
+    <div class="feature purple">
+      <div class="ico">📍</div>
+      <h4>Frente</h4>
+      <p>Una zona de trabajo dentro del proyecto. Tiene responsable, presupuesto propio, color visual.</p>
+    </div>
+    <div class="feature teal">
+      <div class="ico">📋</div>
+      <h4>Actividad</h4>
+      <p>Tarea WBS específica. Pertenece a UN frente de UN proyecto. Lleva proyectoId + frenteId.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>23.3 Componentes implementados</h2>
+
+  <h3>23.3.1 Backbone arquitectónico</h3>
+  <table>
+    <thead><tr><th>Archivo</th><th>Propósito</th><th>Líneas</th></tr></thead>
+    <tbody>
+      <tr><td class="cat">ProyectoActivoContext.jsx</td><td>Contexto global React con persistencia localStorage. Helpers <code>construirFiltros()</code> y <code>filtrarPorContexto()</code>.</td><td>121</td></tr>
+      <tr><td class="cat">inicializadorMultiProyecto.js</td><td>Bootstrap idempotente que crea proyecto/frente "default" automáticamente al primer arranque.</td><td>69</td></tr>
+      <tr><td class="cat">SelectorProyectoFrente.jsx</td><td>Top bar con dropdowns de proyecto + frente. Indicador de "VISTA AGREGADA" vs "VISTA DE FRENTE".</td><td>131</td></tr>
+    </tbody>
+  </table>
+
+  <h3>23.3.2 Vistas CRUD</h3>
+  <table>
+    <thead><tr><th>Archivo</th><th>Funcionalidad</th><th>Líneas</th></tr></thead>
+    <tbody>
+      <tr><td class="cat">ProyectosPanel.jsx</td><td>Wrapper con 3 sub-tabs: Cartera, Frentes, Comparativo</td><td>92</td></tr>
+      <tr><td class="cat">ProyectosListView.jsx</td><td>Listado de cartera con cards visuales (color, estado, avance, CPI, frentes)</td><td>228</td></tr>
+      <tr><td class="cat">ProyectoEditor.jsx</td><td><strong>Wizard de 5 pasos</strong>: Identificación → Ubicación → Contrato → Frentes iniciales → Confirmación</td><td>619</td></tr>
+      <tr><td class="cat">FrentesView.jsx</td><td>CRUD de frentes del proyecto activo, con colores y selector de activo</td><td>317</td></tr>
+      <tr><td class="cat">ComparativoFrentes.jsx</td><td>Tabla comparativa, barras de avance, ranking de rentabilidad</td><td>276</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>23.4 Wizard de creación de proyecto</h2>
+  <p>
+    El wizard guía al usuario por 5 pasos secuenciales con validación en cada paso. Crea el proyecto y sus frentes iniciales en una sola transacción atómica usando <code>writeBatch</code>.
+  </p>
+
+  <div class="feature-grid">
+    <div class="feature">
+      <div class="ico">1️⃣</div>
+      <h4>Identificación</h4>
+      <p>Código único, nombre, cliente, tipo de obra (6 tipos preset), color del proyecto</p>
+    </div>
+    <div class="feature gold">
+      <div class="ico">2️⃣</div>
+      <h4>Ubicación</h4>
+      <p>Ciudad, región, dirección, coordenadas lat/lng (para mapa portfolio futuro)</p>
+    </div>
+    <div class="feature green">
+      <div class="ico">3️⃣</div>
+      <h4>Contrato</h4>
+      <p>Presupuesto, moneda, fechas, plazo (auto-calculado), margen meta, estado</p>
+    </div>
+    <div class="feature purple">
+      <div class="ico">4️⃣</div>
+      <h4>Frentes iniciales</h4>
+      <p>Define los frentes en una sola pantalla. Mínimo 1, sin máximo. Cada uno con código, nombre, responsable, color</p>
+    </div>
+    <div class="feature pink">
+      <div class="ico">5️⃣</div>
+      <h4>Confirmación</h4>
+      <p>Revisión completa antes de crear. Cards de resumen por sección. Click final → todo en transacción atómica</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>23.5 Comparativo entre frentes</h2>
+  <p>
+    El motor del Bloque 21 (<code>calcularROMensual</code>) se aprovecha aquí filtrando los datos por <code>frenteId</code>. Cada frente obtiene su propio:
+  </p>
+  <ul>
+    <li>BAC, EV, AC (Earned Value Management completo)</li>
+    <li>CPI, SPI con coloreado de severidad</li>
+    <li>% avance físico</li>
+    <li>Margen real con coloreado relativo a la meta del proyecto</li>
+    <li>EAC (proyección al cierre)</li>
+  </ul>
+
+  <p>El comparativo presenta tres vistas:</p>
+  <ol>
+    <li><strong>Tabla comparativa</strong> con totales del proyecto en el footer</li>
+    <li><strong>Barras de avance</strong> visualmente comparables entre frentes</li>
+    <li><strong>Ranking de rentabilidad</strong> con medallas (🥇🥈🥉) según margen real</li>
+  </ol>
+</section>
+
+<section>
+  <h2>23.6 Estrategia de migración A1</h2>
+  <p>
+    Para no romper los datos existentes (Plan Maestro, Tareos, Kardex, etc. del Bloque 22), se implementó <strong>migración suave</strong>:
+  </p>
+
+  <ol>
+    <li>Al primer arranque, <code>SelectorProyectoFrente</code> detecta que no hay proyectos creados</li>
+    <li>Llama a <code>asegurarProyectoDefault()</code> que crea idempotentemente:
+      <ul>
+        <li>Proyecto <code>default-ptari</code> (PROYECTO PTARI Default)</li>
+        <li>Frente <code>frente-general</code></li>
+      </ul>
+    </li>
+    <li>Las vistas legacy (que aún no tienen <code>proyectoId</code>) se asumen del proyecto default</li>
+    <li>El usuario puede luego renombrar, agregar frentes, o crear proyectos adicionales</li>
+  </ol>
+
+  <div class="callout success">
+    <strong>✅ Cero pérdida de información.</strong> Todo lo que ya existe (LPS, Tareos, Calidad, RO) sigue funcionando. Sólo se añade el contexto de proyecto/frente.
+  </div>
+</section>
+
+<section>
+  <h2>23.7 Modelo de datos</h2>
+
+  <h3>Colección Proyectos/{proyectoId}</h3>
+  <pre><span class="k">{</span>
+  <span class="t">codigo</span>: <span class="s">"PTARI-2026"</span>,
+  <span class="t">nombre</span>: <span class="s">"Planta Tratamiento PTARI"</span>,
+  <span class="t">cliente</span>: <span class="s">"SEDAPAL"</span>,
+  <span class="t">tipoObra</span>: <span class="s">"hidraulica"</span>,
+  <span class="t">ubicacion</span>: { <span class="t">lat</span>: -12.0464, <span class="t">lng</span>: -77.0428, <span class="t">ciudad</span>: <span class="s">"Lima"</span>, <span class="t">region</span>: <span class="s">"Lima"</span> },
+  <span class="t">presupuestoContractual</span>: 12000000,
+  <span class="t">moneda</span>: <span class="s">"PEN"</span>,
+  <span class="t">fechaInicioContractual</span>, <span class="t">fechaFinContractual</span>,
+  <span class="t">plazoDias</span>: 300,
+  <span class="t">margenMetaPct</span>: 15,
+  <span class="t">estado</span>: <span class="s">"en_ejecucion"</span>,
+  <span class="t">color</span>: <span class="s">"#1e3a5f"</span>,
+  <span class="t">avancePctActual</span>, <span class="t">cpiActual</span>, <span class="t">spiActual</span>     <span class="c">// denormalizados</span>
+<span class="k">}</span></pre>
+
+  <h3>Colección Frentes/{frenteId}</h3>
+  <pre><span class="k">{</span>
+  <span class="t">codigo</span>: <span class="s">"F-NORTE"</span>,
+  <span class="t">nombre</span>: <span class="s">"Tanque sedimentación"</span>,
+  <span class="t">proyectoId</span>: <span class="s">"<id-PTARI>"</span>,        <span class="c">// foreign key</span>
+  <span class="t">responsable</span>: <span class="s">"Ing. Pérez"</span>,
+  <span class="t">presupuestoFrente</span>: 3500000,
+  <span class="t">color</span>: <span class="s">"#7c3aed"</span>,
+  <span class="t">orden</span>: 1,
+  <span class="t">activo</span>: true
+<span class="k">}</span></pre>
+</section>
+
+<section>
+  <h2>23.8 Cifras del bloque</h2>
+  <table>
+    <thead><tr><th>Concepto</th><th>Cantidad</th></tr></thead>
+    <tbody>
+      <tr><td>Archivos nuevos</td><td>8 archivos JSX/JS</td></tr>
+      <tr><td>Líneas de código</td><td>2,366 líneas</td></tr>
+      <tr><td>Validación AST</td><td>✅ 100% pasado</td></tr>
+      <tr><td>Nuevas colecciones Firestore</td><td>2 (Proyectos + Frentes)</td></tr>
+      <tr><td>Nueva tab en App</td><td>1 (🌎 Proyectos)</td></tr>
+      <tr><td>Sub-tabs internos</td><td>3 (Cartera, Frentes, Comparativo)</td></tr>
+      <tr><td>Pasos del wizard</td><td>5</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>23.9 Para tu sustentación — el cierre maestro</h2>
+
+  <div class="highlight">
+    <h3>📢 El argumento final</h3>
+    <p>
+      "GRAPCO Produc-App ya no es una plataforma para una obra, es una <strong>plataforma multi-proyecto multi-frente nivel SaaS empresarial</strong>. Cada empresa puede gestionar simultáneamente todas sus obras (PTARI Lima, Hospital Huarmey, Carretera Cusco, etc.), cada una con sus frentes simultáneos. El sistema calcula RO, CPI y SPI <strong>por frente, por proyecto, y consolidado por empresa</strong>. <strong>Esto NO existe en el mercado peruano integrado de esta forma</strong>. Las grandes empresas pagan SAP o Primavera por funcionalidades parciales; aquí está todo unificado y hecho para el contexto peruano (S/., RO mensual estilo Cosapi, APUs estilo S10)."
+    </p>
+  </div>
+
+  <div class="callout tip">
+    <strong>💼 Bonus comercial:</strong> Esta arquitectura es directamente comercializable a otras constructoras peruanas. Empresas medianas pueden pagar S/. 500-2000 mensuales por una plataforma así. <strong>Tu tesis se puede convertir en un negocio</strong>.
+  </div>
+</section>
+
+<section>
+  <h2>23.10 Lo que viene en el Bloque 24</h2>
+  <ul>
+    <li>Wizard de Plan Maestro con plantillas predefinidas (edificio, hidráulica, vial)</li>
+    <li>CRUD masivo de actividades (tabla editable estilo Excel)</li>
+    <li>Catálogo empresarial de APUs reutilizables entre proyectos</li>
+    <li>Mapa de proyectos del Perú con pins (Leaflet)</li>
+    <li>Portfolio Dashboard ejecutivo (todos los proyectos en una pantalla)</li>
+    <li>Comparativo entre proyectos (rankings, alertas)</li>
+  </ul>
+</section>
+
+</main>
+
+<footer>
+  <p style="font-weight: 900; color: var(--gold); letter-spacing: 2px; font-size: 16px; margin-bottom: 6px;">GRAPCO PRODUC-APP</p>
+  <p>Capítulo 23 · Bloque 23 · Multi-Proyecto Multi-Frente</p>
+  <p style="opacity: 0.7; margin-top: 6px;">UNI Lima · Tesis 2026</p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📚 Capítulo 25 · Catálogo APUs + Importador + Pull Planning + Seed</title>
+<style>
+  :root { --navy:#1e3a5f; --gold:#f59e0b; --green:#16a34a; --red:#dc2626;
+    --blue:#2563eb; --purple:#7c3aed; --indigo:#6366f1; --teal:#0d9488; --pink:#ec4899;
+    --bg:#f8fafc; --white:#fff; --border:#e2e8f0; --text:#1e293b; --muted:#64748b; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', -apple-system, sans-serif; color: var(--text); background: var(--bg); line-height: 1.7; font-size: 15px; }
+  header { background: linear-gradient(135deg, var(--navy), #0f1a2e); color: #fff; padding: 60px 40px 70px; border-bottom: 5px solid var(--gold); }
+  header .inner { max-width: 1100px; margin: 0 auto; }
+  header .badge { display: inline-block; background: rgba(245,158,11,0.2); border: 1px solid var(--gold); color: var(--gold); padding: 6px 16px; border-radius: 20px; font-size: 11px; font-weight: 800; letter-spacing: 1.2px; margin-bottom: 14px; }
+  header h1 { font-size: 38px; font-weight: 900; line-height: 1.15; margin-bottom: 10px; letter-spacing: -0.5px; }
+  header .sub { font-size: 16px; opacity: 0.9; max-width: 750px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 50px 40px 80px; }
+  section { margin-bottom: 60px; }
+  section h2 { font-size: 28px; font-weight: 900; color: var(--navy); margin-bottom: 16px; padding-left: 18px; border-left: 6px solid var(--gold); }
+  section h3 { font-size: 19px; font-weight: 800; color: var(--navy); margin: 24px 0 10px; }
+  section h4 { font-size: 15px; font-weight: 800; color: var(--navy); margin: 16px 0 8px; }
+  p { margin-bottom: 12px; }
+  ul, ol { margin-left: 24px; margin-bottom: 12px; line-height: 1.85; }
+  code { background: var(--bg); padding: 2px 8px; border-radius: 4px; font-size: 12px; color: var(--navy); font-weight: 700; font-family: 'Consolas', monospace; }
+  table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(15,23,42,0.05); margin: 14px 0; font-size: 13px; }
+  th { background: var(--navy); color: #fff; padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; }
+  td { padding: 10px 16px; border-bottom: 1px solid var(--border); }
+  tr:nth-child(even) td { background: #f8fafc; }
+  td.cat { font-weight: 900; color: var(--navy); }
+  .callout { border-radius: 12px; padding: 16px 22px; margin: 16px 0; border-left: 5px solid; }
+  .callout.tip { background: #ede9fe; border-color: var(--purple); color: #5b21b6; }
+  .callout.success { background: #dcfce7; border-color: var(--green); color: #15803d; }
+  .callout.info { background: #dbeafe; border-color: var(--blue); color: var(--navy); }
+  .highlight { background: linear-gradient(135deg, var(--navy), #0f1a2e); color: #fff; border-radius: 14px; padding: 24px 28px; margin: 22px 0; border-left: 5px solid var(--gold); }
+  .highlight h3 { color: var(--gold); border: none; padding: 0; margin-bottom: 10px; font-size: 20px; }
+  .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin: 18px 0; }
+  .feature { background: var(--white); border: 1px solid var(--border); border-top: 4px solid var(--indigo); border-radius: 12px; padding: 18px 20px; }
+  .feature.gold { border-top-color: var(--gold); }
+  .feature.green { border-top-color: var(--green); }
+  .feature.purple { border-top-color: var(--purple); }
+  .feature.teal { border-top-color: var(--teal); }
+  .feature .ico { font-size: 26px; margin-bottom: 8px; }
+  .feature h4 { font-size: 15px; font-weight: 900; color: var(--navy); margin-bottom: 6px; }
+  .feature p { font-size: 12.5px; color: var(--muted); line-height: 1.55; margin: 0; }
+  pre { background: #0f172a; color: #e2e8f0; padding: 16px 20px; border-radius: 10px; font-family: 'Consolas', monospace; font-size: 12px; line-height: 1.6; overflow-x: auto; margin: 12px 0; border-left: 4px solid var(--gold); }
+  pre .c { color: #94a3b8; } pre .k { color: #fbbf24; } pre .s { color: #86efac; } pre .t { color: #7dd3fc; }
+  footer { background: var(--navy); color: rgba(255,255,255,0.78); padding: 36px 40px; text-align: center; font-size: 13px; border-top: 5px solid var(--gold); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="inner">
+    <span class="badge">📚 CAPÍTULO 25 · BLOQUE 25</span>
+    <h1>Catálogo · Importador · Pull Planning · Seed Demo</h1>
+    <p class="sub">Cuatro funcionalidades que cierran las puertas: catálogo empresarial híbrido de APUs, importador desde Excel/S10, sesión colaborativa de Pull Planning LCI fase 2, y seed PTARI listo para sustentación.</p>
+  </div>
+</header>
+
+<main>
+
+<section>
+  <h2>25.1 Las 4 mejoras estratégicas</h2>
+
+  <div class="feature-grid">
+    <div class="feature gold">
+      <div class="ico">💰</div>
+      <h4>Catálogo Empresarial APUs</h4>
+      <p>APUs con scope <code>empresa</code> (reutilizables en TODOS los proyectos) y scope <code>proyecto</code> (específicos). Botones para <strong>copiar al proyecto</strong> y <strong>promover a empresarial</strong>.</p>
+    </div>
+    <div class="feature green">
+      <div class="ico">📥</div>
+      <h4>Importador CSV/Excel</h4>
+      <p>Drag & drop o selección. Detecta automáticamente columnas (código, descripción, metrado, P.U., HH). Vista previa antes de importar. Carga masiva con <code>writeBatch</code>.</p>
+    </div>
+    <div class="feature purple">
+      <div class="ico">🎯</div>
+      <h4>Pull Planning (LCI fase 2)</h4>
+      <p>Reverse scheduling colaborativo. El equipo define hitos finales y "tira" hacia atrás las tareas necesarias. Vista Kanban por hitos con tareas pull, fechas calculadas automáticamente.</p>
+    </div>
+    <div class="feature teal">
+      <div class="ico">🚀</div>
+      <h4>Seed Demo PTARI</h4>
+      <p>1 proyecto + 3 frentes + ~30 actividades + 5 APUs empresariales + 3 hitos con 14 tareas Pull. Carga idempotente, limpia datos seed previos.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>25.2 Catálogo Empresarial de APUs (scope híbrido)</h2>
+  <p>
+    Antes del Bloque 25, todos los APUs eran globales (sin contexto). Ahora la arquitectura distingue entre:
+  </p>
+  <table>
+    <thead><tr><th>Scope</th><th>Características</th><th>Ejemplo</th></tr></thead>
+    <tbody>
+      <tr><td class="cat">🌎 empresa</td><td>Reutilizables en TODOS los proyectos. Mantenidos por la empresa.</td><td>"Concreto f'c=210" usado en 5 obras</td></tr>
+      <tr><td class="cat">🏗️ proyecto</td><td>Específicos del proyecto. No interfieren con catálogo empresarial.</td><td>"Vaciado especial PTARI" customizado</td></tr>
+    </tbody>
+  </table>
+
+  <h3>25.2.1 Operaciones implementadas</h3>
+  <ul>
+    <li><strong>Filtro visual</strong> por scope (Todos · 🌎 Empresa · 🏗️ Proyecto)</li>
+    <li><strong>📋 Copiar al proyecto:</strong> clona un APU empresarial al proyecto activo, con scope=proyecto. Modificable sin afectar el original. Conserva referencia <code>copiadoDeApuId</code>.</li>
+    <li><strong>🌎 Promover a empresa:</strong> un APU específico se vuelve empresarial (solo admin). Útil cuando un APU custom resulta tan bueno que vale para todos los proyectos.</li>
+    <li><strong>Conteo doble</strong> en header: cuántos empresariales y cuántos en el proyecto activo.</li>
+  </ul>
+
+  <div class="callout success">
+    <strong>✅ Beneficio operacional:</strong> El catálogo empresarial crece con la experiencia. Cada proyecto puede contribuir APUs probados al patrimonio empresarial.
+  </div>
+</section>
+
+<section>
+  <h2>25.3 Importador CSV/Excel del Plan Maestro</h2>
+
+  <h3>25.3.1 Casos de uso</h3>
+  <ul>
+    <li>Importar el Plan Maestro <strong>desde S10</strong> (exportado a CSV)</li>
+    <li>Importar desde <strong>Excel</strong> (guardado como CSV UTF-8)</li>
+    <li>Pegar tablas de presupuestos contractuales</li>
+    <li>Migrar datos desde sistemas legacy</li>
+  </ul>
+
+  <h3>25.3.2 Detección automática de columnas</h3>
+  <p>El parser reconoce variantes comunes (case-insensitive):</p>
+  <table>
+    <thead><tr><th>Campo destino</th><th>Variantes detectadas</th></tr></thead>
+    <tbody>
+      <tr><td class="cat">Código</td><td>código, codigo, item, partida, cod</td></tr>
+      <tr><td class="cat">Descripción</td><td>descripcion, descripción, nombre</td></tr>
+      <tr><td class="cat">Unidad</td><td>unidad, und, unit</td></tr>
+      <tr><td class="cat">Metrado</td><td>metrado, cantidad, qty</td></tr>
+      <tr><td class="cat">P. Unitario</td><td>precio unitario, p.u., pu, precio</td></tr>
+      <tr><td class="cat">HH</td><td>hh, horas</td></tr>
+    </tbody>
+  </table>
+
+  <h3>25.3.3 Flujo del importador</h3>
+  <ol>
+    <li>Usuario arrastra archivo .csv (o hace click) → se lee y parsea</li>
+    <li>Sistema detecta columnas → muestra qué se mapeó automáticamente</li>
+    <li>Vista previa de las primeras 15 actividades con totales (presupuesto, partidas hoja)</li>
+    <li>Usuario selecciona frente destino</li>
+    <li>Click "Importar" → carga masiva en lotes de 400 con <code>writeBatch</code></li>
+  </ol>
+
+  <h3>25.3.4 Implementación cero-dependencia</h3>
+  <pre><span class="c">// csvParser.js — sin librerías externas</span>
+<span class="c">// Soporta: separadores , ; \t | · quotes "..." · escape ""</span>
+<span class="k">function</span> <span class="t">parseLines</span>(text, sep) { ... }
+<span class="k">function</span> <span class="t">detectDelimiter</span>(text) { ... }
+<span class="k">export function</span> <span class="t">parseCSV</span>(text) { ... }
+<span class="k">export function</span> <span class="t">mapearCSVAActividades</span>(headers, rows) { ... }</pre>
+</section>
+
+<section>
+  <h2>25.4 Pull Planning (LCI fase 2)</h2>
+
+  <h3>25.4.1 La metodología</h3>
+  <p>
+    El <strong>Pull Planning</strong> es la fase 2 del Last Planner System (Glenn Ballard, 1992). La fase 1 es el Master Schedule (Plan Maestro). La fase 2 es donde el equipo de obra <strong>define hitos finales y "jala" hacia atrás</strong> las tareas necesarias para cumplirlos. Es <strong>colaborativo y compromisivo</strong>: cada subcontratista, cuadrilla, oficina técnica se compromete con sus tareas.
+  </p>
+
+  <div class="callout info">
+    <strong>📚 Origen:</strong> Lean Construction Institute (USA). Implementado por DPR, Turner, Skanska. La sesión típica dura 2-4 horas con todos los actores en una sala (físicamente o virtualmente). Se usan post-its de colores en una pared (digital aquí).
+  </div>
+
+  <h3>25.4.2 Implementación visual</h3>
+  <ul>
+    <li><strong>Vista Kanban horizontal</strong>: cada hito es una columna ordenada por fecha</li>
+    <li><strong>3 tipos de hito</strong>: 📜 Contractual (no negociable), 🏗️ Fase, 🎯 Intermedio</li>
+    <li><strong>Tareas pull</strong> dentro de cada hito, con <code>diasAntesDelHito</code> y <code>duracionDias</code></li>
+    <li><strong>Fecha calculada</strong>: <code>fechaInicio = fechaHito - diasAntesDelHito</code></li>
+    <li><strong>Prerequisitos</strong>: campo de texto donde el equipo escribe qué debe estar listo antes (constraints)</li>
+    <li><strong>Progreso</strong>: barra con tareas completadas / totales por hito</li>
+    <li><strong>Indicador "VENCIDO"</strong> en rojo si la fecha del hito ya pasó y no está cumplido</li>
+  </ul>
+
+  <h3>25.4.3 Modelo de datos</h3>
+  <pre><span class="c">// PullPlanningHitos/{hitoId}</span>
+<span class="k">{</span>
+  <span class="t">nombre</span>, <span class="t">descripcion</span>, <span class="t">tipo</span>: <span class="s">'contractual|fase|intermedio'</span>,
+  <span class="t">fechaHito</span>: <span class="t">timestamp</span>,
+  <span class="t">proyectoId</span>, <span class="t">frenteId</span>, <span class="t">responsable</span>,
+  <span class="t">cumplido</span>: <span class="t">boolean</span>, <span class="t">cumplidoEn</span>: <span class="t">timestamp</span>
+<span class="k">}</span>
+
+<span class="c">// PullPlanningTareas/{tareaId}</span>
+<span class="k">{</span>
+  <span class="t">nombre</span>, <span class="t">descripcion</span>,
+  <span class="t">hitoId</span>, <span class="t">proyectoId</span>,
+  <span class="t">diasAntesDelHito</span>: <span class="t">number</span>,    <span class="c">// reverse scheduling</span>
+  <span class="t">duracionDias</span>: <span class="t">number</span>,
+  <span class="t">responsableEmpresa</span>, <span class="t">cuadrilla</span>,
+  <span class="t">prerequisitos</span>,                <span class="c">// constraints</span>
+  <span class="t">color</span>, <span class="t">completada</span>: <span class="t">boolean</span>
+<span class="k">}</span></pre>
+</section>
+
+<section>
+  <h2>25.5 Seed Demo PTARI</h2>
+  <p>
+    Para tu sustentación de tesis necesitas un proyecto demostrable. El módulo Seed Demo crea de un click un proyecto completo de PTARI Lima Sur con datos realistas:
+  </p>
+
+  <table>
+    <thead><tr><th>Datos creados</th><th>Cantidad</th><th>Detalle</th></tr></thead>
+    <tbody>
+      <tr><td class="cat">Proyecto</td><td>1</td><td>PTARI Lima Sur · Cliente SEDAPAL · S/. 12.5M · 305 días</td></tr>
+      <tr><td class="cat">Frentes</td><td>3</td><td>F-NORTE (Tanque), F-SUR (Edificio), F-CENTRAL (Líneas)</td></tr>
+      <tr><td class="cat">Actividades Plan Maestro</td><td>~30</td><td>Plantilla hidráulica distribuida en frentes</td></tr>
+      <tr><td class="cat">APUs empresariales</td><td>5</td><td>Concreto, acero, excavación, muros, tubería HDPE</td></tr>
+      <tr><td class="cat">Hitos Pull Planning</td><td>3</td><td>Fin obras civiles · Línea impulsión · Recepción cliente</td></tr>
+      <tr><td class="cat">Tareas Pull</td><td>14</td><td>Distribuidas con días antes y duración realistas</td></tr>
+    </tbody>
+  </table>
+
+  <h3>25.5.1 Cómo funciona</h3>
+  <p>
+    Cada documento creado lleva un campo <code>_seedTag = 'SEED_PTARI_DEMO_2026'</code>. La función <code>limpiarSeed()</code> hace una query <code>where('_seedTag', '==', SEED_TAG)</code> y elimina todo. Esto permite cargar y limpiar el demo sin afectar los datos reales.
+  </p>
+
+  <div class="callout tip">
+    <strong>💡 Workflow recomendado para tu sustentación:</strong>
+    <ol style="margin-top: 8px;">
+      <li>Inmediatamente antes de la sustentación: Admin → Datos Demo → Cargar PTARI</li>
+      <li>Sustentas con datos completos y realistas</li>
+      <li>Después de la sustentación: Admin → Datos Demo → Limpiar (opcional)</li>
+    </ol>
+  </div>
+</section>
+
+<section>
+  <h2>25.6 Cifras del bloque</h2>
+  <table>
+    <thead><tr><th>Concepto</th><th>Cantidad</th></tr></thead>
+    <tbody>
+      <tr><td>Archivos nuevos / modificados</td><td>8 archivos JSX/JS</td></tr>
+      <tr><td>Líneas de código</td><td>1,914 líneas</td></tr>
+      <tr><td>Validación AST</td><td>✅ 100% pasado</td></tr>
+      <tr><td>Nuevas colecciones Firestore</td><td>2 (PullPlanningHitos, PullPlanningTareas)</td></tr>
+      <tr><td>Nuevas sub-tabs en Plan Maestro</td><td>2 (Pull Planning, Importar Excel)</td></tr>
+      <tr><td>Nueva sub-tab Admin</td><td>1 (🚀 Datos Demo)</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>25.7 Para tu sustentación</h2>
+
+  <div class="highlight">
+    <h3>📢 El argumento integral</h3>
+    <p>
+      "GRAPCO Produc-App ahora cubre <strong>las 4 fases completas del Last Planner System (LCI)</strong>: Master Schedule (Bloque 21), <strong>Phase Pull Planning (Bloque 25)</strong>, Lookahead (Bloque 9), y Weekly Work Plan (LPS originario). Es la única plataforma peruana integrada que implementa LCI en su totalidad."
+    </p>
+    <p style="margin-top:14px;">
+      "Además, ofrece <strong>importador automático desde Excel/S10</strong> (cero fricción de adopción para una empresa con datos existentes), <strong>catálogo empresarial híbrido de APUs</strong> (las grandes empresas reutilizan, las medianas customizan), y <strong>seed de demostración</strong> que carga un proyecto realista en 5 segundos."
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2>25.8 Estado final del proyecto post-Bloque 25</h2>
+
+  <div class="callout success">
+    <strong>✅ El proyecto está en su mejor versión.</strong> Cubre los 5 pilares de gestión + 4 fases LCI completas + EVM + RO peruano + multi-proyecto SaaS + portfolio ejecutivo + importador + seed demo. Comparable comercialmente con Procore, Autodesk Construction Cloud y RIB CCS, pero hecho para el contexto peruano y a una fracción del costo.
+  </div>
+
+  <p>Cifras totales acumuladas:</p>
+  <ul>
+    <li>~24,000 líneas de código React</li>
+    <li>~170 archivos JSX/JS/HTML</li>
+    <li>25 bloques de mejora documentados</li>
+    <li>4 metodologías mundiales integradas (LCI completo, PMI/EVM, VDC, RO peruano)</li>
+    <li>5 plantillas WBS comerciales</li>
+    <li>5 APUs empresariales seed</li>
+    <li>Pull Planning Kanban</li>
+    <li>Importador CSV/Excel</li>
+  </ul>
+</section>
+
+</main>
+
+<footer>
+  <p style="font-weight: 900; color: var(--gold); letter-spacing: 2px; font-size: 16px; margin-bottom: 6px;">GRAPCO PRODUC-APP</p>
+  <p>Capítulo 25 · Bloque 25 · Catálogo + Importador + Pull Planning + Seed Demo</p>
+  <p style="opacity: 0.7; margin-top: 6px;">UNI Lima · Tesis 2026 · La integración total</p>
+</footer>
+
+</body>
+</html>

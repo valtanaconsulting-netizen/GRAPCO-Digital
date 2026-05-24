@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Setup APS · Cloud Functions · GRAPCO Produc-App</title>
+<style>
+  :root {
+    --navy: #1e3a5f; --navy-dark: #152a47;
+    --gold: #f59e0b; --gold-dark: #d97706; --gold-light: #fef3c7;
+    --green: #16a34a; --green-dark: #15803d; --green-light: #dcfce7;
+    --red: #dc2626; --red-light: #fee2e2;
+    --bg: #f8fafc; --white: #ffffff; --border: #e2e8f0;
+    --text: #1e293b; --muted: #64748b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Inter", "Segoe UI", system-ui, sans-serif; color: var(--text); background: var(--bg); line-height: 1.65; font-size: 15px; }
+  header.hero {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 100%);
+    color: #fff; padding: 50px 40px;
+    border-bottom: 5px solid var(--gold);
+    position: relative; overflow: hidden;
+  }
+  header.hero::before { content: ''; position: absolute; top: -100px; right: -100px; width: 320px; height: 320px; border-radius: 50%; background: var(--gold); opacity: 0.15; filter: blur(50px); }
+  header.hero .inner { max-width: 1100px; margin: 0 auto; position: relative; z-index: 2; }
+  header.hero .badge { display: inline-block; padding: 5px 14px; background: rgba(245,158,11,0.2); border: 1px solid var(--gold); border-radius: 30px; color: var(--gold); font-size: 11px; font-weight: 800; letter-spacing: 1.5px; margin-bottom: 14px; }
+  header.hero h1 { font-size: 36px; font-weight: 900; margin-bottom: 12px; letter-spacing: -0.5px; }
+  header.hero p { font-size: 16px; opacity: 0.85; max-width: 760px; }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 50px 40px 80px; }
+  section { margin-bottom: 56px; }
+  section h2 {
+    font-size: 26px; font-weight: 900; color: var(--navy);
+    margin-bottom: 6px; display: flex; align-items: center; gap: 12px;
+  }
+  section h2 .num { width: 36px; height: 36px; background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #fff; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900; }
+  section .lead { font-size: 14px; color: var(--muted); margin-bottom: 22px; padding-left: 48px; }
+
+  .step { background: var(--white); border: 1px solid var(--border); border-radius: 14px; padding: 22px 26px; margin-bottom: 16px; border-left: 5px solid var(--gold); }
+  .step h3 { font-size: 16px; font-weight: 900; color: var(--navy); margin-bottom: 10px; }
+  .step p { margin-bottom: 10px; font-size: 14px; }
+  .step ol, .step ul { margin: 8px 0 12px 22px; }
+  .step li { margin-bottom: 6px; font-size: 13px; line-height: 1.6; }
+  .step a { color: var(--gold-dark); font-weight: 700; text-decoration: none; }
+  .step a:hover { text-decoration: underline; }
+
+  pre {
+    background: #0f172a; color: #e2e8f0; padding: 16px 18px;
+    border-radius: 10px; font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 12.5px; line-height: 1.55; overflow-x: auto;
+    margin: 10px 0;
+  }
+  pre code { color: inherit; background: transparent; padding: 0; font-size: inherit; }
+  pre .c { color: #94a3b8; }    /* comentarios */
+  pre .k { color: #fbbf24; }    /* palabras clave */
+  pre .s { color: #86efac; }    /* strings */
+
+  code { background: var(--bg); padding: 2px 8px; border-radius: 4px; font-size: 12.5px; font-family: 'Consolas', monospace; color: var(--navy); font-weight: 700; }
+
+  .callout { border-radius: 12px; padding: 14px 20px; margin: 14px 0; border-left: 5px solid; }
+  .callout.info { background: #eff6ff; border-color: var(--navy); color: var(--navy); }
+  .callout.gold { background: var(--gold-light); border-color: var(--gold-dark); color: var(--gold-dark); }
+  .callout.success { background: var(--green-light); border-color: var(--green-dark); color: var(--green-dark); }
+  .callout.danger { background: var(--red-light); border-color: var(--red); color: var(--red); }
+  .callout strong { font-weight: 900; }
+
+  table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(15,23,42,0.05); margin: 14px 0; font-size: 13px; }
+  th { background: var(--navy); color: #fff; padding: 11px 14px; text-align: left; font-size: 11px; font-weight: 800; }
+  td { padding: 11px 14px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  td code { font-size: 11px; }
+
+  footer { background: var(--navy); color: rgba(255,255,255,0.75); padding: 30px 40px; text-align: center; font-size: 11px; border-top: 4px solid var(--gold); }
+  footer .logo { font-size: 16px; font-weight: 900; color: var(--gold); letter-spacing: 2px; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="inner">
+    <span class="badge">⚙️ SETUP TÉCNICO · BLOQUE 9</span>
+    <h1>Configurar APS y Cloud Functions paso a paso</h1>
+    <p>
+      Guía completa para activar la subida de modelos Revit a Autodesk Platform Services
+      desde GRAPCO. Toma ~30 minutos seguir todo. Una vez configurado, los usuarios pueden
+      subir <code style="background:rgba(255,255,255,0.15);color:var(--gold);">.rvt</code> directamente y verlos en el visor 3D.
+    </p>
+  </div>
+</header>
+
+<main>
+
+<section>
+  <h2><span class="num">1</span> Crear app en Autodesk APS</h2>
+  <p class="lead">Necesitas obtener un <strong>Client ID</strong> y <strong>Client Secret</strong>.</p>
+
+  <div class="step">
+    <h3>1.1 Crear cuenta gratuita</h3>
+    <p>Ve a <a href="https://aps.autodesk.com" target="_blank">https://aps.autodesk.com</a> y haz click en <strong>Sign up</strong>. Usa tu email corporativo de GRAPCO. Acepta los términos.</p>
+    <div class="callout info">
+      <strong>💰 Free tier:</strong> 50,000 cargas/mes gratis. Para una obra típica de GRAPCO con 20 usuarios eso son ~2,500 cargas por usuario al mes — MUY suficiente.
+    </div>
+  </div>
+
+  <div class="step">
+    <h3>1.2 Crear app</h3>
+    <p>Una vez logueado, ve a <strong>"Applications"</strong> → <strong>"Create app"</strong>:</p>
+    <ul>
+      <li><strong>Name:</strong> <code>GRAPCO Produc-App</code></li>
+      <li><strong>Description:</strong> <code>Plataforma productividad construcción</code></li>
+      <li><strong>APIs to enable:</strong> Marca <code>Data Management</code>, <code>Model Derivative</code>, <code>OSS</code>, <code>Authentication</code></li>
+      <li><strong>Callback URL:</strong> <code>https://localhost:3000</code> (no se usa, pero es obligatorio)</li>
+    </ul>
+    <p>Copia el <strong>Client ID</strong> y <strong>Client Secret</strong> que te genera. Guárdalos en un lugar seguro.</p>
+    <div class="callout danger">
+      <strong>⚠️ Nunca subas el Client Secret a Git.</strong> En este sistema lo configuramos como variable de entorno en Firebase, no queda en código.
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">2</span> Habilitar Cloud Functions en Firebase</h2>
+  <p class="lead">Las Cloud Functions son el "puente" entre GRAPCO y APS.</p>
+
+  <div class="step">
+    <h3>2.1 Subir plan de Firebase a Blaze (pay-as-you-go)</h3>
+    <p>Cloud Functions requiere plan Blaze. <strong>El plan Blaze incluye un free tier muy generoso:</strong></p>
+    <ul>
+      <li>2 millones de invocaciones/mes gratis</li>
+      <li>400,000 GB-segundos gratis</li>
+      <li>5 GB de transferencia/mes gratis</li>
+    </ul>
+    <p>Para GRAPCO esto significa <strong>$0/mes en facturación</strong> a menos que crezca masivamente.</p>
+    <p>Ve a Firebase Console → tu proyecto → ⚙️ Settings → <strong>Usage and billing</strong> → <strong>Modify plan</strong> → Blaze.</p>
+    <div class="callout gold">
+      <strong>🔒 Configura presupuesto máximo:</strong> En Google Cloud Console pon un budget alert de USD 5/mes. Si por algún motivo se dispara el uso, te avisa antes de cobrar.
+    </div>
+  </div>
+
+  <div class="step">
+    <h3>2.2 Instalar Firebase CLI</h3>
+    <pre><span class="c"># En tu terminal local</span>
+<span class="k">npm</span> install -g firebase-tools
+
+<span class="c"># Login con la cuenta del proyecto</span>
+firebase login
+
+<span class="c"># En la raíz de tu proyecto GRAPCO</span>
+firebase init functions
+<span class="c"># Selecciona: tu proyecto Firebase existente</span>
+<span class="c"># Lenguaje: JavaScript</span>
+<span class="c"># ESLint: No (opcional)</span>
+<span class="c"># Instalar dependencias: Yes</span></pre>
+  </div>
+
+  <div class="step">
+    <h3>2.3 Copiar archivos del backend</h3>
+    <p>Te entrego dos archivos:</p>
+    <ul>
+      <li><code>functions_index.js</code> → copiar a <code>functions/index.js</code></li>
+      <li><code>functions_package.json</code> → copiar a <code>functions/package.json</code></li>
+    </ul>
+    <p>Luego instalar dependencias:</p>
+    <pre><span class="k">cd</span> functions
+<span class="k">npm</span> install</pre>
+  </div>
+
+  <div class="step">
+    <h3>2.4 Configurar credenciales APS como secret</h3>
+    <p>Hay dos formas. La recomendada es usar <strong>Firebase Functions config</strong>:</p>
+    <pre><span class="c"># En la raíz del proyecto</span>
+firebase functions:config:set \
+  aps.client_id=<span class="s">"TU_CLIENT_ID_DE_APS"</span> \
+  aps.client_secret=<span class="s">"TU_CLIENT_SECRET_DE_APS"</span> \
+  aps.bucket_key=<span class="s">"grapco-models-prod"</span>
+
+<span class="c"># Verificar que se guardó</span>
+firebase functions:config:get</pre>
+    <div class="callout info">
+      <strong>📝 Nota sobre bucket_key:</strong> debe ser único en TODO Autodesk (es como un dominio). Sugerencia: <code>grapco-models-{nombre-corto-empresa}</code> en minúsculas, sin espacios.
+    </div>
+  </div>
+
+  <div class="step">
+    <h3>2.5 Desplegar</h3>
+    <pre>firebase deploy --only functions
+
+<span class="c"># Output esperado:</span>
+<span class="c">✔  functions[apsObtenerUrlSubida(us-central1)] Successful deploy</span>
+<span class="c">✔  functions[apsCompletarSubida(us-central1)] Successful deploy</span>
+<span class="c">✔  functions[apsConsultarManifest(us-central1)] Successful deploy</span>
+<span class="c">✔  functions[apsTokenViewer(us-central1)] Successful deploy</span>
+<span class="c">✔  functions[apsEliminarModelo(us-central1)] Successful deploy</span>
+
+<span class="c">Function URL (apsObtenerUrlSubida):</span>
+<span class="c">  https://us-central1-tu-proyecto.cloudfunctions.net/apsObtenerUrlSubida</span></pre>
+    <p><strong>⚠️ Anota la URL base.</strong> La necesitas para el siguiente paso.</p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">3</span> Configurar el frontend</h2>
+  <p class="lead">Solo 1 archivo necesita ajuste.</p>
+
+  <div class="step">
+    <h3>3.1 Editar <code>apsClient.js</code></h3>
+    <p>Abre <code>src/utils/apsClient.js</code> y verifica las constantes en la cabecera:</p>
+    <pre><span class="k">const</span> FUNCTIONS_REGION = <span class="s">'us-central1'</span>;
+<span class="k">const</span> FUNCTIONS_PROJECT = <span class="s">'control-productividad-franklin'</span>;  <span class="c">// ← TU proyecto Firebase</span></pre>
+    <p>Si tu proyecto Firebase tiene otro ID, cámbialo. La región normalmente queda en us-central1.</p>
+  </div>
+
+  <div class="step">
+    <h3>3.2 Copiar archivos nuevos al frontend</h3>
+    <table>
+      <thead><tr><th>Archivo entregado</th><th>Ubicación destino en tu repo</th></tr></thead>
+      <tbody>
+        <tr><td><code>apsClient.js</code></td><td><code>src/utils/apsClient.js</code></td></tr>
+        <tr><td><code>BimUploader.jsx</code></td><td><code>src/components/BimUploader.jsx</code></td></tr>
+        <tr><td><code>BimViewerAPS.jsx</code></td><td><code>src/components/BimViewerAPS.jsx</code></td></tr>
+        <tr><td><code>BIM.jsx</code></td><td><code>src/views/ingeniero/BIM.jsx</code> (reemplazar)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="step">
+    <h3>3.3 Reglas de Firestore para nueva colección</h3>
+    <p>En Firebase Console → Firestore → Rules, agrega:</p>
+    <pre><span class="k">match</span> /BIM_Modelos/{modeloId} {
+  <span class="k">allow read</span>: <span class="k">if</span> request.auth != <span class="k">null</span>;
+  <span class="k">allow write</span>: <span class="k">if</span> request.auth != <span class="k">null</span>;
+}</pre>
+    <p>(Cuando endurezcamos seguridad en general, también restringir esto.)</p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">4</span> Probar end-to-end</h2>
+
+  <div class="step">
+    <h3>4.1 Test de subida</h3>
+    <ol>
+      <li>Abre GRAPCO → login como Ingeniero</li>
+      <li>Dashboard → grupo <strong>📈 ANÁLISIS</strong> → tab <strong>🏗️ Modelo BIM</strong></li>
+      <li>Click sub-tab <strong>📤 Subir Modelo a APS</strong></li>
+      <li>Arrastra un archivo <code>.rvt</code> (o usa el botón "click para seleccionar")</li>
+      <li>Observa la barra de progreso de subida (segundos a 1 min según tamaño)</li>
+      <li>Cuando llegue al 100% verás "✅ Subida completa. Traduciendo..."</li>
+      <li>Aparece en la tabla "📦 MODELOS SUBIDOS" con estado <strong>🔄 Traduciendo</strong></li>
+      <li>Espera 5–30 min (un Revit pequeño tarda 5 min, uno grande 30 min)</li>
+      <li>Estado pasa a <strong>✅ Listo</strong></li>
+      <li>Click en 👁️ del modelo → te lleva al visor con el modelo cargado</li>
+    </ol>
+  </div>
+
+  <div class="step">
+    <h3>4.2 Test del visor</h3>
+    <ol>
+      <li>Sub-tab <strong>🏗️ Fase 2 · Visor 3D</strong> ya tiene el URN cargado</li>
+      <li>Espera ~10 segundos a que el SDK descargue + renderice</li>
+      <li>Modelo aparece. Puedes orbitar (mouse), zoom (rueda), pan (shift+mouse)</li>
+      <li>Click en cualquier elemento del modelo</li>
+      <li>Aparece panel lateral con el GUID del elemento + propiedades + si está vinculado a GRAPCO</li>
+      <li>Si NO está vinculado: copia el GUID, ve a <strong>Fase 1 · Vinculación</strong> y créalo</li>
+    </ol>
+  </div>
+
+  <div class="step">
+    <h3>4.3 Caso de éxito completo</h3>
+    <p>Vinculaste un muro a la actividad "MUROS DE ALBAÑILERÍA". Ahora cuando alguien hace click en ese muro en el visor, ve:</p>
+    <ul>
+      <li>✅ <strong>VINCULADO A GRAPCO</strong></li>
+      <li><strong>MUROS DE ALBAÑILERÍA</strong></li>
+      <li>ALBAÑILERÍA · MUROS</li>
+      <li>(En siguientes bloques: avance %, CPI, HH ejecutadas, capataz responsable)</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">5</span> Troubleshooting común</h2>
+
+  <table>
+    <thead><tr><th style="width:35%">Síntoma</th><th>Causa probable</th><th>Solución</th></tr></thead>
+    <tbody>
+      <tr><td><strong>"Credenciales APS no configuradas"</strong></td><td>Olvidaste <code>firebase functions:config:set</code></td><td>Ejecutar paso 2.4 + redespliegue: <code>firebase deploy --only functions</code></td></tr>
+      <tr><td><strong>CORS error en consola</strong></td><td>URL del backend mal escrita en apsClient.js</td><td>Verificar <code>FUNCTIONS_PROJECT</code> coincide con tu Firebase project ID</td></tr>
+      <tr><td><strong>Subida queda en "Traduciendo" para siempre</strong></td><td>APS rechazó el archivo (corrupto o muy grande)</td><td>Ver logs: <code>firebase functions:log</code></td></tr>
+      <tr><td><strong>"Failed to fetch" en frontend</strong></td><td>Plan Spark, no Blaze</td><td>Subir a Blaze (paso 2.1) y redesplegar funciones</td></tr>
+      <tr><td><strong>Visor carga pero sale negro</strong></td><td>Manifest aún no completo</td><td>Esperar más. Verifica estado en pestaña Subir Modelo</td></tr>
+      <tr><td><strong>Click en elemento no muestra GUID</strong></td><td>Modelo no exportó externalIds</td><td>En Revit, revisar que la exportación incluya GUIDs. Reexportar.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2><span class="num">6</span> Costos reales esperados</h2>
+  <p class="lead">Estimación para una obra típica de GRAPCO con 20 usuarios activos.</p>
+
+  <table>
+    <thead><tr><th>Componente</th><th>Free tier</th><th>Uso esperado GRAPCO</th><th>Costo mensual</th></tr></thead>
+    <tbody>
+      <tr><td><strong>APS — Translation</strong></td><td>50,000 créditos/mes</td><td>~50 modelos × 100 créditos = 5,000</td><td><strong style="color:var(--green-dark);">$0</strong></td></tr>
+      <tr><td><strong>APS — Storage OSS</strong></td><td>5 GB gratis</td><td>~50 modelos × 50 MB promedio = 2.5 GB</td><td><strong style="color:var(--green-dark);">$0</strong></td></tr>
+      <tr><td><strong>APS — Viewer hits</strong></td><td>50,000/mes</td><td>~20 usuarios × 100 visualizaciones = 2,000</td><td><strong style="color:var(--green-dark);">$0</strong></td></tr>
+      <tr><td><strong>Firebase Functions</strong></td><td>2M invocaciones</td><td>~10,000 invocaciones</td><td><strong style="color:var(--green-dark);">$0</strong></td></tr>
+      <tr><td><strong>Firebase Storage</strong></td><td>5 GB + 1 GB/día egreso</td><td>Solo metadata, < 100 MB</td><td><strong style="color:var(--green-dark);">$0</strong></td></tr>
+      <tr><td colspan="3" style="text-align:right;"><strong>TOTAL ESPERADO MENSUAL:</strong></td><td><strong style="color:var(--green-dark); font-size:16px;">USD 0</strong></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout success">
+    <strong>📊 Para escala mayor:</strong> Una empresa que maneje 5 obras simultáneas con 100 usuarios totales seguiría dentro del free tier. APS empieza a cobrar recién a partir de ~500 modelos/mes o uso muy intensivo del visor.
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">7</span> Lo que viene después</h2>
+  <p class="lead">Una vez que esto funcione, las próximas mejoras naturales son:</p>
+
+  <table>
+    <thead><tr><th style="width:30%">Enhancement</th><th>Beneficio</th></tr></thead>
+    <tbody>
+      <tr><td><strong>🎨 Coloreado por estado</strong></td><td>Pintar elementos del modelo según CPI: verde/amarillo/rojo. Vista visual instantánea de zonas problemáticas.</td></tr>
+      <tr><td><strong>⏱️ Simulación 4D</strong></td><td>Slider temporal que muestra qué se construye semana por semana. Útil para presentaciones cliente.</td></tr>
+      <tr><td><strong>📷 Foto vs Modelo</strong></td><td>Cruzar fotos del Bloque 8 con elementos BIM. Detección de desviaciones constructivas.</td></tr>
+      <tr><td><strong>🔗 Vinculación automática por código</strong></td><td>Si el modelo BIM tiene parámetros como "Codigo_GRAPCO" en cada elemento, vincular automáticamente sin GUID a mano.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+</main>
+
+<footer>
+  <div class="logo">GRAPCO SAC</div>
+  <p>Setup APS · Bloque 9 · Mayo 2026</p>
+  <p style="margin-top:6px;opacity:0.6;">Documentación técnica para deploy completo</p>
+</footer>
+
+</body>
+</html>

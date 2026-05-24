@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Informe Ejecutivo · GRAPCO Produc-App</title>
+<style>
+  :root {
+    --navy: #1e3a5f; --navy-dark: #152a47;
+    --gold: #f59e0b; --gold-dark: #d97706; --gold-light: #fef3c7;
+    --green: #16a34a; --green-dark: #15803d; --green-light: #dcfce7;
+    --red: #dc2626; --red-light: #fee2e2;
+    --bg: #f8fafc; --white: #ffffff; --border: #e2e8f0;
+    --text: #1e293b; --muted: #64748b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Inter", "Segoe UI", system-ui, Arial, sans-serif;
+    color: var(--text); background: var(--bg);
+    line-height: 1.6; font-size: 15px;
+  }
+  .hero {
+    background: linear-gradient(135deg, var(--navy), var(--navy-dark));
+    color: #fff; padding: 50px 40px;
+    border-bottom: 5px solid var(--gold);
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: ''; position: absolute; top: -100px; right: -100px;
+    width: 350px; height: 350px; border-radius: 50%;
+    background: var(--gold); opacity: 0.15; filter: blur(50px);
+  }
+  .hero .inner { max-width: 1100px; margin: 0 auto; position: relative; z-index: 2; }
+  .hero .badge {
+    display: inline-block; padding: 5px 12px;
+    background: rgba(245, 158, 11, 0.2); border: 1px solid var(--gold);
+    border-radius: 30px; color: var(--gold);
+    font-size: 11px; font-weight: 800; letter-spacing: 1.5px; margin-bottom: 14px;
+  }
+  .hero h1 {
+    font-size: 36px; font-weight: 900; line-height: 1.15;
+    margin-bottom: 12px; letter-spacing: -0.5px;
+  }
+  .hero p { font-size: 16px; opacity: 0.85; max-width: 720px; }
+  .hero .meta {
+    display: flex; gap: 24px; flex-wrap: wrap;
+    font-size: 12px; opacity: 0.7;
+    border-top: 1px solid rgba(255,255,255,0.15);
+    padding-top: 16px; margin-top: 24px;
+  }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 40px; }
+  section { margin-bottom: 50px; }
+  section h2 {
+    font-size: 24px; font-weight: 900; color: var(--navy);
+    margin-bottom: 6px; letter-spacing: -0.3px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  section h2 .num {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    color: #fff; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 900;
+    box-shadow: 0 3px 10px rgba(245, 158, 11, 0.35);
+  }
+  section .lead {
+    font-size: 14px; color: var(--muted);
+    margin-bottom: 22px; padding-left: 44px; line-height: 1.6;
+  }
+  section h3 {
+    font-size: 17px; font-weight: 800; color: var(--navy);
+    margin: 24px 0 10px; padding-left: 12px;
+    border-left: 4px solid var(--gold);
+  }
+
+  .grid { display: grid; gap: 14px; }
+  .grid-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .grid-3 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .grid-4 { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+
+  /* KPI HERO grandes */
+  .kpi-hero {
+    background: linear-gradient(135deg, var(--navy), var(--navy-dark));
+    color: #fff; border-radius: 14px; padding: 22px;
+    position: relative; overflow: hidden;
+  }
+  .kpi-hero::after {
+    content: ''; position: absolute; top: 0; right: 0;
+    width: 5px; height: 100%; background: var(--gold);
+  }
+  .kpi-hero .label {
+    font-size: 10px; font-weight: 800; color: var(--gold);
+    letter-spacing: 1.2px; margin-bottom: 8px;
+  }
+  .kpi-hero .value {
+    font-size: 36px; font-weight: 900; line-height: 1;
+  }
+  .kpi-hero .sub {
+    font-size: 12px; opacity: 0.75; margin-top: 8px;
+  }
+
+  /* Bloque entregado */
+  .bloque {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 14px; padding: 22px 26px; margin-bottom: 14px;
+    border-left: 5px solid var(--gold);
+  }
+  .bloque .header {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 12px; margin-bottom: 14px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--border);
+  }
+  .bloque .titulo { font-size: 16px; font-weight: 900; color: var(--navy); }
+  .bloque .estado {
+    background: var(--green-light); color: var(--green-dark);
+    padding: 4px 12px; border-radius: 20px;
+    font-size: 11px; font-weight: 800;
+  }
+  .bloque .estado.parcial { background: var(--gold-light); color: var(--gold-dark); }
+  .bloque ul { list-style: none; padding: 0; }
+  .bloque li {
+    padding: 6px 0; font-size: 13px;
+    display: flex; align-items: flex-start; gap: 8px;
+  }
+  .bloque li::before {
+    content: '✓'; color: var(--green); font-weight: 900;
+    flex-shrink: 0; margin-top: 1px;
+  }
+
+  /* Capacidad card */
+  .capacity {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 18px;
+    transition: transform 0.15s;
+  }
+  .capacity:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(15,23,42,0.06); }
+  .capacity .icon { font-size: 28px; margin-bottom: 8px; }
+  .capacity h4 { font-size: 14px; font-weight: 800; color: var(--navy); margin-bottom: 4px; }
+  .capacity p { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  /* Tabla */
+  table {
+    width: 100%; border-collapse: collapse; background: var(--white);
+    border-radius: 12px; overflow: hidden;
+    box-shadow: 0 1px 3px rgba(15,23,42,0.06); margin: 14px 0;
+  }
+  th { background: var(--navy); color: #fff; padding: 12px 14px;
+    text-align: left; font-size: 11px; font-weight: 800; letter-spacing: 0.4px; }
+  td { padding: 11px 14px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  tr:nth-child(even) td { background: var(--bg); }
+  tr:last-child td { border-bottom: none; }
+  td code { background: var(--bg); padding: 1px 6px; border-radius: 4px; font-size: 11px; color: var(--navy); font-weight: 700; }
+
+  /* Callout */
+  .callout {
+    border-radius: 10px; padding: 14px 18px; margin: 14px 0;
+    border-left: 4px solid;
+  }
+  .callout.info { background: #eff6ff; border-color: var(--navy); color: var(--navy); }
+  .callout.success { background: var(--green-light); border-color: var(--green-dark); color: var(--green-dark); }
+  .callout.warning { background: var(--gold-light); border-color: var(--gold-dark); color: var(--gold-dark); }
+
+  /* Footer */
+  footer {
+    background: var(--navy); color: rgba(255,255,255,0.75);
+    padding: 30px 40px; text-align: center; font-size: 11px;
+    border-top: 4px solid var(--gold);
+  }
+  footer .logo {
+    font-size: 16px; font-weight: 900; color: var(--gold);
+    letter-spacing: 2px; margin-bottom: 6px;
+  }
+
+  @media (max-width: 700px) {
+    .hero { padding: 30px 22px; }
+    .hero h1 { font-size: 26px; }
+    main { padding: 24px 22px; }
+    section h2 { font-size: 20px; }
+  }
+  @media print {
+    body { background: #fff; }
+    .bloque, .capacity, table { box-shadow: none; page-break-inside: avoid; }
+    section { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="inner">
+    <span class="badge">📊 INFORME EJECUTIVO</span>
+    <h1>Estado actual de GRAPCO Produc-App</h1>
+    <p>
+      Reporte consolidado de la plataforma de control de productividad de obra civil
+      tras tres bloques de implementación entregados y validados. Documento dirigido a
+      Gerencia GRAPCO SAC y Comité de Tesis.
+    </p>
+    <div class="meta">
+      <span><strong>Versión plataforma:</strong> 3.0</span>
+      <span><strong>Fecha del informe:</strong> Mayo 2026</span>
+      <span><strong>Estado general:</strong> Operativo en producción</span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<section>
+  <h2><span class="num">1</span> Resumen ejecutivo</h2>
+  <p class="lead">
+    GRAPCO Produc-App pasó de ser una herramienta de tareo digital simple a una
+    plataforma de control de productividad con análisis EVM según PMBOK, métricas Lean
+    Construction y módulo VDC con Last Planner System integrado. Tres roles, seis dominios
+    funcionales, validación legal peruana incorporada.
+  </p>
+
+  <div class="grid grid-3">
+    <div class="kpi-hero">
+      <div class="label">ARCHIVOS</div>
+      <div class="value">38</div>
+      <div class="sub">Componentes React + helpers + hooks</div>
+    </div>
+    <div class="kpi-hero">
+      <div class="label">LÍNEAS DE CÓDIGO</div>
+      <div class="value">~7,400</div>
+      <div class="sub">Modular, validado por parser AST</div>
+    </div>
+    <div class="kpi-hero">
+      <div class="label">VISTAS DE DASHBOARD</div>
+      <div class="value">10</div>
+      <div class="sub">Auditoría · CPI · EVM · VDC · Personal · etc.</div>
+    </div>
+  </div>
+
+  <h3>Capacidades por rol</h3>
+  <div class="grid grid-3">
+    <div class="capacity">
+      <div class="icon">👷</div>
+      <h4>Capataz móvil</h4>
+      <p>PWA instalable, layout sidebar + cards verticales, registro multi-actividad con borrador en la nube.</p>
+    </div>
+    <div class="capacity">
+      <div class="icon">📐</div>
+      <h4>Ingeniero residente</h4>
+      <p>Dashboard con 10 secciones: análisis CPI/EAC, Curva-S EVM, VDC/LPS, alertas inteligentes, ranking, exportación Excel.</p>
+    </div>
+    <div class="capacity">
+      <div class="icon">⚖️</div>
+      <h4>Carta Balance</h4>
+      <p>Medición TP/TC/TNC con autocompletado desde Personal, mediciones temporizadas y resultados visuales.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">2</span> Bloques entregados</h2>
+  <p class="lead">
+    Trazabilidad de las tres fases de mejora ejecutadas en este ciclo, cada una con
+    archivos validados y tests funcionales pasando.
+  </p>
+
+  <div class="bloque">
+    <div class="header">
+      <span class="titulo">Bloque 1 — Fixes críticos + Rediseño UX Capataz</span>
+      <span class="estado">✓ Entregado</span>
+    </div>
+    <ul>
+      <li>CartaBalance integrada con Personal: autocompletado de cargo desde la ficha real del trabajador.</li>
+      <li>Modal de Tarifas por cargo en Personal: edición desde UI guardada en colección <code>Configuracion</code>.</li>
+      <li>Validación legal de jornada: bloqueo si HN &gt; 8.5h o total &gt; 12h por trabajador/día.</li>
+      <li>Modal de confirmación cuando HE &gt; 4h, simulando autorización de residente.</li>
+      <li>Rediseño completo del Capataz: sidebar lateral, cards de trabajador en columna vertical, paleta corporativa GRAPCO (navy + dorado del logo).</li>
+      <li>Navbar con identidad GRAPCO: gradient navy con borde dorado.</li>
+    </ul>
+  </div>
+
+  <div class="bloque">
+    <div class="header">
+      <span class="titulo">Bloque 2 — Análisis EVM + Dashboard de Tesis</span>
+      <span class="estado">✓ Entregado</span>
+    </div>
+    <ul>
+      <li>Función <code>calcularEVM()</code>: PV (Planned Value), EV (Earned Value), AC (Actual Cost), CPI, SPI, CV, SV, BAC, EAC, VAC.</li>
+      <li>Vista <strong>📈 CURVA-S (EVM)</strong>: gráfico con 3 líneas, KPIs interpretados, proyección al término (EAC).</li>
+      <li>Vista <strong>🎓 IMPACTO TESIS</strong>: comparativa antes vs ahora del proyecto, con conclusión auto-generada.</li>
+      <li>Login con paleta corporativa: gradient navy + decoración dorada + borde superior gold.</li>
+      <li>Tests con datos sintéticos verifican consistencia matemática (CPI &gt; 1 ⇒ EAC &lt; BAC).</li>
+    </ul>
+  </div>
+
+  <div class="bloque">
+    <div class="header">
+      <span class="titulo">Bloque 3 — Módulo VDC · LPS + Costos en Soles</span>
+      <span class="estado">✓ Entregado</span>
+    </div>
+    <ul>
+      <li>Helpers VDC: <code>calcularPPCSemanal()</code>, <code>calcularParetoRNC()</code>, <code>diagnosticarPPC()</code>.</li>
+      <li>Catálogo estandarizado de 8 categorías RNC con iconos y colores (Materiales, Equipos, Mano de obra, Información, Prerrequisitos, Clima, Externos, Reprocesos).</li>
+      <li>Vista <strong>🎯 VDC · LPS</strong> con 3 sub-pestañas: Dashboard PPC, Plan Semanal, Análisis RNC.</li>
+      <li>Plan Semanal por capataz: agregar compromisos, cerrar con metrado real + categoría RNC si no se cumplió.</li>
+      <li>Diagrama de Pareto interactivo de causas de no cumplimiento con línea acumulada al 80%.</li>
+      <li>2 KPIs nuevos en Dashboard principal: <strong>Costo Real (S/)</strong> y <strong>Sobrecosto S/</strong>.</li>
+      <li>Plan formal de implementación VDC en HTML separado (10 secciones, listo para imprimir).</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">3</span> Capacidades técnicas</h2>
+  <p class="lead">
+    Inventario por dominio funcional. Marca de check (✓) cuando la capacidad existe
+    operativa.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th style="width:30%">Dominio</th><th style="width:8%">Estado</th><th>Detalle</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Tareo digital</strong></td>
+        <td>✓</td>
+        <td>Multi-actividad por jornada con borrador en la nube. Sincroniza entre dispositivos.</td>
+      </tr>
+      <tr>
+        <td><strong>Validación legal Perú</strong></td>
+        <td>✓</td>
+        <td>Bloqueo HN &gt; 8.5h, bloqueo HN+HE &gt; 12h, confirmación HE &gt; 4h.</td>
+      </tr>
+      <tr>
+        <td><strong>Cálculo HE 60/100</strong></td>
+        <td>✓</td>
+        <td>Cascada: ficha trabajador → tarifa custom → default por cargo.</td>
+      </tr>
+      <tr>
+        <td><strong>Tarifas configurables</strong></td>
+        <td>✓</td>
+        <td>Modal en Personal, persistencia en <code>Configuracion/global</code>.</td>
+      </tr>
+      <tr>
+        <td><strong>WBS jerárquica</strong></td>
+        <td>✓</td>
+        <td>Catálogo navegable con códigos automáticos (02.01.03), búsqueda fuzzy.</td>
+      </tr>
+      <tr>
+        <td><strong>CPI / EAC</strong></td>
+        <td>✓</td>
+        <td>Toggles META/PPTO/SALDO, semaforización por estado.</td>
+      </tr>
+      <tr>
+        <td><strong>EVM completo (PMBOK)</strong></td>
+        <td>✓</td>
+        <td>Curva-S con PV/EV/AC, CPI/SPI/CV/SV, proyección EAC con VAC.</td>
+      </tr>
+      <tr>
+        <td><strong>Last Planner System</strong></td>
+        <td>✓</td>
+        <td>Compromisos por capataz, cierre semanal, PPC tracking, RNC categorizado.</td>
+      </tr>
+      <tr>
+        <td><strong>Análisis Pareto RNC</strong></td>
+        <td>✓</td>
+        <td>Pareto interactivo + ranking causas + lista de incumplimientos recientes.</td>
+      </tr>
+      <tr>
+        <td><strong>Alertas inteligentes</strong></td>
+        <td>✓</td>
+        <td>4 detecciones automáticas: CPI &lt; 85%, sobrecostos, anomalías z-score, cuadrillas bajas.</td>
+      </tr>
+      <tr>
+        <td><strong>Ranking de cuadrillas</strong></td>
+        <td>✓</td>
+        <td>Score = CPI × consistencia × cumplimiento.</td>
+      </tr>
+      <tr>
+        <td><strong>Exportación Excel pro</strong></td>
+        <td>✓</td>
+        <td>3 informes con estilos: Valorización (19 col.), HH Semanal, Costos HE 60/100.</td>
+      </tr>
+      <tr>
+        <td><strong>Dashboard de impacto (tesis)</strong></td>
+        <td>✓</td>
+        <td>Comparativa antes/ahora con conclusión auto-generada para sustentación.</td>
+      </tr>
+      <tr>
+        <td><strong>PWA instalable</strong></td>
+        <td>✓</td>
+        <td>Service Worker, manifest, ícono. Funciona desde celular como app nativa.</td>
+      </tr>
+      <tr>
+        <td><strong>Reglas Firebase</strong></td>
+        <td style="color: var(--red); font-weight: 800;">✗</td>
+        <td>Pendiente Bloque 4. Hoy <code>allow read, write: if true</code> — riesgo de producción.</td>
+      </tr>
+      <tr>
+        <td><strong>Subida de fotos</strong></td>
+        <td style="color: var(--red); font-weight: 800;">✗</td>
+        <td>Pendiente. Requiere habilitar Firebase Storage.</td>
+      </tr>
+      <tr>
+        <td><strong>Modo offline real</strong></td>
+        <td style="color: var(--red); font-weight: 800;">✗</td>
+        <td>Pendiente. PWA cachea, pero no hay IndexedDB para escritura sin red.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2><span class="num">4</span> KPIs de la propia plataforma</h2>
+  <p class="lead">
+    Métricas que demuestran madurez del producto. Útil para incluir en el capítulo de
+    resultados de la tesis.
+  </p>
+
+  <div class="grid grid-4">
+    <div class="kpi-hero">
+      <div class="label">VISTAS</div>
+      <div class="value">10</div>
+      <div class="sub">Pestañas operativas en Dashboard Ingeniero</div>
+    </div>
+    <div class="kpi-hero">
+      <div class="label">COLECCIONES</div>
+      <div class="value">6</div>
+      <div class="sub">Firestore: Registros, Cuadrillas, Personal, Borradores, Cartas, PPC</div>
+    </div>
+    <div class="kpi-hero">
+      <div class="label">CATEGORÍAS RNC</div>
+      <div class="value">8</div>
+      <div class="sub">Catálogo Lean estandarizado según LCI</div>
+    </div>
+    <div class="kpi-hero">
+      <div class="label">INDICADORES EVM</div>
+      <div class="value">9</div>
+      <div class="sub">PV·EV·AC·CPI·SPI·CV·SV·EAC·VAC</div>
+    </div>
+  </div>
+
+  <div class="callout success">
+    <strong>📈 Diferenciador frente a soluciones comerciales:</strong> Procore y Primavera
+    cuestan miles de dólares anuales y requieren consultoría de implementación. GRAPCO
+    Produc-App entrega capacidades comparables (EVM + Lean + métricas de proceso) en
+    código abierto adaptado a regulación peruana.
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">5</span> Próximos pasos recomendados</h2>
+  <p class="lead">
+    Roadmap priorizado por riesgo y valor para los próximos sprints.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>#</th><th>Mejora</th><th style="width:15%">Esfuerzo</th><th style="width:18%">Por qué hacerlo</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td><strong>Reglas de seguridad Firebase</strong></td>
+        <td>2 días</td>
+        <td><span style="color:var(--red);font-weight:800">CRÍTICO</span> — protege datos producción</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td><strong>Ampliar VDC</strong>: Lookahead 6 semanas con análisis de restricciones de 7 flujos</td>
+        <td>3-4 días</td>
+        <td>Completa metodología LPS · Aporte de tesis</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td><strong>Subida de fotos</strong> por registro (Firebase Storage)</td>
+        <td>2 días</td>
+        <td>Cambia auditoría en obra · Evidencia para tesis</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td><strong>ICE Sessions</strong> digitales con acta y tracking de decisiones</td>
+        <td>3 días</td>
+        <td>Cierra el círculo VDC</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td><strong>Workflow de aprobaciones</strong>: Capataz sube → Ingeniero aprueba</td>
+        <td>1-2 días</td>
+        <td>Rigor profesional · Reduce errores en datos</td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td><strong>Modo offline</strong> real con IndexedDB</td>
+        <td>5 días</td>
+        <td>Solo si hay zonas de obra sin señal</td>
+      </tr>
+      <tr>
+        <td>7</td>
+        <td><strong>Multi-proyecto</strong>: selector y dashboard cross-obra</td>
+        <td>2-3 días</td>
+        <td>Cuando GRAPCO tenga ≥2 obras simultáneas</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout warning">
+    <strong>⚠️ Recomendación honesta:</strong> No implementar la mejora #6 (offline) ni #7
+    (multi-proyecto) antes de #1 (reglas Firebase). El sistema está expuesto: cualquiera con
+    la URL puede leer y borrar datos. Es la deuda técnica más urgente.
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">6</span> Conclusión</h2>
+  <p class="lead">
+    GRAPCO Produc-App es hoy una plataforma de control de productividad de nivel
+    corporativo, comparable funcionalmente a productos como Procore o Primavera P6 pero
+    adaptada al contexto peruano y al modelo de operación de GRAPCO SAC. La incorporación
+    del módulo VDC con Last Planner System completa el espectro de control de procesos
+    Lean Construction y posiciona la plataforma como diferenciador competitivo y como
+    caso de estudio sólido para investigación académica aplicada.
+  </p>
+
+  <div class="callout info">
+    <strong>📚 Para la sustentación de tesis:</strong> demostrar en vivo el flujo completo
+    Capataz → Ingeniero → VDC → Impacto Tesis usando datos reales del proyecto. Esto evidencia
+    aplicabilidad práctica y diferencia el trabajo de tesis basadas sólo en revisión bibliográfica.
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="logo">GRAPCO SAC</div>
+  <p>Informe Ejecutivo · Estado Plataforma Produc-App v3.0 · Mayo 2026</p>
+  <p style="margin-top:6px;opacity:0.6;">Documento generado como parte del proceso de validación y mejora continua del sistema.</p>
+</footer>
+
+</body>
+</html>

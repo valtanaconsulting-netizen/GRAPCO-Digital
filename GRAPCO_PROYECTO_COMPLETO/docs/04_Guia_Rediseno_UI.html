@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guía del Rediseño UI · GRAPCO Produc-App v3.1</title>
+<style>
+  :root {
+    --navy: #1e3a5f; --navy-dark: #152a47;
+    --gold: #f59e0b; --gold-dark: #d97706; --gold-light: #fef3c7;
+    --green: #16a34a; --green-dark: #15803d; --green-light: #dcfce7;
+    --red: #dc2626; --red-light: #fee2e2;
+    --purple: #7c3aed; --purple-light: #ede9fe;
+    --bg: #f8fafc; --white: #ffffff; --border: #e2e8f0;
+    --text: #1e293b; --muted: #64748b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Inter", "Segoe UI", system-ui, Arial, sans-serif;
+    color: var(--text); background: var(--bg);
+    line-height: 1.6; font-size: 15px;
+  }
+  header.hero {
+    background: linear-gradient(135deg, var(--navy), var(--navy-dark));
+    color: #fff; padding: 50px 40px;
+    border-bottom: 5px solid var(--gold);
+    position: relative; overflow: hidden;
+  }
+  header.hero::before {
+    content: ''; position: absolute; top: -100px; right: -100px;
+    width: 320px; height: 320px; border-radius: 50%;
+    background: var(--gold); opacity: 0.15; filter: blur(50px);
+  }
+  header.hero .inner { max-width: 1200px; margin: 0 auto; position: relative; z-index: 2; }
+  header.hero .badge {
+    display: inline-block; padding: 5px 14px;
+    background: rgba(245,158,11,0.2); border: 1px solid var(--gold);
+    border-radius: 30px; color: var(--gold);
+    font-size: 11px; font-weight: 800; letter-spacing: 1.5px; margin-bottom: 14px;
+  }
+  header.hero h1 { font-size: 36px; font-weight: 900; margin-bottom: 12px; letter-spacing: -0.4px; }
+  header.hero p { font-size: 16px; opacity: 0.85; max-width: 680px; }
+
+  main { max-width: 1200px; margin: 0 auto; padding: 50px 40px 80px; }
+  section { margin-bottom: 60px; }
+  section h2 {
+    font-size: 26px; font-weight: 900; color: var(--navy);
+    margin-bottom: 8px; display: flex; align-items: center; gap: 12px;
+  }
+  section h2 .num {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    color: #fff; border-radius: 9px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 900;
+  }
+  section .lead { font-size: 14px; color: var(--muted); margin-bottom: 24px; padding-left: 48px; }
+  section h3 {
+    font-size: 18px; font-weight: 800; color: var(--navy);
+    margin: 24px 0 10px; padding-left: 12px;
+    border-left: 4px solid var(--gold);
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+  @media (max-width: 800px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  .compare {
+    background: var(--white); border-radius: 12px;
+    border: 1px solid var(--border); padding: 18px 20px;
+    box-shadow: 0 1px 3px rgba(15,23,42,0.05);
+  }
+  .compare.before { border-top: 4px solid var(--red); }
+  .compare.after { border-top: 4px solid var(--green); }
+  .compare .label {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 10px; font-weight: 900; letter-spacing: 0.6px;
+    margin-bottom: 12px;
+  }
+  .compare.before .label { background: var(--red-light); color: var(--red); }
+  .compare.after .label { background: var(--green-light); color: var(--green-dark); }
+  .compare h4 { font-size: 14px; font-weight: 800; color: var(--navy); margin-bottom: 8px; }
+  .compare ul { margin: 8px 0 0 18px; }
+  .compare li { font-size: 12px; line-height: 1.6; margin-bottom: 4px; }
+
+  /* Mockup de la nueva UI */
+  .ui-mockup {
+    background: var(--white); border-radius: 14px;
+    border: 1px solid var(--border); padding: 14px;
+    margin: 18px 0; box-shadow: 0 6px 20px rgba(15,23,42,0.06);
+  }
+
+  /* Barra de comando simulada */
+  .cmd-bar {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 12px; padding: 10px 14px;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .cmd-bar .cpi-chip {
+    background: linear-gradient(135deg, var(--green), var(--green-dark));
+    color: #fff; padding: 8px 16px; border-radius: 10px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 4px 12px rgba(22,163,74,0.4);
+  }
+  .cmd-bar .cpi-chip .label { font-size: 9px; font-weight: 800; opacity: 0.85; letter-spacing: 1px; }
+  .cmd-bar .cpi-chip .value { font-size: 22px; font-weight: 900; line-height: 1; }
+  .cmd-bar .ef { padding-left: 12px; border-left: 1px solid rgba(255,255,255,0.3); }
+  .cmd-bar .ef .label { font-size: 9px; font-weight: 800; opacity: 0.85; }
+  .cmd-bar .ef .value { font-size: 13px; font-weight: 900; }
+  .cmd-bar .actions { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+  .cmd-bar .btn {
+    padding: 7px 13px; background: var(--white);
+    border: 1.5px solid var(--border); border-radius: 9px;
+    font-size: 11px; font-weight: 800; color: var(--navy);
+  }
+  .cmd-bar .btn.gold { background: var(--gold); color: #fff; border-color: var(--gold); }
+
+  /* Nav grupos */
+  .nav-grupos {
+    background: linear-gradient(135deg, var(--navy), var(--navy-dark));
+    border-radius: 12px 12px 0 0; padding: 4px 4px 0;
+    display: flex; gap: 2px; flex-wrap: wrap;
+  }
+  .nav-grupos button {
+    flex: 1; min-width: 120px; padding: 12px 14px;
+    background: transparent; color: rgba(255,255,255,0.85);
+    border: none; border-radius: 9px 9px 0 0;
+    font-size: 11px; font-weight: 900; letter-spacing: 0.4px;
+    border-bottom: 3px solid transparent;
+  }
+  .nav-grupos button.active {
+    background: var(--white); color: var(--navy);
+    border-bottom-color: var(--gold); opacity: 1;
+  }
+  .nav-grupos button.tesis { color: var(--gold); }
+
+  .subtabs {
+    background: var(--white); border-radius: 0 0 12px 12px;
+    border: 1px solid var(--border); border-top: none;
+    padding: 14px 16px;
+  }
+  .subtabs .header {
+    font-size: 11px; color: var(--muted); margin-bottom: 10px;
+  }
+  .subtabs .header strong { color: var(--navy); font-weight: 900; }
+  .subtabs .pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .subtabs .pill {
+    padding: 8px 14px; background: var(--bg);
+    border-radius: 9px; font-size: 11px; font-weight: 800; color: var(--navy);
+  }
+  .subtabs .pill.active {
+    background: linear-gradient(135deg, var(--navy), var(--navy-dark));
+    color: #fff;
+  }
+
+  /* Tabla */
+  table {
+    width: 100%; border-collapse: collapse; background: var(--white);
+    border-radius: 12px; overflow: hidden;
+    box-shadow: 0 1px 3px rgba(15,23,42,0.05); margin: 14px 0; font-size: 13px;
+  }
+  th { background: var(--navy); color: #fff; padding: 12px 14px; text-align: left;
+       font-size: 11px; font-weight: 800; letter-spacing: 0.4px; }
+  td { padding: 11px 14px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  tr:last-child td { border-bottom: none; }
+
+  .callout {
+    border-radius: 12px; padding: 14px 18px; margin: 14px 0;
+    border-left: 4px solid;
+  }
+  .callout.info { background: #eff6ff; border-color: var(--navy); color: var(--navy); }
+  .callout.gold { background: var(--gold-light); border-color: var(--gold-dark); color: var(--gold-dark); }
+  .callout.success { background: var(--green-light); border-color: var(--green-dark); color: var(--green-dark); }
+
+  footer {
+    background: var(--navy); color: rgba(255,255,255,0.75);
+    padding: 30px 40px; text-align: center; font-size: 11px;
+    border-top: 4px solid var(--gold);
+  }
+  footer .logo {
+    font-size: 16px; font-weight: 900; color: var(--gold);
+    letter-spacing: 2px; margin-bottom: 6px;
+  }
+
+  @media (max-width: 700px) {
+    header.hero { padding: 30px 20px; }
+    header.hero h1 { font-size: 26px; }
+    main { padding: 30px 20px; }
+    section h2 { font-size: 20px; }
+    .nav-grupos button { min-width: 100px; font-size: 10px; padding: 10px 8px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="inner">
+    <span class="badge">🎨 REDISEÑO UX · v3.1</span>
+    <h1>Nueva navegación agrupada del Dashboard</h1>
+    <p>
+      Reorganización completa del Dashboard del Ingeniero: 11 pestañas planas convertidas en
+      5 grupos jerárquicos. CPI siempre visible, paneles colapsables, mejor uso del espacio.
+    </p>
+  </div>
+</header>
+
+<main>
+
+<section>
+  <h2><span class="num">1</span> El problema que solucionamos</h2>
+  <p class="lead">
+    El Dashboard tenía 11 pestañas en una sola fila + 8 KPIs grandes + Ranking expandido + Filtros desplegados.
+    Resultado: el usuario tenía que hacer scroll varias pantallas para encontrar el botón que necesitaba,
+    y el CPI (el indicador más importante) se perdía entre el ruido visual.
+  </p>
+
+  <div class="grid-2">
+    <div class="compare before">
+      <span class="label">❌ ANTES</span>
+      <h4>11 pestañas en línea + ruido visual</h4>
+      <ul>
+        <li>11 botones planos (AUDITORÍA, CPI, CONTROL, CURVA-S, VDC, GRÁFICOS, TENDENCIAS, TAREO, PLAN DIARIO, PERSONAL, IMPACTO TESIS)</li>
+        <li>8 KPIs grandes siempre visibles (ocupan ~150px de altura)</li>
+        <li>Ranking de cuadrillas expandido siempre</li>
+        <li>Filtros desplegados aunque no se usen</li>
+        <li>CPI mezclado entre los KPIs sin destacar</li>
+        <li>~600px de altura ANTES de ver el contenido principal</li>
+      </ul>
+    </div>
+    <div class="compare after">
+      <span class="label">✅ AHORA</span>
+      <h4>5 grupos + barra de comando</h4>
+      <ul>
+        <li>5 grupos lógicos: Producción · Planificación · Análisis · Gestión · Tesis</li>
+        <li>CPI siempre visible como chip de color al lado superior</li>
+        <li>3 botones colapsables: Filtros · Resumen · Ranking</li>
+        <li>Alertas colapsadas (badge compacto, expanden al click)</li>
+        <li>Sub-pestañas del grupo activo con tagline explicativo</li>
+        <li>~150px hasta el contenido principal (4× más espacio)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">2</span> La nueva agrupación</h2>
+  <p class="lead">
+    5 grupos que reflejan flujos reales de trabajo. Cada grupo tiene su color identificador y
+    sub-pestañas activables.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th style="width:22%">Grupo</th><th style="width:14%">Color</th><th>Sub-pestañas</th><th>Para qué</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>📊 PRODUCCIÓN</strong></td>
+        <td><span style="background:#1e3a5f;color:#fff;padding:3px 10px;border-radius:10px;font-size:10px;font-weight:800;">Navy</span></td>
+        <td>Auditoría · CPI + EAC · Control Gerencial</td>
+        <td>Ver resultados, validar registros, leer informes</td>
+      </tr>
+      <tr>
+        <td><strong>✍️ PLANIFICACIÓN</strong></td>
+        <td><span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:10px;font-size:10px;font-weight:800;">Gold</span></td>
+        <td>Plan Diario · Last Planner System</td>
+        <td>Programar trabajo, comprometer cuadrillas, gestionar restricciones</td>
+      </tr>
+      <tr>
+        <td><strong>📈 ANÁLISIS</strong></td>
+        <td><span style="background:#16a34a;color:#fff;padding:3px 10px;border-radius:10px;font-size:10px;font-weight:800;">Green</span></td>
+        <td>Curva-S (EVM) · Gráficos · Tendencias</td>
+        <td>EVM, proyecciones, tendencias temporales</td>
+      </tr>
+      <tr>
+        <td><strong>👥 GESTIÓN</strong></td>
+        <td><span style="background:#7c3aed;color:#fff;padding:3px 10px;border-radius:10px;font-size:10px;font-weight:800;">Purple</span></td>
+        <td>Tareo · Personal</td>
+        <td>Configurar trabajadores, ver tareo histórico, tarifas</td>
+      </tr>
+      <tr>
+        <td><strong>🎓 TESIS</strong></td>
+        <td><span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:10px;font-size:10px;font-weight:800;">Gold</span></td>
+        <td>Impacto Tesis</td>
+        <td>Vista exclusiva para sustentación académica</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2><span class="num">3</span> Mockup visual de la nueva UI</h2>
+  <p class="lead">
+    Así se ve el nuevo layout. CPI siempre arriba, navegación agrupada debajo, contenido limpio.
+  </p>
+
+  <div class="ui-mockup">
+    <!-- Barra de comando -->
+    <div class="cmd-bar">
+      <div class="cpi-chip">
+        <div>
+          <p class="label">CPI GLOBAL</p>
+          <p class="value">95%</p>
+        </div>
+        <div class="ef">
+          <p class="label">EFICIENCIA</p>
+          <p class="value">94%</p>
+        </div>
+      </div>
+      <div class="actions">
+        <span class="btn">🔍 Filtros ▼</span>
+        <span class="btn">📊 Resumen ejecutivo ▼</span>
+        <span class="btn">🏆 Ranking (5) ▼</span>
+      </div>
+    </div>
+
+    <!-- Nav grupos -->
+    <div class="nav-grupos">
+      <button class="active">📊 PRODUCCIÓN</button>
+      <button>✍️ PLANIFICACIÓN</button>
+      <button>📈 ANÁLISIS</button>
+      <button>👥 GESTIÓN</button>
+      <button class="tesis">🎓 TESIS</button>
+    </div>
+
+    <!-- Subtabs -->
+    <div class="subtabs">
+      <p class="header">
+        <strong style="color:#1e3a5f">📊 PRODUCCIÓN</strong> · Control de avance y resultados
+      </p>
+      <div class="pills">
+        <span class="pill active">📋 Auditoría</span>
+        <span class="pill">📊 CPI + EAC</span>
+        <span class="pill">📑 Control Gerencial</span>
+      </div>
+    </div>
+
+    <p style="font-size:11px;color:var(--muted);margin-top:12px;text-align:center;font-style:italic;">
+      ↑ Solo ~150px de altura hasta este punto · El contenido principal aparece debajo limpio
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">4</span> Mejoras adicionales aplicadas</h2>
+  <p class="lead">
+    Aprovechamos para pulir otros detalles visuales mientras estábamos en eso.
+  </p>
+
+  <div class="grid-2">
+    <div class="compare after">
+      <span class="label">✨ MEJORA</span>
+      <h4>Alertas colapsadas por defecto</h4>
+      <p style="font-size:12px;line-height:1.6;color:var(--text);margin-top:6px;">
+        Antes: 64 alertas ocupaban 800px de pantalla. <strong>Ahora:</strong> badge compacto
+        (60px) con resumen "47 críticas · 17 de atención". Click expande. Reducción 92% del
+        espacio inicial.
+      </p>
+    </div>
+    <div class="compare after">
+      <span class="label">✨ MEJORA</span>
+      <h4>CPI con color semáforo siempre visible</h4>
+      <p style="font-size:12px;line-height:1.6;color:var(--text);margin-top:6px;">
+        Chip prominente con gradient según valor (verde si ≥95%, dorado si 85-95%, rojo si &lt;85%).
+        Incluye también Eficiencia Meta a su lado. <strong>El KPI más importante nunca se pierde.</strong>
+      </p>
+    </div>
+    <div class="compare after">
+      <span class="label">✨ MEJORA</span>
+      <h4>Auto-ruteo entre grupos</h4>
+      <p style="font-size:12px;line-height:1.6;color:var(--text);margin-top:6px;">
+        Si haces click directo en una sub-pestaña (por ejemplo desde un link interno), el grupo
+        padre se selecciona automáticamente. La navegación es predecible y consistente.
+      </p>
+    </div>
+    <div class="compare after">
+      <span class="label">✨ MEJORA</span>
+      <h4>Responsive mobile</h4>
+      <p style="font-size:12px;line-height:1.6;color:var(--text);margin-top:6px;">
+        En móvil, los grupos pasan a grid 2x3 con botones de ancho 45%. Las sub-pestañas envuelven.
+        Toda la barra superior se compacta sin perder el CPI.
+      </p>
+    </div>
+  </div>
+
+  <div class="callout success">
+    <strong>📐 Métricas de espacio recuperado:</strong> Antes el usuario veía ~150px de contenido
+    principal en pantalla 1080px. Ahora ve ~830px (5.5× más). El "espacio sobre el contenido" pasó
+    de ocupar 56% de la pantalla a ocupar solo 14%.
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">5</span> Lógica de los paneles colapsables</h2>
+  <p class="lead">
+    Reglas claras de cuándo se muestra cada cosa.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th style="width:22%">Elemento</th><th style="width:18%">Estado por defecto</th><th>Lógica</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>🔍 Filtros</strong></td>
+        <td>Colapsado</td>
+        <td>Si hay filtros activos, el botón aparece DORADO en lugar de gris para indicar que están aplicados.</td>
+      </tr>
+      <tr>
+        <td><strong>📊 Resumen ejecutivo (8 KPIs)</strong></td>
+        <td>Colapsado</td>
+        <td>Solo se necesita ver los 8 KPIs cuando se quiere análisis detallado. Para uso normal, basta el CPI superior.</td>
+      </tr>
+      <tr>
+        <td><strong>🏆 Ranking de cuadrillas</strong></td>
+        <td>Colapsado</td>
+        <td>Si no hay datos suficientes para ranking, el botón directamente no aparece.</td>
+      </tr>
+      <tr>
+        <td><strong>🚨 Alertas inteligentes</strong></td>
+        <td>Colapsado (si hay)</td>
+        <td>Si no hay alertas, el panel no aparece en absoluto. Si hay, solo el badge compacto.</td>
+      </tr>
+      <tr>
+        <td><strong>CPI / Eficiencia</strong></td>
+        <td>SIEMPRE VISIBLE</td>
+        <td>Es el indicador más crítico. Nunca debe estar oculto.</td>
+      </tr>
+      <tr>
+        <td><strong>Sub-pestañas del grupo activo</strong></td>
+        <td>SIEMPRE VISIBLE</td>
+        <td>El usuario debe ver de un vistazo qué opciones tiene en el grupo seleccionado.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2><span class="num">6</span> Para probar tras desplegar</h2>
+  <p class="lead">
+    Lista de chequeo rápida para validar que todo funcione.
+  </p>
+
+  <div class="callout info">
+    <strong>✅ Checklist de prueba:</strong>
+    <ol style="margin:12px 0 0 22px;font-size:13px;">
+      <li><strong>Login</strong> y entrar al Dashboard como Ingeniero.</li>
+      <li>Verificar que el <strong>CPI aparece arriba</strong> con color semáforo.</li>
+      <li>Click en <strong>📊 Resumen ejecutivo</strong> → debe desplegar los 8 KPIs.</li>
+      <li>Click en cada uno de los <strong>5 grupos</strong> → la primera sub-pestaña se selecciona automáticamente.</li>
+      <li>Click directo en una sub-pestaña (ej. <strong>Curva-S</strong> dentro de Análisis) → debe activarse.</li>
+      <li>Click en <strong>🔍 Filtros</strong> → despliega panel completo con exportaciones Excel.</li>
+      <li>Aplicar un filtro (ej. Partida = CONCRETO) → cerrar panel → el botón de Filtros queda <strong>DORADO</strong>.</li>
+      <li>Si hay alertas → click en <strong>el badge de alertas</strong> → expande la lista.</li>
+      <li>Probar en <strong>móvil</strong> → grupos en grid 2x3, sub-pestañas envuelven correctamente.</li>
+    </ol>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="logo">GRAPCO SAC</div>
+  <p>Guía del Rediseño UI · GRAPCO Produc-App v3.1 · Mayo 2026</p>
+  <p style="margin-top:6px;opacity:0.6;">Documento de cambios para usuarios y comité de tesis.</p>
+</footer>
+
+</body>
+</html>

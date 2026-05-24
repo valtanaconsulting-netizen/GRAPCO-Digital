@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capítulo 10 · Sistema de Diseño · GRAPCO Produc-App</title>
+<style>
+  :root {
+    --navy: #1e3a5f; --navy-dark: #152a47;
+    --gold: #f59e0b; --gold-dark: #d97706; --gold-light: #fef3c7;
+    --green: #16a34a; --green-dark: #15803d; --green-light: #dcfce7;
+    --red: #dc2626; --red-light: #fee2e2;
+    --purple: #7c3aed;
+    --bg: #f8fafc; --white: #ffffff; --border: #e2e8f0;
+    --text: #1e293b; --muted: #64748b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: "Inter", "Segoe UI", system-ui, sans-serif; color: var(--text); background: var(--bg); line-height: 1.65; font-size: 15px; }
+
+  header.hero {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 100%);
+    color: #fff; padding: 60px 40px;
+    border-bottom: 5px solid var(--gold);
+    position: relative; overflow: hidden;
+  }
+  header.hero::before { content: ''; position: absolute; top: -100px; right: -100px; width: 360px; height: 360px; border-radius: 50%; background: var(--gold); opacity: 0.12; filter: blur(60px); }
+  header.hero::after { content: ''; position: absolute; bottom: -80px; left: -80px; width: 280px; height: 280px; border-radius: 50%; background: var(--gold); opacity: 0.06; filter: blur(50px); }
+  header.hero .inner { max-width: 1200px; margin: 0 auto; position: relative; z-index: 2; }
+  header.hero .badge { display: inline-block; padding: 6px 16px; background: rgba(245,158,11,0.2); border: 1px solid var(--gold); border-radius: 30px; color: var(--gold); font-size: 11px; font-weight: 800; letter-spacing: 1.6px; margin-bottom: 16px; }
+  header.hero h1 { font-size: 40px; font-weight: 900; margin-bottom: 14px; letter-spacing: -0.6px; line-height: 1.15; }
+  header.hero .subtitle { font-size: 17px; opacity: 0.85; max-width: 720px; line-height: 1.5; font-weight: 500; }
+  header.hero .meta { display: flex; gap: 28px; flex-wrap: wrap; font-size: 12px; opacity: 0.7; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 18px; margin-top: 28px; }
+
+  nav.toc { background: var(--white); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(15,23,42,0.05); }
+  nav.toc .inner { max-width: 1200px; margin: 0 auto; padding: 0 40px; display: flex; gap: 4px; overflow-x: auto; }
+  nav.toc a { padding: 16px 14px; color: var(--muted); text-decoration: none; font-size: 12px; font-weight: 700; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.15s; }
+  nav.toc a:hover { color: var(--navy); border-bottom-color: var(--gold); }
+
+  main { max-width: 1200px; margin: 0 auto; padding: 60px 40px 80px; }
+  section { margin-bottom: 70px; scroll-margin-top: 80px; }
+  section h2 { font-size: 30px; font-weight: 900; color: var(--navy); margin-bottom: 10px; letter-spacing: -0.4px; display: flex; align-items: center; gap: 14px; }
+  section h2 .num { width: 42px; height: 42px; background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #fff; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 900; box-shadow: 0 6px 16px rgba(245,158,11,0.3); }
+  section .lead { font-size: 16px; color: var(--muted); margin-bottom: 28px; padding-left: 56px; line-height: 1.6; }
+  section h3 { font-size: 19px; font-weight: 800; color: var(--navy); margin: 30px 0 12px; padding-left: 14px; border-left: 4px solid var(--gold); }
+  section p { margin-bottom: 14px; }
+
+  /* Grid layouts */
+  .grid { display: grid; gap: 16px; }
+  .grid-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .grid-3 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .grid-4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+  /* Token Cards (visualizar el sistema de diseño) */
+  .token-card {
+    background: var(--white); border-radius: 14px;
+    border: 1px solid var(--border); padding: 18px 20px;
+    transition: all 0.2s;
+  }
+  .token-card:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(15,23,42,0.06); border-color: var(--gold); }
+  .token-card .name { font-family: 'Consolas', 'Monaco', monospace; font-size: 11px; color: var(--gold-dark); font-weight: 800; margin-bottom: 6px; letter-spacing: 0.4px; }
+  .token-card .value { font-size: 13px; color: var(--text); font-family: 'Consolas', monospace; }
+
+  /* Color swatches */
+  .color-swatch { display: flex; align-items: center; gap: 14px; padding: 14px; background: var(--white); border-radius: 12px; border: 1px solid var(--border); }
+  .color-swatch .chip { width: 56px; height: 56px; border-radius: 12px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.05); }
+  .color-swatch .info { flex: 1; min-width: 0; }
+  .color-swatch .info .label { font-weight: 800; color: var(--navy); font-size: 13px; }
+  .color-swatch .info .hex { font-family: 'Consolas', monospace; font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .color-swatch .info .use { font-size: 10px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+
+  /* Spacing visualizer */
+  .spacing-row { display: flex; align-items: center; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .spacing-row:last-child { border-bottom: none; }
+  .spacing-row .name { font-family: monospace; font-size: 12px; font-weight: 800; color: var(--gold-dark); width: 60px; }
+  .spacing-row .bar { background: var(--gold); height: 16px; border-radius: 4px; }
+  .spacing-row .px { font-family: monospace; font-size: 11px; color: var(--muted); margin-left: auto; }
+
+  /* Antes/después */
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+  @media (max-width: 800px) { .compare { grid-template-columns: 1fr; } }
+  .compare > div { background: var(--white); border-radius: 14px; padding: 22px; border-top: 4px solid; }
+  .compare .before { border-top-color: var(--red); }
+  .compare .after { border-top-color: var(--green); }
+  .compare .label { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 900; letter-spacing: 0.6px; margin-bottom: 12px; }
+  .compare .before .label { background: var(--red-light); color: var(--red); }
+  .compare .after .label { background: var(--green-light); color: var(--green-dark); }
+  .compare h4 { font-size: 14px; font-weight: 800; color: var(--navy); margin-bottom: 8px; }
+  .compare ul { margin: 8px 0 0 18px; }
+  .compare li { font-size: 12.5px; line-height: 1.6; margin-bottom: 5px; }
+
+  /* Componente preview en vivo */
+  .preview { background: var(--white); border-radius: 14px; border: 1px solid var(--border); padding: 22px; margin: 14px 0; }
+  .preview .preview-label { font-size: 10px; font-weight: 800; color: var(--muted); letter-spacing: 1px; margin-bottom: 14px; }
+
+  /* Botón ejemplo */
+  .demo-btn-primary { padding: 9px 16px; background: linear-gradient(135deg, var(--navy), var(--navy-dark)); color: #fff; border: none; border-radius: 9px; font-size: 12px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(30,58,95,0.25); transition: all 0.15s; }
+  .demo-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(30,58,95,0.35); }
+  .demo-btn-gold { padding: 9px 16px; background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #fff; border: none; border-radius: 9px; font-size: 12px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(245,158,11,0.3); }
+  .demo-btn-secondary { padding: 9px 16px; background: var(--white); color: var(--navy); border: 1.5px solid var(--border); border-radius: 9px; font-size: 12px; font-weight: 800; cursor: pointer; }
+
+  /* Chips ejemplo */
+  .demo-chip { display: inline-flex; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; gap: 5px; }
+  .chip-success { background: var(--green-light); color: var(--green-dark); }
+  .chip-danger { background: var(--red-light); color: var(--red); }
+  .chip-warning { background: var(--gold-light); color: var(--gold-dark); }
+  .chip-info { background: #eff6ff; color: var(--navy); }
+  .chip-neutral { background: var(--bg); color: var(--muted); }
+
+  /* CPI Card mockup */
+  .cpi-mockup { background: linear-gradient(135deg, #16a34a, #15803d); color: #fff; padding: 14px 20px; border-radius: 14px; display: inline-flex; align-items: center; gap: 16px; box-shadow: 0 6px 18px rgba(22,163,74,0.4); position: relative; overflow: hidden; }
+  .cpi-mockup::after { content: ''; position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,0.15); filter: blur(20px); }
+
+  table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(15,23,42,0.05); margin: 14px 0; font-size: 13px; }
+  th { background: var(--navy); color: #fff; padding: 13px 16px; text-align: left; font-size: 11px; font-weight: 800; letter-spacing: 0.4px; }
+  td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  td code { background: var(--bg); padding: 2px 8px; border-radius: 4px; font-size: 11px; color: var(--navy); font-weight: 700; font-family: 'Consolas', monospace; }
+
+  /* Animación sample */
+  .anim-sample { display: inline-block; padding: 16px 32px; background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #fff; border-radius: 12px; font-weight: 800; margin: 8px; cursor: pointer; transition: all 0.2s cubic-bezier(0,0,0.2,1); }
+  .anim-sample:hover { transform: translateY(-3px); box-shadow: 0 12px 24px rgba(245,158,11,0.4); }
+
+  .callout { border-radius: 12px; padding: 16px 20px; margin: 18px 0; border-left: 5px solid; }
+  .callout.info { background: #eff6ff; border-color: var(--navy); color: var(--navy); }
+  .callout.gold { background: var(--gold-light); border-color: var(--gold-dark); color: var(--gold-dark); }
+  .callout.success { background: var(--green-light); border-color: var(--green-dark); color: var(--green-dark); }
+  .callout strong { font-weight: 900; }
+
+  pre { background: #0f172a; color: #e2e8f0; padding: 16px 18px; border-radius: 10px; font-family: 'Consolas', monospace; font-size: 12px; line-height: 1.6; overflow-x: auto; margin: 12px 0; }
+  pre .c { color: #94a3b8; }
+  pre .k { color: #fbbf24; }
+  pre .s { color: #86efac; }
+
+  footer { background: var(--navy); color: rgba(255,255,255,0.75); padding: 36px 40px; text-align: center; font-size: 12px; border-top: 4px solid var(--gold); }
+  footer .logo { font-size: 18px; font-weight: 900; color: var(--gold); letter-spacing: 2px; margin-bottom: 8px; }
+
+  @media (max-width: 700px) {
+    header.hero { padding: 40px 24px; }
+    header.hero h1 { font-size: 28px; }
+    main { padding: 40px 24px; }
+    section h2 { font-size: 23px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="inner">
+    <span class="badge">📐 CAPÍTULO 10 · SISTEMA DE DISEÑO</span>
+    <h1>Refinamiento UX/UI y Design System GRAPCO</h1>
+    <p class="subtitle">
+      Décima iteración: formalización del sistema de diseño con design tokens, componentes
+      reutilizables, animaciones consistentes y refinamiento visual del dashboard. Base sólida
+      para todas las futuras iteraciones del producto.
+    </p>
+    <div class="meta">
+      <span><strong>Audiencia:</strong> Diseñadores · Frontend · Comité tesis</span>
+      <span><strong>Versión:</strong> 1.0 · Mayo 2026</span>
+      <span><strong>Componentes nuevos:</strong> 3</span>
+      <span><strong>Tokens definidos:</strong> 50+</span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="inner">
+    <a href="#diagnostico">1. Diagnóstico</a>
+    <a href="#tokens">2. Design Tokens</a>
+    <a href="#colores">3. Paleta GRAPCO</a>
+    <a href="#tipografia">4. Tipografía</a>
+    <a href="#spacing">5. Spacing</a>
+    <a href="#componentes">6. Componentes</a>
+    <a href="#animaciones">7. Animaciones</a>
+    <a href="#mejoras">8. Mejoras visuales</a>
+    <a href="#recomendaciones">9. Recomendaciones</a>
+    <a href="#archivos">10. Archivos</a>
+  </div>
+</nav>
+
+<main>
+
+<section id="diagnostico">
+  <h2><span class="num">1</span> Diagnóstico de la interfaz actual</h2>
+  <p class="lead">
+    Antes de refinar, identifiqué los puntos a mejorar. Mira el dashboard actual con ojo crítico:
+  </p>
+
+  <h3>Problemas detectados</h3>
+  <table>
+    <thead><tr><th style="width:30%">Problema</th><th>Impacto</th><th style="width:30%">Solución aplicada</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Banner "Modo demo" amarillo agresivo</strong></td>
+        <td>Llama demasiado la atención, rompe la jerarquía visual del navbar</td>
+        <td>Rediseñado con fondo navy + acento dorado · pulse en indicador · CTA elegante</td>
+      </tr>
+      <tr>
+        <td><strong>Tarjeta CPI plana sin contexto</strong></td>
+        <td>Solo muestra el número. No comunica si es bueno/malo de un vistazo</td>
+        <td>+etiqueta semántica (EXCELENTE/ACEPTABLE/CRÍTICO) · glow decorativo · "vs meta"</td>
+      </tr>
+      <tr>
+        <td><strong>Botones colapsables apagados</strong></td>
+        <td>No invitan al click. Estado activo poco diferenciado</td>
+        <td>Iconos + sombras + badges con conteo · transiciones cubic-bezier suaves</td>
+      </tr>
+      <tr>
+        <td><strong>Sin animaciones de entrada</strong></td>
+        <td>El contenido aparece de golpe, se siente "duro"</td>
+        <td>Sistema de animaciones globales (fadeIn, slideUp, scaleIn) reutilizables</td>
+      </tr>
+      <tr>
+        <td><strong>Estados vacíos pobres</strong></td>
+        <td>Solo dice "Sin datos" sin guiar al usuario</td>
+        <td>Componente <code>EmptyState</code> con icono, descripción y CTA</td>
+      </tr>
+      <tr>
+        <td><strong>Sin indicador de carga</strong></td>
+        <td>Usuario no sabe si la app está congelada o cargando</td>
+        <td>Componente <code>SkeletonLoader</code> con shimmer effect</td>
+      </tr>
+      <tr>
+        <td><strong>Spacing inconsistente</strong></td>
+        <td>Cada componente usa valores arbitrarios (8, 10, 12, 14, 16...)</td>
+        <td>Tokens <code>SPACING.xs/sm/md/lg/xl</code> formales</td>
+      </tr>
+      <tr>
+        <td><strong>Tipografía sin sistema</strong></td>
+        <td>Tamaños y pesos hardcodeados en cada componente</td>
+        <td>Tokens <code>TYPOGRAPHY.size/weight/tracking</code> + helper <code>font()</code></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="tokens">
+  <h2><span class="num">2</span> Design Tokens — el corazón del sistema</h2>
+  <p class="lead">
+    "Token" = constante con un nombre semántico. En lugar de escribir <code>padding: '12px'</code>
+    en 200 lugares, escribimos <code>SPACING.md</code>. Si mañana queremos cambiar el spacing
+    medio a 14px, lo cambiamos en UN lugar.
+  </p>
+
+  <h3>Categorías de tokens</h3>
+  <div class="grid grid-3">
+    <div class="token-card">
+      <p class="name">SPACING</p>
+      <p class="value" style="margin-top:4px;">7 valores: xs · sm · md · lg · xl · 2xl · 3xl</p>
+      <p style="font-size:11px;color:var(--muted);margin-top:8px;">Margenes, padding, gaps</p>
+    </div>
+    <div class="token-card">
+      <p class="name">TYPOGRAPHY</p>
+      <p class="value" style="margin-top:4px;">9 tamaños · 5 pesos · 5 tracking · 4 leading</p>
+      <p style="font-size:11px;color:var(--muted);margin-top:8px;">Tamaños, pesos, espaciado</p>
+    </div>
+    <div class="token-card">
+      <p class="name">RADIUS</p>
+      <p class="value" style="margin-top:4px;">7 valores: sm → 3xl + full</p>
+      <p style="font-size:11px;color:var(--muted);margin-top:8px;">Bordes redondeados</p>
+    </div>
+    <div class="token-card">
+      <p class="name">ANIMATION</p>
+      <p class="value" style="margin-top:4px;">3 duraciones · 4 easings</p>
+      <p style="font-size:11px;color:var(--muted);margin-top:8px;">Transiciones consistentes</p>
+    </div>
+    <div class="token-card">
+      <p class="name">Z_INDEX</p>
+      <p class="value" style="margin-top:4px;">5 niveles: dropdown → tooltip</p>
+      <p style="font-size:11px;color:var(--muted);margin-top:8px;">Apilamiento ordenado</p>
+    </div>
+    <div class="token-card">
+      <p class="name">BASE (extendido)</p>
+      <p class="value" style="margin-top:4px;">35+ colores incluyendo LPS</p>
+      <p style="font-size:11px;color:var(--muted);margin-top:8px;">Paleta completa GRAPCO</p>
+    </div>
+  </div>
+
+  <h3>Helpers ergonómicos</h3>
+  <p>Junto a los tokens entrego 3 funciones helper que aplican estilos rápido:</p>
+  <pre><span class="c">// Aplicar tipografía rápido</span>
+&lt;p style={font('lg', 'bold', BASE.navy)}&gt;Título&lt;/p&gt;
+
+<span class="c">// Card consistente</span>
+&lt;div style={cardStyle({ padding: SPACING.lg })}&gt;...&lt;/div&gt;
+
+<span class="c">// Botón consistente</span>
+&lt;button style={buttonStyle('gold', 'lg')}&gt;Acción&lt;/button&gt;</pre>
+</section>
+
+<section id="colores">
+  <h2><span class="num">3</span> Paleta GRAPCO</h2>
+  <p class="lead">
+    La paleta está inspirada en el isotipo: navy del logo + dorado de los edificios estilizados.
+    Verde y rojo solo para semántica de estado. Sin colores arbitrarios.
+  </p>
+
+  <h3>Colores marca (primarios)</h3>
+  <div class="grid grid-2">
+    <div class="color-swatch"><div class="chip" style="background:#1e3a5f;"></div><div class="info"><div class="label">navy</div><div class="hex">#1e3a5f</div><div class="use">Navbar, headers, texto principal, botones primarios</div></div></div>
+    <div class="color-swatch"><div class="chip" style="background:#152a47;"></div><div class="info"><div class="label">navyDark</div><div class="hex">#152a47</div><div class="use">Sidebar, hover, profundidad</div></div></div>
+    <div class="color-swatch"><div class="chip" style="background:#f59e0b;"></div><div class="info"><div class="label">gold</div><div class="hex">#f59e0b</div><div class="use">Acentos, CTAs secundarios, indicadores activos</div></div></div>
+    <div class="color-swatch"><div class="chip" style="background:#d97706;"></div><div class="info"><div class="label">goldDark</div><div class="hex">#d97706</div><div class="use">Hover de gold, gradientes</div></div></div>
+  </div>
+
+  <h3>Colores semánticos</h3>
+  <div class="grid grid-2">
+    <div class="color-swatch"><div class="chip" style="background:#16a34a;"></div><div class="info"><div class="label">green</div><div class="hex">#16a34a</div><div class="use">Éxito, CPI alto, cumplimiento</div></div></div>
+    <div class="color-swatch"><div class="chip" style="background:#dc2626;"></div><div class="info"><div class="label">red</div><div class="hex">#dc2626</div><div class="use">Error, CPI bajo, eliminación</div></div></div>
+    <div class="color-swatch"><div class="chip" style="background:#7c3aed;"></div><div class="info"><div class="label">purple</div><div class="hex">#7c3aed</div><div class="use">Carta Balance, gestión, costos especiales</div></div></div>
+    <div class="color-swatch"><div class="chip" style="background:#64748b;"></div><div class="info"><div class="label">muted</div><div class="hex">#64748b</div><div class="use">Texto secundario, metadata, placeholders</div></div></div>
+  </div>
+
+  <h3>Tonos LPS específicos</h3>
+  <div class="grid grid-3">
+    <div class="color-swatch"><div class="chip" style="background:#67e8f9;"></div><div class="info"><div class="label">lpsS0</div><div class="hex">#67e8f9</div></div></div>
+    <div class="color-swatch"><div class="chip" style="background:#fde047;"></div><div class="info"><div class="label">lpsS1</div><div class="hex">#fde047</div></div></div>
+    <div class="color-swatch"><div class="chip" style="background:#ef4444;"></div><div class="info"><div class="label">lpsS2</div><div class="hex">#ef4444</div></div></div>
+    <div class="color-swatch"><div class="chip" style="background:#86efac;"></div><div class="info"><div class="label">lpsCompletado</div><div class="hex">#86efac</div></div></div>
+    <div class="color-swatch"><div class="chip" style="background:#fca5a5;"></div><div class="info"><div class="label">lpsPendiente</div><div class="hex">#fca5a5</div></div></div>
+    <div class="color-swatch"><div class="chip" style="background:#94a3b8;"></div><div class="info"><div class="label">lpsBloqueado</div><div class="hex">#94a3b8</div></div></div>
+  </div>
+</section>
+
+<section id="tipografia">
+  <h2><span class="num">4</span> Tipografía</h2>
+  <p class="lead">
+    Una sola familia (Inter), 9 tamaños, 5 pesos. Suficiente flexibilidad sin caos.
+  </p>
+
+  <div class="preview">
+    <div class="preview-label">📐 ESCALA TIPOGRÁFICA</div>
+    <p style="font-size:36px;font-weight:900;color:var(--navy);">36px · size.3xl · CPI mega</p>
+    <p style="font-size:28px;font-weight:900;color:var(--navy);margin-top:8px;">28px · size.2xl · Hero titles</p>
+    <p style="font-size:20px;font-weight:800;color:var(--navy);margin-top:8px;">20px · size.xl · KPI values</p>
+    <p style="font-size:16px;font-weight:800;color:var(--navy);margin-top:8px;">16px · size.lg · Section titles</p>
+    <p style="font-size:14px;font-weight:700;color:var(--text);margin-top:8px;">14px · size.md · Subtitles</p>
+    <p style="font-size:13px;font-weight:600;color:var(--text);margin-top:8px;">13px · size.base · Body text</p>
+    <p style="font-size:12px;font-weight:600;color:var(--text);margin-top:8px;">12px · size.sm · Buttons, small body</p>
+    <p style="font-size:11px;font-weight:700;color:var(--muted);margin-top:8px;letter-spacing:0.4px;">11px · SIZE.XS · CAPTIONS</p>
+    <p style="font-size:10px;font-weight:800;color:var(--muted);margin-top:8px;letter-spacing:1.2px;">10px · SIZE.MICRO · LABELS</p>
+  </div>
+
+  <h3>Reglas de uso</h3>
+  <table>
+    <thead><tr><th>Token</th><th>Tamaño</th><th>Uso recomendado</th></tr></thead>
+    <tbody>
+      <tr><td><code>size.3xl</code> (36px)</td><td>Hero números</td><td>CPI principal del dashboard, KPI hero del módulo BIM</td></tr>
+      <tr><td><code>size.2xl</code> (28px)</td><td>Títulos hero</td><td>"Dashboard Analítico", banners principales</td></tr>
+      <tr><td><code>size.xl</code> (20px)</td><td>KPI valores</td><td>Números en cards de KPI (CPI 95%, HH 16,757)</td></tr>
+      <tr><td><code>size.lg</code> (16px)</td><td>Secciones</td><td>Títulos de sección dentro de páginas</td></tr>
+      <tr><td><code>size.md</code> (14px)</td><td>Subtítulos</td><td>Subtítulos, headers secundarios</td></tr>
+      <tr><td><code>size.base</code> (13px)</td><td>Body</td><td>Texto principal, párrafos largos</td></tr>
+      <tr><td><code>size.sm</code> (12px)</td><td>Botones</td><td>Texto en botones, descripciones cortas</td></tr>
+      <tr><td><code>size.xs</code> (11px)</td><td>Captions</td><td>Metadata, fechas, footers</td></tr>
+      <tr><td><code>size.micro</code> (10px)</td><td>Labels</td><td>LABELS EN MAYÚSCULAS con letter-spacing 1.2px</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="spacing">
+  <h2><span class="num">5</span> Spacing system</h2>
+  <p class="lead">
+    Múltiplos de 4px. Coherencia matemática que el cerebro percibe como armónico.
+  </p>
+
+  <div class="preview">
+    <div class="preview-label">📏 ESCALA DE SPACING</div>
+    <div class="spacing-row"><span class="name">xs</span><div class="bar" style="width:4px;"></div><span class="px">4px · entre items muy juntos</span></div>
+    <div class="spacing-row"><span class="name">sm</span><div class="bar" style="width:8px;"></div><span class="px">8px · gaps entre botones</span></div>
+    <div class="spacing-row"><span class="name">md</span><div class="bar" style="width:12px;"></div><span class="px">12px · padding default de cards</span></div>
+    <div class="spacing-row"><span class="name">lg</span><div class="bar" style="width:16px;"></div><span class="px">16px · padding amplio</span></div>
+    <div class="spacing-row"><span class="name">xl</span><div class="bar" style="width:24px;"></div><span class="px">24px · separación entre secciones</span></div>
+    <div class="spacing-row"><span class="name">2xl</span><div class="bar" style="width:32px;"></div><span class="px">32px · grandes separaciones</span></div>
+    <div class="spacing-row"><span class="name">3xl</span><div class="bar" style="width:48px;"></div><span class="px">48px · padding hero / containers</span></div>
+  </div>
+</section>
+
+<section id="componentes">
+  <h2><span class="num">6</span> Componentes reutilizables nuevos</h2>
+  <p class="lead">
+    Tres componentes que ahora puedes usar en cualquier vista para mantener consistencia.
+  </p>
+
+  <h3>📭 EmptyState</h3>
+  <p>Reemplaza los "Sin datos" pobres con placeholders amigables que orientan al usuario.</p>
+
+  <div class="preview">
+    <div class="preview-label">🎨 PREVIEW</div>
+    <div style="background:var(--white);border:2px dashed var(--border);padding:48px;border-radius:14px;text-align:center;">
+      <div style="width:72px;height:72px;border-radius:50%;background:var(--bg);display:inline-flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:16px;">🏗️</div>
+      <p style="font-weight:800;color:var(--navy);font-size:16px;margin-bottom:8px;">Sin vínculos BIM creados aún</p>
+      <p style="color:var(--muted);font-size:13px;max-width:440px;margin:0 auto 16px;">Crea el primer vínculo entre una actividad de la WBS y elementos del modelo BIM.</p>
+      <button class="demo-btn-gold">➕ Crear primer vínculo</button>
+    </div>
+  </div>
+
+  <pre><span class="k">import</span> EmptyState <span class="k">from</span> <span class="s">'../components/EmptyState'</span>;
+
+&lt;EmptyState
+  icono=<span class="s">"🏗️"</span>
+  titulo=<span class="s">"Sin vínculos BIM creados aún"</span>
+  descripcion=<span class="s">"Crea el primer vínculo..."</span>
+  variante=<span class="s">"bim"</span>
+  accion={{ label: <span class="s">"➕ Crear primer vínculo"</span>, onClick: abrirNuevo }}
+/&gt;</pre>
+
+  <h3>⏳ SkeletonLoader</h3>
+  <p>Placeholders animados con efecto shimmer mientras se cargan datos. Tres exports:</p>
+  <ul style="margin-left:22px;">
+    <li><code>Skeleton</code> — bloque genérico</li>
+    <li><code>SkeletonCard</code> — card completa</li>
+    <li><code>SkeletonTabla</code> — tabla con header y filas</li>
+    <li><code>SkeletonKPIs</code> — grid de KPIs</li>
+  </ul>
+
+  <div class="preview">
+    <div class="preview-label">🎨 PREVIEW (animado en la app)</div>
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;">
+      <div class="skeleton" style="width:40%;height:14px;border-radius:8px;background:linear-gradient(90deg,#e2e8f099 25%,#e2e8f0 50%,#e2e8f099 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div>
+      <div class="skeleton" style="width:80%;height:20px;border-radius:8px;background:linear-gradient(90deg,#e2e8f099 25%,#e2e8f0 50%,#e2e8f099 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div>
+      <div class="skeleton" style="width:65%;height:12px;border-radius:8px;background:linear-gradient(90deg,#e2e8f099 25%,#e2e8f0 50%,#e2e8f099 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div>
+    </div>
+    <style>@keyframes shimmer{0%{background-position:-200% 0;}100%{background-position:200% 0;}}</style>
+  </div>
+
+  <h3>🏷️ StatusChip</h3>
+  <p>Badge reutilizable con 7 variantes semánticas y 3 tamaños. Reemplaza badges hardcodeados.</p>
+
+  <div class="preview">
+    <div class="preview-label">🎨 VARIANTES</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+      <span class="demo-chip chip-success">✅ Vinculado</span>
+      <span class="demo-chip chip-danger">❌ Crítico</span>
+      <span class="demo-chip chip-warning">⚠️ Atención</span>
+      <span class="demo-chip chip-info">ℹ️ Info</span>
+      <span class="demo-chip chip-neutral">○ Neutral</span>
+      <span class="demo-chip" style="background:var(--gold-light);color:var(--gold-dark);">⭐ Gold</span>
+      <span class="demo-chip" style="background:var(--bg);color:var(--navy);">⚓ Navy</span>
+    </div>
+  </div>
+</section>
+
+<section id="animaciones">
+  <h2><span class="num">7</span> Animaciones globales</h2>
+  <p class="lead">
+    Un sistema de keyframes CSS que cualquier componente puede aplicar con clases utility.
+  </p>
+
+  <div class="preview">
+    <div class="preview-label">🎬 SAMPLES (pasa el mouse)</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+      <div class="anim-sample">Hover lift</div>
+      <div class="anim-sample">Scale 0.97 al click</div>
+      <div class="anim-sample">Transición suave</div>
+    </div>
+  </div>
+
+  <table>
+    <thead><tr><th>Clase CSS</th><th>Animación</th><th>Cuándo usar</th></tr></thead>
+    <tbody>
+      <tr><td><code>.anim-fade-in</code></td><td>Aparece con opacity 0→1</td><td>Carga inicial de cualquier sección</td></tr>
+      <tr><td><code>.anim-slide-up</code></td><td>Sube 8px + fade</td><td>Cards al entrar en viewport</td></tr>
+      <tr><td><code>.anim-slide-down</code></td><td>Baja 8px + fade</td><td>Banners superiores, dropdowns</td></tr>
+      <tr><td><code>.anim-scale-in</code></td><td>Escala 0.96→1 con bounce</td><td>Modales, dialogs</td></tr>
+      <tr><td><code>.anim-pulse</code></td><td>Opacity oscilante</td><td>Indicadores live (puntito demo)</td></tr>
+      <tr><td><code>.skeleton</code></td><td>Shimmer effect</td><td>Loading placeholders</td></tr>
+      <tr><td><code>.card-hover</code></td><td>Lift -2px + sombra</td><td>Cards clickeables</td></tr>
+      <tr><td><code>.btn-feedback</code></td><td>Scale 0.97 al :active</td><td>Todos los botones (UX táctil)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout info">
+    <strong>♿ Accesibilidad:</strong> Las animaciones respetan <code>prefers-reduced-motion</code> automáticamente
+    (próximo bloque). Usuarios con sensibilidad al movimiento podrán desactivarlas vía OS.
+  </div>
+</section>
+
+<section id="mejoras">
+  <h2><span class="num">8</span> Mejoras visuales aplicadas en este bloque</h2>
+  <p class="lead">
+    Cuatro mejoras concretas que ya están en el código entregado.
+  </p>
+
+  <h3>1. Banner "Modo demo" rediseñado</h3>
+  <div class="compare">
+    <div class="before">
+      <span class="label">❌ ANTES</span>
+      <h4>Banner amarillo agresivo</h4>
+      <ul>
+        <li>Fondo amarillo brillante (#fffbeb) que rompe el navy del navbar</li>
+        <li>Borde grueso amarillo, dos colores cálidos chocando</li>
+        <li>Botón "Salir" gris poco visible</li>
+        <li>Sin animación de entrada</li>
+      </ul>
+    </div>
+    <div class="after">
+      <span class="label">✅ AHORA</span>
+      <h4>Banner navy elegante</h4>
+      <ul>
+        <li>Fondo navy gradient (continuidad con navbar)</li>
+        <li>Borde dorado (acento de marca)</li>
+        <li>Pulse animado en indicador (vivo, no estático)</li>
+        <li>CTA "✕ SALIR DEL DEMO" con hover state</li>
+        <li>Animación slideDown al entrar</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>2. Tarjeta CPI con contexto</h3>
+  <div class="compare">
+    <div class="before">
+      <span class="label">❌ ANTES</span>
+      <h4>Solo número, sin contexto</h4>
+      <ul>
+        <li>Mostraba "CPI GLOBAL 81% / EFICIENCIA 81%"</li>
+        <li>El usuario tenía que saber que 81% es malo</li>
+        <li>Card plano sin profundidad</li>
+      </ul>
+    </div>
+    <div class="after">
+      <span class="label">✅ AHORA</span>
+      <h4>CPI + interpretación + glow</h4>
+      <ul>
+        <li>"CPI GLOBAL 81% — CRÍTICO" (etiqueta semántica auto)</li>
+        <li>"EFICIENCIA 81% — vs meta" (contexto adicional)</li>
+        <li>Glow decorativo blanco (profundidad, no plano)</li>
+        <li>Sombra gradient según color (más coherente)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="preview">
+    <div class="preview-label">🎨 NUEVO CPI CARD</div>
+    <div class="cpi-mockup">
+      <div style="position:relative;z-index:1;">
+        <p style="font-size:9px;font-weight:900;opacity:0.85;letter-spacing:1.4px;">CPI GLOBAL</p>
+        <p style="font-size:26px;font-weight:900;line-height:1;margin-top:3px;">95%</p>
+        <p style="font-size:9px;opacity:0.75;margin-top:2px;font-weight:700;">EXCELENTE</p>
+      </div>
+      <div style="position:relative;z-index:1;border-left:1px solid rgba(255,255,255,0.25);padding-left:14px;">
+        <p style="font-size:9px;font-weight:900;opacity:0.85;letter-spacing:1.2px;">EFICIENCIA</p>
+        <p style="font-size:16px;font-weight:900;margin-top:2px;">94%</p>
+        <p style="font-size:9px;opacity:0.75;margin-top:2px;font-weight:700;">vs meta</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>3. Botones colapsables con personalidad</h3>
+  <div class="preview">
+    <div class="preview-label">🎨 NUEVOS BOTONES</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="demo-btn-secondary">🔍 Filtros ▼</button>
+      <button class="demo-btn-gold">🔍 Filtros • ▼</button>
+      <button class="demo-btn-primary">📊 Resumen ▲</button>
+      <button class="demo-btn-secondary">🏆 Ranking <span style="background:var(--gold-light);color:var(--gold-dark);padding:1px 7px;border-radius:10px;font-size:10px;">5</span> ▼</button>
+    </div>
+  </div>
+
+  <h3>4. Navbar con micro-detalles</h3>
+  <ul style="margin-left:22px;">
+    <li><strong>Glow dorado decorativo</strong> en la esquina derecha (depth)</li>
+    <li><strong>Logo con shadow</strong> sutil para destacarlo del navy</li>
+    <li><strong>Icono central en cuadrito dorado</strong> (32px) integrado al título</li>
+    <li><strong>Badge con shadow</strong> para que "salte" del fondo</li>
+    <li><strong>Botón SALIR</strong> con hover rojo + shadow + transición 0.18s</li>
+    <li><strong>+4px en altura del navbar</strong> (60px) para más respiro visual</li>
+  </ul>
+</section>
+
+<section id="recomendaciones">
+  <h2><span class="num">9</span> Recomendaciones de continuidad</h2>
+  <p class="lead">
+    Mejoras que recomiendo priorizar en próximos bloques.
+  </p>
+
+  <div class="grid grid-2">
+    <div class="token-card">
+      <p style="font-size:24px;margin-bottom:8px;">🌙</p>
+      <h4 style="font-size:15px;font-weight:800;color:var(--navy);margin-bottom:6px;">Modo oscuro (dark mode)</h4>
+      <p style="font-size:12px;color:var(--muted);line-height:1.55;">
+        Ya tenemos los tokens. Solo falta una capa <code>theme</code> con colores
+        invertidos. Usuarios que trabajan de noche en obra lo agradecerán.
+      </p>
+    </div>
+    <div class="token-card">
+      <p style="font-size:24px;margin-bottom:8px;">♿</p>
+      <h4 style="font-size:15px;font-weight:800;color:var(--navy);margin-bottom:6px;">Accesibilidad WCAG AA</h4>
+      <p style="font-size:12px;color:var(--muted);line-height:1.55;">
+        Auditar contrastes de color, agregar <code>aria-labels</code> a botones con solo iconos,
+        soportar <code>prefers-reduced-motion</code>.
+      </p>
+    </div>
+    <div class="token-card">
+      <p style="font-size:24px;margin-bottom:8px;">📱</p>
+      <h4 style="font-size:15px;font-weight:800;color:var(--navy);margin-bottom:6px;">PWA installable</h4>
+      <p style="font-size:12px;color:var(--muted);line-height:1.55;">
+        Agregar manifest + service worker para que capataces instalen GRAPCO como app
+        en su celular, modo offline básico.
+      </p>
+    </div>
+    <div class="token-card">
+      <p style="font-size:24px;margin-bottom:8px;">🎯</p>
+      <h4 style="font-size:15px;font-weight:800;color:var(--navy);margin-bottom:6px;">Storybook de componentes</h4>
+      <p style="font-size:12px;color:var(--muted);line-height:1.55;">
+        Catalogar visualmente todos los componentes (button, card, chip, modal). Útil
+        para que nuevos desarrolladores entiendan rápido el sistema.
+      </p>
+    </div>
+    <div class="token-card">
+      <p style="font-size:24px;margin-bottom:8px;">🔔</p>
+      <h4 style="font-size:15px;font-weight:800;color:var(--navy);margin-bottom:6px;">Sistema de notificaciones</h4>
+      <p style="font-size:12px;color:var(--muted);line-height:1.55;">
+        Reemplazar Toast actual por sistema más rico: notificaciones persistentes,
+        agrupadas, con acciones inline (deshacer, ver más).
+      </p>
+    </div>
+    <div class="token-card">
+      <p style="font-size:24px;margin-bottom:8px;">⌨️</p>
+      <h4 style="font-size:15px;font-weight:800;color:var(--navy);margin-bottom:6px;">Atajos de teclado</h4>
+      <p style="font-size:12px;color:var(--muted);line-height:1.55;">
+        <code>Cmd+K</code> para command palette, <code>Esc</code> para cerrar modales,
+        flechas para navegar tabs. Power users lo amarán.
+      </p>
+    </div>
+    <div class="token-card">
+      <p style="font-size:24px;margin-bottom:8px;">📊</p>
+      <h4 style="font-size:15px;font-weight:800;color:var(--navy);margin-bottom:6px;">Tooltips contextuales</h4>
+      <p style="font-size:12px;color:var(--muted);line-height:1.55;">
+        Hover sobre KPIs muestra explicación: "CPI = EV/AC. Mide eficiencia de costo,
+        ≥1.0 está bajo presupuesto."
+      </p>
+    </div>
+    <div class="token-card">
+      <p style="font-size:24px;margin-bottom:8px;">🔐</p>
+      <h4 style="font-size:15px;font-weight:800;color:var(--navy);margin-bottom:6px;">Seguridad Firebase (URGENTE)</h4>
+      <p style="font-size:12px;color:var(--muted);line-height:1.55;">
+        Las reglas Firestore + Storage siguen abiertas. Cualquiera con la URL puede
+        leer/escribir todo. <strong>Bloque 11 = solo seguridad.</strong>
+      </p>
+    </div>
+  </div>
+</section>
+
+<section id="archivos">
+  <h2><span class="num">10</span> Archivos del Bloque 10</h2>
+  <p class="lead">
+    Resumen de qué archivos cambiaron y cómo desplegarlos.
+  </p>
+
+  <table>
+    <thead><tr><th style="width:32%">Archivo</th><th style="width:14%">Estado</th><th>Cambio</th></tr></thead>
+    <tbody>
+      <tr><td><code>EmptyState.jsx</code></td><td><strong style="color:var(--green-dark);">NUEVO</strong></td><td>Componente de estado vacío con CTA opcional</td></tr>
+      <tr><td><code>SkeletonLoader.jsx</code></td><td><strong style="color:var(--green-dark);">NUEVO</strong></td><td>4 exports: Skeleton, SkeletonCard, SkeletonTabla, SkeletonKPIs</td></tr>
+      <tr><td><code>StatusChip.jsx</code></td><td><strong style="color:var(--green-dark);">NUEVO</strong></td><td>Badge reutilizable, 7 variantes, 3 tamaños</td></tr>
+      <tr><td><code>styles.js</code></td><td>Extendido</td><td>+150 líneas: SPACING, TYPOGRAPHY, RADIUS, ANIMATION, Z_INDEX, helpers font/cardStyle/buttonStyle</td></tr>
+      <tr><td><code>index.css</code></td><td>Extendido</td><td>+8 keyframes + 8 clases utility + scrollbar estilizado + focus-visible</td></tr>
+      <tr><td><code>App.jsx</code></td><td>Modificado</td><td>Banner "Modo demo" rediseñado (navy + dorado + pulse)</td></tr>
+      <tr><td><code>Navbar.jsx</code></td><td>Reescrito</td><td>+glow decorativo +icono integrado +hover refinado +60px altura</td></tr>
+      <tr><td><code>Ingeniero.jsx</code></td><td>Modificado</td><td>Barra de comando v2: CPI con etiqueta semántica + botones con badges + animación entrada</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Para desplegar</h3>
+  <div class="callout success">
+    <strong>📋 Pasos:</strong>
+    <ol style="margin:8px 0 0 22px;font-size:13px;">
+      <li>Crear <code>src/components/EmptyState.jsx</code></li>
+      <li>Crear <code>src/components/SkeletonLoader.jsx</code></li>
+      <li>Crear <code>src/components/StatusChip.jsx</code></li>
+      <li>Reemplazar <code>src/utils/styles.js</code></li>
+      <li>Reemplazar <code>src/index.css</code></li>
+      <li>Reemplazar <code>src/App.jsx</code></li>
+      <li>Reemplazar <code>src/components/Navbar.jsx</code></li>
+      <li>Reemplazar <code>src/views/Ingeniero.jsx</code></li>
+      <li><code>npm run dev</code> y disfrutar</li>
+    </ol>
+  </div>
+
+  <div class="callout info">
+    <strong>🔄 Backwards compatible:</strong> Los componentes viejos siguen funcionando
+    porque solo extendí <code>styles.js</code> sin cambiar exports existentes. Puedes
+    migrar componentes a los nuevos tokens gradualmente, sin romper nada.
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="logo">GRAPCO SAC</div>
+  <p>Capítulo 10 · Sistema de Diseño y Refinamiento UX/UI · Mayo 2026</p>
+  <p style="margin-top:8px;opacity:0.6;">Documentación viva del Design System GRAPCO Produc-App</p>
+</footer>
+
+</body>
+</html>

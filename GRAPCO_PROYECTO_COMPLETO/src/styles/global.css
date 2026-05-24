@@ -1,0 +1,241 @@
+/* src/styles/global.css — Tipografia + estilos base GRAPCO 2026
+ * Carga: Inter (UI), JetBrains Mono (codigos/fechas)
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;700&display=swap');
+
+:root {
+  --grapco-font-ui:   'IBM Plex Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --grapco-font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* Paleta GRAPCO 2026 — tono premium (alineada con BASE en styles.js) */
+  --grapco-navy:        #0F2A47;
+  --grapco-navy-deep:   #081A2E;
+  --grapco-navy-light:  #1E4674;
+  --grapco-gold:        #E5A82F;
+  --grapco-gold-deep:   #B07D1B;
+  --grapco-green:       #10B981;
+  --grapco-red:         #E11D48;
+  --grapco-purple:      #7c3aed;
+  --grapco-blue:        #2563eb;
+  --grapco-pink:        #ec4899;
+  --grapco-teal:        #0d9488;
+  --grapco-text:        #0F172A;
+  --grapco-muted:       #5B6878;
+  --grapco-bg:          #F6F8FB;
+  --grapco-bg-soft:     #FCFCFD;
+  --grapco-border:      #E5E9F0;
+  --grapco-white:       #FFFFFF;
+}
+
+html, body {
+  font-family: var(--grapco-font-ui);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'ss01', 'ss02';
+  letter-spacing: -0.002em;
+  color: var(--grapco-text);
+  background: var(--grapco-bg);
+  /* Bloquea scroll horizontal accidental por elementos que se desbordan */
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100dvh;
+  overflow-x: clip;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Imágenes responsive por default — no se desbordan de su contenedor */
+img, video, svg, canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Tablas: si quedan grandes, scroll horizontal dentro de su wrapper en vez de empujar el layout */
+table { max-width: 100%; }
+
+/* Smartphones: reducir font-size base y paddings de contenedores */
+@media (max-width: 640px) {
+  html, body { font-size: 13px; }
+  /* No esconder nada por defecto — cada componente decide qué oculta */
+}
+
+/* Tablets: ajustes intermedios */
+@media (min-width: 641px) and (max-width: 1024px) {
+  html, body { font-size: 13.5px; }
+}
+
+/* Pantallas muy grandes (4K, ultrawide): contenedores tope para evitar líneas larguísimas */
+@media (min-width: 2000px) {
+  html, body { font-size: 15px; }
+}
+
+/* ── Mobile polish 2026-05 ─────────────────────────────────────────────── */
+
+/* Quitar el destello azul/gris por defecto al tocar elementos en Android/iOS */
+* {
+  -webkit-tap-highlight-color: rgba(229, 168, 47, 0.18);
+}
+
+/* Toque-friendly: botones cumplen el mínimo Apple/Material (44px) en mobile,
+ * inputs en 42px para que el dedo apunte fácil. Solo aplica si el componente
+ * no fija una altura propia. */
+@media (max-width: 640px) {
+  button:not([data-compact]),
+  a[role='button'],
+  input[type='button'],
+  input[type='submit'] {
+    min-height: 44px;
+  }
+  input[type='text'], input[type='number'], input[type='date'],
+  input[type='tel'],  input[type='email'], input[type='password'],
+  select, textarea {
+    min-height: 42px;
+    /* iOS Safari hace zoom automático cuando un input es < 16px → bloqueado. */
+    font-size: 16px;
+  }
+  /* Más aire y respeto de áreas seguras (notch / home indicator) */
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Scroll inercial en iOS para listas largas */
+.scroll-area, [data-scroll], main, aside {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Status bar / navbar respetan el notch del iPhone */
+nav[role='navigation'], nav.app-navbar {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* Mini "lift" al presionar — feedback visual rápido en touch */
+.btn-feedback:active {
+  transform: scale(0.97);
+  transition: transform 0.06s ease-out;
+}
+
+/* Inputs: no overflow nunca por más que el placeholder sea largo */
+input, select, textarea {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* FIX GLOBAL: el desplegable nativo de <select> se pinta sobre fondo blanco del
+ * SO. Si el <select> tiene texto claro (kioskos, headers oscuros), las opciones
+ * quedaban blanco-sobre-blanco e invisibles. Forzamos opciones legibles SIEMPRE,
+ * sin importar el color del select. Una sola regla arregla toda la plataforma. */
+select option,
+select optgroup {
+  color: #0F2A47;
+  background-color: #ffffff;
+  font-weight: 600;
+}
+select option:checked,
+select option:hover {
+  background-color: #E5A82F;
+  color: #0F2A47;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-feature-settings: inherit;
+}
+
+/* Codigos, fechas, IDs: monoespaciada */
+.mono, code, kbd, samp, pre, [data-mono] {
+  font-family: var(--grapco-font-mono);
+  font-feature-settings: 'tnum';
+  letter-spacing: 0;
+}
+
+/* Tabular nums para tablas/numeros */
+table {
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Quitar el "Saltar al contenido principal" — se ocultaba con .skip-link
+ * pero al activar Inter las reglas accesibles lo hacian visible siempre.
+ * Lo dejamos accesible solo cuando recibe foco (mejor UX). */
+.skip-link {
+  position: absolute;
+  left: -9999px; top: -9999px;
+  width: 1px; height: 1px;
+  overflow: hidden;
+}
+.skip-link:focus {
+  left: 16px; top: 16px;
+  width: auto; height: auto;
+  background: var(--grapco-navy);
+  color: var(--grapco-gold);
+  padding: 10px 16px;
+  border-radius: 8px;
+  z-index: 9999;
+  font-weight: 800;
+  text-decoration: none;
+  outline: 2px solid var(--grapco-gold);
+}
+
+/* Spinner para Suspense fallbacks (lazy-load de módulos) */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Animacion de fade-in para transiciones de pagina */
+.anim-fade-in {
+  animation: anim-fade-in 0.25s ease-out;
+}
+@keyframes anim-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Animaciones para el modal del perfil (Portal) */
+@keyframes grapco-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes grapco-pop-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+/* Scroll suave */
+html { scroll-behavior: smooth; }
+
+/* Scrollbar gold/navy */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--grapco-bg-soft); }
+::-webkit-scrollbar-thumb {
+  background: var(--grapco-border);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--grapco-muted); }
+
+/* Selection color (dorado sobre navy) */
+::selection {
+  background: rgba(229, 168, 47, 0.30);
+  color: var(--grapco-navy);
+}
+
+/* Foco accesible y refinado en todos los interactivos */
+:where(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid var(--grapco-gold);
+  outline-offset: 2px;
+  border-radius: 6px;
+}

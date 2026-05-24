@@ -1,0 +1,12 @@
+{
+  "users": [
+    {
+      "localId": "admingrapco001",
+      "email": "admin@grapco.pe",
+      "displayName": "Admin GRAPCO",
+      "emailVerified": true,
+      "passwordHash": "YWRtaW4xMjM0NQ==",
+      "salt": ""
+    }
+  ]
+}

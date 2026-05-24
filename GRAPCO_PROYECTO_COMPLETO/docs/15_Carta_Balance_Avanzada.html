@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capítulo 16 · Carta Balance Avanzada · GRAPCO Produc-App</title>
+<style>
+  :root { --navy:#1e3a5f; --navy-dark:#152a47; --gold:#f59e0b; --gold-dark:#d97706; --gold-light:#fef3c7; --green:#16a34a; --green-dark:#15803d; --green-light:#dcfce7; --red:#dc2626; --red-light:#fee2e2; --purple:#7c3aed; --bg:#f8fafc; --white:#fff; --border:#e2e8f0; --text:#1e293b; --muted:#64748b; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html { scroll-behavior:smooth; }
+  body { font-family:"Inter",system-ui,sans-serif; color:var(--text); background:var(--bg); line-height:1.65; font-size:15px; }
+  header.hero { background:linear-gradient(135deg,var(--navy) 0%,var(--navy-dark) 100%); color:#fff; padding:60px 40px; border-bottom:5px solid var(--gold); position:relative; overflow:hidden; }
+  header.hero::before { content:''; position:absolute; top:-100px; right:-100px; width:360px; height:360px; border-radius:50%; background:var(--gold); opacity:.12; filter:blur(60px); }
+  header.hero .inner { max-width:1200px; margin:0 auto; position:relative; z-index:2; }
+  header.hero .badge { display:inline-block; padding:6px 16px; background:rgba(245,158,11,.2); border:1px solid var(--gold); border-radius:30px; color:var(--gold); font-size:11px; font-weight:800; letter-spacing:1.6px; margin-bottom:16px; }
+  header.hero h1 { font-size:42px; font-weight:900; margin-bottom:14px; letter-spacing:-.6px; line-height:1.15; }
+  header.hero .subtitle { font-size:17px; opacity:.85; max-width:740px; line-height:1.5; }
+  header.hero .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:16px; margin-top:30px; padding-top:24px; border-top:1px solid rgba(255,255,255,.15); }
+  header.hero .stat { background:rgba(255,255,255,.05); padding:14px 18px; border-radius:10px; border:1px solid rgba(245,158,11,.2); }
+  header.hero .stat .num { font-size:24px; font-weight:900; color:var(--gold); line-height:1; }
+  header.hero .stat .lbl { font-size:11px; opacity:.8; margin-top:6px; }
+
+  nav.toc { background:var(--white); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; box-shadow:0 2px 12px rgba(15,23,42,.05); }
+  nav.toc .inner { max-width:1200px; margin:0 auto; padding:0 40px; display:flex; gap:4px; overflow-x:auto; }
+  nav.toc a { padding:16px 14px; color:var(--muted); text-decoration:none; font-size:12px; font-weight:700; white-space:nowrap; border-bottom:3px solid transparent; transition:all .15s; }
+  nav.toc a:hover { color:var(--navy); border-bottom-color:var(--gold); }
+
+  main { max-width:1200px; margin:0 auto; padding:60px 40px 80px; }
+  section { margin-bottom:60px; scroll-margin-top:80px; }
+  section h2 { font-size:30px; font-weight:900; color:var(--navy); margin-bottom:10px; display:flex; align-items:center; gap:14px; }
+  section h2 .num { width:44px; height:44px; background:linear-gradient(135deg,var(--gold),var(--gold-dark)); color:#fff; border-radius:11px; display:inline-flex; align-items:center; justify-content:center; font-size:18px; font-weight:900; }
+  section .lead { font-size:16px; color:var(--muted); margin-bottom:24px; padding-left:58px; }
+  section h3 { font-size:19px; font-weight:800; color:var(--navy); margin:30px 0 12px; padding-left:14px; border-left:4px solid var(--gold); }
+  section h4 { font-size:15px; font-weight:800; color:var(--navy); margin:18px 0 8px; }
+
+  pre { background:#0f172a; color:#e2e8f0; padding:16px 18px; border-radius:10px; font-family:'Consolas',monospace; font-size:12px; line-height:1.55; overflow-x:auto; margin:12px 0; border-left:4px solid var(--gold); }
+  pre .c { color:#94a3b8; } pre .k { color:#fbbf24; } pre .s { color:#86efac; }
+  code { background:var(--bg); padding:2px 8px; border-radius:4px; font-size:12.5px; color:var(--navy); font-weight:700; font-family:'Consolas',monospace; }
+
+  .callout { border-radius:12px; padding:16px 20px; margin:16px 0; border-left:5px solid; }
+  .callout.success { background:var(--green-light); border-color:var(--green-dark); color:var(--green-dark); }
+  .callout.gold { background:var(--gold-light); border-color:var(--gold-dark); color:var(--gold-dark); }
+  .callout.info { background:#eff6ff; border-color:var(--navy); color:var(--navy); }
+  .callout.danger { background:var(--red-light); border-color:var(--red); color:var(--red); }
+  .callout strong { font-weight:900; }
+
+  table { width:100%; border-collapse:collapse; background:var(--white); border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(15,23,42,.05); margin:14px 0; font-size:13px; }
+  th { background:var(--navy); color:#fff; padding:13px 16px; text-align:left; font-size:11px; font-weight:800; letter-spacing:.4px; }
+  td { padding:12px 16px; border-bottom:1px solid var(--border); font-size:13px; }
+  tr:nth-child(even) td { background:#f8fafc; }
+  td code { font-size:11px; }
+
+  .grid-2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px; }
+  .feature { background:var(--white); border-radius:14px; border:1px solid var(--border); padding:22px 24px; border-top:4px solid var(--gold); }
+  .feature .ico { font-size:32px; margin-bottom:10px; }
+  .feature h4 { font-size:16px; font-weight:900; color:var(--navy); margin-bottom:6px; }
+  .feature p { font-size:13px; color:var(--muted); line-height:1.55; }
+  .feature.green { border-top-color: var(--green); }
+  .feature.purple { border-top-color: var(--purple); }
+  .feature.red { border-top-color: var(--red); }
+
+  .cita { background: var(--white); border-radius: 12px; padding: 16px 22px; margin-top: 16px; border-left: 4px solid var(--purple); box-shadow: 0 1px 3px rgba(15,23,42,.04); }
+  .cita p { font-size:14px; color:var(--text); font-style:italic; margin-bottom:8px; }
+  .cita .autor { font-size:12px; color:var(--muted); font-weight:700; font-style:normal; }
+
+  .check-list { list-style:none; padding:0; }
+  .check-list li { padding:10px 0 10px 36px; position:relative; font-size:14px; border-bottom:1px solid var(--border); }
+  .check-list li:last-child { border-bottom:none; }
+  .check-list li::before { content:'✅'; position:absolute; left:0; top:11px; font-size:16px; }
+
+  .formula { background: linear-gradient(135deg, #1e3a5f, #152a47); color: #fff; border-radius: 14px; padding: 24px 28px; margin: 18px 0; font-family: 'Consolas', monospace; font-size: 16px; text-align: center; border-left: 5px solid var(--gold); box-shadow: 0 8px 24px rgba(15,23,42,.15); }
+  .formula .label { font-size: 11px; color: var(--gold); letter-spacing: 1.5px; margin-bottom: 8px; font-family: 'Inter', sans-serif; font-weight: 800; }
+  .formula .ec { font-size: 22px; font-weight: 700; color: #fff; margin: 8px 0; }
+  .formula .desc { font-size: 12px; color: rgba(255,255,255,.75); margin-top: 8px; font-family: 'Inter', sans-serif; }
+
+  .compare { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0; }
+  @media (max-width:800px) { .compare { grid-template-columns:1fr; } }
+  .compare > div { background:var(--white); border-radius:12px; padding:18px 22px; border-top:4px solid; }
+  .compare .before { border-top-color: var(--red); }
+  .compare .after { border-top-color: var(--green); }
+  .compare .lab { display:inline-block; padding:3px 10px; border-radius:12px; font-size:9px; font-weight:900; letter-spacing:.6px; margin-bottom:10px; }
+  .compare .before .lab { background:var(--red-light); color:var(--red); }
+  .compare .after .lab { background:var(--green-light); color:var(--green-dark); }
+  .compare h5 { font-size:14px; font-weight:800; color:var(--navy); margin-bottom:8px; }
+  .compare ul { margin-left:20px; margin-top:6px; }
+  .compare li { font-size:12.5px; line-height:1.55; margin-bottom:4px; }
+
+  .steps { counter-reset: step; padding:0; list-style:none; }
+  .steps li { counter-increment:step; padding:14px 18px 14px 64px; background:var(--white); border-radius:10px; margin-bottom:10px; position:relative; border-left:4px solid var(--gold); box-shadow:0 1px 3px rgba(15,23,42,.04); }
+  .steps li::before { content:counter(step); position:absolute; left:16px; top:50%; transform:translateY(-50%); width:32px; height:32px; background:var(--gold); color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:14px; }
+  .steps li strong { color:var(--navy); }
+
+  footer { background:var(--navy); color:rgba(255,255,255,.75); padding:36px 40px; text-align:center; font-size:12px; border-top:4px solid var(--gold); }
+  footer .logo { font-size:18px; font-weight:900; color:var(--gold); letter-spacing:2px; margin-bottom:8px; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="inner">
+    <span class="badge">⚖️ CAPÍTULO 16 · CARTA BALANCE AVANZADA</span>
+    <h1>De medición pasiva a optimización activa</h1>
+    <p class="subtitle">
+      Decimosexta iteración: la Carta Balance pasa de ser un instrumento que solo mide a ser un motor que <strong>genera estrategia</strong>. Identifica top performers, calcula sinergia entre parejas, detecta drag performers y recomienda automáticamente la composición óptima de cuadrilla por actividad.
+    </p>
+    <div class="stats">
+      <div class="stat"><div class="num">562 L</div><div class="lbl">Motor analítico</div></div>
+      <div class="stat"><div class="num">3</div><div class="lbl">Sub-vistas nuevas</div></div>
+      <div class="stat"><div class="num">7</div><div class="lbl">Algoritmos</div></div>
+      <div class="stat"><div class="num">9</div><div class="lbl">Subcategorías TNC</div></div>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="inner">
+    <a href="#problema">🎯 Problema</a>
+    <a href="#estado-arte">📚 Estado del arte</a>
+    <a href="#luf">📐 LUF</a>
+    <a href="#vistas">🖥️ 3 vistas nuevas</a>
+    <a href="#algoritmo">🤖 Algoritmo</a>
+    <a href="#impacto">📊 Impacto</a>
+    <a href="#deploy">🚀 Despliegue</a>
+  </div>
+</nav>
+
+<main>
+
+<section id="problema">
+  <h2><span class="num">🎯</span> El problema con la Carta Balance "clásica"</h2>
+  <p class="lead">
+    La implementación tradicional de Carta Balance se queda en medir. Mide y reporta TP/TC/TNC, y ahí se acaba. La data queda guardada pero no se accionar.
+  </p>
+
+  <div class="compare">
+    <div class="before">
+      <span class="lab">❌ ANTES</span>
+      <h5>Solo mediciones agregadas</h5>
+      <ul>
+        <li>"La cuadrilla tuvo 32% TP" (¿y qué hago con eso?)</li>
+        <li>Sin diferenciar por persona individual</li>
+        <li>Sin identificar causas específicas del TNC</li>
+        <li>Sin comparar entre cartas balance</li>
+        <li>Sin recomendaciones para el siguiente turno</li>
+        <li>Sin estrategia para armar próximas cuadrillas</li>
+      </ul>
+    </div>
+    <div class="after">
+      <span class="lab">✅ AHORA (Bloque 16)</span>
+      <h5>Motor de optimización</h5>
+      <ul>
+        <li>Ranking individual: <strong>quién es el más productivo</strong></li>
+        <li>Pareto de causas: <strong>qué TNC atacar primero</strong></li>
+        <li>Crew Balance Chart: <strong>visualización por persona</strong></li>
+        <li>Detección de parejas productivas (sinergia)</li>
+        <li>Detección de "drag performers" (bajo rendimiento)</li>
+        <li><strong>Recomendación automática</strong> de cuadrilla óptima por actividad</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="estado-arte">
+  <h2><span class="num">📚</span> Estado del arte (literatura consultada)</h2>
+  <p class="lead">
+    El motor implementa conceptos validados de la literatura de Lean Construction y Work Sampling.
+  </p>
+
+  <div class="grid-2">
+    <div class="feature">
+      <div class="ico">📐</div>
+      <h4>LUF · Labor Utilization Factor</h4>
+      <p>Métrica agregada estándar industria: combina TP + 0.5×TC. Más rica que solo TP. Rangos sanos: 60-80%.</p>
+    </div>
+    <div class="feature green">
+      <div class="ico">📊</div>
+      <h4>Crew Balance Chart</h4>
+      <p>Kuprenas & Fakhouri. Visualización de idle time individual vs total. Permite reasignar roles para minimizar tiempo muerto. Caso: reducción de idle 39% → 27%.</p>
+    </div>
+    <div class="feature purple">
+      <div class="ico">🎯</div>
+      <h4>Pareto de TNC</h4>
+      <p>Borcherding (1976). 80/20 aplicado a tiempo no contributorio: típicamente 2-3 causas explican el 70% del TNC. Atacar esas primero.</p>
+    </div>
+    <div class="feature">
+      <div class="ico">👥</div>
+      <h4>Multiskilling + Aprendizaje</h4>
+      <p>Hossain et al. (2015). Composición óptima combina trabajadores con múltiples habilidades + niveles de experiencia. Caso 1M+1H suele ser óptimo en albañilería.</p>
+    </div>
+  </div>
+
+  <div class="cita">
+    <p>"El crew balance chart no es solo una técnica de medición — es una herramienta de optimización iterativa. Cada análisis revela una mejora posible que se valida en la siguiente medición."</p>
+    <div class="autor">— Adaptado de Kuprenas & Fakhouri, "A Crew Balance Case Study" (CMAA)</div>
+  </div>
+
+  <div class="cita">
+    <p>"Productividad en construcción típicamente: 30% TP, 35% TC, 35% TNC (Borcherding 34%, O'Brien 32%, Orth & Jenkins 29%). Llevar el TP a 45%+ es excepcional y requiere intervención sistemática."</p>
+    <div class="autor">— Síntesis de literatura de Work Sampling 1985-2020</div>
+  </div>
+</section>
+
+<section id="luf">
+  <h2><span class="num">📐</span> LUF · La métrica clave</h2>
+  <p class="lead">
+    En lugar de evaluar a una persona/cuadrilla solo por TP, usamos LUF (Labor Utilization Factor).
+  </p>
+
+  <div class="formula">
+    <div class="label">FÓRMULA LUF</div>
+    <div class="ec">LUF = TP + 0.5 × TC</div>
+    <div class="desc">Donde TP = % trabajo productivo, TC = % trabajo contributorio</div>
+  </div>
+
+  <h3>¿Por qué no solo TP?</h3>
+  <p>Una cuadrilla con 30% TP y 60% TC es <strong>diferente</strong> de una con 30% TP y 60% TNC.</p>
+  <p>La primera está haciendo trabajo necesario aunque no agregue valor directo (transportar materiales es necesario antes de poder colocarlos). La segunda está perdiendo tiempo. <strong>El LUF distingue ambas:</strong></p>
+
+  <table>
+    <thead><tr><th>Escenario</th><th>TP</th><th>TC</th><th>TNC</th><th>LUF</th><th>Clasificación</th></tr></thead>
+    <tbody>
+      <tr><td>Cuadrilla A (necesario)</td><td>30%</td><td>60%</td><td>10%</td><td><strong>60%</strong></td><td style="color:var(--green-dark);font-weight:900;">🟢 BUENO</td></tr>
+      <tr><td>Cuadrilla B (perdiendo tiempo)</td><td>30%</td><td>10%</td><td>60%</td><td><strong>35%</strong></td><td style="color:var(--red);font-weight:900;">🔴 CRÍTICO</td></tr>
+      <tr><td>Cuadrilla C (excepcional)</td><td>50%</td><td>30%</td><td>20%</td><td><strong>65%</strong></td><td style="color:var(--green-dark);font-weight:900;">🟢 BUENO</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Rangos de LUF (umbrales del sistema)</h3>
+  <table>
+    <thead><tr><th>Rango</th><th>Clasificación</th><th>Acción recomendada</th></tr></thead>
+    <tbody>
+      <tr><td>≥ 70%</td><td>🟢 EXCELENTE</td><td>Documentar buenas prácticas. Replicar.</td></tr>
+      <tr><td>60-69%</td><td>🟢 BUENO</td><td>Mantener. Pequeñas optimizaciones.</td></tr>
+      <tr><td>50-59%</td><td>🟡 ACEPTABLE</td><td>Identificar causa principal y atacarla.</td></tr>
+      <tr><td>40-49%</td><td>🟠 BAJO</td><td>Intervención de planificación necesaria.</td></tr>
+      <tr><td>&lt; 40%</td><td>🔴 CRÍTICO</td><td>Revisar todo: composición, supervisión, materiales.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="vistas">
+  <h2><span class="num">🖥️</span> 3 vistas nuevas en la app</h2>
+  <p class="lead">
+    El módulo Carta Balance ahora tiene 3 sub-pestañas que cubren el ciclo completo: medir → analizar → optimizar.
+  </p>
+
+  <div class="grid-2">
+    <div class="feature">
+      <div class="ico">⚖️</div>
+      <h4>1. Capturar (existente, mejorado)</h4>
+      <p>El capataz hace la medición como antes (matriz de trabajadores × tiempo), pero ahora cada celda de TC/TNC tiene <strong>subcategoría</strong> (espera material, retrabajo, etc.). Al guardar, los datos se almacenan en doble formato: legacy + analítico nuevo.</p>
+    </div>
+    <div class="feature green">
+      <div class="ico">📊</div>
+      <h4>2. Análisis (NUEVA)</h4>
+      <p>Vista para el ingeniero con 4 tabs internos: <strong>Ranking</strong> de personas por LUF, <strong>Pareto TNC</strong> con causas críticas, <strong>Crew Balance Chart</strong> visual por persona, y <strong>Recomendaciones</strong> automáticas.</p>
+    </div>
+    <div class="feature purple">
+      <div class="ico">🤖</div>
+      <h4>3. Optimizador (NUEVA)</h4>
+      <p>El ingeniero indica una actividad y un tamaño de cuadrilla. El motor analiza el histórico, aplica el algoritmo greedy con boost por parejas productivas, y recomienda <strong>qué personas específicas formar la cuadrilla óptima</strong>.</p>
+    </div>
+  </div>
+</section>
+
+<section id="algoritmo">
+  <h2><span class="num">🤖</span> El algoritmo de optimización</h2>
+  <p class="lead">
+    El generador de cuadrillas óptimas usa un greedy con boost por sinergia. No es ML — es estadística clásica + heurística informada por la literatura.
+  </p>
+
+  <h3>Paso a paso del algoritmo</h3>
+  <ol class="steps">
+    <li><strong>Filtrar histórico:</strong> tomar solo Cartas Balance de la actividad objetivo (ej. "encofrado").</li>
+    <li><strong>Calcular ranking individual:</strong> LUF promedio de cada persona en esa actividad, ponderado por número de observaciones.</li>
+    <li><strong>Calcular score:</strong> <code>score = LUF × √(min(n/30, 3))</code>. La raíz penaliza pocas observaciones (poca confianza).</li>
+    <li><strong>Detectar parejas productivas:</strong> identificar combinaciones de personas con sinergia positiva (LUF juntos &gt; LUF individual promedio).</li>
+    <li><strong>Greedy:</strong> tomar el top performer como "líder". Marcar como rol 'líder'.</li>
+    <li><strong>Boost por pareja:</strong> buscar la pareja productiva más fuerte del líder que no esté ya incluida. Marcarla como 'pareja productiva'.</li>
+    <li><strong>Repetir hasta llenar:</strong> el siguiente miembro busca pareja con el último incluido. Si no hay, toma el siguiente top performer.</li>
+    <li><strong>Calcular LUF estimado de la cuadrilla</strong> y clasificar (excelente/bueno/aceptable/...).</li>
+    <li><strong>Generar advertencias:</strong> avisar si los datos son insuficientes, si hay miembros con baja confianza, etc.</li>
+  </ol>
+
+  <h3>Ejemplo concreto</h3>
+  <p><strong>Input:</strong> actividad="Encofrado de muros", tamaño=4 personas</p>
+  <p><strong>Output:</strong></p>
+  <pre><span class="c">// Cuadrilla recomendada</span>
+1. <span class="k">Juan Pérez</span>     (líder)            LUF 78% · "Top performer en Encofrado (12 sesiones, confianza 95%)"
+2. <span class="k">Carlos Vega</span>    (pareja productiva) LUF 65% · "Sinergia +8.2 con Juan en 5 sesiones previas"
+3. <span class="k">Luis Mamani</span>    (pareja productiva) LUF 62% · "Sinergia +5.1 con Carlos en 3 sesiones"
+4. <span class="k">Pedro Quispe</span>   (top performer)    LUF 58% · "Top 4 en Encofrado (LUF 58%)"
+
+<span class="c">// LUF estimado de la cuadrilla: 65.75% → 🟢 BUENO</span>
+<span class="c">// Advertencias: ninguna · 12 Cartas Balance históricas</span></pre>
+
+  <div class="callout info">
+    <strong>💡 Detalle clave:</strong> el algoritmo NO solo toma los top 4 por LUF. Si las personas 5 y 7 tienen sinergia documentada con el líder, las prefiere sobre la persona 4. Esto reproduce conocimiento que un buen residente de obra ya tiene intuitivamente.
+  </div>
+</section>
+
+<section id="subcategorias">
+  <h2><span class="num">📋</span> Subcategorías estándar de TC y TNC</h2>
+  <p class="lead">
+    Para que el Pareto sea útil, hay que clasificar el TNC con etiquetas estándares. La literatura propone estas:
+  </p>
+
+  <h3>Trabajo Contributorio (TC) — 6 subcategorías</h3>
+  <table>
+    <thead><tr><th>ID</th><th>Subcategoría</th><th>Ejemplo</th></tr></thead>
+    <tbody>
+      <tr><td>🚚 transporte</td><td>Transporte de materiales</td><td>Llevar fierro al frente</td></tr>
+      <tr><td>📐 mediciones</td><td>Mediciones / replanteo</td><td>Tomar medidas con cinta</td></tr>
+      <tr><td>👂 instrucciones</td><td>Recibir instrucciones</td><td>Charla con el capataz</td></tr>
+      <tr><td>🧹 limpieza</td><td>Limpieza del frente</td><td>Quitar escombros antes de vaciar</td></tr>
+      <tr><td>🔧 preparacion</td><td>Preparación / armado</td><td>Armar andamio, preparar herramientas</td></tr>
+      <tr><td>☕ descanso_prog</td><td>Descanso programado</td><td>Refrigerio de 9 AM</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Trabajo No Contributorio (TNC) — 9 subcategorías</h3>
+  <table>
+    <thead><tr><th>ID</th><th>Subcategoría</th><th>Crítica</th><th>Ejemplo</th></tr></thead>
+    <tbody>
+      <tr><td>📦 espera_material</td><td>Espera de material</td><td style="color:var(--red);font-weight:900;">SÍ</td><td>No llegó el cemento</td></tr>
+      <tr><td>🏗️ espera_equipo</td><td>Espera de equipo</td><td style="color:var(--red);font-weight:900;">SÍ</td><td>Mezcladora ocupada por otra cuadrilla</td></tr>
+      <tr><td>⏳ espera_instrucc</td><td>Espera de instrucciones</td><td style="color:var(--red);font-weight:900;">SÍ</td><td>El residente no llegó al frente</td></tr>
+      <tr><td>👥 espera_otros</td><td>Espera por otra cuadrilla</td><td style="color:var(--red);font-weight:900;">SÍ</td><td>Aún no terminan el acero del muro vecino</td></tr>
+      <tr><td>🔄 retrabajo</td><td>Retrabajo / corrección</td><td style="color:var(--red);font-weight:900;">SÍ</td><td>Hubo que rehacer encofrado mal alineado</td></tr>
+      <tr><td>🪑 descanso_no_prog</td><td>Descanso no programado</td><td>—</td><td>Pausa fuera del horario establecido</td></tr>
+      <tr><td>💬 conversacion</td><td>Conversación no laboral</td><td>—</td><td>Hablar de fútbol</td></tr>
+      <tr><td>🚶 traslado</td><td>Traslado innecesario</td><td>—</td><td>Caminar sin objetivo claro</td></tr>
+      <tr><td>❓ inactividad</td><td>Inactividad sin causa</td><td>—</td><td>Detenido sin saber por qué</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout danger">
+    <strong>⚠️ Las "críticas" son responsabilidad de planificación, no del obrero.</strong> Si el Pareto muestra que el 70% del TNC es por esperas de material/equipo/instrucciones, el problema es de la oficina técnica y logística, no de los trabajadores. El sistema lo señala automáticamente para evitar culpar al equivocado.
+  </div>
+</section>
+
+<section id="estrategia">
+  <h2><span class="num">🎯</span> Estrategia operativa para usar el sistema</h2>
+  <p class="lead">
+    El sistema entrega data, pero la estrategia es lo que la convierte en mejora. Aquí el flujo recomendado:
+  </p>
+
+  <h3>Ciclo de mejora continua (semanal)</h3>
+  <ol class="steps">
+    <li><strong>LUNES — Mediciones:</strong> capataz hace 1-2 Cartas Balance en frentes prioritarios. Mínimo 30 minutos cada una con muestreo cada 30 segundos.</li>
+    <li><strong>MARTES — Análisis:</strong> ingeniero abre la app, ve <em>Análisis</em> → identifica top performer, drag performer y la causa #1 del Pareto TNC.</li>
+    <li><strong>MIÉRCOLES — Acción correctiva:</strong> ataca la causa #1 del Pareto. Si es espera de material, coordinar con logística. Si es retrabajo, reunión de calidad.</li>
+    <li><strong>JUEVES — Optimización composición:</strong> usa el <em>Optimizador</em> para armar las cuadrillas del próximo viernes según las actividades planificadas.</li>
+    <li><strong>VIERNES — Implementar:</strong> capataz aplica la nueva composición. Anota observaciones cualitativas.</li>
+    <li><strong>SIGUIENTE LUNES — Validar:</strong> nueva Carta Balance con la nueva composición. Comparar LUF antes/después. Documentar como lección aprendida en LPS.</li>
+  </ol>
+
+  <div class="callout success">
+    <strong>📈 Resultado esperado:</strong> reducción progresiva del idle time. Caso documentado en literatura: <strong>de 39% a 27% en 4 iteraciones</strong> (Kuprenas case study).
+  </div>
+
+  <h3>Reglas de oro para que funcione</h3>
+  <ul class="check-list">
+    <li><strong>Mínimo 30 observaciones por persona</strong> antes de recomendar reasignación. Menos es estadísticamente débil.</li>
+    <li><strong>Mediciones distribuidas</strong>: no tomar Carta Balance solo en horas pico ni solo en horas valle. Sesgo.</li>
+    <li><strong>No culpar al obrero del TNC crítico:</strong> esperas son problema de planificación. Responsabilizar al equipo correcto.</li>
+    <li><strong>Validar parejas con datos</strong>: el sistema sugiere parejas con sinergia positiva, pero el residente conoce el contexto humano (afinidad, conflictos previos).</li>
+    <li><strong>Iterar:</strong> una sola medición no cambia nada. El valor está en el ciclo continuo.</li>
+  </ul>
+</section>
+
+<section id="impacto">
+  <h2><span class="num">📊</span> Impacto esperado</h2>
+
+  <div class="grid-2">
+    <div class="feature green">
+      <div class="ico">📈</div>
+      <h4>+12 a +18% de LUF</h4>
+      <p>Reducir idle time de 35-40% a 25% siguiendo el ciclo de mejora documentado en literatura.</p>
+    </div>
+    <div class="feature">
+      <div class="ico">🎯</div>
+      <h4>Decisiones de composición basadas en data</h4>
+      <p>El residente ya no arma cuadrillas "por intuición". Tiene datos de qué combinaciones funcionan.</p>
+    </div>
+    <div class="feature purple">
+      <div class="ico">🏆</div>
+      <h4>Reconocimiento explícito</h4>
+      <p>Top performers se identifican objetivamente. Útil para bonos, promociones y motivación interna.</p>
+    </div>
+    <div class="feature red">
+      <div class="ico">⚠️</div>
+      <h4>Detección temprana de problemas</h4>
+      <p>Pareto identifica si el problema es de obrero, de logística o de planificación. Acción correcta al equipo correcto.</p>
+    </div>
+  </div>
+</section>
+
+<section id="deploy">
+  <h2><span class="num">🚀</span> Despliegue del Bloque 16</h2>
+
+  <h3>Archivos nuevos</h3>
+  <table>
+    <thead><tr><th>Archivo</th><th>Líneas</th><th>Función</th></tr></thead>
+    <tbody>
+      <tr><td><code>src/utils/cartaBalanceAnalytics.js</code></td><td>562</td><td>Motor: LUF, Pareto, ranking, parejas, optimizador</td></tr>
+      <tr><td><code>src/views/CartaBalanceAnalisis.jsx</code></td><td>600</td><td>Vista de análisis con 4 tabs</td></tr>
+      <tr><td><code>src/views/OptimizadorCuadrillas.jsx</code></td><td>360</td><td>Generador de cuadrillas óptimas</td></tr>
+      <tr><td><code>src/views/CartaBalanceWrapper.jsx</code></td><td>74</td><td>Wrapper con sub-tabs Capturar/Análisis/Optimizador</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Archivos modificados</h3>
+  <ul class="check-list">
+    <li><code>src/views/CartaBalance.jsx</code> — al guardar, ahora también escribe <code>personas[]</code> y <code>observaciones[]</code> con formato analítico nuevo (compatible con el motor).</li>
+    <li><code>src/App.jsx</code> — el módulo "carta" ahora apunta a <code>CartaBalanceWrapper</code> en lugar de <code>CartaBalance</code> directo.</li>
+  </ul>
+
+  <h3>Migración de datos antiguos</h3>
+  <p>Las Cartas Balance creadas antes del Bloque 16 NO tienen los campos <code>personas[]</code> ni <code>observaciones[]</code>. El motor las ignora silenciosamente — solo las nuevas alimentan los analytics.</p>
+
+  <div class="callout gold">
+    <strong>⚙️ Opcional · Script de migración:</strong> si tienes muchas Cartas Balance históricas, se puede escribir un script que lea las viejas, transforme la matriz en observaciones y las re-escriba. No es crítico — el sistema funciona también solo con datos nuevos.
+  </div>
+
+  <h3>Pasos para desplegar</h3>
+  <ol class="steps">
+    <li>Copiar <code>cartaBalanceAnalytics.js</code> a <code>src/utils/</code></li>
+    <li>Copiar las 3 vistas nuevas a <code>src/views/</code></li>
+    <li>Reemplazar <code>CartaBalance.jsx</code> con la versión modificada</li>
+    <li>Reemplazar <code>App.jsx</code> con la versión que usa Wrapper</li>
+    <li>Build + deploy: <code>npm run build &amp;&amp; firebase deploy --only hosting</code></li>
+    <li>Hacer 2-3 Cartas Balance de prueba para alimentar el motor</li>
+    <li>Verificar Análisis y Optimizador con esos datos</li>
+  </ol>
+</section>
+
+<section>
+  <h2><span class="num">📚</span> 16 capítulos del proyecto</h2>
+  <table>
+    <thead><tr><th style="width:5%">#</th><th>Capítulo</th><th style="width:25%">Bloque</th></tr></thead>
+    <tbody>
+      <tr><td>1-7</td><td>VDC, Informe, Dossier, UI, BIM, Resumen 8, APS</td><td>3-9</td></tr>
+      <tr><td>8</td><td>Sistema Diseño</td><td>10</td></tr>
+      <tr><td>9-10</td><td>UX Avanzada + Storybook</td><td>11</td></tr>
+      <tr><td>11</td><td>Seguridad</td><td>12</td></tr>
+      <tr><td>12</td><td>Admin Panel</td><td>13</td></tr>
+      <tr><td>13-14</td><td>Pulido + Manual de Usuario</td><td>14</td></tr>
+      <tr><td>15</td><td>Slides + Guión Sustentación</td><td>15</td></tr>
+      <tr style="background:var(--gold-light)!important;"><td><strong>16</strong></td><td><strong>Carta Balance Avanzada ⭐</strong></td><td><strong>Bloque 16</strong></td></tr>
+    </tbody>
+  </table>
+</section>
+
+</main>
+
+<footer>
+  <div class="logo">GRAPCO SAC</div>
+  <p>Capítulo 16 · Carta Balance Avanzada · Mayo 2026</p>
+  <p style="margin-top:8px;opacity:0.6;">Motor de optimización · Documentación viva del proyecto</p>
+</footer>
+
+</body>
+</html>

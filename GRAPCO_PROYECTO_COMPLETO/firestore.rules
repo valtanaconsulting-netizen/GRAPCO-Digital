@@ -1,0 +1,546 @@
+// ════════════════════════════════════════════════════════════════════════════
+// firestore.rules — Reglas de seguridad GRAPCO Produc-App v2 (Bloque 12)
+//
+// MODELO DE PERMISOS:
+//   - Solo usuarios autenticados pueden leer/escribir
+//   - Sistema de roles vía colección /Usuarios
+//   - Capataz: puede crear/editar SUS registros, leer maestros, NO puede borrar
+//   - Ingeniero: lee todo, escribe configuración, audita
+//   - Admin: control total + gestión de usuarios
+//
+// COMO DESPLEGAR:
+//   firebase deploy --only firestore:rules
+// ════════════════════════════════════════════════════════════════════════════
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── HELPERS ──
+    function isAuth() {
+      return request.auth != null;
+    }
+    function uid() {
+      return request.auth.uid;
+    }
+    // Super-admins por correo: SIEMPRE admin, sin importar si tienen doc en
+    // /Usuarios. Failsafe de gobernanza (dueños del sistema). No depende de
+    // get() → funciona aunque el perfil no exista.
+    function isSuperAdmin() {
+      return request.auth != null
+        && request.auth.token.email in ['fjrosash@gmail.com', 'abasurco@grapcosac.com'];
+    }
+    function existeUserDoc() {
+      return exists(/databases/$(database)/documents/Usuarios/$(uid()));
+    }
+    function getUserDoc() {
+      return get(/databases/$(database)/documents/Usuarios/$(uid()));
+    }
+    function getRol() {
+      return existeUserDoc() ? getUserDoc().data.rol : '';
+    }
+    function isActivo() {
+      return existeUserDoc() && getUserDoc().data.activo == true;
+    }
+    function isCapataz()    { return isAuth() && isActivo() && getRol() == 'capataz'; }
+    function isIngeniero()  { return isSuperAdmin() || (isAuth() && isActivo() && getRol() == 'ingeniero'); }
+    function isAdmin()      { return isSuperAdmin() || (isAuth() && isActivo() && getRol() == 'admin'); }
+    function isPlaneamiento(){ return isAuth() && isActivo() && getRol() == 'planeamiento'; }
+    function isAuthorized() { return isSuperAdmin() || isCapataz() || isIngeniero() || isAdmin() || isPlaneamiento(); }
+    function isOwner(uidCampo) { return isAuth() && uid() == uidCampo; }
+
+    // Validación: tamaño máximo de strings (anti-spam)
+    function maxLen(str, n) {
+      return str is string && str.size() <= n;
+    }
+    // Validación: número en rango razonable
+    function numInRange(n, min, max) {
+      return n is number && n >= min && n <= max;
+    }
+    // Timestamps deben venir del servidor
+    function hasServerTimestamp(field) {
+      return request.resource.data[field] == request.time;
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // /Usuarios/{uid}
+    // Cada usuario tiene UN documento con su rol y metadata.
+    // Self: puede leer SU propio doc. Admin: puede leer/escribir todo.
+    // ════════════════════════════════════════════════════════════════
+    match /Usuarios/{userId} {
+      allow read:   if isAuth();
+      // Self-register: cualquier auth puede crear SU PROPIO perfil con rol no-admin (acceso compartido).
+      // Bootstrap: el PRIMER admin se auto-crea si no existe /Bootstrap/done.
+      // Admin: crea/edita cualquier perfil.
+      allow create: if isAdmin() || (
+                       isAuth() && uid() == userId &&
+                       request.resource.data.activo == true &&
+                       request.resource.data.rol in ['ingeniero','capataz','almacenero','logistica','calidad','oficina_tecnica','seguridad','supervisor_cliente','subcontratista','carta_balance','planeamiento']
+                     ) || (
+                       isAuth() && uid() == userId &&
+                       request.resource.data.rol == 'admin' &&
+                       request.resource.data.activo == true &&
+                       !exists(/databases/$(database)/documents/Bootstrap/done)
+                     );
+      allow update: if isAdmin() || (
+                       // Update propio: dueño puede tocar nombre/email pero NO rol/activo
+                       isAuth() && uid() == userId &&
+                       request.resource.data.rol == resource.data.rol &&
+                       request.resource.data.activo == resource.data.activo
+                     );
+      allow delete: if isAdmin();
+    }
+
+    // /Bootstrap — marker que cierra el bootstrap del primer admin
+    match /Bootstrap/{docId} {
+      allow read:   if isAuth();
+      // Solo el primer admin recien creado puede escribir el marker (cerrandose la puerta detras de si)
+      allow create: if isAuth() &&
+                       exists(/databases/$(database)/documents/Usuarios/$(uid())) &&
+                       getRol() == 'admin';
+      allow update, delete: if isAdmin();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // /Registros_Campo/{docId}
+    // Reportes de producción del capataz.
+    // Capataz: puede crear/leer SUS registros (los que él subió)
+    // Ingeniero: lee todo, NO escribe
+    // Admin: control total
+    // ════════════════════════════════════════════════════════════════
+    match /Registros_Campo/{docId} {
+      allow read: if isAuth();
+      // Crear: capataz, ingeniero y admin. Validaciones laxas de rango.
+      // Capataz/ingeniero/admin pueden registrar HH; el campo `capataz` (nombre del jefe de cuadrilla)
+      // se guarda como string para auditoria, no se exige uidCapataz porque no todos los registros
+      // los crea el propio capataz (el ingeniero puede registrar HH de su equipo).
+      allow create: if (isCapataz() || isIngeniero() || isAdmin()) &&
+                       request.resource.data.keys().hasAny(['fecha','actividad']) &&
+                       (!('partida'   in request.resource.data) || maxLen(request.resource.data.partida, 200)) &&
+                       (!('actividad' in request.resource.data) || maxLen(request.resource.data.actividad, 500)) &&
+                       (!('metrado'   in request.resource.data) || numInRange(request.resource.data.metrado, 0, 100000)) &&
+                       (!('totalHH'   in request.resource.data) || numInRange(request.resource.data.totalHH, 0, 1000));
+      // Actualizar: capataz/ingeniero/admin pueden corregir registros existentes
+      allow update: if isCapataz() || isIngeniero() || isAdmin();
+      allow delete: if isIngeniero() || isAdmin();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // /Cuadrillas
+    // Maestro de cuadrillas. Solo ingenieros pueden modificar.
+    // ════════════════════════════════════════════════════════════════
+    match /Cuadrillas/{docId} {
+      allow read: if isAuth();
+      allow write: if isIngeniero() || isAdmin();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // /Catalogo_WBS/{proyectoId}
+    // Catálogo WBS editable por proyecto (partidas/subpartidas/actividades
+    // con metrado, HH e IP de presupuesto y meta). Alimenta el ISP.
+    // ════════════════════════════════════════════════════════════════
+    match /Catalogo_WBS/{docId} {
+      allow read:  if isAuth();
+      allow write: if isIngeniero() || isAdmin();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // /Personal
+    // Maestro de personal. Solo ingenieros gestionan.
+    // ════════════════════════════════════════════════════════════════
+    match /Personal/{docId} {
+      allow read: if isAuth();
+      allow write: if isIngeniero() || isAdmin();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // /Borradores_Capataz
+    // Borradores antes de subir. Solo el dueño accede a los suyos.
+    // ════════════════════════════════════════════════════════════════
+    match /Borradores_Capataz/{docId} {
+      // Borradores son intermedios (no oficiales). Cualquier auth puede leer/escribir
+      // para que tanto el capataz como el ingeniero puedan trabajar sobre ellos.
+      // Los registros oficiales viven en /Registros_Campo con reglas más estrictas.
+      allow read, write: if isAuth();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // /Cartas_Balance
+    // Mediciones de productividad. Cualquier rol puede crearlas pero
+    // queda registro del autor.
+    // ════════════════════════════════════════════════════════════════
+    match /Cartas_Balance/{docId} {
+      allow read: if isAuth();
+      allow create: if isAuthorized() && request.resource.data.uidAutor == uid();
+      allow update: if isAuthorized() && resource.data.uidAutor == uid();
+      allow delete: if isAdmin();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // /Configuracion/global
+    // Tarifas, parámetros del sistema. Solo ingenieros/admin.
+    // ════════════════════════════════════════════════════════════════
+    match /Configuracion/{docId} {
+      allow read: if isAuth();
+      allow write: if isIngeniero() || isAdmin();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // /Planes_Diarios
+    // Planificación diaria. Ingenieros escriben, todos leen.
+    // ════════════════════════════════════════════════════════════════
+    match /Planes_Diarios/{docId} {
+      allow read: if isAuth();
+      allow write: if isIngeniero() || isAdmin();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // /PPC_Compromisos, /VDC_Restricciones, /VDC_Lecciones (Last Planner)
+    // Ingenieros gestionan, capataces leen.
+    // ════════════════════════════════════════════════════════════════
+    match /PPC_Compromisos/{docId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin();
+      // Capataz puede marcar cumplimiento de SUS compromisos
+      allow update: if isCapataz() && resource.data.responsable == uid() &&
+                       request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['cumplido','fechaCumplido','rnc','observaciones']);
+      allow delete: if isIngeniero() || isAdmin();
+    }
+    match /VDC_Restricciones/{docId} {
+      allow read: if isAuth();
+      allow write: if isIngeniero() || isAdmin();
+    }
+    match /VDC_Lecciones/{docId} {
+      allow read: if isAuth();
+      allow write: if isIngeniero() || isAdmin();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // /BIM_Vinculos, /BIM_Modelos (BIM Fase 1 + Upload APS)
+    // Ingenieros gestionan modelos y vínculos.
+    // ════════════════════════════════════════════════════════════════
+    match /BIM_Vinculos/{docId} {
+      allow read: if isAuth();
+      allow write: if isIngeniero() || isAdmin();
+    }
+    match /BIM_Modelos/{docId} {
+      allow read: if isAuth();
+      // Solo ingenieros pueden subir modelos (operación cara)
+      allow create: if isIngeniero() || isAdmin();
+      // Status puede actualizarse desde Cloud Functions (admin SDK bypassa rules)
+      allow update: if isIngeniero() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // BLOQUE 19 - MODULO MATERIALES
+    // ════════════════════════════════════════════════════════════════
+
+    // /Materiales — catalogo
+    // Lectura: todos los autenticados (capataz necesita ver para hacer requerimientos)
+    // Escritura: solo ingeniero, admin, logistica
+    match /Materiales/{materialId} {
+      allow read: if isAuth();
+      allow create: if isIngeniero() || isAdmin() ||
+                       (isAuth() && getRol() == 'logistica');
+      allow update: if isIngeniero() || isAdmin() ||
+                       (isAuth() && getRol() == 'logistica');
+      allow delete: if isAdmin();
+    }
+
+    // /Almacenes
+    match /Almacenes/{almacenId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin() ||
+                               (isAuth() && getRol() == 'logistica');
+      allow delete: if isAdmin();
+    }
+
+    // /Kardex_Movimientos — APPEND-ONLY (auditoria)
+    // Lectura: ingeniero, admin, almacenero, logistica
+    // Escritura: solo ingeniero, admin, almacenero, logistica
+    // NUNCA se puede actualizar ni borrar (auditoria pura)
+    match /Kardex_Movimientos/{movId} {
+      allow read: if isAuth();
+      allow create: if (isIngeniero() || isAdmin() ||
+                         (isAuth() && (getRol() == 'almacenero' || getRol() == 'logistica'))) &&
+                       request.resource.data.registradoPor == request.auth.token.email;
+      allow update: if false;  // Append-only
+      allow delete: if false;  // Append-only (para anular se crea un AJUSTE compensatorio)
+    }
+
+    // /Stock_Actual — cache denormalizado
+    // Lectura: todos autenticados
+    // Escritura: solo via Cloud Functions (admin SDK)
+    match /Stock_Actual/{stockId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // /OrdenesCompra
+    match /OrdenesCompra/{ocId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin() ||
+                               (isAuth() && getRol() == 'logistica');
+      allow delete: if isAdmin();
+    }
+
+    // /OrdenesServicio (Fase 3)
+    match /OrdenesServicio/{osId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin() ||
+                               (isAuth() && getRol() == 'logistica');
+      allow delete: if isAdmin();
+    }
+
+    // /Partidas (Fase 6 - partidas presupuestales)
+    match /Partidas/{partidaId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // /PreciosMercado — Cotizaciones: base curada de precios de mercado.
+    // Lectura: todos los autenticados. Escritura: ingeniero, admin,
+    // logistica o almacenero (quienes cotizan/abastecen obra).
+    match /PreciosMercado/{precioId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin() ||
+                               (isAuth() && (getRol() == 'logistica' || getRol() == 'almacenero'));
+      allow delete: if isIngeniero() || isAdmin() ||
+                       (isAuth() && getRol() == 'logistica');
+    }
+
+    // /TipoCambio (Fase 2 - TC SUNAT cacheado por dia)
+    // Lectura libre autenticada (multimoneda lo necesita).
+    // Cualquiera puede crear (auto-cache desde apis.net.pe).
+    // Solo ingeniero/admin pueden sobreescribir (registro manual).
+    match /TipoCambio/{fecha} {
+      allow read: if isAuth();
+      allow create: if isAuth();
+      allow update: if isIngeniero() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // /Requerimientos — pedidos del campo (capataz al almacenero)
+    match /Requerimientos/{reqId} {
+      allow read: if isAuth();  // todos pueden ver
+      allow create: if isAuth();  // capataz puede crear
+      allow update: if isIngeniero() || isAdmin() ||
+                       (isAuth() && (getRol() == 'almacenero' || getRol() == 'logistica'));
+      allow delete: if isAdmin();
+    }
+
+    // /Subcontratos
+    match /Subcontratos/{contratoId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // /Valorizaciones
+    match /Valorizaciones/{valId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // BLOQUE 20 - CALIDAD + OFICINA TECNICA
+    // ════════════════════════════════════════════════════════════════
+
+    // /Protocolos — Liberacion por elemento
+    // Lectura: ingeniero, admin, calidad, supervisor_cliente
+    // Escritura: ingeniero, admin, calidad (no supervisor_cliente — ellos solo firman)
+    match /Protocolos/{protocoloId} {
+      allow read: if isAuth();
+      allow create: if isIngeniero() || isAdmin() ||
+                       (isAuth() && getRol() == 'calidad');
+      allow update: if isIngeniero() || isAdmin() ||
+                       (isAuth() && (getRol() == 'calidad' || getRol() == 'supervisor_cliente'));
+      allow delete: if isAdmin();
+    }
+
+    // /PETs — Procedimientos Escritos de Trabajo Seguro
+    // Lectura: todos los autenticados (capataz/operario debe verlos para firmar)
+    // Update: ingeniero/admin/calidad pueden editar TODO
+    //         capataz puede update SOLO para agregar firma (campo firmasOperarios)
+    match /PETs/{petId} {
+      allow read: if isAuth();
+      allow create: if isIngeniero() || isAdmin() ||
+                       (isAuth() && getRol() == 'calidad');
+      allow update: if isIngeniero() || isAdmin() ||
+                       (isAuth() && getRol() == 'calidad') ||
+                       (isAuth() && (getRol() == 'capataz' || getRol() == 'subcontratista'));
+      allow delete: if isAdmin();
+    }
+
+    // /NoConformidades — append-friendly (solo cambian estado)
+    match /NoConformidades/{ncId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin() ||
+                               (isAuth() && getRol() == 'calidad');
+      allow delete: if isAdmin();
+    }
+
+    // /Ensayos — resultados de laboratorio
+    match /Ensayos/{ensayoId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin() ||
+                               (isAuth() && getRol() == 'calidad');
+      allow delete: if isAdmin();
+    }
+
+    // /RDO — Reporte Diario de Obra
+    match /RDO/{rdoId} {
+      allow read: if isAuth();  // todos pueden ver
+      allow create, update: if isIngeniero() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // /ValorizacionesContractuales
+    match /ValorizacionesContractuales/{valId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // /PartidasContractuales
+    match /PartidasContractuales/{partidaId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // /Adicionales (futuro)
+    match /Adicionales/{adId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // /Cartas (futuro)
+    match /Cartas/{cartaId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // /IndicesPolinomicos (para reajuste DS 011-79-VC, futuro)
+    match /IndicesPolinomicos/{idxId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // BLOQUE 25 - PULL PLANNING (LCI fase 2)
+    // ════════════════════════════════════════════════════════════════
+
+    match /PullPlanningHitos/{hitoId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin() || isPlaneamiento();
+      allow delete: if isAdmin();
+    }
+
+    match /PullPlanningTareas/{tareaId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin() || isCapataz() || isPlaneamiento();
+      allow delete: if isIngeniero() || isAdmin();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // BLOQUE 27 - ASISTENCIA DIARIA (entrada/salida por obrero)
+    // Es la "verdad oficial" de horas trabajadas (admin) que se compara
+    // contra lo que reporta el capataz en Registros_Campo.
+    // ════════════════════════════════════════════════════════════════
+    match /Asistencia_Diaria/{docId} {
+      allow read:   if isAuth();
+      // Admin / Ingeniero gestionan la asistencia. El capataz NO escribe acá.
+      allow create, update: if isIngeniero() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // BLOQUE 23 - MULTI-PROYECTO MULTI-FRENTE
+    // ════════════════════════════════════════════════════════════════
+
+    // /Proyectos — Cartera de proyectos de la empresa
+    // SOLO ADMIN (gerente general) crea/edita proyectos. El resto solo lee su proyecto.
+    match /Proyectos/{proyId} {
+      allow read: if isAuth();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // /Frentes — Frentes de cada proyecto
+    // Solo admin crea/edita frentes.
+    match /Frentes/{frenteId} {
+      allow read: if isAuth();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // BLOQUE 21 - SISTEMA INTEGRADO (Plan Maestro + APUs + RO)
+    // ════════════════════════════════════════════════════════════════
+
+    // /PlanMaestro — Estructura WBS jerárquica
+    // Lectura: todos los autenticados (capataz necesita ver el plan)
+    // Escritura: ingeniero, admin o rol planeamiento (área a cargo del WBS)
+    match /PlanMaestro/{actId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin() || isPlaneamiento();
+      allow delete: if isAdmin();
+    }
+
+    // /APUs — Análisis de Precios Unitarios (información sensible)
+    match /APUs/{apuId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin() || isPlaneamiento();
+      allow delete: if isAdmin();
+    }
+
+    // /APUs_Real — Caché de APUs recalculados (auto-actualizado)
+    match /APUs_Real/{apuId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // /RO_Mensual — Snapshots mensuales del Resultado Operativo
+    match /RO_Mensual/{roId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // /Insumos — Maestro de insumos (MO, materiales, equipos, subcontratos)
+    match /Insumos/{insId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // /Auditoria_Seguridad
+    // Log de operaciones críticas. Solo admin lee, todos los autenticados
+    // pueden ESCRIBIR (append-only).
+    // ════════════════════════════════════════════════════════════════
+    match /Auditoria_Seguridad/{docId} {
+      allow read: if isAdmin();
+      allow create: if isAuth() &&
+                       request.resource.data.uid == uid() &&
+                       hasServerTimestamp('timestamp');
+      allow update, delete: if false;  // Append-only: nadie puede modificar el log
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // DENEGAR TODO LO DEMÁS
+    // Cualquier colección no listada arriba está bloqueada.
+    // ════════════════════════════════════════════════════════════════
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan de Implementación VDC · GRAPCO Produc-App</title>
+<style>
+  :root {
+    --navy: #1e3a5f;
+    --navy-dark: #152a47;
+    --navy-light: #2c4969;
+    --gold: #f59e0b;
+    --gold-dark: #d97706;
+    --gold-light: #fef3c7;
+    --green: #16a34a;
+    --green-dark: #15803d;
+    --green-light: #dcfce7;
+    --red: #dc2626;
+    --red-light: #fee2e2;
+    --bg: #f8fafc;
+    --white: #ffffff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --muted: #64748b;
+    --font: "Inter", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font);
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.6;
+    font-size: 15px;
+  }
+
+  /* === HEADER === */
+  header.hero {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 100%);
+    color: #fff;
+    padding: 60px 40px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+  header.hero::before {
+    content: '';
+    position: absolute;
+    top: -150px; right: -150px;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    background: var(--gold);
+    opacity: 0.15;
+    filter: blur(60px);
+  }
+  header.hero::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, var(--gold), var(--gold-dark), var(--gold));
+  }
+  header.hero .inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+  }
+  header.hero .badge {
+    display: inline-block;
+    padding: 6px 14px;
+    background: rgba(245, 158, 11, 0.2);
+    border: 1px solid var(--gold);
+    border-radius: 30px;
+    color: var(--gold);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    margin-bottom: 16px;
+  }
+  header.hero h1 {
+    font-size: 42px;
+    font-weight: 900;
+    line-height: 1.15;
+    margin-bottom: 14px;
+    letter-spacing: -0.5px;
+  }
+  header.hero .subtitle {
+    font-size: 18px;
+    opacity: 0.85;
+    max-width: 720px;
+    line-height: 1.5;
+    margin-bottom: 24px;
+  }
+  header.hero .meta {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    opacity: 0.7;
+    border-top: 1px solid rgba(255,255,255,0.15);
+    padding-top: 16px;
+    margin-top: 24px;
+  }
+
+  /* === NAVEGACIÓN STICKY === */
+  nav.toc {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(15,23,42,0.05);
+  }
+  nav.toc .inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 40px;
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  nav.toc a {
+    padding: 16px 14px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    border-bottom: 3px solid transparent;
+    transition: all 0.15s;
+  }
+  nav.toc a:hover { color: var(--navy); border-bottom-color: var(--gold); }
+
+  /* === MAIN === */
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 50px 40px 80px;
+  }
+  section {
+    margin-bottom: 64px;
+    scroll-margin-top: 80px;
+  }
+  section h2 {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--navy);
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  section h2 .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    color: #fff;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 900;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+  }
+  section .lead {
+    font-size: 15px;
+    color: var(--muted);
+    margin-bottom: 28px;
+    padding-left: 50px;
+    line-height: 1.6;
+  }
+  section h3 {
+    font-size: 19px;
+    font-weight: 800;
+    color: var(--navy);
+    margin: 28px 0 12px;
+    padding-left: 14px;
+    border-left: 4px solid var(--gold);
+  }
+  section h4 {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--navy);
+    margin: 20px 0 8px;
+    letter-spacing: 0.3px;
+  }
+  section p { margin-bottom: 14px; color: var(--text); }
+  section ul, section ol { margin: 0 0 16px 24px; }
+  section li { margin-bottom: 8px; line-height: 1.6; }
+
+  /* === CARDS === */
+  .grid {
+    display: grid;
+    gap: 16px;
+  }
+  .grid-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .grid-3 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .grid-4 { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 24px;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(15,23,42,0.06);
+  }
+  .card .icon {
+    font-size: 28px;
+    margin-bottom: 10px;
+    display: block;
+  }
+  .card h4 {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--navy);
+    margin-bottom: 6px;
+  }
+  .card p {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .card.accent {
+    border-top: 4px solid var(--gold);
+  }
+  .card.dark {
+    background: var(--navy);
+    color: #fff;
+    border: none;
+  }
+  .card.dark h4 { color: var(--gold); }
+  .card.dark p { color: rgba(255,255,255,0.85); }
+
+  /* === KPI cards === */
+  .kpi {
+    background: linear-gradient(135deg, var(--navy), var(--navy-dark));
+    color: #fff;
+    border-radius: 14px;
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0; width: 5px; height: 100%;
+    background: var(--gold);
+  }
+  .kpi .label {
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--gold);
+    letter-spacing: 1.2px;
+    margin-bottom: 8px;
+  }
+  .kpi .value {
+    font-size: 32px;
+    font-weight: 900;
+    line-height: 1;
+  }
+  .kpi .sub {
+    font-size: 12px;
+    opacity: 0.75;
+    margin-top: 8px;
+  }
+
+  /* === TIMELINE === */
+  .timeline {
+    position: relative;
+    padding-left: 32px;
+    margin-top: 24px;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 12px; top: 0; bottom: 0;
+    width: 2px;
+    background: linear-gradient(180deg, var(--gold), var(--gold-dark));
+  }
+  .timeline-item {
+    position: relative;
+    margin-bottom: 28px;
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -27px;
+    top: 8px;
+    width: 16px;
+    height: 16px;
+    background: var(--gold);
+    border-radius: 50%;
+    border: 3px solid var(--white);
+    box-shadow: 0 0 0 2px var(--gold);
+  }
+  .timeline-item .phase {
+    display: inline-block;
+    padding: 3px 10px;
+    background: var(--gold-light);
+    color: var(--gold-dark);
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    margin-bottom: 6px;
+  }
+  .timeline-item h4 {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--navy);
+    margin-bottom: 6px;
+  }
+
+  /* === TABLA === */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--white);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(15,23,42,0.06);
+    margin: 16px 0;
+  }
+  table th {
+    background: var(--navy);
+    color: #fff;
+    padding: 14px 16px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+  }
+  table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  table tr:nth-child(even) td { background: #f8fafc; }
+  table tr:last-child td { border-bottom: none; }
+
+  /* === CALLOUTS === */
+  .callout {
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    border-left: 4px solid;
+  }
+  .callout.info {
+    background: #eff6ff;
+    border-left-color: var(--navy);
+    color: var(--navy);
+  }
+  .callout.success {
+    background: var(--green-light);
+    border-left-color: var(--green-dark);
+    color: var(--green-dark);
+  }
+  .callout.warning {
+    background: var(--gold-light);
+    border-left-color: var(--gold-dark);
+    color: var(--gold-dark);
+  }
+  .callout.danger {
+    background: var(--red-light);
+    border-left-color: var(--red);
+    color: var(--red);
+  }
+  .callout strong { font-weight: 800; }
+
+  /* === STAGE/PIPELINE === */
+  .pipeline {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin: 20px 0;
+  }
+  .pipeline-stage {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 12px;
+    text-align: center;
+    position: relative;
+  }
+  .pipeline-stage::after {
+    content: '→';
+    position: absolute;
+    right: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gold);
+    font-size: 20px;
+    font-weight: 900;
+  }
+  .pipeline-stage:last-child::after { display: none; }
+  .pipeline-stage .num {
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--gold);
+  }
+  .pipeline-stage .name {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--navy);
+    letter-spacing: 0.4px;
+    margin-top: 4px;
+  }
+
+  /* === FOOTER === */
+  footer {
+    background: var(--navy);
+    color: rgba(255,255,255,0.75);
+    padding: 40px;
+    text-align: center;
+    font-size: 12px;
+    border-top: 4px solid var(--gold);
+  }
+  footer .logo {
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--gold);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+
+  /* === IMPRESIÓN === */
+  @media print {
+    nav.toc { display: none; }
+    header.hero { padding: 30px 20px 40px; page-break-after: avoid; }
+    section { page-break-inside: avoid; }
+    .card:hover { transform: none; box-shadow: none; }
+  }
+
+  @media (max-width: 700px) {
+    header.hero { padding: 40px 24px 60px; }
+    header.hero h1 { font-size: 30px; }
+    main { padding: 30px 24px 60px; }
+    section h2 { font-size: 22px; }
+    .pipeline { grid-template-columns: repeat(2, 1fr); }
+    .pipeline-stage::after { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="inner">
+    <span class="badge">📐 PLAN DE IMPLEMENTACIÓN</span>
+    <h1>Virtual Design and Construction (VDC) en GRAPCO Produc-App</h1>
+    <p class="subtitle">
+      Roadmap formal para integrar la metodología VDC de Stanford CIFE como módulo nativo de
+      la plataforma de productividad GRAPCO, fusionando BIM, Lean Construction y métricas de proceso
+      en un único sistema digital.
+    </p>
+    <div class="meta">
+      <span><strong>Versión:</strong> 1.0</span>
+      <span><strong>Fecha:</strong> Mayo 2026</span>
+      <span><strong>Audiencia:</strong> Gerencia GRAPCO SAC + Comité Tesis</span>
+      <span><strong>Estado:</strong> Borrador para revisión</span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="inner">
+    <a href="#contexto">1. Contexto</a>
+    <a href="#que-es-vdc">2. Qué es VDC</a>
+    <a href="#diagnostico">3. Diagnóstico actual</a>
+    <a href="#arquitectura">4. Arquitectura propuesta</a>
+    <a href="#modulos">5. Módulos VDC</a>
+    <a href="#roadmap">6. Roadmap por fases</a>
+    <a href="#metricas">7. Métricas y KPIs</a>
+    <a href="#roles">8. Roles y gobierno</a>
+    <a href="#riesgos">9. Riesgos</a>
+    <a href="#tesis">10. Aporte académico</a>
+  </div>
+</nav>
+
+<main>
+
+<section id="contexto">
+  <h2><span class="num">1</span> Contexto y motivación</h2>
+  <p class="lead">
+    GRAPCO SAC ejecuta proyectos de construcción civil con control de productividad basado en
+    Excel manual. La plataforma <strong>Produc-App</strong> ya digitalizó el flujo de tareo
+    diario (capataz → ingeniero → reportes). El siguiente salto es incorporar VDC como capa
+    metodológica formal sobre la base ya construida.
+  </p>
+
+  <div class="grid grid-3">
+    <div class="card accent">
+      <span class="icon">📋</span>
+      <h4>Estado actual</h4>
+      <p>Sistema digital con 30+ archivos modulares, 5 colecciones Firebase, exportación Excel profesional, alertas inteligentes y análisis EVM (Bloque 2).</p>
+    </div>
+    <div class="card accent">
+      <span class="icon">🎯</span>
+      <h4>Brecha identificada</h4>
+      <p>No existe planificación formal Lean: el plan diario es reactivo, sin lookahead, sin medición sistemática del cumplimiento (PPC), sin trazabilidad de causas de no cumplimiento (RNC).</p>
+    </div>
+    <div class="card accent">
+      <span class="icon">🚀</span>
+      <h4>Oportunidad VDC</h4>
+      <p>Integrar Last Planner System, ICE Sessions y métricas VDC como tercer módulo de la plataforma, sin reescribir lo existente.</p>
+    </div>
+  </div>
+</section>
+
+<section id="que-es-vdc">
+  <h2><span class="num">2</span> Qué es VDC</h2>
+  <p class="lead">
+    Virtual Design and Construction (VDC) es la metodología desarrollada por el Center for
+    Integrated Facility Engineering (CIFE) de Stanford que integra tres elementos: modelos
+    multidisciplinarios del producto y proceso, sesiones colaborativas estructuradas (ICE),
+    y gestión de la producción con principios Lean.
+  </p>
+
+  <h3>Los 3 pilares del VDC</h3>
+  <div class="grid grid-3">
+    <div class="card dark">
+      <h4>📐 BIM · Modelos digitales</h4>
+      <p>Modelado tridimensional con metadata de costo, tiempo, materiales. En GRAPCO empieza como <strong>WBS digital + zonas + fases</strong> (sin modelo 3D inicial).</p>
+    </div>
+    <div class="card dark">
+      <h4>🤝 ICE · Ingeniería concurrente</h4>
+      <p>Sesiones colaborativas semanales donde residente, capataz, oficina técnica y administración convergen sobre datos del sistema en tiempo real.</p>
+    </div>
+    <div class="card dark">
+      <h4>📊 PPM · Lean Production</h4>
+      <p>Last Planner System: Plan Maestro → Lookahead 6 semanas → Plan Semanal → Análisis de PPC y RNC para reducir variabilidad.</p>
+    </div>
+  </div>
+
+  <div class="callout info">
+    <strong>📚 Fuente metodológica:</strong> Kunz, J. & Fischer, M. (2020). <em>Virtual Design
+    and Construction: Themes, Case Studies and Implementation Suggestions.</em> CIFE Working
+    Paper #097, Stanford University. Más Ballard, G. & Tommelein, I. (2021). <em>2020 Current
+    Process Benchmark for the Last Planner System of Project Planning and Control.</em> P2SL.
+  </div>
+</section>
+
+<section id="diagnostico">
+  <h2><span class="num">3</span> Diagnóstico actual de la plataforma</h2>
+  <p class="lead">
+    Antes de diseñar el módulo VDC, mapeamos qué capacidades ya tiene Produc-App y dónde
+    están las brechas que VDC viene a cubrir.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:35%">Capacidad</th>
+        <th style="width:20%">Estado actual</th>
+        <th style="width:45%">Brecha VDC a cerrar</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Tareo diario digitalizado</strong></td>
+        <td><span style="color:var(--green-dark);font-weight:800">✓ Existente</span></td>
+        <td>Ninguna — base sólida sobre la cual operar.</td>
+      </tr>
+      <tr>
+        <td><strong>WBS jerárquica con códigos</strong></td>
+        <td><span style="color:var(--green-dark);font-weight:800">✓ Existente</span></td>
+        <td>Falta vincular cada actividad a zona/fase y restricciones.</td>
+      </tr>
+      <tr>
+        <td><strong>CPI / EAC / Curva-S</strong></td>
+        <td><span style="color:var(--green-dark);font-weight:800">✓ Bloque 2</span></td>
+        <td>Falta SPI con cronograma planeado real (no sólo distribución lineal).</td>
+      </tr>
+      <tr>
+        <td><strong>Plan Maestro multi-fase</strong></td>
+        <td><span style="color:var(--red);font-weight:800">✗ Inexistente</span></td>
+        <td>Cronograma de hitos por fase y partida, fechas comprometidas.</td>
+      </tr>
+      <tr>
+        <td><strong>Lookahead 6 semanas</strong></td>
+        <td><span style="color:var(--red);font-weight:800">✗ Inexistente</span></td>
+        <td>Ventana móvil para identificar y resolver restricciones anticipadamente.</td>
+      </tr>
+      <tr>
+        <td><strong>Plan Semanal + PPC</strong></td>
+        <td><span style="color:var(--gold-dark);font-weight:800">⚠ Parcial</span></td>
+        <td>Plan diario existe pero no mide % cumplimiento ni razones de fallo.</td>
+      </tr>
+      <tr>
+        <td><strong>Razones de No Cumplimiento (RNC)</strong></td>
+        <td><span style="color:var(--red);font-weight:800">✗ Inexistente</span></td>
+        <td>Catálogo estandarizado + análisis Pareto de causas.</td>
+      </tr>
+      <tr>
+        <td><strong>Sesiones ICE (acta + decisiones)</strong></td>
+        <td><span style="color:var(--red);font-weight:800">✗ Inexistente</span></td>
+        <td>Registro digital de reuniones colaborativas semanales.</td>
+      </tr>
+      <tr>
+        <td><strong>Modelo BIM 3D vinculado</strong></td>
+        <td><span style="color:var(--red);font-weight:800">✗ Inexistente</span></td>
+        <td>Fase 4 — fuera de alcance de la versión inicial.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="arquitectura">
+  <h2><span class="num">4</span> Arquitectura propuesta</h2>
+  <p class="lead">
+    El módulo VDC se integra como una nueva sección dentro del rol de Ingeniero, sin alterar
+    los flujos del Capataz ni de Carta Balance. Reutiliza datos existentes (Registros_Campo,
+    Cuadrillas, Personal) y añade cuatro colecciones nuevas en Firestore.
+  </p>
+
+  <h3>Diagrama de capas</h3>
+  <div style="background:var(--white);border:1px solid var(--border);border-radius:14px;padding:24px;margin:16px 0;">
+    <div style="display:grid;grid-template-columns:1fr;gap:8px;">
+      <div style="background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#fff;padding:14px;border-radius:10px;font-weight:800;text-align:center;">
+        🆕 CAPA VDC (nueva) — LPS · ICE · Métricas Lean · Restricciones
+      </div>
+      <div style="text-align:center;color:var(--muted);font-size:18px;">↑</div>
+      <div style="background:var(--green);color:#fff;padding:14px;border-radius:10px;font-weight:800;text-align:center;">
+        CAPA ANALÍTICA — CPI · EAC · Curva-S · Alertas · Ranking · Impacto Tesis
+      </div>
+      <div style="text-align:center;color:var(--muted);font-size:18px;">↑</div>
+      <div style="background:var(--navy);color:#fff;padding:14px;border-radius:10px;font-weight:800;text-align:center;">
+        CAPA OPERATIVA — Capataz · Carta Balance · Plan Diario
+      </div>
+      <div style="text-align:center;color:var(--muted);font-size:18px;">↑</div>
+      <div style="background:#f1f5f9;color:var(--navy);padding:14px;border-radius:10px;font-weight:800;text-align:center;border:1px solid var(--border);">
+        CAPA DATOS — Firebase Firestore · 5 colecciones existentes + 4 nuevas
+      </div>
+    </div>
+  </div>
+
+  <h3>Nuevas colecciones Firestore</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Colección</th>
+        <th>Propósito</th>
+        <th>Documento ejemplo</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>Plan_Maestro</code></td>
+        <td>Hitos y fechas comprometidas por fase</td>
+        <td>{ fase, partida, inicioPlan, finPlan, metradoPlan }</td>
+      </tr>
+      <tr>
+        <td><code>Lookahead_Semanal</code></td>
+        <td>Ventana móvil de 6 semanas con restricciones</td>
+        <td>{ semana, actividad, restricciones[], responsable }</td>
+      </tr>
+      <tr>
+        <td><code>PPC_Tracking</code></td>
+        <td>Compromisos semanales y su cumplimiento</td>
+        <td>{ semana, capataz, comprometido, ejecutado, ppc, rncId }</td>
+      </tr>
+      <tr>
+        <td><code>RNC_Registro</code></td>
+        <td>Razones de No Cumplimiento estandarizadas</td>
+        <td>{ ppcId, categoria, descripcion, leccionAprendida }</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="modulos">
+  <h2><span class="num">5</span> Módulos VDC del producto</h2>
+  <p class="lead">
+    Cada módulo entrega valor independiente y se puede activar por separado. Esto permite
+    adopción incremental sin sobrecargar al equipo de obra.
+  </p>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <span class="icon">🗓️</span>
+      <h4>Módulo 1 · Last Planner System (LPS)</h4>
+      <p style="margin-bottom:10px;color:var(--muted);">
+        Pipeline de planificación en cascada conforme al método Ballard.
+      </p>
+      <div class="pipeline">
+        <div class="pipeline-stage"><div class="num">1</div><div class="name">PLAN<br>MAESTRO</div></div>
+        <div class="pipeline-stage"><div class="num">2</div><div class="name">LOOKAHEAD<br>6 SEM</div></div>
+        <div class="pipeline-stage"><div class="num">3</div><div class="name">PLAN<br>SEMANAL</div></div>
+        <div class="pipeline-stage"><div class="num">4</div><div class="name">PPC + RNC<br>ANÁLISIS</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="icon">🤝</span>
+      <h4>Módulo 2 · ICE Sessions</h4>
+      <p>
+        Tablero digital para sesiones colaborativas semanales. Cada sesión registra:
+        asistentes, agenda, decisiones tomadas, responsables y fechas comprometidas.
+        Las decisiones se vinculan automáticamente al Plan Semanal subsiguiente.
+      </p>
+    </div>
+
+    <div class="card">
+      <span class="icon">🚧</span>
+      <h4>Módulo 3 · Gestión de Restricciones</h4>
+      <p>
+        Cada actividad del Lookahead pasa por análisis de 7 flujos: información, recursos,
+        equipos, mano de obra, materiales, condiciones externas, prerrequisitos. Sólo
+        actividades sin restricciones pueden entrar al Plan Semanal.
+      </p>
+    </div>
+
+    <div class="card">
+      <span class="icon">📚</span>
+      <h4>Módulo 4 · Lecciones Aprendidas</h4>
+      <p>
+        Base de conocimiento alimentada automáticamente desde RNC + ICE. Cada incidente
+        recurrente genera una lección catalogada por categoría, accesible al inicio de cada
+        proyecto futuro.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section id="roadmap">
+  <h2><span class="num">6</span> Roadmap por fases</h2>
+  <p class="lead">
+    Implementación incremental en 4 fases de 2 a 4 semanas cada una. Cada fase termina con
+    una versión funcional desplegable, no requiere completar las siguientes para generar valor.
+  </p>
+
+  <div class="timeline">
+    <div class="timeline-item">
+      <span class="phase">FASE 1 · 2 SEMANAS</span>
+      <h4>Last Planner System core</h4>
+      <p>
+        Implementación del módulo LPS funcional con Lookahead 6 semanas, Plan Semanal con
+        compromisos por capataz, registro de PPC al cierre de cada semana y catálogo inicial
+        de 8 categorías RNC. Incluye dashboard con tendencia PPC últimas 12 semanas.
+      </p>
+      <p style="font-size:12px;color:var(--muted);">
+        <strong>Entregable:</strong> Tab "🎯 VDC · Last Planner" en Dashboard Ingeniero.<br>
+        <strong>KPI nuevo:</strong> PPC Semanal con meta ≥ 80%.
+      </p>
+    </div>
+
+    <div class="timeline-item">
+      <span class="phase">FASE 2 · 3 SEMANAS</span>
+      <h4>Restricciones + Lecciones Aprendidas</h4>
+      <p>
+        Análisis de 7 flujos por actividad del Lookahead. Workflow de levantamiento de
+        restricciones con responsable y fecha comprometida. Base de Lecciones Aprendidas
+        que se alimenta automáticamente desde RNC repetidos.
+      </p>
+      <p style="font-size:12px;color:var(--muted);">
+        <strong>Entregable:</strong> Sub-módulos "Restricciones" y "Lecciones".<br>
+        <strong>KPI nuevo:</strong> % Restricciones liberadas a tiempo + ratio incidentes recurrentes/totales.
+      </p>
+    </div>
+
+    <div class="timeline-item">
+      <span class="phase">FASE 3 · 2 SEMANAS</span>
+      <h4>ICE Sessions digitales</h4>
+      <p>
+        Crear acta digital de sesiones colaborativas semanales: asistentes, agenda,
+        decisiones, acciones, responsables. Sincronización bidireccional con Lookahead
+        (decisiones generan ítems del Lookahead, restricciones generan agenda de ICE).
+      </p>
+      <p style="font-size:12px;color:var(--muted);">
+        <strong>Entregable:</strong> Tab "🤝 ICE Sessions" + integración con LPS.<br>
+        <strong>KPI nuevo:</strong> Cumplimiento de acciones ICE en plazo.
+      </p>
+    </div>
+
+    <div class="timeline-item">
+      <span class="phase">FASE 4 · 4 SEMANAS</span>
+      <h4>Vinculación BIM + Vista 4D simplificada</h4>
+      <p>
+        Permitir adjuntar planos PDF/imágenes por zona, marcar regiones interactivas que
+        vinculen a actividades del cronograma. Vista temporal "4D" tipo timeline donde se
+        visualiza qué se está ejecutando cada semana sobre el plano.
+      </p>
+      <p style="font-size:12px;color:var(--muted);">
+        <strong>Entregable:</strong> Tab "🏗️ Modelo 4D" con planos georreferenciados.<br>
+        <strong>Stack adicional:</strong> Konva.js o react-image-marker · Firebase Storage.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section id="metricas">
+  <h2><span class="num">7</span> Métricas y KPIs VDC</h2>
+  <p class="lead">
+    El módulo VDC añade indicadores de proceso (no sólo de resultado), alineados con el
+    framework CIFE de medición de adopción VDC.
+  </p>
+
+  <div class="grid grid-4">
+    <div class="kpi">
+      <div class="label">PPC</div>
+      <div class="value">≥ 80%</div>
+      <div class="sub">% Plan Cumplido (meta benchmark Lean Construction Institute)</div>
+    </div>
+    <div class="kpi">
+      <div class="label">RNC TOP 3</div>
+      <div class="value">&lt; 60%</div>
+      <div class="sub">Las 3 causas principales no deben superar 60% del total acumulado</div>
+    </div>
+    <div class="kpi">
+      <div class="label">RESTRIC. LIBERADAS</div>
+      <div class="value">≥ 90%</div>
+      <div class="sub">% liberadas en plazo comprometido en sesión ICE</div>
+    </div>
+    <div class="kpi">
+      <div class="label">ICE CADENCIA</div>
+      <div class="value">100%</div>
+      <div class="sub">Sesiones realizadas vs planificadas (1/semana)</div>
+    </div>
+  </div>
+
+  <h3>Categorías estándar de RNC (catálogo inicial)</h3>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:8%">#</th>
+        <th style="width:22%">Categoría</th>
+        <th>Ejemplos</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td><strong>Materiales</strong></td><td>Falta de cemento, acero no llegó, materiales de mala calidad</td></tr>
+      <tr><td>2</td><td><strong>Equipos</strong></td><td>Mezcladora averiada, falta de andamios, vibrador descompuesto</td></tr>
+      <tr><td>3</td><td><strong>Mano de obra</strong></td><td>Ausentismo, cuadrilla insuficiente, paro</td></tr>
+      <tr><td>4</td><td><strong>Información</strong></td><td>Plano desactualizado, RFI sin respuesta, especificación poco clara</td></tr>
+      <tr><td>5</td><td><strong>Prerrequisitos</strong></td><td>Actividad previa no terminó, sector no liberado por subcontratista</td></tr>
+      <tr><td>6</td><td><strong>Clima</strong></td><td>Lluvia, viento fuerte, alta temperatura</td></tr>
+      <tr><td>7</td><td><strong>Cliente / Externos</strong></td><td>Cambio de alcance, decisión pendiente, permiso municipal</td></tr>
+      <tr><td>8</td><td><strong>Reprocesos</strong></td><td>Calidad rechazada, error de medida, vaciado defectuoso</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="roles">
+  <h2><span class="num">8</span> Roles y gobierno del proceso</h2>
+  <p class="lead">
+    VDC implica cambios en quién participa, cuándo y con qué información. La plataforma
+    soporta los flujos pero la metodología requiere disciplina humana.
+  </p>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <h4>👷 Capataz · "Last Planner"</h4>
+      <ul style="margin-top:8px;font-size:13px;color:var(--text);">
+        <li>Compromete actividades del Plan Semanal el viernes anterior</li>
+        <li>Reporta avance diario en su tareo (ya lo hace)</li>
+        <li>Identifica restricciones nuevas para la próxima semana</li>
+        <li>Participa en ICE Session los viernes 4pm (1h)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📐 Ingeniero Residente · "VDC Lead"</h4>
+      <ul style="margin-top:8px;font-size:13px;color:var(--text);">
+        <li>Mantiene el Plan Maestro actualizado</li>
+        <li>Aprueba el Lookahead semanal y Plan Semanal</li>
+        <li>Lidera la sesión ICE y firma el acta</li>
+        <li>Analiza PPC y RNC mensual para mejora continua</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🏢 Oficina Técnica</h4>
+      <ul style="margin-top:8px;font-size:13px;color:var(--text);">
+        <li>Resuelve restricciones de información (planos, RFI, especificaciones)</li>
+        <li>Provee inputs para el Plan Maestro (cronograma contractual)</li>
+        <li>Documenta lecciones aprendidas en el catálogo</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🎓 Tesista · "VDC Champion"</h4>
+      <ul style="margin-top:8px;font-size:13px;color:var(--text);">
+        <li>Capacita al equipo en cada nuevo módulo activado</li>
+        <li>Audita la calidad de los datos VDC mensualmente</li>
+        <li>Reporta hallazgos al jurado/gerencia</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout warning">
+    <strong>⚠️ Factor crítico de éxito:</strong> Sin la disciplina de la sesión ICE semanal
+    el módulo VDC se convierte en formularios sin uso. La plataforma facilita el proceso
+    pero no lo reemplaza.
+  </div>
+</section>
+
+<section id="riesgos">
+  <h2><span class="num">9</span> Riesgos y mitigaciones</h2>
+  <p class="lead">
+    Implementar VDC en una empresa que viene del Excel manual tiene riesgos predecibles.
+    Los listamos con plan de contención.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:25%">Riesgo</th>
+        <th style="width:12%">Probabilidad</th>
+        <th style="width:12%">Impacto</th>
+        <th>Mitigación</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Resistencia del capataz al "papeleo digital extra"</strong></td>
+        <td><span style="color:var(--red);font-weight:800">Alta</span></td>
+        <td><span style="color:var(--red);font-weight:800">Alto</span></td>
+        <td>Comprometer máximo 5 actividades por semana inicialmente; ICE de 1h estricta; reconocer al capataz con mayor PPC.</td>
+      </tr>
+      <tr>
+        <td><strong>ICE Session se vuelve reunión sin agenda</strong></td>
+        <td><span style="color:var(--gold-dark);font-weight:800">Media</span></td>
+        <td><span style="color:var(--red);font-weight:800">Alto</span></td>
+        <td>Agenda pre-cargada desde la plataforma con: PPC semana anterior, top 3 RNC, lookahead semana 2.</td>
+      </tr>
+      <tr>
+        <td><strong>Datos PPC manipulados (registrar lo que se hizo)</strong></td>
+        <td><span style="color:var(--gold-dark);font-weight:800">Media</span></td>
+        <td><span style="color:var(--gold-dark);font-weight:800">Medio</span></td>
+        <td>Bloquear edición de compromisos después del lunes 8am; auditoría aleatoria mensual del residente.</td>
+      </tr>
+      <tr>
+        <td><strong>Catálogo RNC se infla con causas ad-hoc</strong></td>
+        <td><span style="color:var(--green-dark);font-weight:800">Baja</span></td>
+        <td><span style="color:var(--gold-dark);font-weight:800">Medio</span></td>
+        <td>Mantener 8 categorías rígidas; añadir nuevas sólo con aprobación de oficina técnica.</td>
+      </tr>
+      <tr>
+        <td><strong>Subutilización del módulo BIM 4D (Fase 4)</strong></td>
+        <td><span style="color:var(--red);font-weight:800">Alta</span></td>
+        <td><span style="color:var(--green-dark);font-weight:800">Bajo</span></td>
+        <td>Lanzar sólo si las Fases 1–3 muestran adopción ≥ 70%; opcional, no bloqueante.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="tesis">
+  <h2><span class="num">10</span> Aporte académico para la tesis</h2>
+  <p class="lead">
+    La integración de VDC en GRAPCO Produc-App constituye un caso de estudio aplicado de
+    transformación digital de obra civil en el contexto peruano. Los aportes específicos a
+    la tesis se estructuran en cinco dimensiones.
+  </p>
+
+  <div class="grid grid-2">
+    <div class="card accent">
+      <h4>📚 Marco teórico</h4>
+      <p>Aplicación de VDC (Stanford CIFE) y Last Planner System (Ballard) en obra civil de mediana escala en Perú. Adaptación a regulación laboral peruana (HE 60/100, jornada 8.5h).</p>
+    </div>
+    <div class="card accent">
+      <h4>🛠️ Diseño metodológico</h4>
+      <p>Caso de estudio longitudinal: comparación pre-VDC (Excel manual) vs post-VDC (plataforma + LPS) en una obra real de GRAPCO. Métricas: CPI, PPC, variabilidad semanal.</p>
+    </div>
+    <div class="card accent">
+      <h4>📊 Resultados cuantitativos</h4>
+      <p>Reducción de HH desperdiciadas, mejora del CPI, % cumplimiento del cronograma, valorización monetaria del ahorro. Generados automáticamente en módulo "Impacto Tesis".</p>
+    </div>
+    <div class="card accent">
+      <h4>💡 Aporte tecnológico</h4>
+      <p>Plataforma open-source replicable, arquitectura modular React + Firebase, validada en producción real. Código auditable disponible para futuras investigaciones.</p>
+    </div>
+    <div class="card accent">
+      <h4>🌱 Sostenibilidad</h4>
+      <p>Capacitación documentada, manuales operativos, gobierno del proceso definido. La metodología persiste aún si el tesista deja la organización.</p>
+    </div>
+    <div class="card accent">
+      <h4>🎤 Defensa</h4>
+      <p>Demo en vivo de la plataforma + módulo "Impacto Tesis" + curva-S EVM con números reales del caso. Diferenciación frente a tesis puramente teóricas.</p>
+    </div>
+  </div>
+
+  <div class="callout success">
+    <strong>📈 Sugerencia para el jurado:</strong> en la sustentación, abrir directamente la
+    pestaña "🎓 IMPACTO TESIS" del Dashboard Ingeniero y mostrar los números reales del proyecto
+    GRAPCO PTARI. Esto demuestra aplicabilidad práctica y diferencia el trabajo de tesis basadas
+    sólo en revisión bibliográfica.
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="logo">GRAPCO SAC</div>
+  <p>Plan de Implementación VDC v1.0 · Mayo 2026</p>
+  <p style="margin-top:8px;opacity:0.6;">Documento elaborado como parte del proyecto de tesis de implementación de plataforma digital de control de productividad de obra civil.</p>
+</footer>
+
+</body>
+</html>

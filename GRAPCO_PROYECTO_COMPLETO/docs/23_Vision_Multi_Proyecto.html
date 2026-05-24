@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌎 Visión Multi-Proyecto · GRAPCO · Arquitectura SaaS</title>
+<style>
+  :root {
+    --navy:#1e3a5f; --navy-dark:#152a47; --gold:#f59e0b; --gold-dark:#d97706;
+    --gold-light:#fef3c7; --green:#16a34a; --red:#dc2626; --blue:#2563eb;
+    --purple:#7c3aed; --pink:#ec4899; --indigo:#6366f1; --teal:#0d9488;
+    --bg:#f8fafc; --white:#fff; --border:#e2e8f0; --text:#1e293b; --muted:#64748b;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html { scroll-behavior:smooth; }
+  body { font-family:"Inter",-apple-system,sans-serif; color:var(--text); background:var(--bg); line-height:1.7; font-size:15px; }
+  header.hero { background:linear-gradient(135deg,#0f1a2e 0%,var(--navy) 100%); color:#fff; padding:80px 40px 100px; border-bottom:6px solid var(--gold); position:relative; overflow:hidden; }
+  header.hero::before { content:''; position:absolute; top:-200px; right:-200px; width:600px; height:600px; border-radius:50%; background:var(--gold); opacity:0.1; filter:blur(120px); }
+  header.hero::after { content:''; position:absolute; bottom:-150px; left:-150px; width:500px; height:500px; border-radius:50%; background:var(--teal); opacity:0.15; filter:blur(120px); }
+  header.hero .inner { max-width:1200px; margin:0 auto; position:relative; z-index:2; }
+  header.hero .badge { display:inline-block; padding:10px 24px; background:rgba(245,158,11,0.2); border:1px solid var(--gold); border-radius:30px; color:var(--gold); font-size:11px; font-weight:800; letter-spacing:1.8px; margin-bottom:22px; }
+  header.hero h1 { font-size:54px; font-weight:900; margin-bottom:18px; letter-spacing:-1px; line-height:1.05; }
+  header.hero .subtitle { font-size:19px; opacity:0.92; max-width:850px; line-height:1.5; }
+  header.hero .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:18px; margin-top:42px; padding-top:32px; border-top:1px solid rgba(255,255,255,0.18); }
+  header.hero .stat { background:rgba(255,255,255,0.06); padding:20px 22px; border-radius:14px; border:1px solid rgba(245,158,11,0.3); }
+  header.hero .stat .num { font-size:30px; font-weight:900; color:var(--gold); line-height:1.05; }
+  header.hero .stat .lbl { font-size:12px; opacity:0.85; margin-top:8px; }
+
+  nav.toc { background:var(--white); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; box-shadow:0 2px 12px rgba(15,23,42,0.06); }
+  nav.toc .inner { max-width:1200px; margin:0 auto; padding:0 40px; display:flex; gap:4px; overflow-x:auto; }
+  nav.toc a { padding:16px 14px; color:var(--muted); text-decoration:none; font-size:12.5px; font-weight:700; white-space:nowrap; border-bottom:3px solid transparent; transition:all 0.15s; }
+  nav.toc a:hover { color:var(--gold); border-bottom-color:var(--gold); }
+
+  main { max-width:1200px; margin:0 auto; padding:60px 40px 100px; }
+  section { margin-bottom:80px; scroll-margin-top:80px; }
+  section h2 { font-size:34px; font-weight:900; color:var(--navy); margin-bottom:14px; display:flex; align-items:center; gap:18px; line-height:1.15; }
+  section h2 .num { width:54px; height:54px; color:#fff; border-radius:14px; display:inline-flex; align-items:center; justify-content:center; font-size:26px; font-weight:900; flex-shrink:0; box-shadow:0 8px 20px rgba(15,23,42,0.18); }
+  section .lead { font-size:17px; color:var(--muted); margin-bottom:30px; padding-left:72px; line-height:1.6; }
+  section h3 { font-size:23px; font-weight:800; color:var(--navy); margin:40px 0 14px; padding-left:16px; border-left:5px solid var(--gold); }
+
+  .highlight { background:linear-gradient(135deg,var(--navy),#0f1a2e); color:#fff; border-radius:18px; padding:32px 38px; margin:30px 0; border-left:6px solid var(--gold); box-shadow:0 10px 30px rgba(15,23,42,0.18); }
+  .highlight h3 { color:var(--gold); border:none; padding:0; margin-bottom:14px; font-size:24px; }
+  .highlight p { opacity:0.92; line-height:1.7; }
+  .highlight strong { color:var(--gold); }
+
+  .feature-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; margin:20px 0; }
+  .feature { background:var(--white); border-radius:14px; border:1px solid var(--border); padding:24px 26px; border-top:5px solid var(--indigo); transition:all 0.2s; }
+  .feature:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(15,23,42,0.08); }
+  .feature .ico { font-size:36px; margin-bottom:12px; }
+  .feature h4 { font-size:17px; font-weight:900; color:var(--navy); margin-bottom:8px; }
+  .feature p { font-size:13.5px; color:var(--muted); line-height:1.55; margin:0; }
+  .feature.green { border-top-color:var(--green); }
+  .feature.gold { border-top-color:var(--gold); }
+  .feature.red { border-top-color:var(--red); }
+  .feature.teal { border-top-color:var(--teal); }
+  .feature.pink { border-top-color:var(--pink); }
+  .feature.purple { border-top-color:var(--purple); }
+
+  pre { background:#0f172a; color:#e2e8f0; padding:18px 22px; border-radius:10px; font-family:'Consolas',monospace; font-size:12.5px; line-height:1.65; overflow-x:auto; margin:14px 0; border-left:5px solid var(--gold); }
+  pre .c { color:#94a3b8; } pre .k { color:#fbbf24; } pre .s { color:#86efac; } pre .t { color:#7dd3fc; } pre .v { color:#c4b5fd; }
+  code { background:var(--bg); padding:2px 8px; border-radius:4px; font-size:12.5px; color:var(--navy); font-weight:700; font-family:'Consolas',monospace; }
+
+  .callout { border-radius:12px; padding:18px 24px; margin:18px 0; border-left:5px solid; display:flex; gap:14px; align-items:flex-start; }
+  .callout .icon { font-size:24px; flex-shrink:0; margin-top:2px; }
+  .callout .body { flex:1; }
+  .callout strong { font-weight:900; }
+  .callout.success { background:#dcfce7; border-color:var(--green); color:#15803d; }
+  .callout.warning { background:var(--gold-light); border-color:var(--gold-dark); color:var(--gold-dark); }
+  .callout.info { background:#dbeafe; border-color:var(--blue); color:var(--navy); }
+
+  table { width:100%; border-collapse:collapse; background:var(--white); border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(15,23,42,0.05); margin:16px 0; font-size:13px; }
+  th { background:var(--navy); color:#fff; padding:13px 16px; text-align:left; font-size:11px; font-weight:800; letter-spacing:0.5px; }
+  td { padding:11px 16px; border-bottom:1px solid var(--border); vertical-align:top; }
+  tr:nth-child(even) td { background:#f8fafc; }
+  td.cat { font-weight:900; color:var(--navy); }
+
+  /* Diagrama jerarquia */
+  .jerar { background:var(--white); border:1px solid var(--border); border-radius:16px; padding:24px; margin:20px 0; }
+  .jerar-row { display:flex; gap:14px; align-items:stretch; padding:8px 0; }
+  .jerar-row.sub { padding-left:30px; }
+  .jerar-row.subsub { padding-left:60px; }
+  .jerar-card { padding:14px 20px; border-radius:12px; flex:1; border-left:5px solid; }
+  .jerar-card.empresa { background:linear-gradient(135deg,var(--navy),#0f1a2e); color:#fff; border-color:var(--gold); }
+  .jerar-card.proyecto { background:linear-gradient(135deg,var(--indigo),#4338ca); color:#fff; border-color:var(--gold); }
+  .jerar-card.frente { background:linear-gradient(135deg,var(--purple),#5b21b6); color:#fff; border-color:var(--gold); }
+  .jerar-card.actividad { background:linear-gradient(135deg,var(--teal),#0f766e); color:#fff; border-color:var(--gold); }
+  .jerar-card .lbl { font-size:10px; font-weight:900; color:var(--gold); letter-spacing:1.2px; }
+  .jerar-card .nm { font-size:14px; font-weight:900; margin-top:4px; }
+  .jerar-card .ds { font-size:11px; opacity:0.85; margin-top:4px; }
+
+  .formula { background:linear-gradient(135deg,var(--navy),#0f1a2e); color:#fff; border-radius:14px; padding:24px 28px; margin:18px 0; font-family:'Consolas',monospace; text-align:center; border-left:5px solid var(--gold); }
+  .formula .lbl { font-size:11px; color:var(--gold); letter-spacing:1.5px; margin-bottom:10px; font-family:'Inter',sans-serif; font-weight:900; }
+  .formula .ec { font-size:18px; font-weight:700; margin:8px 0; }
+  .formula .ds { font-size:12px; color:rgba(255,255,255,0.78); margin-top:10px; font-family:'Inter',sans-serif; }
+
+  /* Color tags */
+  .num.arq { background:linear-gradient(135deg,var(--navy),var(--navy-dark)); }
+  .num.proy { background:linear-gradient(135deg,var(--indigo),#4338ca); }
+  .num.frente { background:linear-gradient(135deg,var(--purple),#5b21b6); }
+  .num.mig { background:linear-gradient(135deg,var(--gold),var(--gold-dark)); }
+  .num.tesis { background:linear-gradient(135deg,var(--pink),#be185d); }
+
+  footer { background:linear-gradient(135deg,var(--navy),#0f1a2e); color:rgba(255,255,255,0.78); padding:48px 40px; text-align:center; font-size:13px; border-top:6px solid var(--gold); }
+  footer .logo { font-size:24px; font-weight:900; color:var(--gold); letter-spacing:3px; margin-bottom:10px; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="inner">
+    <span class="badge">🌎 BLOQUE 23 · TRANSFORMACIÓN ARQUITECTÓNICA SAAS</span>
+    <h1>De plataforma de un proyecto a sistema multi-proyecto enterprise</h1>
+    <p class="subtitle">
+      Las grandes empresas ejecutan <strong>múltiples proyectos a la vez</strong>, cada uno con <strong>varios frentes simultáneos</strong>. GRAPCO Produc-App ahora soporta toda la jerarquía: <strong>Empresa → Proyectos → Frentes → Actividades WBS</strong>. Cada nivel tiene su RO, sus indicadores, sus comparativos. Es la arquitectura de un producto SaaS.
+    </p>
+    <div class="stats">
+      <div class="stat"><div class="num">3 niveles</div><div class="lbl">Proyecto · Frente · Actividad</div></div>
+      <div class="stat"><div class="num">∞ proyectos</div><div class="lbl">Sin límite, ubicación geográfica</div></div>
+      <div class="stat"><div class="num">∞ frentes</div><div class="lbl">Por proyecto, comparables</div></div>
+      <div class="stat"><div class="num">RO consolidado</div><div class="lbl">Por frente, proyecto y empresa</div></div>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="inner">
+    <a href="#porque">🎯 Por qué</a>
+    <a href="#jerarquia">🏗️ Jerarquía</a>
+    <a href="#datos">🗄️ Datos</a>
+    <a href="#ux">🎨 UX</a>
+    <a href="#migracion">🔄 Migración</a>
+    <a href="#fases">📅 Roadmap</a>
+    <a href="#tesis">🎓 Tesis</a>
+  </div>
+</nav>
+
+<main>
+
+<div class="highlight">
+  <h3>🎯 La transformación de fondo</h3>
+  <p>
+    Hasta el Bloque 22, GRAPCO funcionaba como una <strong>app de un solo proyecto</strong>. Si querías gestionar otra obra, necesitabas otra app. El Bloque 23 cambia eso radicalmente: ahora puedes tener <strong>todas las obras de la empresa en una sola plataforma</strong>, cada una con sus frentes, su equipo, su contrato. Y como bonus, comparas todo: ¿qué proyecto es más rentable? ¿qué frente está atrasado? ¿dónde está el dinero?
+  </p>
+</div>
+
+<section id="porque">
+  <h2><span class="num arq">🎯</span> Por qué este cambio cambia todo</h2>
+  <p class="lead">El antes y el después: pasar de "app de tesis" a "producto SaaS empresarial".</p>
+
+  <h3>Casos de uso reales que se desbloquean</h3>
+  <div class="feature-grid">
+    <div class="feature gold">
+      <div class="ico">🏗️</div>
+      <h4>Una obra grande con frentes simultáneos</h4>
+      <p>Proyecto PTARI: Frente Norte (tanque), Frente Sur (edificio), Frente Central (líneas). Cada uno con su CPI, SPI, margen, equipo. Comparas y decides dónde mover recursos.</p>
+    </div>
+    <div class="feature purple">
+      <div class="ico">🌎</div>
+      <h4>Múltiples obras en diferentes ciudades</h4>
+      <p>GRAPCO ejecuta simultáneamente: PTARI en Lima, Hospital Huarmey en Áncash, Carretera en Cusco. Dashboard único de portfolio empresarial.</p>
+    </div>
+    <div class="feature green">
+      <div class="ico">💰</div>
+      <h4>Catálogo empresarial de APUs</h4>
+      <p>El APU "Vaciado columnas f'c=210" se crea UNA vez y se reutiliza en 5 proyectos. Si un precio de cemento sube, se actualiza centralmente.</p>
+    </div>
+    <div class="feature teal">
+      <div class="ico">📊</div>
+      <h4>Comparativo entre frentes y proyectos</h4>
+      <p>Ranking de rentabilidad. Identifica frentes problema. Detecta patrones (¿el frente Norte siempre se atrasa? ¿por qué?).</p>
+    </div>
+    <div class="feature pink">
+      <div class="ico">👥</div>
+      <h4>Roles diferenciados por proyecto</h4>
+      <p>Juan es residente en PTARI pero auditor en Hospital. María es jefa de calidad en 3 proyectos a la vez. Permisos granulares.</p>
+    </div>
+    <div class="feature red">
+      <div class="ico">🚨</div>
+      <h4>Alertas centralizadas</h4>
+      <p>"3 proyectos con margen &lt; meta", "5 NCs críticas en frente Sur de PTARI". El director ve todo desde un solo lugar.</p>
+    </div>
+  </div>
+</section>
+
+<section id="jerarquia">
+  <h2><span class="num proy">🏗️</span> La jerarquía de 4 niveles</h2>
+  <p class="lead">Cómo se organizan los datos en el nuevo modelo.</p>
+
+  <div class="jerar">
+    <div class="jerar-row">
+      <div class="jerar-card empresa">
+        <div class="lbl">NIVEL 1 · EMPRESA (futuro multi-tenant)</div>
+        <div class="nm">🏢 GRAPCO SAC</div>
+        <div class="ds">RUC, datos generales, configuración global, catálogo APUs empresarial</div>
+      </div>
+    </div>
+    <div class="jerar-row sub">
+      <div class="jerar-card proyecto">
+        <div class="lbl">NIVEL 2 · PROYECTO</div>
+        <div class="nm">🏗️ PROYECTO PTARI (Lima)</div>
+        <div class="ds">Cliente: SEDAPAR · Contrato S/. 12M · Inicio Mar/2026 · Fin Dic/2026</div>
+      </div>
+      <div class="jerar-card proyecto">
+        <div class="lbl">NIVEL 2 · PROYECTO</div>
+        <div class="nm">🏥 HOSPITAL HUARMEY</div>
+        <div class="ds">Cliente: MINSA · Contrato S/. 8.5M</div>
+      </div>
+    </div>
+    <div class="jerar-row subsub">
+      <div class="jerar-card frente">
+        <div class="lbl">NIVEL 3 · FRENTE</div>
+        <div class="nm">📍 Frente Norte: Tanque sedimentación</div>
+        <div class="ds">Residente: Ing. Pérez · Cuadrillas: 3</div>
+      </div>
+      <div class="jerar-card frente">
+        <div class="lbl">NIVEL 3 · FRENTE</div>
+        <div class="nm">📍 Frente Sur: Edificio operaciones</div>
+        <div class="ds">Residente: Ing. López · Cuadrillas: 2</div>
+      </div>
+      <div class="jerar-card frente">
+        <div class="lbl">NIVEL 3 · FRENTE</div>
+        <div class="nm">📍 Frente Central: Línea impulsión</div>
+        <div class="ds">Residente: Ing. Castro · Cuadrillas: 4</div>
+      </div>
+    </div>
+    <div class="jerar-row" style="padding-left:90px;">
+      <div class="jerar-card actividad">
+        <div class="lbl">NIVEL 4 · ACTIVIDAD WBS</div>
+        <div class="nm">📋 02.01.003 Vaciado columnas Eje 3</div>
+        <div class="ds">Pertenece a Frente Norte de Proyecto PTARI de Empresa GRAPCO</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout success">
+    <span class="icon">💡</span>
+    <div class="body">
+      <strong>Cada actividad WBS sabe a qué frente pertenece, y cada frente sabe a qué proyecto pertenece.</strong> Esto permite agrupar y filtrar en cualquier nivel. Tareos, materiales, calidad, costos: todo lleva referencia al proyecto + frente.
+    </div>
+  </div>
+</section>
+
+<section id="datos">
+  <h2><span class="num proy">🗄️</span> Modelo de datos</h2>
+  <p class="lead">Cambios en colecciones y nuevos campos.</p>
+
+  <h3>Nuevas colecciones</h3>
+  <pre><span class="c">// Coleccion Proyectos/{proyectoId}</span>
+<span class="k">{</span>
+  <span class="t">codigo</span>: <span class="s">"PTARI-2026"</span>,
+  <span class="t">nombre</span>: <span class="s">"Planta Tratamiento PTARI"</span>,
+  <span class="t">descripcionCorta</span>: <span class="s">"PTARI Lima Sur, capacidad 200 lps"</span>,
+  <span class="t">cliente</span>: <span class="s">"SEDAPAR"</span>,
+  <span class="t">tipoObra</span>: <span class="s">"hidraulica | edificacion | vial | mineria | otro"</span>,
+  <span class="t">ubicacion</span>: { <span class="t">lat</span>: -<span class="v">12.0464</span>, <span class="t">lng</span>: -<span class="v">77.0428</span>, <span class="t">ciudad</span>: <span class="s">"Lima"</span>, <span class="t">region</span>: <span class="s">"Lima"</span>, <span class="t">direccion</span>: <span class="s">"..."</span> },
+  <span class="t">presupuestoContractual</span>: <span class="v">12000000</span>,
+  <span class="t">moneda</span>: <span class="s">"PEN"</span>,
+  <span class="t">fechaInicioContractual</span>: <span class="v">timestamp</span>,
+  <span class="t">fechaFinContractual</span>: <span class="v">timestamp</span>,
+  <span class="t">plazoDias</span>: <span class="v">300</span>,
+  <span class="t">margenMetaPct</span>: <span class="v">15</span>,
+  <span class="t">estado</span>: <span class="s">"planificado | en_ejecucion | suspendido | completado | cancelado"</span>,
+  <span class="t">avancePctActual</span>: <span class="v">42.3</span>,         <span class="c">// denormalizado, calculado periodicamente</span>
+  <span class="t">cpiActual</span>: <span class="v">0.95</span>,
+  <span class="t">spiActual</span>: <span class="v">0.88</span>,
+  <span class="t">color</span>: <span class="s">"#1e3a5f"</span>,                    <span class="c">// para UI</span>
+  <span class="t">creadoEn</span>, <span class="t">creadoPor</span>
+<span class="k">}</span>
+
+<span class="c">// Coleccion Frentes/{frenteId}</span>
+<span class="k">{</span>
+  <span class="t">codigo</span>: <span class="s">"F-NORTE"</span>,
+  <span class="t">nombre</span>: <span class="s">"Tanque sedimentación"</span>,
+  <span class="t">proyectoId</span>: <span class="s">"<id-PTARI>"</span>,
+  <span class="t">responsable</span>: <span class="s">"Ing. Juan Pérez"</span>,
+  <span class="t">descripcion</span>: <span class="s">"..."</span>,
+  <span class="t">presupuestoFrente</span>: <span class="v">3500000</span>,        <span class="c">// suma de actividades del frente</span>
+  <span class="t">avancePctActual</span>: <span class="v">38.2</span>,
+  <span class="t">color</span>: <span class="s">"#7c3aed"</span>,
+  <span class="t">orden</span>: <span class="v">1</span>,
+  <span class="t">activo</span>: <span class="v">true</span>
+<span class="k">}</span></pre>
+
+  <h3>Cambios en colecciones existentes</h3>
+  <table>
+    <thead><tr><th>Colección</th><th>Campos agregados</th></tr></thead>
+    <tbody>
+      <tr><td class="cat">PlanMaestro</td><td><code>proyectoId</code> + <code>frenteId</code></td></tr>
+      <tr><td class="cat">APUs</td><td><code>scope</code>: 'empresa' | 'proyecto' + <code>proyectoId</code> (si scope=proyecto)</td></tr>
+      <tr><td class="cat">Tareos</td><td><code>proyectoId</code> + <code>frenteId</code></td></tr>
+      <tr><td class="cat">Historial</td><td><code>proyectoId</code> + <code>frenteId</code></td></tr>
+      <tr><td class="cat">KardexMovimientos</td><td><code>proyectoId</code> + <code>frenteId</code></td></tr>
+      <tr><td class="cat">Materiales (stock)</td><td><code>proyectoId</code> (stock por almacén de proyecto)</td></tr>
+      <tr><td class="cat">Protocolos</td><td><code>proyectoId</code> + <code>frenteId</code></td></tr>
+      <tr><td class="cat">NoConformidades</td><td><code>proyectoId</code> + <code>frenteId</code></td></tr>
+      <tr><td class="cat">Ensayos</td><td><code>proyectoId</code> + <code>frenteId</code></td></tr>
+      <tr><td class="cat">RDO</td><td><code>proyectoId</code> + <code>frenteId</code></td></tr>
+      <tr><td class="cat">ValorizacionesContractuales</td><td><code>proyectoId</code></td></tr>
+      <tr><td class="cat">PartidasContractuales</td><td><code>proyectoId</code></td></tr>
+      <tr><td class="cat">PETs</td><td><code>proyectoId</code> (los PETs son por proyecto)</td></tr>
+      <tr><td class="cat">PlanDiario</td><td><code>proyectoId</code> + <code>frenteId</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Cálculos jerárquicos</h3>
+  <div class="formula">
+    <div class="lbl">RO POR FRENTE</div>
+    <div class="ec">RO_frente = filtrar(actividades, frenteId) → calcularROMensual</div>
+    <div class="ds">Mismo motor del Bloque 21, filtrando por frenteId</div>
+  </div>
+
+  <div class="formula">
+    <div class="lbl">RO POR PROYECTO</div>
+    <div class="ec">RO_proyecto = sumar(RO_frente1 + RO_frente2 + ...) por categoría</div>
+    <div class="ds">Agregación: BAC, EV, AC se suman; CPI/SPI se recalculan a nivel proyecto</div>
+  </div>
+
+  <div class="formula">
+    <div class="lbl">RO PORTFOLIO (TODA LA EMPRESA)</div>
+    <div class="ec">RO_empresa = sumar(RO_proy1 + RO_proy2 + ...) ponderado por presupuesto</div>
+    <div class="ds">Vista del Director General de la empresa</div>
+  </div>
+</section>
+
+<section id="ux">
+  <h2><span class="num frente">🎨</span> Experiencia de usuario</h2>
+  <p class="lead">Cómo se siente el cambio en la app.</p>
+
+  <h3>Selector global de Proyecto + Frente (top bar)</h3>
+  <p>
+    El usuario ahora <strong>selecciona en qué proyecto y frente está trabajando</strong>. Esto se elige desde la barra superior y se guarda en el contexto. Todas las vistas posteriores filtran automáticamente.
+  </p>
+
+  <h3>Modos de visualización</h3>
+  <div class="feature-grid">
+    <div class="feature gold">
+      <div class="ico">📍</div>
+      <h4>Modo Frente</h4>
+      <p>Filtra todo a UN solo frente. Útil para residentes que solo gestionan su frente.</p>
+    </div>
+    <div class="feature purple">
+      <div class="ico">🏗️</div>
+      <h4>Modo Proyecto</h4>
+      <p>Ve todos los frentes del proyecto agregados. Útil para gerentes de obra y oficina técnica.</p>
+    </div>
+    <div class="feature teal">
+      <div class="ico">🌎</div>
+      <h4>Modo Empresa (Portfolio)</h4>
+      <p>Ve todos los proyectos de la empresa. Útil para directores y administración. (Bloque 24)</p>
+    </div>
+  </div>
+</section>
+
+<section id="migracion">
+  <h2><span class="num mig">🔄</span> Migración suave de datos existentes</h2>
+  <p class="lead">Cero pérdida de información.</p>
+
+  <h3>Estrategia adoptada (A1)</h3>
+  <ol style="margin-left:24px;line-height:2;">
+    <li>Al primer arranque, el sistema detecta que no hay proyectos creados</li>
+    <li>Crea automáticamente <strong>"Proyecto PTARI Default"</strong> con frente "Frente General"</li>
+    <li>Marca todas las colecciones existentes con <code>proyectoId = "default-ptari"</code> y <code>frenteId = "frente-general"</code></li>
+    <li>El usuario puede luego renombrarlo, agregar frentes, o crear proyectos adicionales</li>
+  </ol>
+
+  <div class="callout success">
+    <span class="icon">✅</span>
+    <div class="body">
+      <strong>Compatibilidad garantizada:</strong> Todo lo que ya tienes (LPS, Tareos, Calidad, RO) sigue funcionando. Sólo se añade el contexto de proyecto/frente.
+    </div>
+  </div>
+</section>
+
+<section id="fases">
+  <h2><span class="num arq">📅</span> Roadmap del bloque</h2>
+  <p class="lead">Lo que entregamos AHORA vs lo que viene en el siguiente bloque.</p>
+
+  <h3>BLOQUE 23 (este turno)</h3>
+  <ol style="margin-left:24px;line-height:1.9;">
+    <li>Modelo de datos: colecciones <code>Proyectos</code> + <code>Frentes</code></li>
+    <li>Contexto global de proyecto/frente activo (React Context)</li>
+    <li>Selector global en barra superior</li>
+    <li>CRUD de Proyectos (crear, editar, listar)</li>
+    <li>CRUD de Frentes (dentro del proyecto)</li>
+    <li>Wizard simple de creación de proyecto</li>
+    <li>Migración automática de datos existentes</li>
+    <li>RO multi-frente: comparativo entre frentes del mismo proyecto</li>
+    <li>Filtrado automático: todas las vistas existentes respetan el contexto</li>
+    <li>Reglas Firestore actualizadas</li>
+  </ol>
+
+  <h3>BLOQUE 24 (siguiente turno)</h3>
+  <ol style="margin-left:24px;line-height:1.9;">
+    <li>Wizard de Plan Maestro con plantillas predefinidas (edificio, hidráulica, vial, etc.)</li>
+    <li>CRUD masivo de actividades (tabla editable estilo Excel)</li>
+    <li>Catálogo empresarial de APUs reutilizables</li>
+    <li>Mapa de proyectos del Perú con pins</li>
+    <li>Portfolio Dashboard (todos los proyectos)</li>
+    <li>Comparativo entre proyectos (rankings, alertas)</li>
+  </ol>
+</section>
+
+<section id="tesis">
+  <h2><span class="num tesis">🎓</span> Para tu sustentación</h2>
+  <p class="lead">El argumento que eleva tu tesis a otro nivel.</p>
+
+  <div class="highlight">
+    <h3>📢 El cierre maestro</h3>
+    <p>
+      "GRAPCO Produc-App ya no es una plataforma para una obra, es una <strong>plataforma multi-proyecto multi-frente nivel SaaS empresarial</strong>. Como Procore, Autodesk Construction Cloud o RIB CCS, pero hecha para el contexto peruano. Una empresa como GRAPCO con 5 proyectos en simultáneo (PTARI, Hospital Huarmey, Carretera Cusco, etc) y cada proyecto con sus 3-4 frentes simultáneos, puede ahora gestionar TODO desde una sola plataforma. <strong>El director general puede ver el dashboard de portfolio cada mañana y saber exactamente cuál de sus 5 obras está perdiendo plata, dónde y por qué</strong>. Esto NO existe en el mercado peruano integrado de esta forma."
+    </p>
+  </div>
+
+  <div class="callout warning">
+    <span class="icon">💼</span>
+    <div class="body">
+      <strong>Bonus comercial:</strong> Esta arquitectura es <strong>directamente comercializable</strong> a otras constructoras. Cosapi paga millones por SAP. Empresas medianas (50-200 trabajadores) pueden pagar S/. 500-2000 al mes por una plataforma como esta. Tu tesis se puede convertir en un negocio.
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="logo">GRAPCO SAC</div>
+  <p>🌎 Visión Multi-Proyecto · Mayo 2026 · Bloque 23</p>
+  <p style="opacity:0.7;margin-top:8px;">De plataforma de tesis a producto SaaS empresarial</p>
+</footer>
+
+</body>
+</html>

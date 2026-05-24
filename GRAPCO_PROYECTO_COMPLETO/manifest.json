@@ -1,0 +1,64 @@
+{
+  "name": "PLATAFORMA GRAPCO S.A.C.",
+  "short_name": "GRAPCO",
+  "description": "Plataforma integral de gestión de obra GRAPCO SAC — Productividad, Calidad, Oficina Técnica y Planeamiento.",
+  "id": "/?source=pwa",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "browser"],
+  "background_color": "#F6F8FB",
+  "theme_color": "#0F2A47",
+  "lang": "es",
+  "dir": "ltr",
+  "categories": ["business", "productivity", "utilities"],
+  "icons": [
+    { "src": "/icons/icon-72.png",   "sizes": "72x72",   "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-96.png",   "sizes": "96x96",   "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-128.png",  "sizes": "128x128", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-192.png",  "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-256.png",  "sizes": "256x256", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-384.png",  "sizes": "384x384", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png",  "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-72-maskable.png",   "sizes": "72x72",   "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon-96-maskable.png",   "sizes": "96x96",   "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon-128-maskable.png",  "sizes": "128x128", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon-192-maskable.png",  "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon-256-maskable.png",  "sizes": "256x256", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon-384-maskable.png",  "sizes": "384x384", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon-512-maskable.png",  "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Registro de Producción",
+      "short_name": "Producción",
+      "description": "Ingresar reporte de producción diario",
+      "url": "/?modo=capataz",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Dashboard CPI",
+      "short_name": "Dashboard",
+      "description": "Análisis de desempeño y CPI",
+      "url": "/?modo=ingeniero",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Carta Balance",
+      "short_name": "C.Balance",
+      "description": "Iniciar medición de productividad",
+      "url": "/?modo=carta_balance",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Plataforma GRAPCO"
+    }
+  ],
+  "prefer_related_applications": false
+}
