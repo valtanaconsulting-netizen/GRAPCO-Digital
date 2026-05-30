@@ -242,18 +242,25 @@ export default function MarcadorAsistencia({ showToast }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
-      {/* Banda de estado grande */}
+      {/* Banda de estado grande — con relieve y degradado */}
       <div style={{
-        background: headerColor, color: '#fff', borderRadius: '14px',
-        padding: '14px 22px', display: 'flex', alignItems: 'center',
+        background: headerColor,
+        backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0) 45%), linear-gradient(0deg, rgba(0,0,0,0.18), rgba(0,0,0,0))',
+        color: '#fff', borderRadius: '16px',
+        padding: '15px 22px', display: 'flex', alignItems: 'center',
         justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap',
-        transition: 'background 0.3s', boxShadow: '0 6px 20px rgba(15,23,42,0.18)',
+        transition: 'background 0.3s',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.18), 0 14px 32px -16px rgba(8,26,46,0.7)',
+        border: '1px solid rgba(255,255,255,0.10)',
       }}>
         <span style={{ fontSize: '18px', fontWeight: 900, letterSpacing: '0.5px' }}>{headerTxt}</span>
-        <span style={{ display: 'flex', gap: '16px', fontSize: '12px', fontWeight: 700 }}>
-          <span style={{ opacity: 0.9 }}>🟢 Presentes <b>{presentes}</b></span>
-          <span style={{ opacity: 0.9 }}>🏁 Completaron <b>{completos}</b></span>
-          <span style={{ opacity: 0.9 }}>👥 Enrolados <b>{personalEnrolado.length}</b></span>
+        <span style={{ display: 'flex', gap: '10px', fontSize: '11.5px', fontWeight: 800, flexWrap: 'wrap' }}>
+          {[['Presentes', presentes], ['Completaron', completos], ['Enrolados', personalEnrolado.length]].map(([l, v]) => (
+            <span key={l} style={{
+              background: 'rgba(255,255,255,0.14)', padding: '5px 12px', borderRadius: '999px',
+              border: '1px solid rgba(255,255,255,0.16)', letterSpacing: '0.3px',
+            }}>{l} <b style={{ fontSize: '13px' }}>{v}</b></span>
+          ))}
         </span>
       </div>
 
@@ -269,8 +276,13 @@ export default function MarcadorAsistencia({ showToast }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '14px' }}>
 
         {/* CÁMARA */}
-        <div style={{ background: '#0a1628', borderRadius: '16px', padding: '12px', position: 'relative' }}>
-          <div style={{ background: '#000', borderRadius: '12px', overflow: 'hidden', position: 'relative', aspectRatio: '4/3' }}>
+        <div style={{
+          background: 'linear-gradient(160deg, #0F2A47 0%, #081A2E 100%)',
+          borderRadius: '18px', padding: '12px', position: 'relative',
+          border: '1px solid rgba(255,255,255,0.08)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 22px 48px -24px rgba(0,0,0,0.7)',
+        }}>
+          <div style={{ background: '#000', borderRadius: '14px', overflow: 'hidden', position: 'relative', aspectRatio: '4/3', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)' }}>
             <video ref={videoRef} autoPlay playsInline muted
               style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }} />
 
@@ -396,7 +408,12 @@ export default function MarcadorAsistencia({ showToast }) {
         </div>
 
         {/* PANEL — asistencia en vivo */}
-        <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column' }}>
+        <div style={{
+          background: 'linear-gradient(180deg, #ffffff 0%, #f5f8fc 100%)',
+          border: `1px solid rgba(15,42,71,0.07)`, borderRadius: '18px', padding: '16px',
+          display: 'flex', flexDirection: 'column',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.9), 0 22px 48px -26px rgba(8,26,46,0.6)',
+        }}>
           <p style={{ fontSize: '11px', fontWeight: 900, color: BASE.muted, letterSpacing: '1px', marginBottom: '10px' }}>
             ASISTENCIA DE HOY · {hoyStr()}
           </p>

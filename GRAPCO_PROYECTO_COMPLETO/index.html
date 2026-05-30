@@ -26,14 +26,14 @@
     <!-- Loader inline: aparece INSTANTÁNEAMENTE, antes de que se descargue React.
          Se reemplaza solo cuando React monta dentro de #root. -->
     <style>
-      html, body { margin: 0; padding: 0; background: #F6F8FB; }
+      html, body { margin: 0; padding: 0; background: #061226; }
       #gp-boot {
         position: fixed; inset: 0;
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         gap: 18px;
-        background: radial-gradient(ellipse at center, #FFFFFF 0%, #F4F7FB 55%, #E9EEF5 100%);
+        background: radial-gradient(120% 90% at 50% 28%, #143256 0%, #0B1F39 46%, #061226 100%);
         font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-        color: #0F2A47; z-index: 9999;
+        color: #fff; z-index: 9999;
         animation: gp-fade 0.35s ease-out;
       }
       #gp-boot .ring {
@@ -63,12 +63,12 @@
         object-fit: contain;
       }
       #gp-boot .brand {
-        font-size: 20px; font-weight: 900; letter-spacing: 6px; color: #0F2A47;
+        font-size: 20px; font-weight: 900; letter-spacing: 6px; color: #ffffff;
         margin-top: 4px;
       }
       #gp-boot .sub {
         font-size: 11px; font-weight: 600; letter-spacing: 2.5px;
-        color: #64748b; text-transform: uppercase;
+        color: #8198b3; text-transform: uppercase;
       }
       #gp-boot .dots { display: inline-block; min-width: 18px; text-align: left; }
       #gp-boot .dots::after {
@@ -90,7 +90,7 @@
         <div class="ring">
           <img class="logo" src="/brand/grapco-192.png" alt="GRAPCO" />
         </div>
-        <div class="brand">GRAPCO</div>
+        <div class="brand">GRAPCO <span style="color:#E5A82F">S.A.C.</span></div>
         <div class="sub">Cargando plataforma<span class="dots"></span></div>
       </div>
     </div>

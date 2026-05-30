@@ -300,17 +300,24 @@ function AppInner() {
     return CUADRILLAS_DEFAULT || {};
   }, [cuadrillasDBFiltrado, cuadrillasDB]);
 
-  // ── Pantalla de carga inicial ──
+  // ── Pantalla de carga inicial (acabado premium navy) ──
   if (loading) {
     return (
       <div style={{
         minHeight: '100dvh',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        gap: '18px',
-        background: 'radial-gradient(ellipse at center, #FFFFFF 0%, #F4F7FB 55%, #E9EEF5 100%)',
-        fontFamily: BASE.font, color: BASE.navy,
+        gap: '22px',
+        background: 'radial-gradient(120% 90% at 50% 28%, #143256 0%, #0B1F39 46%, #061226 100%)',
+        fontFamily: BASE.font, color: '#fff', position: 'relative', overflow: 'hidden',
       }}>
-        <div style={{ position: 'relative', width: 96, height: 96, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+        {/* Viñeta para profundidad */}
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none',
+          background: 'radial-gradient(130% 110% at 50% 40%, transparent 52%, rgba(3,9,18,0.72) 100%)' }} />
+
+        {/* Logo con anillos dorados + halo */}
+        <div style={{ position: 'relative', width: 108, height: 108, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+          <span style={{ position: 'absolute', width: 150, height: 150, borderRadius: '50%',
+            background: `radial-gradient(circle, ${BASE.gold}26 0%, transparent 68%)` }} />
           <span style={{
             position: 'absolute', inset: 0, borderRadius: '50%',
             border: '3px solid transparent', borderTopColor: BASE.gold, borderRightColor: BASE.gold,
@@ -319,15 +326,36 @@ function AppInner() {
           <span style={{
             position: 'absolute', inset: 0, borderRadius: '50%',
             border: '3px solid transparent',
-            borderBottomColor: 'rgba(229,168,47,0.22)', borderLeftColor: 'rgba(229,168,47,0.22)',
+            borderBottomColor: 'rgba(229,168,47,0.25)', borderLeftColor: 'rgba(229,168,47,0.25)',
             animation: 'spin 2.4s linear infinite reverse',
           }} />
-          <img src={LOGO} alt="GRAPCO" style={{ width: 60, height: 60, borderRadius: 14, background: '#fff', padding: 4, boxShadow: '0 8px 24px rgba(15,42,71,0.12), 0 2px 6px rgba(15,42,71,0.08)', objectFit: 'contain' }} />
+          <img src={LOGO} alt="GRAPCO" style={{ width: 66, height: 66, borderRadius: 16, background: '#fff', padding: 5, boxShadow: '0 12px 30px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.6)', objectFit: 'contain' }} />
         </div>
-        <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: 4, color: BASE.navy }}>GRAPCO</div>
-        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 2.5, color: '#64748b', textTransform: 'uppercase' }}>
+
+        <div style={{ textAlign: 'center', zIndex: 1 }}>
+          <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: 3 }}>
+            GRAPCO <span style={{ color: BASE.gold }}>S.A.C.</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 8 }}>
+            <span style={{ height: 1, width: 26, background: `linear-gradient(90deg, transparent, ${BASE.gold}aa)` }} />
+            <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: 2.6, color: BASE.gold, textTransform: 'uppercase' }}>
+              Plataforma Integral de Gestión de Obra
+            </span>
+            <span style={{ height: 1, width: 26, background: `linear-gradient(90deg, ${BASE.gold}aa, transparent)` }} />
+          </div>
+        </div>
+
+        {/* Barra de progreso indeterminada */}
+        <div style={{ width: 210, height: 3, borderRadius: 999, background: 'rgba(255,255,255,0.10)', overflow: 'hidden', zIndex: 1 }}>
+          <div style={{ height: '100%', width: '40%', borderRadius: 999,
+            background: `linear-gradient(90deg, transparent, ${BASE.gold}, transparent)`,
+            animation: 'gp-load 1.3s ease-in-out infinite' }} />
+        </div>
+        <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: 2.5, color: '#8198b3', textTransform: 'uppercase', zIndex: 1 }}>
           Cargando plataforma…
         </div>
+
+        <style>{'@keyframes gp-load { 0% { transform: translateX(-160%); } 100% { transform: translateX(420%); } }'}</style>
       </div>
     );
   }
