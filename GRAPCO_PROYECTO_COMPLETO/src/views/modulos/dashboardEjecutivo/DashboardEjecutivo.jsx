@@ -8,8 +8,12 @@
 // Así la gerencia construye una serie histórica diaria por proyecto, con la
 // tendencia de CPI y avance físico. Costo $0: todo se calcula y guarda desde el
 // cliente, sin Cloud Functions.
+//
+// MODO EDICIÓN (solo admin): permite reordenar (arrastrar / botones ▲▼) y
+// ocultar tarjetas dentro de cada bloque. La disposición se guarda en
+// Configuracion/layout_dashEjecutivo y se aplica para todos al entrar.
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { db } from '../../../firebaseConfig';
 import {
   collection, query, where, onSnapshot, doc, setDoc, serverTimestamp,
@@ -27,6 +31,31 @@ import { useCatalogoWBS } from '../../../hooks/useCatalogoWBS';
 import { enriquecerHistorial, calcularIndicadoresDiarios } from '../../../utils/indicadoresEjecutivos';
 
 const COL = 'Indicadores_Ejecutivos';
+const LAYOUT_DOC = 'layout_dashEjecutivo';   // Configuracion/{LAYOUT_DOC}
+
+// Estructura ESTÁTICA de bloques y tarjetas (los ids no cambian → sirven para
+// guardar el orden/ocultos). El contenido visible se calcula aparte (display).
+const BLOQUES_META = [
+  { id: 'prod', titulo: 'Producción y costo (acumulado)', color: BASE.navy, cards: [
+    { id: 'cpi', nombre: 'Eficiencia (CPI)' },
+    { id: 'avance', nombre: 'Avance físico' },
+    { id: 'sobrecosto', nombre: 'Sobrecosto / Ahorro' },
+    { id: 'hhreal', nombre: 'HH reales acum.' },
+  ] },
+  { id: 'mo', titulo: 'Mano de obra (del día)', color: BASE.gold, cards: [
+    { id: 'hhdia', nombre: 'HH ejecutadas hoy' },
+    { id: 'obreros', nombre: 'Obreros presentes' },
+    { id: 'asist', nombre: 'HH asistencia hoy' },
+  ] },
+  { id: 'cal', titulo: 'Calidad', color: '#ec4899', cards: [
+    { id: 'protlib', nombre: 'Protocolos liberados' },
+    { id: 'ncs', nombre: 'NCs abiertas' },
+  ] },
+  { id: 'plan', titulo: 'Planeamiento y seguridad', color: '#7c3aed', cards: [
+    { id: 'ppc', nombre: 'PPC acumulado' },
+    { id: 'ssoma', nombre: 'Hallazgos SSOMA hoy' },
+  ] },
+];
 
 // Fecha local 'YYYY-MM-DD' (zona horaria del dispositivo, no UTC).
 const hoyLocal = () => {
@@ -40,7 +69,7 @@ const ddmm = (f) => (f && f.length >= 10 ? f.slice(8, 10) + '/' + f.slice(5, 7) 
 
 export default function DashboardEjecutivo({ showToast, isMobile }) {
   const fecha = useMemo(() => hoyLocal(), []);
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const {
     proyectoActivoId, proyectoActivo, filtrarPorContexto,
   } = useProyectoActivo();
@@ -88,6 +117,14 @@ export default function DashboardEjecutivo({ showToast, isMobile }) {
     }, (e) => console.warn('[DashEjec snapshots]', e));
   }, [proyectoActivoId]);
 
+  // ── Disposición guardada (orden / ocultos por bloque) ──
+  const [layout, setLayout] = useState({});
+  useEffect(() => {
+    return onSnapshot(doc(db, 'Configuracion', LAYOUT_DOC), (s) => {
+      setLayout(s.exists() ? (s.data()?.bloques || {}) : {});
+    }, (e) => console.warn('[DashEjec layout]', e));
+  }, []);
+
   // ── Costo S/./HH representativo (promedio de los 4 cargos) ──
   const costoHH = useMemo(() => {
     const map = { ...COSTO_HORA_DEFAULT };
@@ -120,11 +157,28 @@ export default function DashboardEjecutivo({ showToast, isMobile }) {
     fecha,
   }), [historialEnriquecido, infoMap, asistencia, protocolos, ncs, compromisos, inspecciones, costoHH, fecha, filtrarPorContexto]);
 
-  const yaGuardadoHoy = useMemo(
-    () => snapshots.some((s) => s.fecha === fecha),
-    [snapshots, fecha],
-  );
+  // ── Contenido visible de cada tarjeta (id → {label, valor, sub, color}) ──
+  const est = getEstado(ind.cpi);
+  const display = useMemo(() => ({
+    cpi: { label: 'Eficiencia (CPI)', valor: fmtCPIPct(ind.cpi), color: est.color,
+      sub: !ind.cpi ? 'sin datos' : ind.cpi >= 1 ? 'bajo presupuesto' : ind.cpi >= 0.85 ? 'en alerta' : 'sobrecosto' },
+    avance: { label: 'Avance físico', valor: ind.avancePct != null ? ind.avancePct.toFixed(0) + '%' : '—',
+      color: BASE.navy, sub: `${fmt1(ind.hhMeta)} / ${fmt1(ind.hhMetaTotal)} HH meta` },
+    sobrecosto: { label: ind.sobrecosto >= 0 ? 'Sobrecosto acum.' : 'Ahorro acum.', valor: fmtS(Math.abs(ind.sobrecosto)),
+      color: ind.sobrecosto >= 0 ? BASE.red : BASE.greenDark, sub: `${fmt1(Math.abs(ind.sobrecostoHH))} HH · S/ ${costoHH.toFixed(1)}/HH` },
+    hhreal: { label: 'HH reales acum.', valor: fmt1(ind.hhReal), color: BASE.goldDark, sub: `meta ${fmt1(ind.hhMeta)} HH` },
+    hhdia: { label: 'HH ejecutadas hoy', valor: fmt1(ind.hhDia), color: BASE.navy, sub: fecha },
+    obreros: { label: 'Obreros presentes', valor: ind.obrerosDia || 0, color: BASE.greenDark, sub: 'según asistencia' },
+    asist: { label: 'HH asistencia hoy', valor: fmt1(ind.asistenciaHHDia), color: BASE.navyLight, sub: 'entrada/salida' },
+    protlib: { label: 'Protocolos liberados', valor: ind.protocolosLiberados, color: BASE.greenDark, sub: `${ind.pctLiberacion}% de ${ind.protocolosTotal}` },
+    ncs: { label: 'NCs abiertas', valor: ind.ncsAbiertas, color: ind.ncsAbiertas > 0 ? BASE.red : BASE.greenDark, sub: `${ind.ncsCriticas} críticas` },
+    ppc: { label: 'PPC acumulado', valor: ind.ppcPct != null ? ind.ppcPct + '%' : '—',
+      color: ind.ppcPct == null ? BASE.muted : ind.ppcPct >= 80 ? BASE.greenDark : ind.ppcPct >= 60 ? BASE.goldDark : BASE.red, sub: 'plan cumplido (LPS)' },
+    ssoma: { label: 'Hallazgos SSOMA hoy', valor: ind.ssomaHallazgos, color: ind.ssomaCrit > 0 ? BASE.red : BASE.navy, sub: `${ind.ssomaCrit} críticos · ${ind.ssomaObs} obs.` },
+  }), [ind, est, costoHH, fecha]);
 
+  // ── Cierre del día ──
+  const yaGuardadoHoy = useMemo(() => snapshots.some((s) => s.fecha === fecha), [snapshots, fecha]);
   const [guardando, setGuardando] = useState(false);
   const guardarCierre = useCallback(async () => {
     if (!proyectoActivoId) { showToast?.('Sin proyecto activo', 'warning'); return; }
@@ -147,7 +201,92 @@ export default function DashboardEjecutivo({ showToast, isMobile }) {
     }
   }, [proyectoActivoId, proyectoActivo, fecha, ind, user, yaGuardadoHoy, showToast]);
 
-  const est = getEstado(ind.cpi);
+  // ════════════════════════════════════════════════════════════════
+  // MODO EDICIÓN (solo admin)
+  // ════════════════════════════════════════════════════════════════
+  const [editMode, setEditMode] = useState(false);
+  const [draft, setDraft] = useState({});       // { bloqueId: { order:[ids], hidden:[ids] } }
+  const [guardandoLayout, setGuardandoLayout] = useState(false);
+  const dragRef = useRef(null);
+
+  // Orden + ocultos efectivos de un bloque, a partir de una fuente (layout o draft).
+  const efectivo = useCallback((bloque, src) => {
+    const cfg = (src || {})[bloque.id] || {};
+    const ids = bloque.cards.map((c) => c.id);
+    const order = Array.isArray(cfg.order) ? cfg.order.filter((id) => ids.includes(id)) : [];
+    const ordered = [...order, ...ids.filter((id) => !order.includes(id))];
+    const hidden = new Set(Array.isArray(cfg.hidden) ? cfg.hidden : []);
+    return { ordered, hidden };
+  }, []);
+
+  const entrarEdicion = useCallback(() => {
+    const d = {};
+    BLOQUES_META.forEach((b) => {
+      const { ordered, hidden } = efectivo(b, layout);
+      d[b.id] = { order: ordered, hidden: [...hidden] };
+    });
+    setDraft(d);
+    setEditMode(true);
+  }, [efectivo, layout]);
+
+  const cancelarEdicion = useCallback(() => { setEditMode(false); setDraft({}); }, []);
+
+  const guardarLayout = useCallback(async () => {
+    setGuardandoLayout(true);
+    try {
+      await setDoc(doc(db, 'Configuracion', LAYOUT_DOC), {
+        bloques: draft,
+        actualizadoEn: serverTimestamp(),
+        actualizadoPor: user?.email || user?.uid || 'admin',
+      }, { merge: true });
+      showToast?.('Disposición guardada ✓', 'success');
+      setEditMode(false);
+    } catch (e) {
+      console.error('[guardarLayout]', e);
+      showToast?.('Error al guardar disposición: ' + (e?.message || e), 'error');
+    } finally {
+      setGuardandoLayout(false);
+    }
+  }, [draft, user, showToast]);
+
+  // Operaciones sobre el draft
+  const moverCard = useCallback((bloqueId, id, dir) => {
+    setDraft((prev) => {
+      const cfg = prev[bloqueId] || { order: [], hidden: [] };
+      const order = [...cfg.order];
+      const i = order.indexOf(id);
+      const j = i + dir;
+      if (i < 0 || j < 0 || j >= order.length) return prev;
+      [order[i], order[j]] = [order[j], order[i]];
+      return { ...prev, [bloqueId]: { ...cfg, order } };
+    });
+  }, []);
+
+  const soltarSobre = useCallback((bloqueId, targetId) => {
+    const d = dragRef.current;
+    dragRef.current = null;
+    if (!d || d.bloque !== bloqueId || d.id === targetId) return;
+    setDraft((prev) => {
+      const cfg = prev[bloqueId] || { order: [], hidden: [] };
+      const order = [...cfg.order];
+      const from = order.indexOf(d.id);
+      const to = order.indexOf(targetId);
+      if (from < 0 || to < 0) return prev;
+      order.splice(from, 1);
+      order.splice(to, 0, d.id);
+      return { ...prev, [bloqueId]: { ...cfg, order } };
+    });
+  }, []);
+
+  const alternarOculto = useCallback((bloqueId, id) => {
+    setDraft((prev) => {
+      const cfg = prev[bloqueId] || { order: [], hidden: [] };
+      const hidden = new Set(cfg.hidden || []);
+      if (hidden.has(id)) hidden.delete(id); else hidden.add(id);
+      return { ...prev, [bloqueId]: { ...cfg, hidden: [...hidden] } };
+    });
+  }, []);
+
   const grid = (min) => `repeat(auto-fit, minmax(min(100%, ${min}px), 1fr))`;
 
   // Serie para la tendencia (últimos 30 cierres guardados).
@@ -161,10 +300,12 @@ export default function DashboardEjecutivo({ showToast, isMobile }) {
     [snapshots],
   );
 
+  const fuente = editMode ? draft : layout;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
-      {/* ── Encabezado + acción de cierre ── */}
+      {/* ── Encabezado + acciones ── */}
       <div style={{
         background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
         borderRadius: '14px', padding: isMobile ? '16px' : '18px 22px', color: '#fff',
@@ -187,66 +328,88 @@ export default function DashboardEjecutivo({ showToast, isMobile }) {
             </p>
           </div>
         </div>
-        <button
-          onClick={guardarCierre}
-          disabled={guardando}
-          style={{
-            background: guardando ? 'rgba(255,255,255,0.25)' : `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`,
-            color: '#fff', border: 'none', borderRadius: '10px',
-            padding: '12px 20px', fontSize: '13px', fontWeight: 900, cursor: guardando ? 'wait' : 'pointer',
-            boxShadow: '0 4px 12px rgba(229,168,47,0.35)', whiteSpace: 'nowrap',
-            display: 'inline-flex', alignItems: 'center', gap: '8px',
-          }}
-        >
-          <Icon name="registro" size={16} color="#fff" strokeWidth={2.2} />
-          {guardando ? 'Guardando…' : yaGuardadoHoy ? 'Actualizar cierre de hoy' : 'Guardar cierre del día'}
-        </button>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {/* Botón de edición (solo admin) */}
+          {isAdmin && !editMode && (
+            <button onClick={entrarEdicion} style={btnHero('rgba(255,255,255,0.16)')}>
+              <Icon name="settings" size={15} color="#fff" strokeWidth={2.2} /> Editar
+            </button>
+          )}
+          {editMode && (
+            <>
+              <button onClick={guardarLayout} disabled={guardandoLayout}
+                style={btnHero(`linear-gradient(135deg, ${BASE.green}, ${BASE.greenDark})`)}>
+                <Icon name="checkSquare" size={15} color="#fff" strokeWidth={2.2} />
+                {guardandoLayout ? 'Guardando…' : 'Guardar disposición'}
+              </button>
+              <button onClick={cancelarEdicion} style={btnHero('rgba(220,38,38,0.30)')}>✖ Cancelar</button>
+            </>
+          )}
+          {!editMode && (
+            <button onClick={guardarCierre} disabled={guardando}
+              style={btnHero(guardando ? 'rgba(255,255,255,0.25)' : `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`)}>
+              <Icon name="registro" size={16} color="#fff" strokeWidth={2.2} />
+              {guardando ? 'Guardando…' : yaGuardadoHoy ? 'Actualizar cierre' : 'Guardar cierre del día'}
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* ── Producción y costo ── */}
-      <Bloque titulo="Producción y costo (acumulado)" color={BASE.navy}>
-        <div style={{ display: 'grid', gridTemplateColumns: grid(180), gap: '10px' }}>
-          <Kpi label="Eficiencia (CPI)" valor={fmtCPIPct(ind.cpi)} color={est.color}
-            sub={!ind.cpi ? 'sin datos' : ind.cpi >= 1 ? 'bajo presupuesto' : ind.cpi >= 0.85 ? 'en alerta' : 'sobrecosto'} />
-          <Kpi label="Avance físico" valor={ind.avancePct != null ? ind.avancePct.toFixed(0) + '%' : '—'} color={BASE.navy}
-            sub={`${fmt1(ind.hhMeta)} / ${fmt1(ind.hhMetaTotal)} HH meta`} />
-          <Kpi label={ind.sobrecosto >= 0 ? 'Sobrecosto acum.' : 'Ahorro acum.'}
-            valor={fmtS(Math.abs(ind.sobrecosto))} color={ind.sobrecosto >= 0 ? BASE.red : BASE.greenDark}
-            sub={`${fmt1(Math.abs(ind.sobrecostoHH))} HH · S/ ${costoHH.toFixed(1)}/HH`} />
-          <Kpi label="HH reales acum." valor={fmt1(ind.hhReal)} color={BASE.goldDark}
-            sub={`meta ${fmt1(ind.hhMeta)} HH`} />
+      {editMode && (
+        <div style={{
+          background: BASE.goldSoft, border: `1px dashed ${BASE.gold}`, borderRadius: '10px',
+          padding: '10px 14px', fontSize: '12px', color: BASE.goldDark, fontWeight: 700,
+        }}>
+          ✏️ Modo edición — arrastra las tarjetas (o usa ▲▼) para reordenar y el 👁 para mostrar/ocultar. Luego «Guardar disposición».
         </div>
-      </Bloque>
+      )}
 
-      {/* ── Mano de obra (del día) ── */}
-      <Bloque titulo="Mano de obra (del día)" color={BASE.gold}>
-        <div style={{ display: 'grid', gridTemplateColumns: grid(180), gap: '10px' }}>
-          <Kpi label="HH ejecutadas hoy" valor={fmt1(ind.hhDia)} color={BASE.navy} sub={fecha} />
-          <Kpi label="Obreros presentes" valor={ind.obrerosDia || 0} color={BASE.greenDark} sub="según asistencia" />
-          <Kpi label="HH asistencia hoy" valor={fmt1(ind.asistenciaHHDia)} color={BASE.navyLight} sub="entrada/salida" />
-        </div>
-      </Bloque>
-
-      {/* ── Calidad ── */}
-      <Bloque titulo="Calidad" color="#ec4899">
-        <div style={{ display: 'grid', gridTemplateColumns: grid(180), gap: '10px' }}>
-          <Kpi label="Protocolos liberados" valor={ind.protocolosLiberados} color={BASE.greenDark}
-            sub={`${ind.pctLiberacion}% de ${ind.protocolosTotal}`} />
-          <Kpi label="NCs abiertas" valor={ind.ncsAbiertas} color={ind.ncsAbiertas > 0 ? BASE.red : BASE.greenDark}
-            sub={`${ind.ncsCriticas} críticas`} />
-        </div>
-      </Bloque>
-
-      {/* ── Planeamiento y seguridad ── */}
-      <Bloque titulo="Planeamiento y seguridad" color="#7c3aed">
-        <div style={{ display: 'grid', gridTemplateColumns: grid(180), gap: '10px' }}>
-          <Kpi label="PPC acumulado" valor={ind.ppcPct != null ? ind.ppcPct + '%' : '—'}
-            color={ind.ppcPct == null ? BASE.muted : ind.ppcPct >= 80 ? BASE.greenDark : ind.ppcPct >= 60 ? BASE.goldDark : BASE.red}
-            sub="plan cumplido (LPS)" />
-          <Kpi label="Hallazgos SSOMA hoy" valor={ind.ssomaHallazgos} color={ind.ssomaCrit > 0 ? BASE.red : BASE.navy}
-            sub={`${ind.ssomaCrit} críticos · ${ind.ssomaObs} obs.`} />
-        </div>
-      </Bloque>
+      {/* ── Bloques de indicadores (editables) ── */}
+      {BLOQUES_META.map((bloque) => {
+        const { ordered, hidden } = efectivo(bloque, fuente);
+        const lista = ordered.filter((id) => display[id]);
+        const visibles = editMode ? lista : lista.filter((id) => !hidden.has(id));
+        if (!editMode && visibles.length === 0) return null;
+        return (
+          <Bloque key={bloque.id} titulo={bloque.titulo} color={bloque.color}>
+            <div style={{ display: 'grid', gridTemplateColumns: grid(180), gap: '10px' }}>
+              {visibles.map((id, idx) => {
+                const d = display[id];
+                const oculto = hidden.has(id);
+                const meta = bloque.cards.find((c) => c.id === id);
+                if (!editMode) return <Kpi key={id} {...d} />;
+                return (
+                  <div
+                    key={id}
+                    draggable
+                    onDragStart={() => { dragRef.current = { bloque: bloque.id, id }; }}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={() => soltarSobre(bloque.id, id)}
+                    style={{
+                      border: `2px dashed ${oculto ? BASE.border : bloque.color}`,
+                      borderRadius: '12px', padding: '6px', background: oculto ? BASE.bgSoft : '#fff',
+                      opacity: oculto ? 0.5 : 1, cursor: 'grab',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
+                      <span title="Arrastra para mover" style={{ cursor: 'grab', color: BASE.muted, fontWeight: 900, fontSize: '13px', userSelect: 'none' }}>⠿</span>
+                      <span style={{ flex: 1, fontSize: '10px', fontWeight: 800, color: BASE.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {meta?.nombre || id}
+                      </span>
+                      <button onClick={() => moverCard(bloque.id, id, -1)} disabled={idx === 0} style={btnMini} title="Subir">▲</button>
+                      <button onClick={() => moverCard(bloque.id, id, +1)} disabled={idx === visibles.length - 1} style={btnMini} title="Bajar">▼</button>
+                      <button onClick={() => alternarOculto(bloque.id, id)} style={{ ...btnMini, color: oculto ? BASE.muted : bloque.color }} title={oculto ? 'Mostrar' : 'Ocultar'}>
+                        {oculto ? '🚫' : '👁'}
+                      </button>
+                    </div>
+                    <Kpi {...d} />
+                  </div>
+                );
+              })}
+            </div>
+          </Bloque>
+        );
+      })}
 
       {/* ── Tendencia histórica (snapshots guardados) ── */}
       <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '14px', padding: '16px 18px', boxShadow: BASE.shadowSm }}>
@@ -309,10 +472,22 @@ export default function DashboardEjecutivo({ showToast, isMobile }) {
 
       <p style={{ fontSize: '10.5px', color: BASE.muted, textAlign: 'center', fontStyle: 'italic' }}>
         Indicadores del proyecto activo. El cierre del día guarda un snapshot en Firebase (Indicadores_Ejecutivos) — uno por día y proyecto; volver a guardar el mismo día lo actualiza.
+        {isAdmin && ' La disposición de tarjetas es configurable (botón Editar) y se guarda para todos.'}
       </p>
     </div>
   );
 }
+
+// ── Estilos de botones ──
+const btnHero = (bg) => ({
+  background: bg, color: '#fff', border: 'none', borderRadius: '10px',
+  padding: '11px 16px', fontSize: '12.5px', fontWeight: 900, cursor: 'pointer',
+  whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '7px',
+});
+const btnMini = {
+  background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '12px',
+  padding: '2px 4px', color: BASE.muted, lineHeight: 1,
+};
 
 // ── Sub-componentes de presentación ──
 function Bloque({ titulo, color, children }) {
