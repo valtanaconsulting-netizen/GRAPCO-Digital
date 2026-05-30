@@ -13,7 +13,7 @@ import { BASE } from '../../utils/styles';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import { usePersonal } from '../../hooks/useFirebaseData';
-import { cargarModelos, obtenerDescriptor, buscarMatch, arrayToDescriptor } from '../../utils/faceapi';
+import { cargarModelos, obtenerDescriptor, buscarMatch, arrayToDescriptor, similitudPct, distanciaDeSimilitud } from '../../utils/faceapi';
 
 const hoyStr = () => new Date().toISOString().slice(0, 10);
 const horaStr = () => {
@@ -25,9 +25,14 @@ const minutos = (hhmm) => {
   return (h || 0) * 60 + (m || 0);
 };
 
-// Umbrales de confianza
-const TH_AUTO = 0.42;   // ≤ → match muy fuerte: registra solo
-const TH_MATCH = 0.55;  // ≤ → match aceptable: pide confirmar
+// ── SEGURIDAD BIOMÉTRICA — umbral de similitud OBLIGATORIO ──
+// Un rostro solo se acepta si alcanza SIMILITUD_MIN. Por debajo NUNCA hay match
+// ni registro (evita que caras desconocidas marquen asistencia al azar).
+// NO bajar de 75 sin autorización: es el piso de seguridad pedido por gerencia.
+const SIMILITUD_MIN  = 75;   // % mínimo obligatorio para aceptar un rostro
+const SIMILITUD_AUTO = 80;   // % desde el cual registra solo (auto); entre 75-80 pide confirmar
+const DIST_MAX  = distanciaDeSimilitud(SIMILITUD_MIN);   // 0.25 → similitud 75%
+const DIST_AUTO = distanciaDeSimilitud(SIMILITUD_AUTO);  // 0.20 → similitud 80%
 
 export default function MarcadorAsistencia({ showToast }) {
   const { user } = useAuth();
@@ -82,7 +87,8 @@ export default function MarcadorAsistencia({ showToast }) {
   const [stream, setStream] = useState(null);
   const [match, setMatch] = useState(null);     // { obrero, distancia, dataUrl, accion }
   const [exito, setExito] = useState(null);     // { nombre, accion, hora, foto }
-  const [noId, setNoId] = useState(false);      // cara detectada pero sin match
+  const [noId, setNoId] = useState(false);      // cara detectada pero sin match (similitud < mínimo)
+  const [noIdSim, setNoIdSim] = useState(0);    // % de similitud del mejor candidato rechazado
   const [analizando, setAnalizando] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [cuenta, setCuenta] = useState(0);      // countdown auto-confirm
@@ -132,20 +138,25 @@ export default function MarcadorAsistencia({ showToast }) {
         canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
         const det = await obtenerDescriptor(canvas);
         if (det) {
-          const found = buscarMatch(det.descriptor, personalEnrolado, TH_MATCH);
-          if (found) {
-            const accion = estadoDe(found.obrero.id);
+          // Buscar el MEJOR candidato sin filtrar, y luego aplicar el piso de seguridad.
+          const best = buscarMatch(det.descriptor, personalEnrolado, Infinity);
+          const sim = best?.obrero ? similitudPct(best.distancia) : 0;
+          // Solo se acepta si alcanza el mínimo obligatorio (≥ SIMILITUD_MIN).
+          if (best?.obrero && best.distancia <= DIST_MAX) {
+            const accion = estadoDe(best.obrero.id);
             setNoId(false);
             setMatch({
-              obrero: found.obrero,
-              distancia: found.distancia,
+              obrero: best.obrero,
+              distancia: best.distancia,
+              similitud: sim,
               dataUrl: canvas.toDataURL('image/jpeg', 0.85),
               accion,
             });
             setAnalizando(false);
             return;
           }
-          // Hay cara pero no matchea a nadie enrolado
+          // Hay cara pero NO alcanza el mínimo → rechazo (posible desconocido).
+          setNoIdSim(sim);
           setNoId(true);
           setTimeout(() => setNoId(false), 1800);
         }
@@ -160,7 +171,7 @@ export default function MarcadorAsistencia({ showToast }) {
   // Auto-confirmación con cuenta regresiva cuando el match es fuerte
   useEffect(() => {
     if (!match || match.accion === 'completo') { setCuenta(0); return; }
-    if (match.distancia > TH_AUTO) return; // confianza media → confirmación manual
+    if (match.distancia > DIST_AUTO) return; // similitud 75-80% → confirmación manual (no auto)
     setCuenta(3);
     let n = 3;
     const iv = setInterval(() => {
@@ -192,7 +203,7 @@ export default function MarcadorAsistencia({ showToast }) {
         fecha, proyectoId: proyectoActivoId,
         frenteId: modoTodosFrentes ? null : frenteActivoId,
         personalId, nombre: mt.obrero.nombre, categoria: mt.obrero.categoria || '',
-        fuente: 'biometric-face', matchDistancia: mt.distancia,
+        fuente: 'biometric-face', matchDistancia: mt.distancia, matchSimilitud: mt.similitud ?? null,
         registradoPor: user?.email || 'kiosko', actualizadoEn: serverTimestamp(),
       };
 
@@ -332,7 +343,7 @@ export default function MarcadorAsistencia({ showToast }) {
                 ) : (
                   <>
                     <p style={{ fontSize: '12px', fontWeight: 800, color: '#86efac', letterSpacing: '1px' }}>
-                      ✓ RECONOCIDO · {((1 - match.distancia) * 100).toFixed(0)}% confianza
+                      ✓ RECONOCIDO · {match.similitud}% similitud {match.similitud >= SIMILITUD_AUTO ? '(alta)' : '(verificar)'}
                     </p>
                     <p style={{ fontSize: '22px', fontWeight: 900, marginTop: '3px' }}>{match.obrero.nombre}</p>
                     <p style={{ fontSize: '13px', opacity: 0.85, marginTop: '2px' }}>
@@ -353,6 +364,25 @@ export default function MarcadorAsistencia({ showToast }) {
                     )}
                   </>
                 )}
+              </div>
+            )}
+
+            {/* OVERLAY RECHAZO — rostro no alcanza el mínimo de similitud */}
+            {noId && !match && !exito && (
+              <div style={{
+                position: 'absolute', left: 0, right: 0, bottom: 0,
+                background: 'linear-gradient(0deg, rgba(146,64,14,0.96), rgba(146,64,14,0.55) 70%, transparent)',
+                padding: '18px 16px 16px', color: '#fff',
+              }}>
+                <p style={{ fontSize: '13px', fontWeight: 900, color: '#fed7aa', letterSpacing: '0.5px' }}>
+                  ⚠️ ROSTRO NO RECONOCIDO
+                </p>
+                <p style={{ fontSize: '13px', opacity: 0.92, marginTop: '3px' }}>
+                  Similitud <b style={{ color: '#fde047' }}>{noIdSim}%</b> — se requiere mínimo <b>{SIMILITUD_MIN}%</b>.
+                </p>
+                <p style={{ fontSize: '11.5px', opacity: 0.8, marginTop: '2px' }}>
+                  Acércate al óvalo, mejora la iluminación o pide ser re-enrolado.
+                </p>
               </div>
             )}
           </div>
@@ -411,7 +441,7 @@ export default function MarcadorAsistencia({ showToast }) {
             })}
           </div>
           <p style={{ fontSize: '10.5px', color: BASE.muted, marginTop: '10px', textAlign: 'center', fontStyle: 'italic' }}>
-            Acércate al óvalo. La 1ª marca = ENTRADA, la 2ª = SALIDA. Registro automático cuando la confianza es alta.
+            Acércate al óvalo. La 1ª marca = ENTRADA, la 2ª = SALIDA. Solo se acepta con similitud ≥ {SIMILITUD_MIN}%; registro automático desde {SIMILITUD_AUTO}%.
           </p>
         </div>
       </div>

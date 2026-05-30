@@ -65,6 +65,13 @@ export function buscarMatch(descriptorTest, obreros, threshold = 0.55) {
   return null;
 }
 
+// Conversión similitud (%) ↔ distancia euclidiana de face-api.
+// Convención usada en toda la app: similitud = (1 - distancia) * 100.
+//   distancia 0.00 → 100% (idéntico)   ·   distancia 0.25 → 75%   ·   distancia 0.55 → 45%
+// Menor distancia = mayor parecido. Usar SIEMPRE estas funciones para que el % sea consistente.
+export const similitudPct = (dist) => Math.max(0, Math.min(100, Math.round((1 - dist) * 100)));
+export const distanciaDeSimilitud = (pct) => Math.max(0, 1 - (pct / 100));
+
 /** Convierte descriptor a array de JS plano para guardar en Firestore. */
 export const descriptorToArray = (d) => Array.from(d);
 
