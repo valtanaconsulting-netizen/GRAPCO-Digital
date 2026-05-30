@@ -232,7 +232,7 @@ export default function SelectorPerfil() {
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'flex-start',
-      padding: '40px 20px',
+      padding: '18px 20px 22px',
       background: '#0a1628',
       fontFamily: BASE.font,
       position: 'relative',
@@ -327,52 +327,45 @@ export default function SelectorPerfil() {
       </div>
       <div className="grapco-scan" />
 
-      {/* Header */}
-      <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', marginBottom: '32px' }}>
+      {/* Header — compacto para que todo entre sin scroll */}
+      <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', marginBottom: '16px' }}>
         <div style={{
-          width: '88px', height: '88px',
+          width: '56px', height: '56px',
           background: '#fff',
-          borderRadius: '20px',
+          borderRadius: '14px',
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
-          marginBottom: '16px',
-          boxShadow: `0 12px 32px rgba(0,0,0,0.4), 0 0 0 3px ${BASE.gold}33`,
+          marginBottom: '8px',
+          boxShadow: `0 8px 22px rgba(0,0,0,0.4), 0 0 0 2px ${BASE.gold}33`,
         }}>
           <img
             src={LOGO}
             alt="GRAPCO"
             onError={(e) => { if (!e.target.dataset.fallback) { e.target.dataset.fallback = '1'; e.target.src = LOGO_FALLBACK; } }}
-            style={{ width: '70px', height: '70px', objectFit: 'contain' }}
+            style={{ width: '44px', height: '44px', objectFit: 'contain' }}
           />
         </div>
         <h1 style={{
-          color: '#fff', fontSize: '28px', fontWeight: '900',
-          margin: '0 0 6px', letterSpacing: '1.2px',
+          color: '#fff', fontSize: '22px', fontWeight: '900',
+          margin: '0 0 3px', letterSpacing: '1px',
         }}>
           GRAPCO <span style={{ color: BASE.gold }}>S.A.C.</span>
         </h1>
         <p style={{
-          color: '#cbd5e1', fontSize: '13px', fontWeight: '600',
-          letterSpacing: '0.6px',
-        }}>
-          PLATAFORMA INTEGRAL DE GESTIÓN DE OBRA
-        </p>
-        <p style={{
           color: '#94a3b8', fontSize: '12px',
-          marginTop: '12px',
-          maxWidth: '520px',
+          margin: '4px auto 0', maxWidth: '520px', lineHeight: 1.4,
         }}>
           {modoPin
             ? 'Ingresa el PIN de obra (4 dígitos). Modo kiosk para personal de campo.'
-            : 'Selecciona el perfil con el que quieres entrar al sistema. Cada perfil aterriza en sus módulos específicos.'}
+            : 'Selecciona el perfil con el que quieres entrar. Cada perfil aterriza en sus módulos.'}
         </p>
         <button onClick={() => { setModoPin(!modoPin); setPin(''); setErrorPin(''); }} style={{
-          marginTop: '14px',
+          marginTop: '10px',
           background: 'rgba(255,255,255,0.08)',
           border: `1px solid ${BASE.gold}88`,
           color: BASE.gold,
-          padding: '7px 16px', borderRadius: '999px',
+          padding: '6px 15px', borderRadius: '999px',
           fontSize: '11px', fontWeight: 800, letterSpacing: '0.6px',
           cursor: 'pointer',
         }}>
@@ -447,26 +440,26 @@ export default function SelectorPerfil() {
           style={{
             position: 'relative', zIndex: 1,
             width: '100%', maxWidth: '1100px',
-            display: 'flex', alignItems: 'center', gap: '16px',
+            display: 'flex', alignItems: 'center', gap: '14px',
             background: 'linear-gradient(135deg, rgba(229,168,47,0.14), rgba(30,58,95,0.30))',
             border: `1.5px solid ${BASE.gold}66`,
-            borderRadius: '16px', padding: '16px 20px', marginBottom: '18px',
+            borderRadius: '14px', padding: '11px 18px', marginBottom: '14px',
             cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s ease',
           }}
           onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = BASE.gold; }}
           onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = `${BASE.gold}66`; }}
         >
           <span style={{
-            width: '52px', height: '52px', borderRadius: '14px', flexShrink: 0,
+            width: '42px', height: '42px', borderRadius: '12px', flexShrink: 0,
             background: `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`, color: '#fff',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: `0 6px 18px ${BASE.gold}55`, fontSize: '24px',
+            boxShadow: `0 6px 18px ${BASE.gold}55`, fontSize: '20px',
           }}>📷</span>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ color: '#fff', fontSize: '17px', fontWeight: 900, letterSpacing: '0.3px' }}>
+            <p style={{ color: '#fff', fontSize: '15px', fontWeight: 900, letterSpacing: '0.3px' }}>
               Registro de Personal · Reconocimiento Facial
             </p>
-            <p style={{ color: '#cbd5e1', fontSize: '12px', marginTop: '3px' }}>
+            <p style={{ color: '#cbd5e1', fontSize: '11.5px', marginTop: '2px' }}>
               Marca tu entrada/salida con la cara. Modo kiosko — no necesitas elegir perfil.
             </p>
           </div>
@@ -482,10 +475,10 @@ export default function SelectorPerfil() {
       <div style={{
         position: 'relative', zIndex: 1,
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-        gap: '16px',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(248px, 1fr))',
+        gap: '12px',
         width: '100%',
-        maxWidth: '1100px',
+        maxWidth: '1180px',
       }}>
         {perfilesFiltrados.map((p) => {
           const acento = p.destacado ? BASE.gold : p.color;
@@ -502,15 +495,15 @@ export default function SelectorPerfil() {
               overflow: 'hidden',
               background: 'rgba(255,255,255,0.98)',
               border: `1px solid ${p.destacado ? BASE.gold + '99' : 'rgba(255,255,255,0.7)'}`,
-              borderRadius: '18px',
-              padding: '24px 20px 18px',
+              borderRadius: '16px',
+              padding: '16px 16px 13px',
               textAlign: 'left',
               display: 'flex',
               flexDirection: 'column',
-              gap: '13px',
+              gap: '9px',
               transition: 'transform 0.22s cubic-bezier(0.34,1.4,0.64,1), box-shadow 0.22s ease, border-color 0.22s ease',
               boxShadow: sombraBase,
-              minHeight: '236px',
+              minHeight: '0',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-5px)';
@@ -539,10 +532,10 @@ export default function SelectorPerfil() {
               }}>★ ACCESO TOTAL</span>
             )}
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '13px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
               <span style={{
-                width: '50px', height: '50px',
-                borderRadius: '14px',
+                width: '42px', height: '42px',
+                borderRadius: '12px',
                 background: `${p.color}12`,
                 border: `1px solid ${p.color}2A`,
                 display: 'inline-flex',
@@ -550,7 +543,7 @@ export default function SelectorPerfil() {
                 justifyContent: 'center',
                 flexShrink: 0,
               }}>
-                <Icon name={p.iconName} size={24} color={p.color} strokeWidth={2} />
+                <Icon name={p.iconName} size={21} color={p.color} strokeWidth={2} />
               </span>
               <span style={{
                 fontSize: '15.5px', fontWeight: '800',
@@ -606,7 +599,7 @@ export default function SelectorPerfil() {
 
       <p style={{
         position: 'relative', zIndex: 1,
-        marginTop: '32px', color: '#94a3b8',
+        marginTop: '16px', color: '#94a3b8',
         fontSize: '11px', textAlign: 'center', letterSpacing: '0.4px',
       }}>
         GRAPCO SAC © {new Date().getFullYear()} · Plataforma integral de gestion de obra
