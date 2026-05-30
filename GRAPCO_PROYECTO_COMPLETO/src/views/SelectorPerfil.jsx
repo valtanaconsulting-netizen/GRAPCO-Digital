@@ -239,22 +239,32 @@ export default function SelectorPerfil() {
       overflow: 'hidden',
     }}>
       {/* === VIDEO DE FONDO === */}
-      {/* Si /grapco-bg.mp4 existe en /public se reproduce. Si no, queda el mesh animado debajo. */}
+      {/* Video hero CREDITEX PTARI a pantalla completa (como en el Login).
+          Si el archivo no existe en /public, queda el mesh animado debajo. */}
       <video
         ref={videoRef}
-        autoPlay loop muted playsInline
+        autoPlay loop muted playsInline preload="auto"
+        poster="/hero.png"
         onError={() => { if (videoRef.current) videoRef.current.style.display = 'none'; }}
+        aria-hidden="true"
         style={{
           position: 'fixed', inset: 0,
           width: '100%', height: '100%',
           objectFit: 'cover',
-          opacity: 0.18,
+          opacity: 0.9,
           zIndex: 0,
           pointerEvents: 'none',
         }}
       >
-        <source src="/grapco-bg.mp4" type="video/mp4" />
+        <source src="/creditex-ptari.mp4" type="video/mp4" />
       </video>
+      {/* Overlay oscuro y dorado tenue para que las tarjetas resalten (igual que el Login) */}
+      <div aria-hidden="true" style={{
+        position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
+        background:
+          'radial-gradient(circle at center, rgba(15,23,42,0.35) 0%, rgba(10,22,40,0.78) 70%, rgba(10,22,40,0.92) 100%),'
+          + 'linear-gradient(180deg, rgba(245,158,11,0.05) 0%, transparent 40%)',
+      }} />
 
       {/* Botón SALIR (cierre de sesión total → vuelve al Login) */}
       <button
@@ -289,7 +299,8 @@ export default function SelectorPerfil() {
       </button>
 
       {/* === FONDO DINAMICO TIPO LINKEDIN === */}
-      <div className="grapco-mesh" />
+      {/* Mesh atenuado + multiply para que el video CREDITEX se vea por debajo (como en el Login). */}
+      <div className="grapco-mesh" style={{ opacity: 0.4, mixBlendMode: 'multiply' }} />
       <div className="grapco-blob grapco-blob-1" />
       <div className="grapco-blob grapco-blob-2" />
       <div className="grapco-blob grapco-blob-3" />
