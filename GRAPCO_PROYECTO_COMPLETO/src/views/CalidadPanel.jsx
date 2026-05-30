@@ -7,6 +7,9 @@ import DashboardCalidad from './calidad/DashboardCalidad';
 import ProtocolosView from './calidad/ProtocolosView';
 import ProtocoloEditor from './calidad/ProtocoloEditor';
 import ProtocoloCALFOR from './calidad/ProtocoloCALFOR';
+import ProtocolosPreVaciadoView from './calidad/ProtocolosPreVaciadoView';
+import ProtocoloPreVaciadoEditor from './calidad/ProtocoloPreVaciadoEditor';
+import ArchivoProtocolosView from './calidad/ArchivoProtocolosView';
 import NoConformidadesView from './calidad/NoConformidadesView';
 import EnsayosView from './calidad/EnsayosView';
 import PETsView from './modulos/petsWBS/PETsView';
@@ -14,6 +17,8 @@ import BIM from './BIM';
 
 const TABS = [
   { id: 'dashboard',  l: 'Dashboard',         icono: '📊', desc: 'KPIs ejecutivos',         color: '#ec4899' },
+  { id: 'prevaciado', l: 'Pre-Vaciado',       icono: '🧱', desc: 'CAL-FOR-006 · Liberación de concreto', color: '#0F2A47' },
+  { id: 'archivo',    l: 'Archivo',           icono: '📁', desc: 'PDFs firmados por Frente y Semana',     color: '#0d9488' },
   { id: 'protocolos', l: 'Protocolos',        icono: '📋', desc: 'Liberación por elemento', color: '#7c3aed' },
   { id: 'calfor',     l: 'CAL-FOR',           icono: '📄', desc: 'Plantilla GRAPCO con firmas', color: '#a855f7' },
   { id: 'pets',       l: 'PETs',              icono: '📜', desc: 'PETs (10 secciones)',     color: '#0ea5e9' },
@@ -25,6 +30,8 @@ const TABS = [
 // Mapa de keys del sidebar (calidad.dashboard, calidad.protocolos, ...) a tab interno
 const KEY_TO_TAB = {
   'calidad.dashboard': 'dashboard',
+  'calidad.prevaciado': 'prevaciado',
+  'calidad.archivo':    'archivo',
   'calidad.protocolos': 'protocolos',
   'calidad.calfor': 'calfor',
   'calidad.pets': 'pets',
@@ -43,6 +50,7 @@ export default function CalidadPanel({ showToast, tabExterna, onChangeTab }) {
     else setTabInterno(t);
   };
   const [protocoloEdit, setProtocoloEdit] = useState(null); // { id, modo } — para editar uno especifico
+  const [pvEdit, setPvEdit] = useState(null); // { id } — null = lista; { id: null } = nuevo; { id: 'xxx' } = editar
 
   return (
     <RoleGuard rolesPermitidos={['admin', 'ingeniero', 'calidad', 'supervisor_cliente']}>
@@ -80,7 +88,7 @@ export default function CalidadPanel({ showToast, tabExterna, onChangeTab }) {
           {TABS.map(t => {
             const activo = tab === t.id;
             return (
-              <button key={t.id} onClick={() => { setTab(t.id); setProtocoloEdit(null); }} style={{
+              <button key={t.id} onClick={() => { setTab(t.id); setProtocoloEdit(null); setPvEdit(null); }} style={{
                 padding: '12px 18px', flex: '1 1 auto', minWidth: '160px',
                 background: activo
                   ? `linear-gradient(135deg, ${t.color}, ${t.color}dd)`
@@ -111,6 +119,25 @@ export default function CalidadPanel({ showToast, tabExterna, onChangeTab }) {
         {/* CONTENIDO */}
         <div className="anim-fade-in" key={tab}>
           {tab === 'dashboard'  && <DashboardCalidad showToast={showToast} />}
+          {tab === 'prevaciado' && !pvEdit && (
+            <ProtocolosPreVaciadoView
+              showToast={showToast}
+              onNuevo={() => setPvEdit({ id: null })}
+              onEdit={(id) => setPvEdit({ id })}
+            />
+          )}
+          {tab === 'prevaciado' && pvEdit && (
+            <ProtocoloPreVaciadoEditor
+              showToast={showToast}
+              protocoloId={pvEdit.id}
+              onClose={() => setPvEdit(null)}
+            />
+          )}
+          {tab === 'archivo' && (
+            <ArchivoProtocolosView
+              onEdit={(id) => { setTab('prevaciado'); setPvEdit({ id }); }}
+            />
+          )}
           {tab === 'protocolos' && !protocoloEdit && <ProtocolosView showToast={showToast} onEdit={(id) => setProtocoloEdit({ id })} />}
           {tab === 'protocolos' && protocoloEdit && (
             <ProtocoloEditor

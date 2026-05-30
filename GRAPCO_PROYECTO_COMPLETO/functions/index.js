@@ -344,3 +344,12 @@ exports.apsEliminarModelo = functions.https.onRequest(async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// ════════════════════════════════════════════════════════════════
+// 6) protocoloPdfFirmadoSync (Storage trigger)
+//    Cuando se sube un PDF firmado a protocolos-firmados/{tipo}/{frente}/{semana}/
+//    lo sincroniza a Google Drive + Google Sheets de control.
+//    Definido en módulo separado para no contaminar este archivo.
+// ════════════════════════════════════════════════════════════════
+const archivado = require('./protocolosArchivado');
+exports.protocoloPdfFirmadoSync = archivado.protocoloPdfFirmadoSync;

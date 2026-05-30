@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Setup · Google Drive + Sheets · Protocolos GRAPCO</title>
+<style>
+  :root {
+    --navy: #1e3a5f; --navy-dark: #152a47;
+    --gold: #f59e0b; --gold-dark: #d97706; --gold-light: #fef3c7;
+    --green: #16a34a; --green-dark: #15803d; --green-light: #dcfce7;
+    --red: #dc2626; --red-light: #fee2e2;
+    --bg: #f8fafc; --white: #ffffff; --border: #e2e8f0;
+    --text: #1e293b; --muted: #64748b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Inter", "Segoe UI", system-ui, sans-serif; color: var(--text); background: var(--bg); line-height: 1.65; font-size: 15px; }
+  header.hero {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 100%);
+    color: #fff; padding: 50px 40px;
+    border-bottom: 5px solid var(--gold);
+    position: relative; overflow: hidden;
+  }
+  header.hero::before { content: ''; position: absolute; top: -100px; right: -100px; width: 320px; height: 320px; border-radius: 50%; background: var(--gold); opacity: 0.15; filter: blur(50px); }
+  header.hero .inner { max-width: 1100px; margin: 0 auto; position: relative; z-index: 2; }
+  header.hero .badge { display: inline-block; padding: 5px 14px; background: rgba(245,158,11,0.2); border: 1px solid var(--gold); border-radius: 30px; color: var(--gold); font-size: 11px; font-weight: 800; letter-spacing: 1.5px; margin-bottom: 14px; }
+  header.hero h1 { font-size: 36px; font-weight: 900; margin-bottom: 12px; letter-spacing: -0.5px; }
+  header.hero p.subtitle { font-size: 16px; opacity: 0.85; max-width: 760px; margin-bottom: 18px; }
+  header.hero .meta { display: flex; gap: 24px; flex-wrap: wrap; margin-top: 14px; }
+  header.hero .meta span { font-size: 11px; opacity: 0.7; letter-spacing: 1px; }
+  header.hero .meta b { color: var(--gold); font-weight: 800; }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 50px 40px 80px; }
+  section { margin-bottom: 56px; }
+  section h2 {
+    font-size: 26px; font-weight: 900; color: var(--navy);
+    margin-bottom: 6px; display: flex; align-items: center; gap: 12px;
+  }
+  section h2 .num { width: 36px; height: 36px; background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #fff; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900; }
+  section .lead { font-size: 14px; color: var(--muted); margin-bottom: 22px; padding-left: 48px; }
+
+  .step { background: var(--white); border: 1px solid var(--border); border-radius: 14px; padding: 22px 26px; margin-bottom: 16px; border-left: 5px solid var(--gold); box-shadow: 0 1px 3px rgba(15,23,42,0.04); }
+  .step h3 { font-size: 16px; font-weight: 900; color: var(--navy); margin-bottom: 10px; }
+  .step p { margin-bottom: 10px; font-size: 14px; }
+  .step ol, .step ul { margin: 8px 0 12px 22px; }
+  .step li { margin-bottom: 6px; font-size: 13.5px; line-height: 1.7; }
+  .step a { color: var(--gold-dark); font-weight: 700; text-decoration: none; word-break: break-all; }
+  .step a:hover { text-decoration: underline; }
+
+  pre {
+    background: #0f172a; color: #e2e8f0; padding: 16px 18px;
+    border-radius: 10px; font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 12.5px; line-height: 1.55; overflow-x: auto;
+    margin: 10px 0;
+  }
+  pre code { color: inherit; background: transparent; padding: 0; font-size: inherit; }
+  pre .c { color: #94a3b8; }
+  pre .k { color: #fbbf24; }
+  pre .s { color: #86efac; }
+  pre .v { color: #93c5fd; }
+
+  code { background: var(--bg); padding: 2px 8px; border-radius: 4px; font-size: 12.5px; font-family: 'Consolas', monospace; color: var(--navy); font-weight: 700; border: 1px solid var(--border); }
+
+  .callout { border-radius: 12px; padding: 14px 20px; margin: 14px 0; border-left: 5px solid; font-size: 13.5px; }
+  .callout.info { background: #eff6ff; border-color: var(--navy); color: var(--navy); }
+  .callout.gold { background: var(--gold-light); border-color: var(--gold-dark); color: var(--gold-dark); }
+  .callout.success { background: var(--green-light); border-color: var(--green-dark); color: var(--green-dark); }
+  .callout.danger { background: var(--red-light); border-color: var(--red); color: var(--red); }
+  .callout strong { font-weight: 900; }
+
+  table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(15,23,42,0.05); margin: 14px 0; font-size: 12.5px; }
+  th { background: var(--navy); color: #fff; padding: 11px 8px; text-align: left; font-size: 10.5px; font-weight: 800; letter-spacing: 0.4px; }
+  td { padding: 9px 8px; border-bottom: 1px solid var(--border); font-size: 12px; vertical-align: top; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  td code { font-size: 11px; padding: 1px 5px; }
+
+  .tldr {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-left: 5px solid var(--gold-dark);
+    border-radius: 14px; padding: 22px 28px; margin-bottom: 42px;
+  }
+  .tldr h3 { font-size: 14px; color: var(--gold-dark); letter-spacing: 1.5px; margin-bottom: 8px; }
+  .tldr p { font-size: 14.5px; color: var(--navy-dark); margin-bottom: 6px; }
+  .tldr strong { color: var(--navy); }
+
+  .checklist { background: var(--white); border: 2px solid var(--green); border-radius: 14px; padding: 22px 26px; }
+  .checklist h3 { font-size: 16px; color: var(--green-dark); margin-bottom: 14px; }
+  .checklist .row { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 13.5px; border-bottom: 1px solid var(--green-light); }
+  .checklist .row:last-child { border-bottom: 0; }
+  .checklist .dot { width: 20px; height: 20px; border-radius: 50%; background: var(--green); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 900; font-size: 11px; }
+
+  footer { background: var(--navy); color: rgba(255,255,255,0.75); padding: 30px 40px; text-align: center; font-size: 11px; border-top: 4px solid var(--gold); margin-top: 60px; }
+  footer .logo { font-size: 16px; font-weight: 900; color: var(--gold); letter-spacing: 2px; margin-bottom: 6px; }
+  footer p { margin-bottom: 4px; }
+
+  .kbd { display: inline-block; padding: 2px 8px; border-radius: 4px; background: #f1f5f9; border: 1px solid #cbd5e1; border-bottom-width: 2px; font-family: monospace; font-size: 11.5px; font-weight: 700; color: var(--navy); }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="inner">
+    <span class="badge">GUÍA DE CONFIGURACIÓN</span>
+    <h1>Setup · Google Drive + Sheets</h1>
+    <p class="subtitle">
+      Conecta la Cloud Function <code style="background:rgba(255,255,255,0.15);border:0;color:#fde68a">protocoloPdfFirmadoSync</code>
+      con tu Google Drive y tu Sheet de control para cerrar el workflow del CAL-FOR-006.
+    </p>
+    <div class="meta">
+      <span>PROYECTO FIREBASE: <b>grapco-demo-2026</b></span>
+      <span>TIEMPO TOTAL: <b>~15 min</b></span>
+      <span>FRECUENCIA: <b>Una sola vez</b></span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <div class="tldr">
+    <h3>⚡ TL;DR — LO QUE VAS A HACER</h3>
+    <p>1) Crear una <strong>Service Account</strong> en GCP (un "usuario robot" para la Cloud Function).</p>
+    <p>2) Habilitar <strong>Drive API</strong> y <strong>Sheets API</strong> con 1 click cada una.</p>
+    <p>3) <strong>Compartir</strong> tu carpeta de Drive y tu Sheet con el email de esa SA.</p>
+    <p>4) Activar plan <strong>Blaze</strong> + <strong>Budget Alert de $1/mes</strong> (red de seguridad — costo real esperado: $0).</p>
+    <p>5) Guardar <strong>3 secrets</strong> en Firebase y <strong>desplegar</strong> la función. Listo.</p>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2><span class="num">1</span> Crear la Service Account</h2>
+    <p class="lead">La SA es un "usuario robot" que la Cloud Function usará para escribir en Drive y Sheets en tu nombre — sin compartir tu cuenta personal.</p>
+
+    <div class="step">
+      <h3>1.1 · Abre Google Cloud Console</h3>
+      <p>👉 <a href="https://console.cloud.google.com/iam-admin/serviceaccounts?project=grapco-demo-2026" target="_blank">console.cloud.google.com/iam-admin/serviceaccounts?project=grapco-demo-2026</a></p>
+      <p>Asegúrate de estar en el proyecto <code>grapco-demo-2026</code> (lo ves arriba a la izquierda).</p>
+    </div>
+
+    <div class="step">
+      <h3>1.2 · Click en <span class="kbd">+ CREATE SERVICE ACCOUNT</span></h3>
+      <p>Llena los campos así:</p>
+      <ul>
+        <li><strong>Service account name:</strong> <code>protocolos-bot</code></li>
+        <li><strong>Service account ID:</strong> se autogenera</li>
+        <li><strong>Description:</strong> <em>Bot para archivado de protocolos en Drive y Sheets</em></li>
+      </ul>
+      <p>Click <span class="kbd">CREATE AND CONTINUE</span> → <span class="kbd">DONE</span>. <strong>NO le des ningún rol IAM</strong> — no hace falta para Drive ni Sheets.</p>
+    </div>
+
+    <div class="step">
+      <h3>1.3 · Descargar la JSON key</h3>
+      <p>Click sobre la SA recién creada → pestaña <span class="kbd">KEYS</span> → <span class="kbd">ADD KEY</span> → <strong>Create new key</strong> → tipo <strong>JSON</strong> → <span class="kbd">CREATE</span>.</p>
+      <p>Se descarga un archivo <code>grapco-demo-2026-XXXXX.json</code>.</p>
+      <div class="callout danger">
+        ⚠️ <strong>Guárdalo bien</strong> — esta key solo se descarga una vez. Si la pierdes, hay que generar otra.
+      </div>
+    </div>
+
+    <div class="step">
+      <h3>1.4 · Copia el email de la SA</h3>
+      <p>Lo vas a usar 2 veces en los pasos 3 y 4. Tiene este formato:</p>
+      <pre><span class="s">protocolos-bot@grapco-demo-2026.iam.gserviceaccount.com</span></pre>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2><span class="num">2</span> Habilitar Drive API + Sheets API</h2>
+    <p class="lead">Las APIs vienen apagadas por defecto. Las prendes una vez y listo.</p>
+
+    <div class="step">
+      <h3>2.1 · Drive API</h3>
+      <p>👉 <a href="https://console.cloud.google.com/apis/library/drive.googleapis.com?project=grapco-demo-2026" target="_blank">console.cloud.google.com/apis/library/drive.googleapis.com</a></p>
+      <p>Click <span class="kbd">ENABLE</span>.</p>
+    </div>
+
+    <div class="step">
+      <h3>2.2 · Sheets API</h3>
+      <p>👉 <a href="https://console.cloud.google.com/apis/library/sheets.googleapis.com?project=grapco-demo-2026" target="_blank">console.cloud.google.com/apis/library/sheets.googleapis.com</a></p>
+      <p>Click <span class="kbd">ENABLE</span>.</p>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2><span class="num">3</span> Compartir la carpeta de Drive</h2>
+    <p class="lead">La SA necesita permiso de Editor en la carpeta raíz donde vivirá la jerarquía <code>Tipo / Frente / Semana</code>.</p>
+
+    <div class="step">
+      <h3>3.1 · Abre tu carpeta raíz de Drive</h3>
+      <p>La carpeta que será el "techo" de toda la estructura de protocolos firmados.</p>
+    </div>
+
+    <div class="step">
+      <h3>3.2 · Compártela con la SA</h3>
+      <p>Click derecho → <strong>Share</strong> (Compartir).</p>
+      <ul>
+        <li>Pega el <strong>email de la SA</strong> (paso 1.4).</li>
+        <li>Permiso: <strong>Editor</strong>.</li>
+        <li><strong>Desactiva</strong> la casilla "Notify people" — no le mandes mail a un robot 😄</li>
+      </ul>
+      <p>Click <span class="kbd">Share</span>.</p>
+    </div>
+
+    <div class="step">
+      <h3>3.3 · Copia el ID de la carpeta</h3>
+      <p>Está en la URL cuando abres la carpeta:</p>
+      <pre><span class="c">https://drive.google.com/drive/folders/</span><span class="s">1AbCdEfGhIjKlMnOpQrStUvWxYz1234567</span>
+                                       <span class="k">↑↑↑ COPIA ESTO ↑↑↑</span></pre>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2><span class="num">4</span> Compartir el Sheet de control</h2>
+    <p class="lead">Mismo procedimiento que la carpeta — la SA necesita Editor para escribir filas.</p>
+
+    <div class="step">
+      <h3>4.1 · Abre tu Sheet de control</h3>
+      <p>El Google Sheet donde ya manejas la bitácora de protocolos.</p>
+    </div>
+
+    <div class="step">
+      <h3>4.2 · Compártelo con la SA</h3>
+      <p>Botón <span class="kbd">Share</span> (arriba derecha) → pega el email de la SA → permiso <strong>Editor</strong> → <span class="kbd">Share</span>.</p>
+    </div>
+
+    <div class="step">
+      <h3>4.3 · Copia el ID del Sheet</h3>
+      <p>También de la URL:</p>
+      <pre><span class="c">https://docs.google.com/spreadsheets/d/</span><span class="s">1ABCDefghijKLMNOPqrstuVWXyz1234567</span><span class="c">/edit</span>
+                                       <span class="k">↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑</span></pre>
+    </div>
+
+    <div class="step">
+      <h3>4.4 · Asegura las 14 columnas</h3>
+      <p>La pestaña debe llamarse exactamente <code>Protocolos</code> y tener este encabezado en la fila 1 (A1..N1):</p>
+      <table>
+        <tr>
+          <th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th>
+          <th>H</th><th>I</th><th>J</th><th>K</th><th>L</th><th>M</th><th>N</th>
+        </tr>
+        <tr>
+          <td>N° Registro</td><td>Tipo</td><td>Frente</td><td>Semana ISO</td>
+          <td>Elemento</td><td>Ejes</td><td>Nivel</td><td>Sector</td>
+          <td>f'c</td><td>Volumen</td><td>Fecha vaciado</td><td>Estado</td>
+          <td>URL Storage</td><td>URL Drive</td>
+        </tr>
+      </table>
+      <div class="callout info">
+        💡 Si tu Sheet tiene otra estructura o nombre de pestaña, dime cómo se llama y el orden de columnas y ajusto el código.
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2><span class="num">5</span> Activar Blaze + Budget Alert ($1/mes)</h2>
+    <p class="lead">Cloud Functions v2 requiere plan Blaze (pay-as-you-go). En tu caso real costará <strong>$0/mes</strong> — pero ponemos alertas y caps para garantizar que <strong>nunca</strong> se cobre por accidente.</p>
+
+    <div class="callout success">
+      💰 <strong>Costo realista esperado:</strong> $0.00/mes. Tu free tier mensual permite 2 millones de invocaciones de Cloud Functions, 5 GB de Storage y 1 billón de calls de Drive API. Vas a usar &lt;1% de eso.
+    </div>
+
+    <div class="step">
+      <h3>5.1 · Cambiar a plan Blaze</h3>
+      <p>👉 <a href="https://console.firebase.google.com/project/grapco-demo-2026/usage/details" target="_blank">console.firebase.google.com/project/grapco-demo-2026/usage/details</a></p>
+      <p>Click <span class="kbd">Modify plan</span> → <strong>Blaze (Pay as you go)</strong> → agrega tarjeta de crédito.</p>
+      <div class="callout info">
+        ℹ️ Blaze cobra solo lo que pasa del free tier. Si no pasas (no vas a pasar), no cobra. La tarjeta es una garantía, no un cargo automático.
+      </div>
+    </div>
+
+    <div class="step">
+      <h3>5.2 · Crear Budget Alert a $1/mes (OBLIGATORIO)</h3>
+      <p>👉 <a href="https://console.cloud.google.com/billing/budgets?project=grapco-demo-2026" target="_blank">console.cloud.google.com/billing/budgets?project=grapco-demo-2026</a></p>
+      <p>Click <span class="kbd">CREATE BUDGET</span>:</p>
+      <ul>
+        <li><strong>Name:</strong> <code>GRAPCO Costo Cero</code></li>
+        <li><strong>Projects:</strong> selecciona <code>grapco-demo-2026</code></li>
+        <li><strong>Services:</strong> All services</li>
+        <li><strong>Budget type:</strong> Specified amount</li>
+        <li><strong>Target amount:</strong> <code>1.00 USD</code></li>
+        <li><strong>Threshold rules:</strong> 50%, 90%, 100% (vienen por defecto)</li>
+        <li><strong>Email alerts:</strong> ✅ marca <em>"Email alerts to billing admins and users"</em></li>
+      </ul>
+      <p>Click <span class="kbd">FINISH</span>. Listo — si alguna vez llega a $0.50 te llega un email; si llega a $1 también; si llega a $0.90 también.</p>
+      <div class="callout gold">
+        🛡️ <strong>Cómo funciona:</strong> El budget NO apaga nada automáticamente — solo te avisa. Si te llega el primer mail "50% del budget", revisas qué está pasando y decides. En tu caso de uso real, esos mails NUNCA van a llegar.
+      </div>
+    </div>
+
+    <div class="step">
+      <h3>5.3 · (Opcional avanzado) Cap duro de gasto</h3>
+      <p>Si quieres que cuando llegue a $5 se <strong>apague el billing automáticamente</strong> (cap duro), Google lo permite via Cloud Function + Pub/Sub:</p>
+      <p>👉 <a href="https://cloud.google.com/billing/docs/how-to/disable-billing-with-notifications" target="_blank">cloud.google.com/billing/docs/how-to/disable-billing-with-notifications</a></p>
+      <div class="callout info">
+        💡 No es necesario para tu caso. El budget alert a $1 es más que suficiente — si te avisa, puedes desactivar la function manualmente en 30 segundos.
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2><span class="num">6</span> Guardar los 3 secrets en Firebase</h2>
+    <p class="lead">Abre una terminal en la raíz del proyecto y corre estos 3 comandos. Pega cada valor cuando te lo pida y dale Enter.</p>
+
+    <div class="step">
+      <h3>6.1 · Posiciónate en la raíz</h3>
+      <pre><span class="k">cd</span> <span class="s">"c:\Users\fjros\OneDrive\Escritorio\PROYECTOS_FRANKLIN2025\PROYECTO GRAPCO 2026\GRAPCO_PROYECTO_COMPLETO"</span></pre>
+    </div>
+
+    <div class="step">
+      <h3>6.2 · Secret 1 — ID de la carpeta de Drive</h3>
+      <pre><span class="k">firebase functions:secrets:set</span> DRIVE_ROOT_FOLDER_ID <span class="v">--project</span> grapco-demo-2026
+<span class="c"># Pega el ID del paso 3.3 y Enter</span></pre>
+    </div>
+
+    <div class="step">
+      <h3>6.3 · Secret 2 — ID del Sheet de control</h3>
+      <pre><span class="k">firebase functions:secrets:set</span> SHEET_CONTROL_ID <span class="v">--project</span> grapco-demo-2026
+<span class="c"># Pega el ID del paso 4.3 y Enter</span></pre>
+    </div>
+
+    <div class="step">
+      <h3>6.4 · Secret 3 — JSON completo de la Service Account</h3>
+      <pre><span class="k">firebase functions:secrets:set</span> GOOGLE_SA_KEY <span class="v">--project</span> grapco-demo-2026 <span class="v">--data-file</span>=<span class="s">"C:\ruta\a\tu\grapco-demo-2026-XXXXX.json"</span></pre>
+      <div class="callout gold">
+        💡 Si <code>--data-file</code> no te funciona, abre el JSON en Notepad, copia TODO el contenido y usa el comando sin <code>--data-file</code> — te dejará pegarlo.
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2><span class="num">7</span> Desplegar la Cloud Function</h2>
+    <p class="lead">Un solo comando. Tarda ~2 min.</p>
+
+    <div class="step">
+      <h3>7.1 · Deploy</h3>
+      <pre><span class="k">firebase deploy</span> <span class="v">--only</span> functions:protocoloPdfFirmadoSync <span class="v">--project</span> grapco-demo-2026</pre>
+      <p>Cuando termine, verás algo como:</p>
+      <pre><span class="s">✔ functions[protocoloPdfFirmadoSync(us-central1)] Successful create operation.</span></pre>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2><span class="num">8</span> Probar end-to-end</h2>
+    <p class="lead">Sube un PDF de prueba y verifica que llega a los 3 destinos.</p>
+
+    <div class="step">
+      <h3>8.1 · Crea un protocolo de prueba</h3>
+      <p>Abre GRAPCO → <strong>Calidad → Pre-Vaciado → Nuevo</strong>.</p>
+      <p>Llena los campos mínimos (frente, semana, estructura, datos). Guarda.</p>
+    </div>
+
+    <div class="step">
+      <h3>8.2 · Genera el PDF</h3>
+      <p>Click <span class="kbd">📄 GENERAR PDF PARA FIRMA</span> → se descarga <code>PV-F03-001.pdf</code>.</p>
+    </div>
+
+    <div class="step">
+      <h3>8.3 · Sube el escaneado (o el mismo PDF para test)</h3>
+      <p>Arrastra el PDF a la zona de drop "Subir PDF firmado". Espera 5-15 segundos.</p>
+    </div>
+
+    <div class="step">
+      <h3>8.4 · Verifica los 3 destinos</h3>
+      <div class="checklist">
+        <h3>CHECKLIST DE ÉXITO</h3>
+        <div class="row"><span class="dot">✓</span> Firebase Storage en <code>protocolos-firmados/...</code></div>
+        <div class="row"><span class="dot">✓</span> Google Drive: aparece en tu carpeta raíz → <code>Pre-Vaciado / F03 / 2026-W22 /</code></div>
+        <div class="row"><span class="dot">✓</span> Google Sheet: nueva fila en la pestaña <code>Protocolos</code></div>
+        <div class="row"><span class="dot">✓</span> Plataforma: los 3 puntitos del archivo se ponen verdes 🟢 🟢 🟢</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <h3>8.5 · Si algo falla, revisa los logs</h3>
+      <pre><span class="k">firebase functions:log</span> <span class="v">--project</span> grapco-demo-2026 <span class="v">--only</span> protocoloPdfFirmadoSync</pre>
+      <p>El editor del protocolo también muestra un <strong>banner rojo</strong> con el mensaje exacto del error si la sincronización falló 3 veces.</p>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section>
+    <h2><span class="num">9</span> Troubleshooting común</h2>
+    <p class="lead">Los errores más típicos y cómo resolverlos en 30 segundos.</p>
+
+    <table>
+      <tr>
+        <th style="width: 38%">Error</th>
+        <th>Causa y fix</th>
+      </tr>
+      <tr>
+        <td><code>Permission denied</code> al subir a Drive</td>
+        <td>La SA no tiene acceso a la carpeta. Revisa <strong>paso 3.2</strong> — el email debe estar como Editor.</td>
+      </tr>
+      <tr>
+        <td><code>API not enabled</code></td>
+        <td>Falta habilitar Drive o Sheets API. Revisa <strong>paso 2</strong>.</td>
+      </tr>
+      <tr>
+        <td><code>Unable to parse range: Protocolos!A:N</code></td>
+        <td>Falta la pestaña <code>Protocolos</code> en el Sheet (paso 4.4) o tiene otro nombre.</td>
+      </tr>
+      <tr>
+        <td>Los puntitos verdes no aparecen pero el archivo SÍ está en Drive</td>
+        <td>Delay de Firestore. Refresca la página después de 30s. Si persiste, hay un error en el <code>update()</code> — revisa logs.</td>
+      </tr>
+      <tr>
+        <td>Failed después de 3 reintentos</td>
+        <td>Firestore guarda <code>archivado.error</code> con detalles. El banner rojo en el editor te dice qué pasó. Vuelve a arrastrar el PDF para reintentar.</td>
+      </tr>
+      <tr>
+        <td><code>The caller does not have permission</code> en Sheets</td>
+        <td>El Sheet no fue compartido con la SA. Revisa <strong>paso 4.2</strong>.</td>
+      </tr>
+    </table>
+  </section>
+
+</main>
+
+<footer>
+  <div class="logo">GRAPCO 2026</div>
+  <p>Setup · Sincronización de Protocolos QA/QC con Google Drive + Sheets</p>
+  <p>Cloud Function · <code style="color:#fde68a;background:transparent">protocoloPdfFirmadoSync</code> · Trigger onObjectFinalized</p>
+</footer>
+
+</body>
+</html>

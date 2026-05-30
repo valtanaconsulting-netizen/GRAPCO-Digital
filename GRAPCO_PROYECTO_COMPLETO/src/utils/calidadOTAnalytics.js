@@ -16,6 +16,7 @@
 // ════════════════════════════════════════════════════════════════
 
 export const TIPOS_PROTOCOLO = {
+  prevaciado:  { label: 'Liberacion Pre-Vaciado', icono: '🧱', color: '#0F2A47', codigoFormato: 'CAL-FOR-006', prefijoRegistro: 'PV', plantilla: 'PreVaciado' },
   acero:       { label: 'Habilitacion de Acero',  icono: '🔩', color: '#dc2626' },
   encofrado:   { label: 'Encofrado',              icono: '📐', color: '#f59e0b' },
   concreto:    { label: 'Vaciado de Concreto',    icono: '🧱', color: '#7c3aed' },
@@ -76,7 +77,33 @@ export const TIPOS_ENSAYO = [
 // CHECKLISTS DEFAULT POR TIPO DE PROTOCOLO + ELEMENTO
 // ════════════════════════════════════════════════════════════════
 
+// CAL-FOR-006 · Liberacion de Pre-Vaciado de Concreto.
+// Los 10 items son LITERALES del formato corporativo GRAPCO y no se editan.
+// (Si el cliente cambia el formato, se versiona aqui — nunca por usuario.)
+export const CHECKLIST_PREVACIADO = [
+  { item: 'Ubicacion del elemento segun ejes y dimensiones.',                                       critico: true  },
+  { item: 'Topografia, cota de fondo y niveles de concreto.',                                        critico: true  },
+  { item: 'Verificacion de la armadura segun check list.',                                           critico: true  },
+  { item: 'Verificacion del encofrado segun check list.',                                            critico: true  },
+  { item: 'IISS / ACI: Tendido de redes, ubicacion de puntos de salida y pases para tuberias, etc.', critico: true  },
+  { item: 'IIEE: Redes de salidas (Interruptores, tomacorrientes, TV, telefono e intercomunicados, etc)', critico: true },
+  { item: 'Pernos de anclaje y/o elementos embebidos',                                               critico: true  },
+  { item: 'Limpieza del fondo del encofrado',                                                        critico: true  },
+  { item: 'Humedad en toda la superficie de contacto',                                               critico: false },
+  { item: 'Otros:',                                                                                  critico: false },
+];
+
+// Los 5 firmantes (Hold Point) del CAL-FOR-006.
+export const FIRMANTES_PREVACIADO = [
+  { rol: 'Calidad - Sector',     campo: 'firmaCalidad'     },
+  { rol: 'Produccion - Sector',  campo: 'firmaProduccion'  },
+  { rol: 'Seguridad - Sector',   campo: 'firmaSeguridad'   },
+  { rol: 'Residente',            campo: 'firmaResidente'   },
+  { rol: 'Supervision',          campo: 'firmaSupervisor'  },
+];
+
 const CHECKLIST_TEMPLATES = {
+  prevaciado: CHECKLIST_PREVACIADO,
   acero: [
     { item: 'Diametros y cantidades segun planos',           critico: true },
     { item: 'Distribucion correcta de estribos',             critico: true },
@@ -423,3 +450,48 @@ export const generarCodigoProtocolo = (tipo, elementoTipo, elementoCodigo, anio 
 
 export const colorEstadoProtocolo = (estado) => ESTADOS_PROTOCOLO[estado]?.color || '#64748b';
 export const iconoEstadoProtocolo = (estado) => ESTADOS_PROTOCOLO[estado]?.icono || '⚪';
+
+// ════════════════════════════════════════════════════════════════
+// SEMANA ISO 8601 — para clasificar protocolos en Drive/Sheets
+// ════════════════════════════════════════════════════════════════
+
+// Devuelve { anio, semana } según ISO 8601 (lunes = inicio de semana).
+// Ej. 28-mayo-2026 → { anio: 2026, semana: 22 }.
+export function getSemanaISO(fecha = new Date()) {
+  const d = new Date(Date.UTC(fecha.getFullYear(), fecha.getMonth(), fecha.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const semana = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return { anio: d.getUTCFullYear(), semana };
+}
+
+export const formatSemanaISO = (fecha = new Date()) => {
+  const { anio, semana } = getSemanaISO(fecha);
+  return `${anio}-W${String(semana).padStart(2, '0')}`;
+};
+
+// ════════════════════════════════════════════════════════════════
+// N° DE REGISTRO — la "llave única" del workflow del PDF
+// ════════════════════════════════════════════════════════════════
+
+// Formato: {PREFIJO}-{FRENTE}-{NNN}
+//   PV-F03-001  → Pre-vaciado, Frente 03, registro 1
+//   EX-F02-014  → Excavación, Frente 02, registro 14
+// `secuencia` es un número entero que la vista calcula (max + 1 en la lista filtrada).
+// `frenteCodigo` puede venir del Frente activo (preferido) o derivarse del nombre.
+export function generarNumeroRegistro(tipo, frenteCodigo, secuencia) {
+  const t = TIPOS_PROTOCOLO[tipo];
+  const prefijo = (t?.prefijoRegistro || (tipo || 'GEN').substring(0, 2)).toUpperCase();
+  const fr = String(frenteCodigo || 'F00').toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5) || 'F00';
+  const seq = String(secuencia || 1).padStart(3, '0');
+  return `${prefijo}-${fr}-${seq}`;
+}
+
+// Deriva un código corto del Frente desde su nombre (ej. "Frente 03" → "F03").
+export function codigoFrente(frente) {
+  if (!frente) return 'F00';
+  if (frente.codigo) return String(frente.codigo).toUpperCase();
+  const m = String(frente.nombre || '').match(/(\d+)/);
+  return m ? `F${m[1].padStart(2, '0')}` : 'F00';
+}
