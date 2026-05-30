@@ -32,7 +32,7 @@ const PERFILES = [
     rol: 'ingeniero',
     titulo: 'Ingeniería de Producción',
     iconName: 'dashboard',
-    color: '#16a34a',
+    color: '#047857',
     descripcion: 'Producción (Auditoría + CPI/EAC + Control Gerencial), registro de producción, Carta Balance, Sala de Operaciones, materiales y coordinación BIM.',
     accesos: ['Producción', 'Registro', 'Carta Balance', 'Sala de Operaciones', 'Materiales'],
   },
@@ -40,7 +40,7 @@ const PERFILES = [
     rol: 'oficina_tecnica',
     titulo: 'Oficina Técnica',
     iconName: 'fileText',
-    color: '#6366f1',
+    color: '#1D4ED8',
     descripcion: 'Resultado Operativo, valorizaciones, adicionales y deductivos, sustento fotográfico, partidas y BIM.',
     accesos: ['RO', 'Valorizaciones', 'Sustento', 'Partidas', 'BIM'],
   },
@@ -48,7 +48,7 @@ const PERFILES = [
     rol: 'planeamiento',
     titulo: 'Planeamiento y Programación',
     iconName: 'tree',
-    color: '#0d9488',
+    color: '#0E7490',
     descripcion: 'Plan Maestro (WBS), Análisis de Precios Unitarios, Last Planner / Pull Planning, hitos y cronograma.',
     accesos: ['Plan Maestro', 'APU', 'Pull Planning', 'Hitos'],
   },
@@ -56,7 +56,7 @@ const PERFILES = [
     rol: 'calidad',
     titulo: 'Aseguramiento de Calidad',
     iconName: 'shield',
-    color: '#ec4899',
+    color: '#7E22CE',
     descripcion: 'Protocolos, PETs, No Conformidades, ensayos, evidencia fotográfica y modelo BIM para liberación.',
     accesos: ['Protocolos', 'PETs', 'No Conformidades', 'Ensayos', 'BIM'],
   },
@@ -64,7 +64,7 @@ const PERFILES = [
     rol: 'seguridad',
     titulo: 'Seguridad, Salud y Medio Ambiente',
     iconName: 'alert',
-    color: '#dc2626',
+    color: '#BE123C',
     descripcion: 'Reporte de incidencias con fotos, inspección diaria con checklist y apertura automática de No Conformidades.',
     accesos: ['Reportar', 'Inspección', 'Historial'],
   },
@@ -72,7 +72,7 @@ const PERFILES = [
     rol: 'almacenero',
     titulo: 'Almacén y Logística',
     iconName: 'package',
-    color: '#7c3aed',
+    color: '#B45309',
     descripcion: 'Kardex de materiales, ingresos y salidas, stock por almacén, requerimientos del campo y valorizado S10.',
     accesos: ['Kardex', 'Stock', 'Requerimientos', 'Materiales'],
   },
@@ -486,96 +486,120 @@ export default function SelectorPerfil() {
         width: '100%',
         maxWidth: '1100px',
       }}>
-        {perfilesFiltrados.map((p) => (
+        {perfilesFiltrados.map((p) => {
+          const acento = p.destacado ? BASE.gold : p.color;
+          const sombraBase = p.destacado
+            ? '0 18px 44px -18px rgba(229,168,47,0.50), 0 6px 16px -10px rgba(8,26,46,0.45)'
+            : '0 16px 40px -20px rgba(8,26,46,0.70), 0 4px 12px -8px rgba(8,26,46,0.35)';
+          return (
           <button
             key={p.rol}
             onClick={() => entrarComoRol(p.rol)}
             style={{
               cursor: 'pointer',
-              background: '#fff',
-              border: p.destacado ? `2px solid ${BASE.gold}` : '2px solid transparent',
-              borderRadius: '16px',
-              padding: '20px 18px',
+              position: 'relative',
+              overflow: 'hidden',
+              background: 'rgba(255,255,255,0.98)',
+              border: `1px solid ${p.destacado ? BASE.gold + '99' : 'rgba(255,255,255,0.7)'}`,
+              borderRadius: '18px',
+              padding: '24px 20px 18px',
               textAlign: 'left',
               display: 'flex',
               flexDirection: 'column',
-              gap: '12px',
-              transition: 'all 0.2s ease',
-              boxShadow: p.destacado
-                ? `0 10px 30px rgba(0,0,0,0.25), 0 0 0 4px ${BASE.gold}22`
-                : '0 6px 20px rgba(0,0,0,0.18)',
-              position: 'relative',
-              minHeight: '230px',
+              gap: '13px',
+              transition: 'transform 0.22s cubic-bezier(0.34,1.4,0.64,1), box-shadow 0.22s ease, border-color 0.22s ease',
+              boxShadow: sombraBase,
+              minHeight: '236px',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = `0 14px 36px rgba(0,0,0,0.32), 0 0 0 2px ${p.color}55`;
-              e.currentTarget.style.borderColor = p.color;
+              e.currentTarget.style.transform = 'translateY(-5px)';
+              e.currentTarget.style.boxShadow = `0 26px 54px -18px ${acento}66, 0 0 0 1.5px ${acento}`;
+              e.currentTarget.style.borderColor = acento;
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = p.destacado
-                ? `0 10px 30px rgba(0,0,0,0.25), 0 0 0 4px ${BASE.gold}22`
-                : '0 6px 20px rgba(0,0,0,0.18)';
-              e.currentTarget.style.borderColor = p.destacado ? BASE.gold : 'transparent';
+              e.currentTarget.style.boxShadow = sombraBase;
+              e.currentTarget.style.borderColor = p.destacado ? BASE.gold + '99' : 'rgba(255,255,255,0.7)';
             }}
           >
+            {/* Barra de acento superior — identidad del área */}
+            <span style={{
+              position: 'absolute', top: 0, left: 0, right: 0, height: '4px',
+              background: `linear-gradient(90deg, ${acento}, ${acento}77)`,
+            }} />
+
             {p.destacado && (
               <span style={{
-                position: 'absolute', top: '-10px', right: '14px',
-                background: BASE.gold, color: BASE.navy,
-                padding: '4px 10px', borderRadius: '999px',
-                fontSize: '9.5px', fontWeight: 900, letterSpacing: '0.6px',
-              }}>★ COMPLETO</span>
+                position: 'absolute', top: '14px', right: '14px',
+                background: `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`, color: '#fff',
+                padding: '4px 11px', borderRadius: '999px',
+                fontSize: '9px', fontWeight: 900, letterSpacing: '0.8px',
+                boxShadow: `0 3px 10px ${BASE.gold}55`,
+              }}>★ ACCESO TOTAL</span>
             )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '13px' }}>
               <span style={{
-                width: '46px', height: '46px',
-                borderRadius: '12px',
-                background: `linear-gradient(135deg, ${p.color}, ${p.color}cc)`,
-                color: '#fff',
+                width: '50px', height: '50px',
+                borderRadius: '14px',
+                background: `${p.color}12`,
+                border: `1px solid ${p.color}2A`,
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
-                boxShadow: `0 4px 12px ${p.color}66`,
               }}>
-                <Icon name={p.iconName} size={22} color="#fff" strokeWidth={2} />
+                <Icon name={p.iconName} size={24} color={p.color} strokeWidth={2} />
               </span>
               <span style={{
-                fontSize: '16px', fontWeight: '800',
-                color: BASE.navy, lineHeight: 1.25,
+                fontSize: '15.5px', fontWeight: '800',
+                color: BASE.navy, lineHeight: 1.3,
                 letterSpacing: '-0.01em',
               }}>
                 {p.titulo}
               </span>
             </div>
+
             <p style={{
               fontSize: '11.5px', color: BASE.muted,
-              lineHeight: 1.5, margin: 0, flex: 1,
+              lineHeight: 1.55, margin: 0, flex: 1,
             }}>
               {p.descripcion}
             </p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
               {p.accesos.map(a => (
                 <span key={a} style={{
-                  background: `${p.color}15`, color: p.color,
-                  padding: '3px 8px', borderRadius: '999px',
-                  fontSize: '9.5px', fontWeight: 800, letterSpacing: '0.3px',
+                  background: BASE.bg,
+                  color: BASE.muted,
+                  border: `1px solid ${BASE.border}`,
+                  padding: '3px 9px', borderRadius: '999px',
+                  fontSize: '9.5px', fontWeight: 700, letterSpacing: '0.2px',
                 }}>{a}</span>
               ))}
             </div>
-            <span style={{
-              alignSelf: 'flex-start',
-              fontSize: '11px', fontWeight: 900, color: p.color,
-              letterSpacing: '0.6px', textTransform: 'uppercase',
-              borderTop: `1px solid ${BASE.border}`,
-              paddingTop: '10px', width: '100%',
+
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              borderTop: `1px solid ${BASE.borderSoft}`,
+              paddingTop: '12px', marginTop: '2px',
             }}>
-              ENTRAR →
-            </span>
+              <span style={{
+                fontSize: '11px', fontWeight: 900, color: acento,
+                letterSpacing: '0.8px', textTransform: 'uppercase',
+              }}>
+                Entrar
+              </span>
+              <span style={{
+                width: '26px', height: '26px', borderRadius: '999px',
+                background: `${acento}14`,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                color: acento, fontSize: '14px', fontWeight: 900,
+              }}>→</span>
+            </div>
           </button>
-        ))}
+          );
+        })}
       </div>
       )}
 
