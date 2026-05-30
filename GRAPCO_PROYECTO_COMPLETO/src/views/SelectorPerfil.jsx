@@ -251,19 +251,23 @@ export default function SelectorPerfil() {
           position: 'fixed', inset: 0,
           width: '100%', height: '100%',
           objectFit: 'cover',
-          opacity: 0.9,
+          opacity: 0.72,
+          // Desaturar + enfriar para eliminar el tinte verde-amarillo del agua y
+          // que todo se unifique bajo el navy de la marca (sigue visible como textura).
+          filter: 'saturate(0.45) brightness(0.8) contrast(1.05)',
           zIndex: 0,
           pointerEvents: 'none',
         }}
       >
         <source src="/creditex-ptari.mp4" type="video/mp4" />
       </video>
-      {/* Overlay oscuro y dorado tenue para que las tarjetas resalten (igual que el Login) */}
+      {/* Lavado NAVY cohesivo (sin dorado) — unifica el fondo con la marca y hace
+          resaltar las tarjetas. Sustituye al overlay que mezclaba dorado+verde. */}
       <div aria-hidden="true" style={{
         position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
         background:
-          'radial-gradient(circle at center, rgba(15,23,42,0.35) 0%, rgba(10,22,40,0.78) 70%, rgba(10,22,40,0.92) 100%),'
-          + 'linear-gradient(180deg, rgba(245,158,11,0.05) 0%, transparent 40%)',
+          'linear-gradient(180deg, rgba(8,20,38,0.88) 0%, rgba(12,30,55,0.58) 45%, rgba(8,18,34,0.90) 100%),'
+          + 'radial-gradient(130% 95% at 50% 6%, rgba(30,58,95,0.40) 0%, transparent 58%)',
       }} />
 
       {/* Botón SALIR (cierre de sesión total → vuelve al Login) */}
@@ -298,15 +302,12 @@ export default function SelectorPerfil() {
         CERRAR SESIÓN
       </button>
 
-      {/* === FONDO DINAMICO TIPO LINKEDIN === */}
-      {/* Mesh atenuado + multiply para que el video CREDITEX se vea por debajo (como en el Login). */}
-      <div className="grapco-mesh" style={{ opacity: 0.4, mixBlendMode: 'multiply' }} />
-      <div className="grapco-blob grapco-blob-1" />
-      <div className="grapco-blob grapco-blob-2" />
-      <div className="grapco-blob grapco-blob-3" />
-      <div className="grapco-blob grapco-blob-4" />
-      <div className="grapco-grid-bg" />
-      <div className="grapco-floating-icons" aria-hidden="true">
+      {/* === FONDO — solo capas neutras (sin blobs de colores que rompían la armonía) === */}
+      {/* Mesh muy atenuado para dar profundidad navy sin introducir color. Los blobs
+          ámbar/azul/rosa/verde se retiraron a propósito: chocaban con el video. */}
+      <div className="grapco-mesh" style={{ opacity: 0.2, mixBlendMode: 'multiply' }} />
+      <div className="grapco-grid-bg" style={{ opacity: 0.5 }} />
+      <div className="grapco-floating-icons" aria-hidden="true" style={{ opacity: 0.22 }}>
         <span className="grapco-fi grapco-fi-1">🏗️</span>
         <span className="grapco-fi grapco-fi-2">⚙️</span>
         <span className="grapco-fi grapco-fi-3">🔩</span>
@@ -447,7 +448,7 @@ export default function SelectorPerfil() {
             position: 'relative', zIndex: 1,
             width: '100%', maxWidth: '1100px',
             display: 'flex', alignItems: 'center', gap: '16px',
-            background: 'linear-gradient(135deg, rgba(229,168,47,0.16), rgba(13,148,136,0.16))',
+            background: 'linear-gradient(135deg, rgba(229,168,47,0.14), rgba(30,58,95,0.30))',
             border: `1.5px solid ${BASE.gold}66`,
             borderRadius: '16px', padding: '16px 20px', marginBottom: '18px',
             cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s ease',
@@ -457,7 +458,7 @@ export default function SelectorPerfil() {
         >
           <span style={{
             width: '52px', height: '52px', borderRadius: '14px', flexShrink: 0,
-            background: `linear-gradient(135deg, ${BASE.gold}, #0d9488)`, color: '#fff',
+            background: `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`, color: '#fff',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: `0 6px 18px ${BASE.gold}55`, fontSize: '24px',
           }}>📷</span>
