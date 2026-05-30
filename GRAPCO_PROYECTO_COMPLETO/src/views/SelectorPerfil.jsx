@@ -560,22 +560,23 @@ export default function SelectorPerfil() {
               </span>
             </div>
 
+            {/* Descripción COMPLETA — explica qué hace cada área */}
             <p style={{
-              fontSize: '11px', color: BASE.muted,
-              lineHeight: 1.45, margin: 0, flex: 1,
-              display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+              fontSize: '11.5px', color: BASE.muted,
+              lineHeight: 1.5, margin: 0, flex: 1,
             }}>
               {p.descripcion}
             </p>
 
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', maxHeight: '22px', overflow: 'hidden' }}>
+            {/* Etiquetas completas (todos los módulos del área, sin recortar) */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
               {p.accesos.map(a => (
                 <span key={a} style={{
                   background: BASE.bg,
                   color: BASE.muted,
                   border: `1px solid ${BASE.border}`,
-                  padding: '2px 8px', borderRadius: '999px',
-                  fontSize: '9px', fontWeight: 700, letterSpacing: '0.2px',
+                  padding: '3px 9px', borderRadius: '999px',
+                  fontSize: '9.5px', fontWeight: 700, letterSpacing: '0.2px',
                 }}>{a}</span>
               ))}
             </div>
