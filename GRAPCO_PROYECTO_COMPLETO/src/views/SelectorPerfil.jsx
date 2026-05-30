@@ -266,8 +266,9 @@ export default function SelectorPerfil() {
       <div aria-hidden="true" style={{
         position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
         background:
-          'linear-gradient(180deg, rgba(8,20,38,0.88) 0%, rgba(12,30,55,0.58) 45%, rgba(8,18,34,0.90) 100%),'
-          + 'radial-gradient(130% 95% at 50% 6%, rgba(30,58,95,0.40) 0%, transparent 58%)',
+          'radial-gradient(55% 38% at 50% 2%, rgba(40,74,118,0.55) 0%, transparent 62%),'
+          + 'linear-gradient(180deg, rgba(8,20,38,0.90) 0%, rgba(12,30,55,0.55) 46%, rgba(7,16,30,0.92) 100%),'
+          + 'radial-gradient(130% 110% at 50% 42%, transparent 52%, rgba(4,11,22,0.78) 100%)',
       }} />
 
       {/* Botón SALIR (cierre de sesión total → vuelve al Login) */}
@@ -305,16 +306,7 @@ export default function SelectorPerfil() {
       {/* === FONDO — solo capas neutras (sin blobs de colores que rompían la armonía) === */}
       {/* Mesh muy atenuado para dar profundidad navy sin introducir color. Los blobs
           ámbar/azul/rosa/verde se retiraron a propósito: chocaban con el video. */}
-      <div className="grapco-mesh" style={{ opacity: 0.2, mixBlendMode: 'multiply' }} />
-      <div className="grapco-floating-icons" aria-hidden="true" style={{ opacity: 0.22 }}>
-        <span className="grapco-fi grapco-fi-1">🏗️</span>
-        <span className="grapco-fi grapco-fi-2">⚙️</span>
-        <span className="grapco-fi grapco-fi-3">🔩</span>
-        <span className="grapco-fi grapco-fi-4">🦺</span>
-        <span className="grapco-fi grapco-fi-5">📐</span>
-        <span className="grapco-fi grapco-fi-6">🏢</span>
-        <span className="grapco-fi grapco-fi-7">🔧</span>
-      </div>
+      <div className="grapco-mesh" style={{ opacity: 0.18, mixBlendMode: 'multiply' }} />
       <div className="grapco-particles" aria-hidden="true">
         {Array.from({ length: 18 }).map((_, i) => (
           <span key={i} className="grapco-particle" style={{
@@ -346,14 +338,22 @@ export default function SelectorPerfil() {
           />
         </div>
         <h1 style={{
-          color: '#fff', fontSize: '22px', fontWeight: '900',
-          margin: '0 0 3px', letterSpacing: '1px',
+          color: '#fff', fontSize: '23px', fontWeight: '900',
+          margin: '0 0 5px', letterSpacing: '0.5px',
         }}>
           GRAPCO <span style={{ color: BASE.gold }}>S.A.C.</span>
         </h1>
+        {/* Eyebrow premium con líneas a los lados */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', margin: '0 auto' }}>
+          <span style={{ height: '1px', width: '28px', background: `linear-gradient(90deg, transparent, ${BASE.gold}aa)` }} />
+          <span style={{ color: BASE.gold, fontSize: '9.5px', fontWeight: 800, letterSpacing: '2.6px', textTransform: 'uppercase' }}>
+            Plataforma Integral de Gestión de Obra
+          </span>
+          <span style={{ height: '1px', width: '28px', background: `linear-gradient(90deg, ${BASE.gold}aa, transparent)` }} />
+        </div>
         <p style={{
           color: '#94a3b8', fontSize: '12px',
-          margin: '4px auto 0', maxWidth: '520px', lineHeight: 1.4,
+          margin: '8px auto 0', maxWidth: '520px', lineHeight: 1.4,
         }}>
           {modoPin
             ? 'Ingresa el PIN de obra (4 dígitos). Modo kiosk para personal de campo.'
@@ -440,32 +440,36 @@ export default function SelectorPerfil() {
             position: 'relative', zIndex: 1,
             width: '100%', maxWidth: '1100px',
             display: 'flex', alignItems: 'center', gap: '14px',
-            background: 'linear-gradient(135deg, rgba(229,168,47,0.14), rgba(30,58,95,0.30))',
-            border: `1.5px solid ${BASE.gold}66`,
-            borderRadius: '14px', padding: '11px 18px', marginBottom: '14px',
-            cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s ease',
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))',
+            backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: '16px', padding: '12px 18px', marginBottom: '16px',
+            cursor: 'pointer', textAlign: 'left', transition: 'all 0.22s ease',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 14px 34px -22px rgba(0,0,0,0.8)',
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = BASE.gold; }}
-          onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = `${BASE.gold}66`; }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = `${BASE.gold}88`; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; }}
         >
           <span style={{
             width: '42px', height: '42px', borderRadius: '12px', flexShrink: 0,
-            background: `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`, color: '#fff',
+            background: `linear-gradient(145deg, ${BASE.gold}, ${BASE.goldDark})`, color: '#fff',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: `0 6px 18px ${BASE.gold}55`, fontSize: '20px',
+            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.4), 0 6px 18px ${BASE.gold}55`, fontSize: '20px',
           }}>📷</span>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ color: '#fff', fontSize: '15px', fontWeight: 900, letterSpacing: '0.3px' }}>
+            <p style={{ color: '#fff', fontSize: '14.5px', fontWeight: 800, letterSpacing: '0.2px' }}>
               Registro de Personal · Reconocimiento Facial
             </p>
-            <p style={{ color: '#cbd5e1', fontSize: '11.5px', marginTop: '2px' }}>
+            <p style={{ color: '#9fb2c8', fontSize: '11.5px', marginTop: '2px' }}>
               Marca tu entrada/salida con la cara. Modo kiosko — no necesitas elegir perfil.
             </p>
           </div>
           <span style={{
-            color: BASE.gold, fontSize: '12px', fontWeight: 900,
-            letterSpacing: '0.6px', whiteSpace: 'nowrap',
-          }}>ABRIR ►</span>
+            color: BASE.navy, background: `linear-gradient(145deg, ${BASE.gold}, ${BASE.goldDark})`,
+            fontSize: '11px', fontWeight: 900, letterSpacing: '0.8px', whiteSpace: 'nowrap',
+            padding: '7px 14px', borderRadius: '999px',
+            boxShadow: `0 5px 14px -4px ${BASE.gold}88`,
+          }}>ABRIR →</span>
         </button>
       )}
 
@@ -481,9 +485,10 @@ export default function SelectorPerfil() {
       }}>
         {perfilesFiltrados.map((p) => {
           const acento = p.destacado ? BASE.gold : p.color;
+          // Sombra por capas + brillo interior superior (look "vidrio premium").
           const sombraBase = p.destacado
-            ? '0 18px 44px -18px rgba(229,168,47,0.50), 0 6px 16px -10px rgba(8,26,46,0.45)'
-            : '0 16px 40px -20px rgba(8,26,46,0.70), 0 4px 12px -8px rgba(8,26,46,0.35)';
+            ? `inset 0 1px 0 rgba(255,255,255,0.9), 0 20px 46px -22px rgba(229,168,47,0.45), 0 6px 16px -10px rgba(7,16,30,0.5)`
+            : `inset 0 1px 0 rgba(255,255,255,0.9), 0 20px 46px -24px rgba(7,16,30,0.75), 0 5px 14px -10px rgba(7,16,30,0.45)`;
           return (
           <button
             key={p.rol}
@@ -492,33 +497,34 @@ export default function SelectorPerfil() {
               cursor: 'pointer',
               position: 'relative',
               overflow: 'hidden',
-              background: 'rgba(255,255,255,0.98)',
-              border: `1px solid ${p.destacado ? BASE.gold + '99' : 'rgba(255,255,255,0.7)'}`,
-              borderRadius: '14px',
-              padding: '13px 14px 11px',
+              background: 'linear-gradient(180deg, #ffffff 0%, #f5f8fc 100%)',
+              border: `1px solid ${p.destacado ? BASE.gold + '88' : 'rgba(15,42,71,0.07)'}`,
+              borderRadius: '16px',
+              padding: '14px 15px 12px',
               textAlign: 'left',
               display: 'flex',
               flexDirection: 'column',
               gap: '8px',
-              transition: 'transform 0.22s cubic-bezier(0.34,1.4,0.64,1), box-shadow 0.22s ease, border-color 0.22s ease',
+              transition: 'transform 0.24s cubic-bezier(0.34,1.4,0.64,1), box-shadow 0.24s ease, border-color 0.24s ease',
               boxShadow: sombraBase,
               minHeight: '0',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-5px)';
-              e.currentTarget.style.boxShadow = `0 26px 54px -18px ${acento}66, 0 0 0 1.5px ${acento}`;
+              e.currentTarget.style.transform = 'translateY(-6px)';
+              e.currentTarget.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.9), 0 30px 60px -20px ${acento}5C, 0 0 0 1.5px ${acento}`;
               e.currentTarget.style.borderColor = acento;
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0)';
               e.currentTarget.style.boxShadow = sombraBase;
-              e.currentTarget.style.borderColor = p.destacado ? BASE.gold + '99' : 'rgba(255,255,255,0.7)';
+              e.currentTarget.style.borderColor = p.destacado ? BASE.gold + '88' : 'rgba(15,42,71,0.07)';
             }}
           >
-            {/* Barra de acento superior — identidad del área */}
+            {/* Barra de acento superior con glow — identidad del área */}
             <span style={{
-              position: 'absolute', top: 0, left: 0, right: 0, height: '4px',
-              background: `linear-gradient(90deg, ${acento}, ${acento}77)`,
+              position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
+              background: `linear-gradient(90deg, transparent, ${acento}, transparent)`,
+              boxShadow: `0 0 12px ${acento}99`,
             }} />
 
             {p.destacado && (
@@ -533,21 +539,22 @@ export default function SelectorPerfil() {
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span style={{
-                width: '38px', height: '38px',
-                borderRadius: '11px',
-                background: `${p.color}12`,
-                border: `1px solid ${p.color}2A`,
+                width: '40px', height: '40px',
+                borderRadius: '12px',
+                background: `linear-gradient(145deg, ${p.color}1F, ${p.color}0A)`,
+                border: `1px solid ${p.color}33`,
+                boxShadow: `inset 0 1px 0 rgba(255,255,255,0.6), 0 4px 10px -4px ${p.color}55`,
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
               }}>
-                <Icon name={p.iconName} size={19} color={p.color} strokeWidth={2} />
+                <Icon name={p.iconName} size={20} color={p.color} strokeWidth={2} />
               </span>
               <span style={{
                 fontSize: '13.5px', fontWeight: '800',
-                color: BASE.navy, lineHeight: 1.25,
-                letterSpacing: '-0.01em',
+                color: BASE.navy, lineHeight: 1.22,
+                letterSpacing: '-0.015em',
               }}>
                 {p.titulo}
               </span>
@@ -580,15 +587,16 @@ export default function SelectorPerfil() {
             }}>
               <span style={{
                 fontSize: '10.5px', fontWeight: 900, color: acento,
-                letterSpacing: '0.8px', textTransform: 'uppercase',
+                letterSpacing: '1px', textTransform: 'uppercase',
               }}>
                 Entrar
               </span>
               <span style={{
-                width: '24px', height: '24px', borderRadius: '999px',
-                background: `${acento}14`,
+                width: '26px', height: '26px', borderRadius: '999px',
+                background: `linear-gradient(145deg, ${acento}, ${acento}cc)`,
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                color: acento, fontSize: '13px', fontWeight: 900,
+                color: '#fff', fontSize: '13px', fontWeight: 900,
+                boxShadow: `0 4px 10px -3px ${acento}88`,
               }}>→</span>
             </div>
           </button>
