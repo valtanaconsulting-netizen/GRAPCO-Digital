@@ -536,6 +536,16 @@ service cloud.firestore {
     }
 
     // ════════════════════════════════════════════════════════════════
+    // DASHBOARD EJECUTIVO - Indicadores diarios (snapshots por proyecto+día)
+    // Lectura: todos los autenticados. Escritura (cierre del día): ingeniero/admin.
+    // ════════════════════════════════════════════════════════════════
+    match /Indicadores_Ejecutivos/{docId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ════════════════════════════════════════════════════════════════
     // DENEGAR TODO LO DEMÁS
     // Cualquier colección no listada arriba está bloqueada.
     // ════════════════════════════════════════════════════════════════

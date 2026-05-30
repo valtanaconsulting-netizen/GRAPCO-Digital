@@ -90,6 +90,7 @@ const APUsPanel           = lazy(() => import('./views/modulos/apus/APUsPanel'))
 const PanelGerencia       = lazy(() => import('./views/modulos/panelGerencia/PanelGerencia'));
 const ProyectosPanel      = lazy(() => import('./views/modulos/proyectos/ProyectosPanel'));
 const PortfolioPanel      = lazy(() => import('./views/modulos/portfolio/PortfolioPanel'));
+const DashboardEjecutivo  = lazy(() => import('./views/modulos/dashboardEjecutivo/DashboardEjecutivo'));
 const BIM                 = lazy(() => import('./views/BIM'));
 const CapatazPanel        = lazy(() => import('./views/capataz/CapatazPanel'));
 const SeguridadPanel      = lazy(() => import('./views/seguridad/SeguridadPanel'));
@@ -496,6 +497,7 @@ function AppInner() {
             { key: 'gerencia',    label: 'Tablero Ejecutivo',       iconName: 'pulse',       color: '#fbbf24',    group: 'GERENCIA' },
             { key: 'proyectos',   label: 'Cartera de Proyectos',    iconName: 'mapPin',      color: '#5eead4',    group: 'GERENCIA' },
             { key: 'portfolio',   label: 'Portafolio Estratégico',  iconName: 'lineChart',   color: '#fcd34d',    group: 'GERENCIA' },
+            { key: 'dashEjecutivo', label: 'Indicadores Diarios',   iconName: 'trendingUp',  color: '#fbbf24',    group: 'GERENCIA' },
             ...(rol === 'admin' ? [
               { key: 'admin', label: 'Administración del Sistema', iconName: 'shieldAdmin', color: BASE.red, group: 'ADMINISTRACIÓN' },
             ] : []),
@@ -836,6 +838,11 @@ function AppInner() {
             {/* Bloque 24 - Portfolio Ejecutivo */}
             {moduloIngeniero === 'portfolio' && (
               <PortfolioPanel showToast={showToast} />
+            )}
+
+            {/* Dashboard Ejecutivo · Indicadores diarios (snapshot a Firestore) */}
+            {moduloIngeniero === 'dashEjecutivo' && (
+              <DashboardEjecutivo showToast={showToast} isMobile={isMobile} />
             )}
 
             {/* Calidad — Modulo Bloque 20 */}
