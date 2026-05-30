@@ -95,6 +95,21 @@ const BIM                 = lazy(() => import('./views/BIM'));
 const CapatazPanel        = lazy(() => import('./views/capataz/CapatazPanel'));
 const SeguridadPanel      = lazy(() => import('./views/seguridad/SeguridadPanel'));
 
+// ── Alcance de módulos por ÁREA (sidebar del shell ingeniero/admin/planeamiento) ──
+// Cada área ve SOLO sus módulos. Únicamente Administración (admin) ve todos.
+//   - ingeniero  → Producción: avance, registro, carta balance, sala de operaciones, materiales, BIM
+//   - planeamiento → WBS, APU, Last Planner
+//   - admin      → null = TODOS los módulos (acceso completo)
+const KEYS_PRODUCCION  = ['dashboard', 'registro', 'carta', 'warroom', 'materiales', 'bim'];
+const KEYS_PLANEAMIENTO = ['planMaestro', 'apus', 'lps'];
+// Devuelve la lista de keys permitidas para el rol, o null si ve todo (admin).
+const keysPermitidasPorRol = (rol) => {
+  if (rol === 'admin') return null;            // acceso total
+  if (rol === 'planeamiento') return KEYS_PLANEAMIENTO;
+  if (rol === 'ingeniero') return KEYS_PRODUCCION;
+  return null;
+};
+
 export default function App() {
   // Service Worker DESACTIVADO. La limpieza/unregister de SW viejos vive en main.jsx.
   // No re-registramos aqui para evitar caches stale que ocultaban la data al usuario.
@@ -150,6 +165,15 @@ function AppInner() {
 
   const [moduloIngeniero, setModuloIngeniero] = useState('dashboard');
   const [drawerOpen, setDrawerOpen] = useState(false); // menú móvil (hamburguesa)
+
+  // Si el módulo activo no está permitido para el área actual, salta al primero permitido.
+  // (Ej.: Planeamiento no incluye "Producción" → arranca en Plan Maestro.)
+  useEffect(() => {
+    const keys = keysPermitidasPorRol(rol);
+    if (keys && keys.length && !keys.includes(moduloIngeniero)) {
+      setModuloIngeniero(keys[0]);
+    }
+  }, [rol, moduloIngeniero]);
 
   // Sidebar colapsado (solo iconos) — persistido en localStorage para que el usuario
   // mantenga su preferencia entre sesiones.
@@ -502,10 +526,10 @@ function AppInner() {
               { key: 'admin', label: 'Administración del Sistema', iconName: 'shieldAdmin', color: BASE.red, group: 'ADMINISTRACIÓN' },
             ] : []),
           ];
-          // Planeamiento ve sólo módulos relevantes a planificación + gestión analítica
-          const KEYS_PLAN = ['planMaestro', 'apus', 'lps', 'dashboard', 'warroom', 'gerencia', 'proyectos', 'portfolio', 'bim'];
-          const SIDEBAR_ITEMS = rol === 'planeamiento'
-            ? ITEMS_FULL.filter(it => KEYS_PLAN.includes(it.key))
+          // Cada área ve SOLO sus módulos; admin (Administración) ve todos.
+          const keysRol = keysPermitidasPorRol(rol);
+          const SIDEBAR_ITEMS = keysRol
+            ? ITEMS_FULL.filter(it => keysRol.includes(it.key))
             : ITEMS_FULL;
           const grupos = {};
           SIDEBAR_ITEMS.forEach(it => {
