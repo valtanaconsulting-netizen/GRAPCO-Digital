@@ -306,7 +306,6 @@ export default function SelectorPerfil() {
       {/* Mesh muy atenuado para dar profundidad navy sin introducir color. Los blobs
           ámbar/azul/rosa/verde se retiraron a propósito: chocaban con el video. */}
       <div className="grapco-mesh" style={{ opacity: 0.2, mixBlendMode: 'multiply' }} />
-      <div className="grapco-grid-bg" style={{ opacity: 0.5 }} />
       <div className="grapco-floating-icons" aria-hidden="true" style={{ opacity: 0.22 }}>
         <span className="grapco-fi grapco-fi-1">🏗️</span>
         <span className="grapco-fi grapco-fi-2">⚙️</span>
@@ -495,12 +494,12 @@ export default function SelectorPerfil() {
               overflow: 'hidden',
               background: 'rgba(255,255,255,0.98)',
               border: `1px solid ${p.destacado ? BASE.gold + '99' : 'rgba(255,255,255,0.7)'}`,
-              borderRadius: '16px',
-              padding: '16px 16px 13px',
+              borderRadius: '14px',
+              padding: '13px 14px 11px',
               textAlign: 'left',
               display: 'flex',
               flexDirection: 'column',
-              gap: '9px',
+              gap: '8px',
               transition: 'transform 0.22s cubic-bezier(0.34,1.4,0.64,1), box-shadow 0.22s ease, border-color 0.22s ease',
               boxShadow: sombraBase,
               minHeight: '0',
@@ -532,10 +531,10 @@ export default function SelectorPerfil() {
               }}>★ ACCESO TOTAL</span>
             )}
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span style={{
-                width: '42px', height: '42px',
-                borderRadius: '12px',
+                width: '38px', height: '38px',
+                borderRadius: '11px',
                 background: `${p.color}12`,
                 border: `1px solid ${p.color}2A`,
                 display: 'inline-flex',
@@ -543,11 +542,11 @@ export default function SelectorPerfil() {
                 justifyContent: 'center',
                 flexShrink: 0,
               }}>
-                <Icon name={p.iconName} size={21} color={p.color} strokeWidth={2} />
+                <Icon name={p.iconName} size={19} color={p.color} strokeWidth={2} />
               </span>
               <span style={{
-                fontSize: '15.5px', fontWeight: '800',
-                color: BASE.navy, lineHeight: 1.3,
+                fontSize: '13.5px', fontWeight: '800',
+                color: BASE.navy, lineHeight: 1.25,
                 letterSpacing: '-0.01em',
               }}>
                 {p.titulo}
@@ -555,20 +554,21 @@ export default function SelectorPerfil() {
             </div>
 
             <p style={{
-              fontSize: '11.5px', color: BASE.muted,
-              lineHeight: 1.55, margin: 0, flex: 1,
+              fontSize: '11px', color: BASE.muted,
+              lineHeight: 1.45, margin: 0, flex: 1,
+              display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
             }}>
               {p.descripcion}
             </p>
 
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', maxHeight: '22px', overflow: 'hidden' }}>
               {p.accesos.map(a => (
                 <span key={a} style={{
                   background: BASE.bg,
                   color: BASE.muted,
                   border: `1px solid ${BASE.border}`,
-                  padding: '3px 9px', borderRadius: '999px',
-                  fontSize: '9.5px', fontWeight: 700, letterSpacing: '0.2px',
+                  padding: '2px 8px', borderRadius: '999px',
+                  fontSize: '9px', fontWeight: 700, letterSpacing: '0.2px',
                 }}>{a}</span>
               ))}
             </div>
@@ -576,19 +576,19 @@ export default function SelectorPerfil() {
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               borderTop: `1px solid ${BASE.borderSoft}`,
-              paddingTop: '12px', marginTop: '2px',
+              paddingTop: '9px', marginTop: '1px',
             }}>
               <span style={{
-                fontSize: '11px', fontWeight: 900, color: acento,
+                fontSize: '10.5px', fontWeight: 900, color: acento,
                 letterSpacing: '0.8px', textTransform: 'uppercase',
               }}>
                 Entrar
               </span>
               <span style={{
-                width: '26px', height: '26px', borderRadius: '999px',
+                width: '24px', height: '24px', borderRadius: '999px',
                 background: `${acento}14`,
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                color: acento, fontSize: '14px', fontWeight: 900,
+                color: acento, fontSize: '13px', fontWeight: 900,
               }}>→</span>
             </div>
           </button>
