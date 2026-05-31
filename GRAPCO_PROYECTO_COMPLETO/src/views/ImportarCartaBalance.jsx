@@ -193,10 +193,10 @@ export default function ImportarCartaBalance({ showToast }) {
 
       {/* KPIs en vivo */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
-        <Kpi l="TP · Productivo" v={`${kpis.pTP.toFixed(0)}%`} c={CB_COL.TP} sub={`${kpis.tp} obs`} />
-        <Kpi l="TC · Contributorio" v={`${kpis.pTC.toFixed(0)}%`} c={CB_COL.TC} sub={`${kpis.tc} obs`} />
-        <Kpi l="TNC · No contrib." v={`${kpis.pTNC.toFixed(0)}%`} c={CB_COL.TNC} sub={`${kpis.tnc} obs`} />
-        <Kpi l="LUF" v={`${kpis.luf.toFixed(0)}%`} c={clsLuf.color} sub={clsLuf.label} />
+        <Kpi l="TP · Productivo" v={`${kpis.pTP.toFixed(1)}%`} c={CB_COL.TP} sub={`${kpis.tp} obs`} />
+        <Kpi l="TC · Contributorio" v={`${kpis.pTC.toFixed(1)}%`} c={CB_COL.TC} sub={`${kpis.tc} obs`} />
+        <Kpi l="TNC · No contrib." v={`${kpis.pTNC.toFixed(1)}%`} c={CB_COL.TNC} sub={`${kpis.tnc} obs`} />
+        <Kpi l="LUF" v={`${kpis.luf.toFixed(1)}%`} c={clsLuf.color} sub={clsLuf.label} />
       </div>
 
       {/* Grid de conteos */}
