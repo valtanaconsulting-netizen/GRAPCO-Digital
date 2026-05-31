@@ -91,6 +91,7 @@ const PanelGerencia       = lazy(() => import('./views/modulos/panelGerencia/Pan
 const ProyectosPanel      = lazy(() => import('./views/modulos/proyectos/ProyectosPanel'));
 const PortfolioPanel      = lazy(() => import('./views/modulos/portfolio/PortfolioPanel'));
 const DashboardEjecutivo  = lazy(() => import('./views/modulos/dashboardEjecutivo/DashboardEjecutivo'));
+const RadarProduccion     = lazy(() => import('./views/modulos/radarProduccion/RadarProduccion'));
 const BIM                 = lazy(() => import('./views/BIM'));
 const CapatazPanel        = lazy(() => import('./views/capataz/CapatazPanel'));
 const SeguridadPanel      = lazy(() => import('./views/seguridad/SeguridadPanel'));
@@ -100,7 +101,7 @@ const SeguridadPanel      = lazy(() => import('./views/seguridad/SeguridadPanel'
 //   - ingeniero  → Producción: avance, registro, carta balance, sala de operaciones, materiales, BIM
 //   - planeamiento → WBS, APU, Last Planner
 //   - admin      → null = TODOS los módulos (acceso completo)
-const KEYS_PRODUCCION  = ['dashboard', 'registro', 'carta', 'warroom', 'materiales', 'bim'];
+const KEYS_PRODUCCION  = ['dashboard', 'radarProd', 'registro', 'carta', 'warroom', 'materiales', 'bim'];
 const KEYS_PLANEAMIENTO = ['planMaestro', 'apus', 'lps'];
 // Devuelve la lista de keys permitidas para el rol, o null si ve todo (admin).
 const keysPermitidasPorRol = (rol) => {
@@ -529,6 +530,7 @@ function AppInner() {
           const ITEMS_FULL = [
             // PRODUCCIÓN — control de avance, productividad y carta balance
             { key: 'dashboard',   label: 'Producción',              iconName: 'barChart3',   color: BASE.gold,    group: 'PRODUCCIÓN' },
+            { key: 'radarProd',   label: 'Radar de Producción',     iconName: 'target',      color: '#f87171',    group: 'PRODUCCIÓN' },
             { key: 'registro',    label: 'Registro de Producción',  iconName: 'registro',    color: BASE.green,   group: 'PRODUCCIÓN' },
             { key: 'carta',       label: 'Carta Balance',           iconName: 'balance',     color: BASE.orange,  group: 'PRODUCCIÓN' },
             { key: 'warroom',     label: 'Sala de Operaciones',     iconName: 'target',      color: '#f87171',    group: 'PRODUCCIÓN' },
@@ -806,6 +808,11 @@ function AppInner() {
                 isMobile={isMobile}
                 showToast={showToast}
               />
+            )}
+
+            {/* Radar de Producción — alertas predictivas */}
+            {moduloIngeniero === 'radarProd' && (
+              <RadarProduccion isMobile={isMobile} />
             )}
 
             {/* Planeamiento — Last Planner System (módulo lateral propio) */}
