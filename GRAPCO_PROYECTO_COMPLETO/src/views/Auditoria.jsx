@@ -67,22 +67,22 @@ export default function Auditoria({ filtrados, eliminar, hhPorSemana = [], hhTot
                     const pct = hhTotales.total > 0 ? (s.total / hhTotales.total * 100) : 0;
                     return (
                       <tr key={s.semana} style={{borderBottom:`1px solid ${BASE.border}`}}>
-                        <td style={{padding:'7px 10px',fontWeight:'700',color:BASE.navy}}>S{s.semana}</td>
-                        <td style={{padding:'7px 10px',textAlign:'center'}}>{fmt1(s.hn)}</td>
-                        <td style={{padding:'7px 10px',textAlign:'center',color:s.he>0?BASE.orange:BASE.muted,fontWeight:s.he>0?'700':'400'}}>{fmt1(s.he)}</td>
-                        <td style={{padding:'7px 10px',textAlign:'center',fontWeight:'800',color:BASE.navy}}>{fmt1(s.total)}</td>
-                        <td style={{padding:'7px 10px',textAlign:'center',color:BASE.muted}}>{s.registros}</td>
-                        <td style={{padding:'7px 10px',textAlign:'center',color:BASE.muted,fontWeight:'600'}}>{pct.toFixed(1)}%</td>
+                        <td style={{padding:'9px 12px',fontWeight:'700',color:BASE.navy}}>S{s.semana}</td>
+                        <td style={{padding:'9px 12px',textAlign:'center'}}>{fmt1(s.hn)}</td>
+                        <td style={{padding:'9px 12px',textAlign:'center',color:s.he>0?BASE.orange:BASE.muted,fontWeight:s.he>0?'700':'400'}}>{fmt1(s.he)}</td>
+                        <td style={{padding:'9px 12px',textAlign:'center',fontWeight:'800',color:BASE.navy}}>{fmt1(s.total)}</td>
+                        <td style={{padding:'9px 12px',textAlign:'center',color:BASE.muted}}>{s.registros}</td>
+                        <td style={{padding:'9px 12px',textAlign:'center',color:BASE.muted,fontWeight:'600'}}>{pct.toFixed(1)}%</td>
                       </tr>
                     );
                   })}
                   <tr style={{background:BASE.navy,color:'#fff',fontWeight:'800'}}>
-                    <td style={{padding:'9px 10px',color:'#fff'}}>TOTAL</td>
-                    <td style={{padding:'9px 10px',textAlign:'center',color:'#fff'}}>{fmt1(hhTotales.hn)}</td>
-                    <td style={{padding:'9px 10px',textAlign:'center',color:'#fdba74'}}>{fmt1(hhTotales.he)}</td>
-                    <td style={{padding:'9px 10px',textAlign:'center',color:'#fff',fontSize:'13px'}}>{fmt1(hhTotales.total)}</td>
-                    <td style={{padding:'9px 10px',textAlign:'center',color:'#fff'}}>{filtrados.length}</td>
-                    <td style={{padding:'9px 10px',textAlign:'center',color:'#86efac'}}>100.0%</td>
+                    <td style={{padding:'10px 13px',color:'#fff'}}>TOTAL</td>
+                    <td style={{padding:'10px 13px',textAlign:'center',color:'#fff'}}>{fmt1(hhTotales.hn)}</td>
+                    <td style={{padding:'10px 13px',textAlign:'center',color:'#fdba74'}}>{fmt1(hhTotales.he)}</td>
+                    <td style={{padding:'10px 13px',textAlign:'center',color:'#fff',fontSize:'13px'}}>{fmt1(hhTotales.total)}</td>
+                    <td style={{padding:'10px 13px',textAlign:'center',color:'#fff'}}>{filtrados.length}</td>
+                    <td style={{padding:'10px 13px',textAlign:'center',color:'#86efac'}}>100.0%</td>
                   </tr>
                 </tbody>
               </table>
@@ -135,32 +135,32 @@ export default function Auditoria({ filtrados, eliminar, hhPorSemana = [], hhTot
                   const metZero = (parseFloat(r.metrado) || 0) <= 0;
                   return (
                     <tr key={r.id} style={{background:idx%2===0?BASE.white:'#f8fafc',borderBottom:`1px solid ${BASE.border}`}}>
-                      <td style={{padding:'9px 10px',fontWeight:'700',color:BASE.navy}}>S{r.semana}</td>
-                      <td style={{padding:'9px 10px',color:BASE.muted,fontSize:'11px'}}>{r.fecha}</td>
-                      <td style={{padding:'9px 10px',fontSize:'10px',color:BASE.muted,maxWidth:'120px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} title={r.partida}>
+                      <td style={{padding:'10px 13px',fontWeight:'700',color:BASE.navy}}>S{r.semana}</td>
+                      <td style={{padding:'10px 13px',color:BASE.muted,fontSize:'11px'}}>{r.fecha}</td>
+                      <td style={{padding:'10px 13px',fontSize:'10px',color:BASE.muted,maxWidth:'120px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} title={r.partida}>
                         {r._partidaCanonica || r.partida}
                       </td>
-                      <td style={{padding:'9px 10px',fontWeight:'600',maxWidth:'200px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} title={r.actividad}>
+                      <td style={{padding:'10px 13px',fontWeight:'600',maxWidth:'200px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} title={r.actividad}>
                         {fuzzyMatch && (<span style={{fontSize:'9px',color:'#7c3aed',marginRight:'4px'}} title={`Catálogo: ${r._actividadCanonica}`}>≈</span>)}
                         {r.actividad}
                       </td>
-                      <td style={{padding:'9px 10px',textAlign:'center',color:BASE.navy,fontWeight:'700',fontSize:'11px'}}>
+                      <td style={{padding:'10px 13px',textAlign:'center',color:BASE.navy,fontWeight:'700',fontSize:'11px'}}>
                         <span style={{background:'#eff6ff',padding:'2px 8px',borderRadius:'10px',border:'1px solid #bfdbfe'}}>{r.unidad || '—'}</span>
                       </td>
-                      <td style={{padding:'9px 10px',textAlign:'center',color:metZero?'#dc2626':BASE.text,fontWeight:metZero?'700':'400'}}>{r.metrado}</td>
-                      <td style={{padding:'9px 10px',textAlign:'center',color:BASE.text}}>{fmt1(hn)}</td>
-                      <td style={{padding:'9px 10px',textAlign:'center',color:he>0?BASE.orange:BASE.muted,fontWeight:he>0?'700':'400'}}>{fmt1(he)}</td>
-                      <td style={{padding:'9px 10px',textAlign:'center',fontWeight:'700',color:BASE.navy}}>{fmt1(total)}</td>
-                      <td style={{padding:'9px 10px',textAlign:'center',fontWeight:'700',color:BASE.text}}>
+                      <td style={{padding:'10px 13px',textAlign:'center',color:metZero?'#dc2626':BASE.text,fontWeight:metZero?'700':'400'}}>{r.metrado}</td>
+                      <td style={{padding:'10px 13px',textAlign:'center',color:BASE.text}}>{fmt1(hn)}</td>
+                      <td style={{padding:'10px 13px',textAlign:'center',color:he>0?BASE.orange:BASE.muted,fontWeight:he>0?'700':'400'}}>{fmt1(he)}</td>
+                      <td style={{padding:'10px 13px',textAlign:'center',fontWeight:'700',color:BASE.navy}}>{fmt1(total)}</td>
+                      <td style={{padding:'10px 13px',textAlign:'center',fontWeight:'700',color:BASE.text}}>
                         {ipReal ? parseFloat(ipReal).toFixed(3) : '—'}
                       </td>
-                      <td style={{padding:'9px 10px',textAlign:'center',color:BASE.muted}}>
+                      <td style={{padding:'10px 13px',textAlign:'center',color:BASE.muted}}>
                         {ipMeta ? parseFloat(ipMeta).toFixed(3) : '—'}
                       </td>
-                      <td style={{padding:'9px 10px',textAlign:'center',fontWeight:'800',color:cc.color,background:cc.bg}}>
+                      <td style={{padding:'10px 13px',textAlign:'center',fontWeight:'800',color:cc.color,background:cc.bg}}>
                         {fmtCPIPct(cpi)}
                       </td>
-                      <td style={{padding:'9px 10px',textAlign:'center'}} title={fnt.title}>
+                      <td style={{padding:'10px 13px',textAlign:'center'}} title={fnt.title}>
                         <span style={{fontSize:'14px',color:fnt.color}}>{fnt.icon}</span>
                       </td>
                       <td style={{padding:'6px 8px',textAlign:'center'}}>
@@ -175,7 +175,7 @@ export default function Auditoria({ filtrados, eliminar, hhPorSemana = [], hhTot
                           <span style={{fontSize:'10px',color:BASE.muted,opacity:0.4}}>—</span>
                         )}
                       </td>
-                      <td style={{padding:'9px 10px',textAlign:'center'}}>
+                      <td style={{padding:'10px 13px',textAlign:'center'}}>
                         <button onClick={()=>eliminar(r)} style={{padding:'4px 10px',background:'#fee2e2',color:'#dc2626',border:'none',borderRadius:'6px',fontSize:'11px',fontWeight:'700',cursor:'pointer'}}>✕</button>
                       </td>
                     </tr>
