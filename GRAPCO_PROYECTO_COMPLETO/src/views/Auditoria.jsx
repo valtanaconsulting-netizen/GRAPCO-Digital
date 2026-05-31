@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { BASE } from '../utils/styles';
 import { calcCPI, getEstado, fmt1, fmtCPIPct } from '../utils/helpers';
 import { FotoGaleriaCompacta } from '../components/FotoUploader';
+import VistaHeader from '../components/VistaHeader';
 
 export default function Auditoria({ filtrados, eliminar, hhPorSemana = [], hhTotales = { hn:0, he:0, total:0 }, totalBaseDatos = 0 }) {
   const [hhOpen, setHhOpen] = useState(false);
@@ -32,6 +33,10 @@ export default function Auditoria({ filtrados, eliminar, hhPorSemana = [], hhTot
 
   return (
     <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
+
+      <VistaHeader icono="registro" eyebrow="Producción"
+        titulo="Auditoría de Registros"
+        subtitulo="Validación de tareos, HH y CPI por registro de campo" />
 
       {/* PANEL HH SEMANAL — colapsable */}
       <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,overflow:'hidden',boxShadow:BASE.shadowMd}}>

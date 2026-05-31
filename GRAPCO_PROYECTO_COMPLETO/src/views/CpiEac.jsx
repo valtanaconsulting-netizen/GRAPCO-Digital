@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { INFO_MAP } from '../utils/constants';
 import { BASE } from '../utils/styles';
 import { calcCPI, fmtCPIPct, fmt1, getEstado } from '../utils/helpers';
+import VistaHeader from '../components/VistaHeader';
 
 // Badge para etiquetas de tipo de dato
 const Badge = ({ tipo }) => {
@@ -320,6 +321,10 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
 
   return (
     <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
+
+      <VistaHeader icono="chartBars" eyebrow="Producción"
+        titulo="CPI + EAC · Desempeño"
+        subtitulo="Eficiencia (CPI) por actividad, valor ganado y proyección de cierre (EAC)" />
 
       {/* CONTROLES DE VISTA — META o PPT + chips inline */}
       <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,padding:'12px 16px'}}>
