@@ -74,6 +74,7 @@ const PLANTILLAS = [
     data: {
       obra: 'CREDITEX PTARI', fecha: '2026-01-12', actividad: 'COLOCACIÓN DE ACERO',
       ubicacion: 'Av. Los Hornos 185, Ate.', horaInicio: '09:30', horaFin: '12:00',
+      conclusiones: 'TP 50% (armado y amarrado de acero). El TNC fue casi todo ESPERA (90.7%) por falta de sincronización entre quien sube el acero y quien lo arma. Recomendación: un grupo sube el acero de forma continua y otro lo arma de inmediato; poner a los trabajadores más rápidos en la parte inferior para marcar el ritmo.',
       trabajadores: [
         { letra: 'A', nombre: 'RUIZ RIOS, SANTIAGO ALFONSO', cargo: 'Operario' },
         { letra: 'B', nombre: 'PIMPINCO CRUZADO, SERGIO OLIVERIO', cargo: 'Operario' },
@@ -99,6 +100,7 @@ const PLANTILLAS = [
     data: {
       obra: 'CREDITEX PTARI', fecha: '2026-01-15', actividad: 'COLOCACIÓN DE ACERO',
       ubicacion: 'Av. Los Hornos 185, Ate.', horaInicio: '09:30', horaFin: '12:30',
+      conclusiones: 'TP 49% (colocación y amarrado de acero). El TC se concentró en acarreo (32%), aplomado (31%) y subida de acero (21%) por la lejanía del acopio y el trabajo en altura. El TNC (15%) fue dominado por ESPERA (85.9%) por descoordinación en el izaje. Recomendación: reubicar el acopio más cerca del frente y definir una secuencia clara de izaje con roles fijos.',
       trabajadores: [
         { letra: 'A', nombre: 'RUIZ RIOS, SANTIAGO ALFONSO', cargo: 'Operario' },
         { letra: 'B', nombre: 'VENTURO MURGA, ALEXANDER NICOLAY', cargo: 'Operario' },
@@ -124,6 +126,7 @@ const PLANTILLAS = [
     data: {
       obra: 'CREDITEX PTARI', fecha: '2026-01-28', actividad: 'COLOCACIÓN DE ACERO',
       ubicacion: 'Av. Los Hornos 185, Ate.', horaInicio: '10:00', horaFin: '12:00',
+      conclusiones: 'TP 51%. El TC estuvo dominado por el acarreo de materiales (79.4%) por la entrada pequeña a la zona de trabajo. El TNC (10%) se generó por tiempo de espera (47.9%) y baño (33.3%) por el acceso complicado. Recomendación: mejorar el acceso a la zona de trabajo y añadir un rol fijo de acarreo para subir la productividad.',
       trabajadores: [
         { letra: 'A', nombre: 'VEGA LOPEZ, ANDERSON JULIO', cargo: 'Oficial' },
         { letra: 'B', nombre: 'RUIZ RIOS, SANTIAGO ALFONSO', cargo: 'Operario' },
@@ -154,6 +157,7 @@ export default function ImportarCartaBalance({ showToast }) {
   const [ficha, setFicha] = useState({
     obra: PRECARGA.obra, fecha: PRECARGA.fecha, actividad: PRECARGA.actividad,
     ubicacion: PRECARGA.ubicacion, horaInicio: PRECARGA.horaInicio, horaFin: PRECARGA.horaFin,
+    conclusiones: PRECARGA.conclusiones || '',
   });
   const [trab, setTrab] = useState(PRECARGA.trabajadores);
   const [conteos, setConteos] = useState(PRECARGA.conteos);
@@ -181,12 +185,12 @@ export default function ImportarCartaBalance({ showToast }) {
     const p = PLANTILLAS.find((x) => x.key === key);
     if (!p) return;
     const d = p.data;
-    setFicha({ obra: d.obra, fecha: d.fecha, actividad: d.actividad, ubicacion: d.ubicacion, horaInicio: d.horaInicio, horaFin: d.horaFin });
+    setFicha({ obra: d.obra, fecha: d.fecha, actividad: d.actividad, ubicacion: d.ubicacion, horaInicio: d.horaInicio, horaFin: d.horaFin, conclusiones: d.conclusiones || '' });
     setTrab(d.trabajadores);
     setConteos(d.conteos);
   };
   const vaciar = () => {
-    setFicha({ obra: 'CREDITEX PTARI', fecha: '', actividad: '', ubicacion: '', horaInicio: '', horaFin: '' });
+    setFicha({ obra: 'CREDITEX PTARI', fecha: '', actividad: '', ubicacion: '', horaInicio: '', horaFin: '', conclusiones: '' });
     setTrab([{ letra: 'A', nombre: '', cargo: 'Operario' }]);
     setConteos({});
   };
@@ -235,6 +239,7 @@ export default function ImportarCartaBalance({ showToast }) {
       const docData = {
         obra: ficha.obra, fecha: ficha.fecha, actividad: actNorm,
         ubicacion: ficha.ubicacion, horaInicio: ficha.horaInicio, horaFin: ficha.horaFin,
+        conclusiones: (ficha.conclusiones || '').trim(),
         trabajadores: trab.map((t) => ({ nombre: t.nombre.trim(), cargo: CARGOS_CORTO[t.cargo] || 'OP' })),
         personas, observaciones, formatoVersion: 2,
         proyectoId: proyectoActivoId || null,
@@ -345,6 +350,12 @@ export default function ImportarCartaBalance({ showToast }) {
         <Campo l="Ubicación"><input style={inp()} value={ficha.ubicacion} onChange={(e) => setFicha({ ...ficha, ubicacion: e.target.value })} /></Campo>
         <Campo l="Hora inicio"><input style={inp()} value={ficha.horaInicio} onChange={(e) => setFicha({ ...ficha, horaInicio: e.target.value })} /></Campo>
         <Campo l="Hora término"><input style={inp()} value={ficha.horaFin} onChange={(e) => setFicha({ ...ficha, horaFin: e.target.value })} /></Campo>
+        <div style={{ gridColumn: '1 / -1' }}>
+          <label style={{ fontSize: '10px', fontWeight: 800, color: BASE.muted, letterSpacing: '0.4px', display: 'block', marginBottom: '3px', textTransform: 'uppercase' }}>Conclusiones / recomendaciones (opcional)</label>
+          <textarea value={ficha.conclusiones} onChange={(e) => setFicha({ ...ficha, conclusiones: e.target.value })} rows={3}
+            placeholder="Ej: TNC dominado por ESPERA. Recomendación: separar roles de subida y armado…"
+            style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: `1.5px solid ${BASE.border}`, fontSize: '12.5px', color: BASE.text, background: BASE.bgSoft, boxSizing: 'border-box', resize: 'vertical', fontFamily: BASE.font }} />
+        </div>
       </div>
 
       {/* KPIs en vivo */}
