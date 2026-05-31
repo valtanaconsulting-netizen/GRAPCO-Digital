@@ -110,14 +110,14 @@ export default function RadarProduccion({ isMobile }) {
               {cierre ? `${cierre.sobreFinal >= 0 ? '+' : '−'}${fmtS(Math.abs(cierre.sobreFinal))}` : '—'}
             </p>
             <p style={{ fontSize: 11, fontWeight: 700, opacity: 0.92, marginTop: 2 }}>
-              {cierre ? `${cierre.sobreFinal >= 0 ? 'Sobrecosto' : 'Ahorro'} estimado · ${cierre.pct >= 0 ? '+' : ''}${(cierre.pct * 100).toFixed(1)}% vs presupuesto` : 'Sin datos suficientes'}
+              {cierre ? `${cierre.sobreFinal >= 0 ? 'Sobrecosto' : 'Ahorro'} estimado · ${cierre.pct >= 0 ? '+' : ''}${Math.round(cierre.pct * 100)}% vs presupuesto` : 'Sin datos suficientes'}
             </p>
           </div>
           <div>
             <p style={{ fontSize: 10, fontWeight: 800, opacity: 0.8, letterSpacing: 0.8 }}>CPI RECIENTE → PROYECTADO</p>
             <p style={{ fontSize: isMobile ? 22 : 28, fontWeight: 900, lineHeight: 1.05, marginTop: 2 }}>
-              {resumen.cpiReciente ? (resumen.cpiReciente * 100).toFixed(1) : '—'}%
-              <span style={{ fontSize: 16, opacity: 0.85 }}> → {resumen.cpiProyectado ? (resumen.cpiProyectado * 100).toFixed(1) : '—'}%</span>
+              {resumen.cpiReciente ? Math.round(resumen.cpiReciente * 100) : '—'}%
+              <span style={{ fontSize: 16, opacity: 0.85 }}> → {resumen.cpiProyectado ? Math.round(resumen.cpiProyectado * 100) : '—'}%</span>
             </p>
             <p style={{ fontSize: 11, fontWeight: 700, opacity: 0.92, marginTop: 2 }}>
               {proyeccionCpi ? (proyeccionCpi.pendSemana < -0.002 ? '📉 Tendencia a la baja' : proyeccionCpi.pendSemana > 0.002 ? '📈 Tendencia al alza' : '➡️ Estable') : '—'}
@@ -126,7 +126,7 @@ export default function RadarProduccion({ isMobile }) {
           <div>
             <p style={{ fontSize: 10, fontWeight: 800, opacity: 0.8, letterSpacing: 0.8 }}>AVANCE / CIERRE PROYECTADO</p>
             <p style={{ fontSize: isMobile ? 22 : 28, fontWeight: 900, lineHeight: 1.05, marginTop: 2 }}>
-              {cierre ? cierre.avancePct.toFixed(1) : '—'}%
+              {cierre ? Math.round(cierre.avancePct) : '—'}%
               {resumen.plazo?.semFin != null && <span style={{ fontSize: 16, opacity: 0.85 }}> · ≈ S{resumen.plazo.semFin}</span>}
             </p>
             <div style={{ height: 7, background: 'rgba(255,255,255,0.22)', borderRadius: 999, marginTop: 6, overflow: 'hidden' }}>

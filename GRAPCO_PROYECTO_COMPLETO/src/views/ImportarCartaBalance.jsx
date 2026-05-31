@@ -193,10 +193,10 @@ export default function ImportarCartaBalance({ showToast }) {
 
       {/* KPIs en vivo */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
-        <Kpi l="TP · Productivo" v={`${kpis.pTP.toFixed(1)}%`} c={CB_COL.TP} sub={`${kpis.tp} obs`} />
-        <Kpi l="TC · Contributorio" v={`${kpis.pTC.toFixed(1)}%`} c={CB_COL.TC} sub={`${kpis.tc} obs`} />
-        <Kpi l="TNC · No contrib." v={`${kpis.pTNC.toFixed(1)}%`} c={CB_COL.TNC} sub={`${kpis.tnc} obs`} />
-        <Kpi l="LUF" v={`${kpis.luf.toFixed(1)}%`} c={clsLuf.color} sub={clsLuf.label} />
+        <Kpi l="TP · Productivo" v={`${Math.round(kpis.pTP)}%`} c={CB_COL.TP} sub={`${kpis.tp} obs`} />
+        <Kpi l="TC · Contributorio" v={`${Math.round(kpis.pTC)}%`} c={CB_COL.TC} sub={`${kpis.tc} obs`} />
+        <Kpi l="TNC · No contrib." v={`${Math.round(kpis.pTNC)}%`} c={CB_COL.TNC} sub={`${kpis.tnc} obs`} />
+        <Kpi l="LUF" v={`${Math.round(kpis.luf)}%`} c={clsLuf.color} sub={clsLuf.label} />
       </div>
 
       {/* Grid de conteos */}

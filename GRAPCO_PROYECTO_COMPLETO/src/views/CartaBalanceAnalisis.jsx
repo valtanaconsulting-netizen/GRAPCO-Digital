@@ -268,7 +268,7 @@ function TabComparar({ data, metas }) {
                 <span style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <span style={{ fontSize: 11, color: BASE.muted }}>{d.sesiones} ses · {d.totalObs} obs</span>
                   <span style={{ fontSize: 11, fontWeight: 900, color: '#fff', background: ev.color, padding: '3px 10px', borderRadius: 999 }}>{ev.label}</span>
-                  <span style={{ fontSize: 15, fontWeight: 900, color: BASE.navy, fontFamily: 'monospace', minWidth: 56, textAlign: 'right' }}>LUF {d.luf}%</span>
+                  <span style={{ fontSize: 15, fontWeight: 900, color: BASE.navy, fontFamily: 'monospace', minWidth: 56, textAlign: 'right' }}>LUF {Math.round(d.luf)}%</span>
                 </span>
               </div>
               <div style={{ display: 'flex', height: 16, borderRadius: 5, overflow: 'hidden', marginTop: 8 }}>
@@ -276,7 +276,7 @@ function TabComparar({ data, metas }) {
                 {d.tc > 0 && <div style={{ width: d.tc + '%', background: BASE.gold }} title={`TC ${d.tc}%`} />}
                 {d.tnc > 0 && <div style={{ width: d.tnc + '%', background: BASE.red }} title={`TNC ${d.tnc}%`} />}
               </div>
-              <p style={{ fontSize: 10, color: BASE.muted, marginTop: 4 }}>TP {d.tp}% · TC {d.tc}% · TNC {d.tnc}%</p>
+              <p style={{ fontSize: 10, color: BASE.muted, marginTop: 4 }}>TP {Math.round(d.tp)}% · TC {Math.round(d.tc)}% · TNC {Math.round(d.tnc)}%</p>
             </div>
           );
         })}
@@ -362,13 +362,13 @@ function TabRanking({ ranking }) {
               }}>
                 <td style={{ ...td(), fontWeight: '900', color: BASE.gold }}>{i + 1}</td>
                 <td style={{ ...td(), fontWeight: '800', color: BASE.navy }}>{r.nombre}</td>
-                <td style={{ ...td(), fontWeight: '900', color: r.clasificacion.color }}>{r.lufPromedio}%</td>
-                <td style={td()}>{r.tpPromedio}%</td>
-                <td style={td()}>{r.tcPromedio}%</td>
-                <td style={td()}>{r.tncPromedio}%</td>
+                <td style={{ ...td(), fontWeight: '900', color: r.clasificacion.color }}>{Math.round(r.lufPromedio)}%</td>
+                <td style={td()}>{Math.round(r.tpPromedio)}%</td>
+                <td style={td()}>{Math.round(r.tcPromedio)}%</td>
+                <td style={td()}>{Math.round(r.tncPromedio)}%</td>
                 <td style={td()}>{r.sesiones}</td>
                 <td style={td()}>{r.totalObs}</td>
-                <td style={td()}>{r.confianza}%</td>
+                <td style={td()}>{Math.round(r.confianza)}%</td>
               </tr>
             ))}
           </tbody>
@@ -401,7 +401,7 @@ function TabPareto({ cb }) {
           fontSize: '12px',
         }}>
           <span style={{ fontWeight: '800', color: BASE.navy }}>{fila.label}</span>
-          <span style={{ fontWeight: '900', color: BASE.navy }}>{fila.porcentaje}% (acum {fila.acumulado}%)</span>
+          <span style={{ fontWeight: '900', color: BASE.navy }}>{Math.round(fila.porcentaje)}% (acum {Math.round(fila.acumulado)}%)</span>
         </div>
       ))}
     </div>
@@ -430,7 +430,7 @@ function TabCrew({ cb }) {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
               <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>{g.nombre}</p>
-              <span style={{ color: cls.color, fontWeight: '900' }}>LUF {g.kpis.luf}%</span>
+              <span style={{ color: cls.color, fontWeight: '900' }}>LUF {Math.round(g.kpis.luf)}%</span>
             </div>
             <div style={{ display: 'flex', height: '20px', borderRadius: '6px', overflow: 'hidden' }}>
               {g.kpis.tp > 0 && <div style={{ width: g.kpis.tp + '%', background: BASE.green }} />}
@@ -438,7 +438,7 @@ function TabCrew({ cb }) {
               {g.kpis.tnc > 0 && <div style={{ width: g.kpis.tnc + '%', background: BASE.red }} />}
             </div>
             <p style={{ fontSize: '10px', color: BASE.muted, marginTop: '4px' }}>
-              TP {g.kpis.tp}% / TC {g.kpis.tc}% / TNC {g.kpis.tnc}% / {g.kpis.n} obs
+              TP {Math.round(g.kpis.tp)}% / TC {Math.round(g.kpis.tc)}% / TNC {Math.round(g.kpis.tnc)}% / {g.kpis.n} obs
             </p>
           </div>
         );

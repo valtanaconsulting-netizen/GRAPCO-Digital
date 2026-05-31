@@ -162,7 +162,7 @@ export default function DashboardEjecutivo({ showToast, isMobile }) {
   const display = useMemo(() => ({
     cpi: { label: 'Eficiencia (CPI)', valor: fmtCPIPct(ind.cpi), color: est.color,
       sub: !ind.cpi ? 'sin datos' : ind.cpi >= 1 ? 'bajo presupuesto' : ind.cpi >= 0.85 ? 'en alerta' : 'sobrecosto' },
-    avance: { label: 'Avance físico', valor: ind.avancePct != null ? ind.avancePct.toFixed(1) + '%' : '—',
+    avance: { label: 'Avance físico', valor: ind.avancePct != null ? Math.round(ind.avancePct) + '%' : '—',
       color: BASE.navy, sub: `${fmt1(ind.hhMeta)} / ${fmt1(ind.hhMetaTotal)} HH meta` },
     sobrecosto: { label: ind.sobrecosto >= 0 ? 'Sobrecosto acum.' : 'Ahorro acum.', valor: fmtS(Math.abs(ind.sobrecosto)),
       color: ind.sobrecosto >= 0 ? BASE.red : BASE.greenDark, sub: `${fmt1(Math.abs(ind.sobrecostoHH))} HH · S/ ${costoHH.toFixed(1)}/HH` },
@@ -456,7 +456,7 @@ export default function DashboardEjecutivo({ showToast, isMobile }) {
                   <tr key={s.id} style={{ borderTop: `1px solid ${BASE.border}`, background: i % 2 ? BASE.bgSoft : BASE.white }}>
                     <td style={{ padding: '7px 12px', fontWeight: 700, color: BASE.text }}>{s.fecha}</td>
                     <td style={{ padding: '7px 12px', textAlign: 'right', fontWeight: 800, color: getEstado(s.cpi).color }}>{fmtCPIPct(s.cpi)}</td>
-                    <td style={{ padding: '7px 12px', textAlign: 'right' }}>{s.avancePct != null ? s.avancePct.toFixed(1) + '%' : '—'}</td>
+                    <td style={{ padding: '7px 12px', textAlign: 'right' }}>{s.avancePct != null ? Math.round(s.avancePct) + '%' : '—'}</td>
                     <td style={{ padding: '7px 12px', textAlign: 'right', color: (s.sobrecosto || 0) >= 0 ? BASE.red : BASE.greenDark }}>{fmtS(Math.abs(s.sobrecosto || 0))}</td>
                     <td style={{ padding: '7px 12px', textAlign: 'right' }}>{fmt1(s.hhDia || 0)}</td>
                     <td style={{ padding: '7px 12px', textAlign: 'right' }}>{s.protocolosLiberados ?? '—'}</td>
