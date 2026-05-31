@@ -27,6 +27,24 @@ export const CARGOS_CORTO = {
 export const ESPECIALIDADES = ['Albañilería','Encofrado','Acero','Concreto','Instalaciones','Movimiento de Tierras','General'];
 export const CB_COL  = { TP:'#16a34a', TC:'#d97706', TNC:'#dc2626' };
 
+// ── Paleta de GRÁFICOS unificada (cohesión visual en toda la plataforma) ──
+// CHART: colores SEMÁNTICOS para series fijas (real/meta/presupuesto/cpi/proyección).
+// CHART_PALETTE: paleta CATEGÓRICA armonizada (tonos profundos, NO arcoíris saturado)
+// para gráficos con N categorías (cuadrillas, personas, partidas). Mismos tonos que
+// las tarjetas premium del selector de áreas → todo se siente de una sola plataforma.
+export const CHART = {
+  real:     '#0F2A47',  // navy — ejecutado/real
+  meta:     '#10B981',  // emerald — meta
+  ppto:     '#E5A82F',  // gold — presupuesto
+  cpi:      '#4F46E5',  // indigo — CPI (más sobrio que el violeta saturado)
+  forecast: '#0E7490',  // cyan profundo — proyección/forecast
+};
+export const CHART_PALETTE = [
+  '#0F2A47', '#E5A82F', '#0E7490', '#7E22CE', '#047857',
+  '#1D4ED8', '#BE123C', '#B45309', '#0F766E', '#475569',
+  '#9333EA', '#0891B2',
+];
+
 export const DEFAULT_TP  = [{cod:'ACE',desc:'Armado de acero'},{cod:'AMA',desc:'Amarrando acero'},{cod:'ENC',desc:'Encofrado'},{cod:'DES',desc:'Desencofrado'},{cod:'VAC',desc:'Vaciado concreto'},{cod:'VIB',desc:'Vibrado concreto'},{cod:'HAB',desc:'Habilitado acero'}];
 export const DEFAULT_TC  = [{cod:'AM',desc:'Acarreo materiales'},{cod:'AP',desc:'Aplomado/Alineado'},{cod:'SA',desc:'Subiendo material'},{cod:'MD',desc:'Midiendo distancias'},{cod:'COO',desc:'Coordinación'},{cod:'CA',desc:'Cortando material'},{cod:'AA',desc:'Armado andamio'},{cod:'CI',desc:'Col. instrumentos'}];
 export const DEFAULT_TNC = [{cod:'VI',desc:'Viaje'},{cod:'BA',desc:'Baño'},{cod:'ES',desc:'Espera'},{cod:'DE',desc:'Descanso'},{cod:'CO',desc:'Conversación'},{cod:'TR',desc:'Trabajo Rehecho'}];

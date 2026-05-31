@@ -16,7 +16,7 @@ const card = {
   background: BASE.white,
   borderRadius: '12px',
   border: `1px solid ${BASE.border}`,
-  boxShadow: '0 1px 3px rgba(15,23,42,0.04)',
+  boxShadow: BASE.shadowMd,
 };
 
 export default function PagoObreros({ historial = [], cuadrillasActivas = {}, configuracion = {}, personalDB = [], showToast }) {

@@ -34,7 +34,7 @@ export default function Auditoria({ filtrados, eliminar, hhPorSemana = [], hhTot
     <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
 
       {/* PANEL HH SEMANAL — colapsable */}
-      <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,overflow:'hidden'}}>
+      <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,overflow:'hidden',boxShadow:BASE.shadowMd}}>
         <button onClick={()=>setHhOpen(!hhOpen)}
           style={{width:'100%',padding:'12px 16px',display:'flex',alignItems:'center',gap:'10px',background:'transparent',border:'none',cursor:'pointer',fontWeight:'700'}}>
           <span style={{fontSize:'14px',color:BASE.navy}}>{hhOpen?'▼':'▶'}</span>
@@ -101,7 +101,7 @@ export default function Auditoria({ filtrados, eliminar, hhPorSemana = [], hhTot
       </div>
 
       {/* TABLA AUDITORÍA */}
-      <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,overflow:'hidden'}}>
+      <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,overflow:'hidden',boxShadow:BASE.shadowMd}}>
         <div style={{padding:'10px 14px',display:'flex',justifyContent:'space-between',alignItems:'center',borderBottom:`1px solid ${BASE.border}`,background:'#f8fafc'}}>
           <span style={{fontSize:'12px',fontWeight:'700',color:BASE.navy}}>📋 REGISTROS — Más reciente arriba</span>
           <span style={{fontSize:'10px',color:BASE.muted}}>{filtrados.length} registros</span>

@@ -61,8 +61,8 @@ const PAL = {
   real:     { stroke: '#0f1f3a', fill: '#0f1f3a', name: 'REAL' },         // navy
   meta:     { stroke: '#10b981', fill: '#10b981', name: 'META' },          // verde
   ppt:      { stroke: '#f59e0b', fill: '#f59e0b', name: 'PRESUPUESTO' },   // ámbar
-  cpi:      { stroke: '#8b5cf6', fill: '#8b5cf6', name: 'CPI' },           // violeta
-  forecast: { stroke: '#ec4899', fill: '#ec4899', name: 'FORECAST' },      // magenta
+  cpi:      { stroke: '#4F46E5', fill: '#4F46E5', name: 'CPI' },           // indigo (marca)
+  forecast: { stroke: '#0E7490', fill: '#0E7490', name: 'FORECAST' },      // cyan profundo (marca)
   // Bandas de estado (para CPI)
   optimo:   { fill: '#10b981', alpha: 0.06 },
   alerta:   { fill: '#f59e0b', alpha: 0.06 },

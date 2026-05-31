@@ -7,21 +7,18 @@ import {
   BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer,
   XAxis, YAxis, Tooltip, CartesianGrid, Legend,
 } from 'recharts';
-import { BASE } from '../utils/styles';
+import { BASE, CHART_PALETTE } from '../utils/styles';
 import { fmt1 } from '../utils/helpers';
 import { crearResolverNombre } from '../utils/nombresCanonicos';
 
-const PALETTE = [
-  '#2563eb', '#16a34a', '#d97706', '#7c3aed', '#dc2626',
-  '#0891b2', '#db2777', '#65a30d', '#ea580c', '#4338ca',
-  '#0f766e', '#a16207',
-];
+// Paleta categórica armonizada de marca (antes era un arcoíris saturado).
+const PALETTE = CHART_PALETTE;
 
 const card = {
   background: BASE.white,
   borderRadius: '12px',
   border: `1px solid ${BASE.border}`,
-  boxShadow: '0 1px 3px rgba(15,23,42,0.04)',
+  boxShadow: BASE.shadowMd,
 };
 
 const sectionTitle = {
