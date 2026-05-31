@@ -273,10 +273,10 @@ function ReporteTareos({ historial, tarifaPromedio, partidaExpandida, setPartida
             <tr>
               <th style={thStyle({ width: '60px', textAlign: 'center' })}>FRENTE</th>
               <th style={thStyle({ width: '80px', textAlign: 'center' })}>PARTIDA</th>
-              <th style={thStyle({ textAlign: 'left', paddingLeft: '20px' })}>DESCRIPCION</th>
-              <th style={thStyle({ width: '100px', textAlign: 'right', paddingRight: '20px' })}>HH</th>
-              <th style={thStyle({ width: '140px', textAlign: 'right', background: BASE.gold, color: '#fff', paddingRight: '22px' })}>COSTO</th>
-              <th style={thStyle({ width: '180px', textAlign: 'left', paddingLeft: '12px', paddingRight: '12px' })}>% DEL TOTAL</th>
+              <th style={thStyle({ width: '34%', textAlign: 'left', paddingLeft: '20px' })}>DESCRIPCION</th>
+              <th style={thStyle({ width: '110px', textAlign: 'right', paddingRight: '20px' })}>HH</th>
+              <th style={thStyle({ width: '150px', textAlign: 'right', background: BASE.gold, color: '#fff', paddingRight: '22px' })}>COSTO</th>
+              <th style={thStyle({ textAlign: 'left', paddingLeft: '16px', paddingRight: '20px' })}>% DEL TOTAL</th>
             </tr>
           </thead>
           <tbody>
@@ -324,16 +324,16 @@ function ReporteTareos({ historial, tarifaPromedio, partidaExpandida, setPartida
                       {fmtMoney(p.costo)}
                     </td>
                     <td style={tdStyle({ paddingLeft: '12px', paddingRight: '12px' })}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <div style={{
-                          flex: 1, height: '10px', borderRadius: '5px',
+                          flex: 1, height: '14px', borderRadius: '7px',
                           background: 'rgba(255,255,255,0.10)',
                           overflow: 'hidden', position: 'relative',
                         }}>
                           <div style={{
                             width: `${Math.min(100, pctTotal)}%`, height: '100%',
                             background: `linear-gradient(90deg, ${BASE.gold}, #fcd34d)`,
-                            borderRadius: '5px', transition: 'width 0.3s',
+                            borderRadius: '7px', transition: 'width 0.3s',
                           }}/>
                         </div>
                         <span style={{
