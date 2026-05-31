@@ -92,7 +92,8 @@ const PLANTILLAS = [
     },
   },
 ];
-const PRECARGA = PLANTILLAS[0].data;
+// Abre con la ÚLTIMA carta cargada (la más reciente) — lista para guardar.
+const PRECARGA = PLANTILLAS[PLANTILLAS.length - 1].data;
 
 const LETRAS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
 const n = (v) => parseInt(v, 10) || 0;
