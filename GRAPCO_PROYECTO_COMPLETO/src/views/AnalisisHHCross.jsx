@@ -10,6 +10,7 @@ import {
 import { BASE, CHART_PALETTE } from '../utils/styles';
 import { fmt1 } from '../utils/helpers';
 import { crearResolverNombre } from '../utils/nombresCanonicos';
+import VistaHeader from '../components/VistaHeader';
 
 // Paleta categórica armonizada de marca (antes era un arcoíris saturado).
 const PALETTE = CHART_PALETTE;
@@ -171,6 +172,10 @@ export default function AnalisisHHCross({ filtrados = [], personalDB = [] }) {
   // ════════════════════════════════════════════════════════════════
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+      <VistaHeader icono="users" eyebrow="Análisis"
+        titulo="Análisis de Cuadrillas"
+        subtitulo="HH cruzadas por cuadrilla, persona, actividad y día (cross-filtering)" />
 
       {/* ── BARRA SUPERIOR: modo + búsqueda + chips ───────────── */}
       <div style={{ ...card, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>

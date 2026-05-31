@@ -4,6 +4,7 @@ import * as XLSX from 'xlsx';
 import { BASE, inp } from '../utils/styles';
 import { hoy, fmtFecha } from '../utils/helpers';
 import DateInput from '../components/DateInput';
+import VistaHeader from '../components/VistaHeader';
 import { crearResolverNombre } from '../utils/nombresCanonicos';
 
 export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobile, showToast }) {
@@ -313,6 +314,10 @@ export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobi
 
   return (
     <div style={{display:'flex',flexDirection:'column',gap:'14px'}}>
+
+      <VistaHeader icono="clock" eyebrow="Gestión"
+        titulo="Tareo"
+        subtitulo="Horas-hombre por trabajador y exportación de planilla semanal" />
 
       {/* Filtros de rango */}
       <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,padding:'18px'}}>

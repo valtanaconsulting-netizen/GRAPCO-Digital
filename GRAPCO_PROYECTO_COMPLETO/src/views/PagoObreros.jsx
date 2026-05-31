@@ -11,6 +11,7 @@ import {
 } from '../utils/helpers';
 import { exportarCostosHE } from '../utils/excelExport';
 import { crearResolverNombre } from '../utils/nombresCanonicos';
+import VistaHeader from '../components/VistaHeader';
 
 const card = {
   background: BASE.white,
@@ -165,6 +166,10 @@ export default function PagoObreros({ historial = [], cuadrillasActivas = {}, co
   // ── Render ────────────────────────────────────────────────────
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+      <VistaHeader icono="coins" eyebrow="Gestión"
+        titulo="Pago a Obreros"
+        subtitulo="Costo a pagar por trabajador: HN + HE 60% + HE 100% según tarifa" />
 
       {/* FILTROS */}
       <div style={{ ...card, padding: '14px 16px' }}>

@@ -8,6 +8,7 @@ import {
   ReferenceLine, ReferenceArea, AreaChart, Area, ComposedChart, Cell,
 } from 'recharts';
 import { BASE } from '../utils/styles';
+import VistaHeader from '../components/VistaHeader';
 
 // === Builder de grafData a partir de registros — corre on-the-fly por filtro ===
 const buildGrafData = (records) => {
@@ -374,6 +375,10 @@ export default function Graficos({ grafData: grafDataOriginal, filtrados = [], w
 
   return (
     <div style={{display:'flex',flexDirection:'column',gap:'14px'}}>
+
+      <VistaHeader icono="barChart3" eyebrow="Producción"
+        titulo="Gráficos de Producción"
+        subtitulo="HH real / meta / presupuesto y CPI por semana y acumulado" />
 
       {/* === BARRA DE FILTRO GLOBAL === */}
       <div style={{

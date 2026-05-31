@@ -6,6 +6,7 @@ import {
   ReferenceLine, ReferenceArea, Area,
 } from 'recharts';
 import { BASE } from '../utils/styles';
+import VistaHeader from '../components/VistaHeader';
 import {
   calcularTendencia, calcularTendenciaPond, mediaMovil, fmt1, fmtCPI, fmtCPIPct,
   getEstado, resolverIP, proyectarFuturo,
@@ -381,6 +382,10 @@ export default function Tendencias({ filtrados, historial, wbs }) {
 
   return (
     <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
+
+      <VistaHeader icono="trendingUp" eyebrow="Producción"
+        titulo="Tendencias"
+        subtitulo="Evolución del CPI con tendencia ponderada y proyección a futuro" />
 
       {/* KPIs */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(216px,1fr))',gap:'10px'}}>
