@@ -21,6 +21,7 @@ import {
 } from '../utils/cartaBalanceProductividad';
 
 const TABS = [
+  { id: 'resumen',   l: 'Resumen General', desc: 'Consolidado de todas las cartas' },
   { id: 'tendencia', l: 'Tendencia',      desc: 'TP/TC/TNC en el tiempo' },
   { id: 'comparar',  l: 'Comparar',       desc: 'Productividad por actividad' },
   { id: 'ranking',   l: 'Ranking',        desc: 'Personas ordenadas por LUF' },
@@ -33,7 +34,7 @@ const TABS = [
 export default function CartaBalanceAnalisis() {
   const [cartas, setCartas] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState('tendencia');
+  const [tab, setTab] = useState('resumen');
   const [cbSel, setCbSel] = useState(null);
   const [filtro, setFiltro] = useState('');
   const [metas, setMetas] = useState(METAS_CB_DEFAULT);
@@ -197,6 +198,7 @@ export default function CartaBalanceAnalisis() {
         })}
       </div>
 
+      {tab === 'resumen' && <TabResumen cartas={cartasFiltradas} ranking={ranking} tendencia={tendencia} comparativa={comparativa} metas={metas} />}
       {tab === 'tendencia' && <TabTendencia data={tendencia} metas={metas} />}
       {tab === 'comparar' && <TabComparar data={comparativa} metas={metas} />}
       {tab === 'ranking' && <TabRanking ranking={ranking} />}
@@ -204,6 +206,114 @@ export default function CartaBalanceAnalisis() {
       {tab === 'crew' && cbSel && <TabCrew cb={cbSel} />}
       {tab === 'recoms' && cbSel && <TabRecoms cb={cbSel} />}
       {tab === 'metas' && <TabMetas metas={metas} onGuardar={guardarMetas} />}
+    </div>
+  );
+}
+
+// Subcomponentes del Resumen (módulo-scope para no recrearlos en cada render).
+function ChipResumen({ icon, v, l }) {
+  return (
+    <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 12, padding: '12px 14px', boxShadow: BASE.shadowSm, flex: '1 1 130px' }}>
+      <p style={{ fontSize: 22, fontWeight: 900, color: BASE.navy, fontFamily: 'monospace' }}>{icon} {v}</p>
+      <p style={{ fontSize: 10.5, fontWeight: 800, color: BASE.muted, textTransform: 'uppercase', letterSpacing: 0.4 }}>{l}</p>
+    </div>
+  );
+}
+function CardResumen({ color, titulo, valor, detalle }) {
+  return (
+    <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderLeft: `5px solid ${color}`, borderRadius: 12, padding: '12px 14px', boxShadow: BASE.shadowSm, flex: '1 1 200px' }}>
+      <p style={{ fontSize: 11, fontWeight: 900, color: BASE.navy }}>{titulo}</p>
+      <p style={{ fontSize: 18, fontWeight: 900, color, marginTop: 2 }}>{valor}</p>
+      {detalle && <p style={{ fontSize: 11, color: BASE.muted, marginTop: 2 }}>{detalle}</p>}
+    </div>
+  );
+}
+
+// ── Resumen General: consolidado de TODAS las cartas balance ──
+function TabResumen({ cartas, ranking, tendencia, metas }) {
+  const { k, pareto, fechas, nPersonas } = useMemo(() => {
+    const obs = [];
+    cartas.forEach((c) => (c.observaciones || []).forEach((o) => obs.push(o)));
+    const ids = new Set();
+    cartas.forEach((c) => (c.personas || []).forEach((p) => ids.add(p.nombre || p.id)));
+    return {
+      k: calcularKPIs(obs),
+      pareto: paretoTNC(obs),
+      fechas: cartas.map((c) => c.fecha).filter(Boolean).sort(),
+      nPersonas: ids.size,
+    };
+  }, [cartas]);
+
+  if (!cartas.length) {
+    return <EmptyState icono="∑" titulo="Sin cartas para resumir" descripcion="Carga al menos una Carta Balance para ver el consolidado general." />;
+  }
+  const cls = clasificarLUF(k.luf);
+  const topTNC = pareto[0];
+  const best = ranking[0];
+  const worst = ranking.length > 1 ? ranking[ranking.length - 1] : null;
+  const rango = fechas.length ? `${fechas[0]} → ${fechas[fechas.length - 1]}` : '—';
+  const chart = tendencia.map((t) => ({ periodo: t.periodo.replace('-', ' '), LUF: Math.round(t.luf), TP: Math.round(t.tp) }));
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* Hero consolidado */}
+      <div style={{ background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', borderRadius: 16, padding: '18px 22px', boxShadow: BASE.shadowMd }}>
+        <p style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1.6, color: BASE.gold }}>RESUMEN GENERAL · CARTA BALANCE</p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 22, alignItems: 'flex-end', marginTop: 8 }}>
+          <div>
+            <p style={{ fontSize: 11, opacity: 0.8, fontWeight: 700 }}>LUF GLOBAL</p>
+            <p style={{ fontSize: 40, fontWeight: 900, lineHeight: 1, color: '#fff' }}>{Math.round(k.luf)}%</p>
+            <p style={{ fontSize: 12, fontWeight: 800, color: cls.color === '#dc2626' ? '#fca5a5' : '#86efac' }}>{cls.emoji} {cls.label}</p>
+          </div>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {[['TP', k.tp, '#86efac'], ['TC', k.tc, '#fcd34d'], ['TNC', k.tnc, '#fca5a5']].map(([l, v, c]) => (
+              <div key={l} style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 10, padding: '8px 16px', textAlign: 'center' }}>
+                <p style={{ fontSize: 22, fontWeight: 900, color: c, fontFamily: 'monospace' }}>{Math.round(v)}%</p>
+                <p style={{ fontSize: 10, fontWeight: 800, opacity: 0.85 }}>{l}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Chips de cobertura */}
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <ChipResumen icon="📋" v={cartas.length} l="Cartas balance" />
+        <ChipResumen icon="👁" v={k.n} l="Observaciones" />
+        <ChipResumen icon="👷" v={nPersonas} l="Trabajadores" />
+        <ChipResumen icon="📅" v={rango} l="Período" />
+      </div>
+
+      {/* Insights */}
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        {best && <CardResumen color={BASE.greenDark} titulo="🏆 Mejor productividad" valor={best.nombre} detalle={`LUF ${Math.round(best.lufPromedio)}% · ${best.sesiones} sesión(es)`} />}
+        {worst && worst.personaId !== best?.personaId && <CardResumen color="#d97706" titulo="⚠️ A reforzar" valor={worst.nombre} detalle={`LUF ${Math.round(worst.lufPromedio)}%`} />}
+        {topTNC && <CardResumen color={BASE.red} titulo="🔴 Principal pérdida (TNC)" valor={topTNC.label} detalle={`${Math.round(topTNC.porcentaje)}% del tiempo no contributorio`} />}
+        <CardResumen color={k.luf >= metas.lufObjetivo ? BASE.greenDark : '#d97706'} titulo="🎯 vs Meta LUF" valor={`${Math.round(k.luf)}% / ${metas.lufObjetivo}%`} detalle={k.luf >= metas.lufObjetivo ? 'Cumple la meta' : `Faltan ${Math.round(metas.lufObjetivo - k.luf)} pts`} />
+      </div>
+
+      {/* Mini tendencia */}
+      {chart.length >= 2 && (
+        <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 12, padding: '14px 16px', boxShadow: BASE.shadowSm }}>
+          <p style={{ fontSize: 12, fontWeight: 900, color: BASE.navy, marginBottom: 10 }}>📈 EVOLUCIÓN (LUF y TP por semana)</p>
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={chart} margin={{ top: 6, right: 12, left: -12, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={BASE.border} />
+              <XAxis dataKey="periodo" tick={{ fontSize: 11, fill: BASE.muted }} />
+              <YAxis tick={{ fontSize: 11, fill: BASE.muted }} unit="%" domain={[0, 100]} />
+              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v) => `${v}%`} />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <ReferenceLine y={metas.lufObjetivo} stroke={BASE.green} strokeDasharray="5 4" />
+              <Line type="monotone" dataKey="LUF" stroke={BASE.navy} strokeWidth={2.5} dot={{ r: 2 }} />
+              <Line type="monotone" dataKey="TP" stroke={BASE.green} strokeWidth={2} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      <p style={{ fontSize: 10.5, color: BASE.muted, textAlign: 'center', fontStyle: 'italic' }}>
+        Consolidado de todas las Cartas Balance guardadas (filtradas por la actividad si hay filtro). LUF global = promedio ponderado por observación.
+      </p>
     </div>
   );
 }
