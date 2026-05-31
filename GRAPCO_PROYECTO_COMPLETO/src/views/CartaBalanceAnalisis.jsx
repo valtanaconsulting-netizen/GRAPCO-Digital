@@ -18,6 +18,19 @@ import { calcularKPIs, clasificarLUF, paretoTNC, rankingHistorico } from '../uti
 import { METAS_CB_DEFAULT } from '../utils/cartaBalanceProductividad';
 
 const fmtCorta = (f) => (f && f.length >= 10) ? `${f.slice(8, 10)}/${f.slice(5, 7)}` : (f || '—');
+
+// Composición de una categoría (TP/TC/TNC) por código → [{name,value%}] desc.
+function composicion(obs, categoria) {
+  const g = {};
+  obs.filter((o) => o.categoria === categoria).forEach((o) => {
+    const key = o.descripcion || o.codigo || '—';
+    g[key] = (g[key] || 0) + 1;
+  });
+  const tot = Object.values(g).reduce((s, v) => s + v, 0);
+  return Object.entries(g)
+    .map(([name, v]) => ({ name, value: tot ? Math.round((v / tot) * 100) : 0 }))
+    .sort((a, b) => b.value - a.value);
+}
 const cardBox = { background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 14, padding: '14px 16px', boxShadow: BASE.shadowMd };
 const titBox = { fontSize: 11, fontWeight: 900, color: BASE.muted, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 8 };
 
@@ -56,10 +69,24 @@ export default function CartaBalanceAnalisis() {
 
   // Selección (cross-filter): si hay fecha seleccionada, todo se calcula sobre ella.
   const cartasSel = useMemo(() => (sel ? cartasFiltradas.filter((c) => c.fecha === sel) : cartasFiltradas), [cartasFiltradas, sel]);
-  const { k, pareto, ranking, nPersonas } = useMemo(() => {
+  const { k, pareto, ranking, nPersonas, crew, compTC } = useMemo(() => {
     const obs = []; cartasSel.forEach((c) => (c.observaciones || []).forEach((o) => obs.push(o)));
     const ids = new Set(); cartasSel.forEach((c) => (c.personas || []).forEach((p) => ids.add(p.nombre || p.id)));
-    return { k: calcularKPIs(obs), pareto: paretoTNC(obs), ranking: rankingHistorico(cartasSel), nPersonas: ids.size };
+    // Crew Balance por persona REAL (une personaId→nombre de cada carta).
+    const porPersona = {};
+    cartasSel.forEach((c) => {
+      const nameById = {}; (c.personas || []).forEach((p) => { nameById[p.id] = p.nombre || p.id; });
+      (c.observaciones || []).forEach((o) => {
+        const nom = nameById[o.personaId] || o.personaId;
+        const e = porPersona[nom] || (porPersona[nom] = { nombre: nom, tp: 0, tc: 0, tnc: 0, n: 0 });
+        if (o.categoria === 'TP') e.tp++; else if (o.categoria === 'TC') e.tc++; else if (o.categoria === 'TNC') e.tnc++;
+        e.n++;
+      });
+    });
+    const crew = Object.values(porPersona)
+      .map((e) => ({ ...e, luf: e.n ? (e.tp + 0.5 * e.tc) / e.n * 100 : 0 }))
+      .sort((a, b) => b.luf - a.luf);
+    return { k: calcularKPIs(obs), pareto: paretoTNC(obs), ranking: rankingHistorico(cartasSel), nPersonas: ids.size, crew, compTC: composicion(obs, 'TC') };
   }, [cartasSel]);
 
   const exportarExcel = useCallback(() => {
@@ -89,6 +116,8 @@ export default function CartaBalanceAnalisis() {
   const cls = clasificarLUF(k.luf);
   const cumpleMeta = k.luf >= metas.lufObjetivo;
   const best = ranking[0];
+  // Delta de LUF vs la medición anterior (tendencia global).
+  const deltaLuf = porFecha.length >= 2 ? porFecha[porFecha.length - 1].luf - porFecha[porFecha.length - 2].luf : null;
   const donut = [
     { name: 'Productivo (TP)', value: Math.round(k.tp), color: CB_COL.TP },
     { name: 'Contributorio (TC)', value: Math.round(k.tc), color: CB_COL.TC },
@@ -136,6 +165,11 @@ export default function CartaBalanceAnalisis() {
                 <span style={{ fontSize: 13, fontWeight: 900, padding: '5px 12px', borderRadius: 999, background: cumpleMeta ? 'rgba(16,185,129,0.22)' : 'rgba(229,168,47,0.22)', border: `1px solid ${cumpleMeta ? '#10B981' : BASE.gold}` }}>
                   {cls.emoji} {cls.label}
                 </span>
+                {!sel && deltaLuf != null && (
+                  <span style={{ fontSize: 12, fontWeight: 900, color: deltaLuf >= 0 ? '#86efac' : '#fca5a5' }}>
+                    {deltaLuf >= 0 ? '▲ +' : '▼ '}{Math.round(deltaLuf)} pts vs anterior
+                  </span>
+                )}
                 {sel && (
                   <button onClick={() => setSel(null)} style={{ fontSize: 11, fontWeight: 800, color: '#fff', background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 999, padding: '5px 12px', cursor: 'pointer' }}>✕ Ver todas</button>
                 )}
@@ -224,6 +258,42 @@ export default function CartaBalanceAnalisis() {
               <BarPorFecha titulo="Trabajo Contributorio (TC)" data={porFecha} dk="tc" color={CB_COL.TC} sel={sel} onSel={toggleSel} />
               <BarPorFecha titulo="Trabajo No Contributorio (TNC)" data={porFecha} dk="tnc" color={CB_COL.TNC} sel={sel} onSel={toggleSel} />
             </div>
+          </div>
+
+          {/* Crew Balance Chart (Lean) + Composición del tiempo de soporte */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))', gap: 14 }}>
+            {crew.length > 0 && (
+              <div style={cardBox}>
+                <p style={titBox}>Crew Balance · productividad por trabajador {sel ? `(${fmtCorta(sel)})` : ''}</p>
+                <ResponsiveContainer width="100%" height={Math.max(150, crew.length * 38)}>
+                  <BarChart data={crew} layout="vertical" stackOffset="expand" margin={{ top: 4, right: 12, left: 4, bottom: 0 }}>
+                    <XAxis type="number" hide domain={[0, 1]} />
+                    <YAxis type="category" dataKey="nombre" width={160} tick={{ fontSize: 10.5, fill: BASE.text }} />
+                    <Tooltip formatter={(v, n, p) => [`${Math.round((v / (p.payload.n || 1)) * 100)}%`, n]} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                    <Bar dataKey="tp" stackId="a" name="Productivo" fill={CB_COL.TP} />
+                    <Bar dataKey="tc" stackId="a" name="Contributorio" fill={CB_COL.TC} />
+                    <Bar dataKey="tnc" stackId="a" name="No contributorio" fill={CB_COL.TNC} radius={[0, 6, 6, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+                <p style={{ fontSize: 10, color: BASE.muted, marginTop: 4 }}>Barras al 100%: verde = productivo · ámbar = soporte · rojo = ocio/espera. Ideal: más verde.</p>
+              </div>
+            )}
+
+            {compTC.length > 0 && (
+              <div style={cardBox}>
+                <p style={titBox}>¿En qué se va el tiempo de soporte (TC)?</p>
+                <ResponsiveContainer width="100%" height={Math.max(150, compTC.length * 34)}>
+                  <BarChart data={compTC} layout="vertical" margin={{ top: 4, right: 34, left: 4, bottom: 0 }}>
+                    <XAxis type="number" hide domain={[0, 100]} />
+                    <YAxis type="category" dataKey="name" width={160} tick={{ fontSize: 10.5, fill: BASE.text }} />
+                    <Tooltip formatter={(v) => `${v}%`} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                    <Bar dataKey="value" fill={CB_COL.TC} radius={[0, 6, 6, 0]} label={{ position: 'right', fontSize: 10, fontWeight: 800, fill: BASE.navy, formatter: (v) => `${v}%` }} />
+                  </BarChart>
+                </ResponsiveContainer>
+                <p style={{ fontSize: 10, color: BASE.muted, marginTop: 4 }}>Mucho acarreo/subida = oportunidad de acercar el material y subir el productivo.</p>
+              </div>
+            )}
           </div>
         </>
       )}
