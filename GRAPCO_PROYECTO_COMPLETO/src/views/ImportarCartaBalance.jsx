@@ -5,7 +5,7 @@
 // consume el motor de análisis y guarda en Cartas_Balance.
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { BASE, CB_COL, CARGOS, CARGOS_CORTO, inp } from '../utils/styles';
 import { clasificarLUF } from '../utils/cartaBalanceAnalytics';
@@ -139,8 +139,9 @@ export default function ImportarCartaBalance({ showToast }) {
           }
         });
       });
-      await addDoc(collection(db, 'Cartas_Balance'), {
-        obra: ficha.obra, fecha: ficha.fecha, actividad: ficha.actividad.trim().toUpperCase(),
+      const actNorm = ficha.actividad.trim().toUpperCase();
+      const docData = {
+        obra: ficha.obra, fecha: ficha.fecha, actividad: actNorm,
         ubicacion: ficha.ubicacion, horaInicio: ficha.horaInicio, horaFin: ficha.horaFin,
         trabajadores: trab.map((t) => ({ nombre: t.nombre.trim(), cargo: CARGOS_CORTO[t.cargo] || 'OP' })),
         personas, observaciones, formatoVersion: 2,
@@ -149,10 +150,36 @@ export default function ImportarCartaBalance({ showToast }) {
         fuente: 'importador-conteos',
         timestamp: new Date(),
         uidAutor: user.uid,
+      };
+
+      // ── Anti-duplicado: misma fecha + actividad + proyecto ──
+      // Query por fecha (un solo campo → sin índice) y filtro fino en cliente.
+      const snap = await getDocs(query(collection(db, 'Cartas_Balance'), where('fecha', '==', ficha.fecha)));
+      const dups = snap.docs.filter((d) => {
+        const x = d.data() || {};
+        return (x.actividad || '').toUpperCase() === actNorm && (x.proyectoId || null) === (proyectoActivoId || null);
       });
-      setOkMsg(`Carta Balance guardada ✓ (${observaciones.length} observaciones)`);
-      showToast?.('Carta Balance importada a la base de datos ✓', 'success');
-      setTimeout(() => setOkMsg(''), 5000);
+
+      if (dups.length > 0) {
+        const ok = window.confirm(
+          `Ya guardaste ${dups.length === 1 ? 'una Carta Balance' : `${dups.length} Cartas Balance`} de "${actNorm}" del ${ficha.fecha}.\n\n` +
+          `¿Reemplazar con estos datos?${dups.length > 1 ? ` (se conservará 1 y se eliminarán las ${dups.length - 1} copias extra)` : ''}`
+        );
+        if (!ok) { setGuardando(false); return; }
+        // Reemplaza la primera y elimina el resto (limpia duplicados).
+        await setDoc(doc(db, 'Cartas_Balance', dups[0].id), docData);
+        let borradas = 0;
+        for (let i = 1; i < dups.length; i++) {
+          try { await deleteDoc(doc(db, 'Cartas_Balance', dups[i].id)); borradas++; } catch { /* requiere admin */ }
+        }
+        setOkMsg(`Carta Balance reemplazada ✓${borradas ? ` · ${borradas} copia(s) duplicada(s) eliminada(s)` : ''}`);
+        showToast?.('Carta Balance reemplazada ✓', 'success');
+      } else {
+        await addDoc(collection(db, 'Cartas_Balance'), docData);
+        setOkMsg(`Carta Balance guardada ✓ (${observaciones.length} observaciones)`);
+        showToast?.('Carta Balance importada a la base de datos ✓', 'success');
+      }
+      setTimeout(() => setOkMsg(''), 6000);
     } catch (e) {
       console.error('[ImportarCB]', e);
       showToast?.('Error al guardar: ' + (e?.message || e), 'error');
