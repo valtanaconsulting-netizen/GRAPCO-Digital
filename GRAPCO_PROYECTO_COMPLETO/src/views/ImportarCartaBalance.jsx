@@ -21,6 +21,7 @@ const CODIGOS = {
   ],
   TC: [
     { cod: 'AM', desc: 'Acarreo de materiales' },
+    { cod: 'AV', desc: 'Alineado vertical (aplomado)' },
     { cod: 'NA', desc: 'Nivelando acero' },
     { cod: 'SA', desc: 'Subiendo acero' },
     { cod: 'MD', desc: 'Midiendo distancias' },
@@ -42,29 +43,56 @@ Object.values(CODIGOS).flat().forEach((c) => { DESC[c.cod] = c.desc; });
 const CAT_DE = {};
 Object.entries(CODIGOS).forEach(([cat, arr]) => arr.forEach((c) => { CAT_DE[c.cod] = cat; }));
 
-// Precarga: Carta Balance CREDITEX PTARI · 08/01/2026 · Colocación de Acero.
-const PRECARGA = {
-  obra: 'CREDITEX PTARI',
-  fecha: '2026-01-08',
-  actividad: 'COLOCACIÓN DE ACERO',
-  ubicacion: 'CALLE LOS HORNOS 185 URB. VULCANO, ATE',
-  horaInicio: '11:30',
-  horaFin: '12:30',
-  trabajadores: [
-    { letra: 'A', nombre: 'LIDER LOPEZ VILLANUEVA', cargo: 'Operario' },
-    { letra: 'B', nombre: 'SERGIO OLIVERIO PIMPINCO CRUZADO', cargo: 'Operario' },
-    { letra: 'C', nombre: 'OSWALDO VALDEZ GAMBOA', cargo: 'Operario' },
-    { letra: 'D', nombre: 'SANTIAGO ALFONSO RUIZ RIOS', cargo: 'Operario' },
-    { letra: 'E', nombre: 'RICHARD ARENA RODRIGUEZ', cargo: 'Ayudante' },
-  ],
-  conteos: {
-    A: { ACE: 27, AMA: 16, AM: 11, NA: 21, SA: 13, COO: 4, ES: 2, CO: 4 },
-    B: { ACE: 41, AMA: 16, AM: 3, NA: 6, SA: 13, MD: 4, COO: 3, BA: 2, ES: 9, DE: 3 },
-    C: { ACE: 36, AMA: 14, AM: 27, NA: 15, SA: 18, COO: 4, AA: 2, ES: 11 },
-    D: { ACE: 27, AMA: 12, AM: 3, NA: 8, SA: 29, CI: 5, AA: 4, ES: 1, CO: 4 },
-    E: { ACE: 7, AM: 28, NA: 8, SA: 3, COO: 2, ES: 8, DE: 1 },
+// Plantillas precargadas (cartas reales ya digitadas) — se cargan con el selector.
+const PLANTILLAS = [
+  {
+    key: 'd08', label: 'CREDITEX · 08-ene · Colocación de Acero (5)',
+    data: {
+      obra: 'CREDITEX PTARI', fecha: '2026-01-08', actividad: 'COLOCACIÓN DE ACERO',
+      ubicacion: 'CALLE LOS HORNOS 185 URB. VULCANO, ATE', horaInicio: '11:30', horaFin: '12:30',
+      trabajadores: [
+        { letra: 'A', nombre: 'LIDER LOPEZ VILLANUEVA', cargo: 'Operario' },
+        { letra: 'B', nombre: 'SERGIO OLIVERIO PIMPINCO CRUZADO', cargo: 'Operario' },
+        { letra: 'C', nombre: 'OSWALDO VALDEZ GAMBOA', cargo: 'Operario' },
+        { letra: 'D', nombre: 'SANTIAGO ALFONSO RUIZ RIOS', cargo: 'Operario' },
+        { letra: 'E', nombre: 'RICHARD ARENA RODRIGUEZ', cargo: 'Ayudante' },
+      ],
+      conteos: {
+        A: { ACE: 27, AMA: 16, AM: 11, NA: 21, SA: 13, COO: 4, ES: 2, CO: 4 },
+        B: { ACE: 41, AMA: 16, AM: 3, NA: 6, SA: 13, MD: 4, COO: 3, BA: 2, ES: 9, DE: 3 },
+        C: { ACE: 36, AMA: 14, AM: 27, NA: 15, SA: 18, COO: 4, AA: 2, ES: 11 },
+        D: { ACE: 27, AMA: 12, AM: 3, NA: 8, SA: 29, CI: 5, AA: 4, ES: 1, CO: 4 },
+        E: { ACE: 7, AM: 28, NA: 8, SA: 3, COO: 2, ES: 8, DE: 1 },
+      },
+    },
   },
-};
+  {
+    key: 'd12', label: 'CREDITEX · 12-ene · Colocación de Acero (7)',
+    data: {
+      obra: 'CREDITEX PTARI', fecha: '2026-01-12', actividad: 'COLOCACIÓN DE ACERO',
+      ubicacion: 'Av. Los Hornos 185, Ate.', horaInicio: '09:30', horaFin: '12:00',
+      trabajadores: [
+        { letra: 'A', nombre: 'RUIZ RIOS, SANTIAGO ALFONSO', cargo: 'Operario' },
+        { letra: 'B', nombre: 'PIMPINCO CRUZADO, SERGIO OLIVERIO', cargo: 'Operario' },
+        { letra: 'C', nombre: 'VENTURO MURGA, ALEXANDER NICOLAY', cargo: 'Operario' },
+        { letra: 'D', nombre: 'VEGA LOPEZ, ANDERSON JULIO', cargo: 'Operario' },
+        { letra: 'E', nombre: 'VALDEZ GAMBOA, OSWALDO', cargo: 'Operario' },
+        { letra: 'F', nombre: 'TORRES DOMINGUES, VICTOR RAUL', cargo: 'Operario' },
+        { letra: 'G', nombre: 'LOPEZ VILLANUEVA, LIDER', cargo: 'Operario' },
+      ],
+      conteos: {
+        A: { ACE: 49, AMA: 29, AV: 31, SA: 11, COO: 3, ES: 26 },
+        B: { ACE: 47, AMA: 50, AV: 24, SA: 5, ES: 19, CO: 1 },
+        C: { ACE: 32, AMA: 42, AM: 6, AV: 5, SA: 1, COO: 3, AA: 2, BA: 3, ES: 48, DE: 2, CO: 1 },
+        D: { ACE: 15, AMA: 25, AM: 14, SA: 68, MD: 2, COO: 2, ES: 22 },
+        E: { ACE: 51, AMA: 33, AV: 8, SA: 20, MD: 3, COO: 7, CI: 3, BA: 3, ES: 20 },
+        F: { ACE: 24, AMA: 24, AM: 42, SA: 8, MD: 24, BA: 3, ES: 23 },
+        G: { ACE: 47, AMA: 50, AM: 7, AV: 15, SA: 3, MD: 12, COO: 1, BA: 3, ES: 7, CO: 1 },
+      },
+    },
+  },
+];
+const PRECARGA = PLANTILLAS[0].data;
 
 const LETRAS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
 const n = (v) => parseInt(v, 10) || 0;
@@ -97,6 +125,19 @@ export default function ImportarCartaBalance({ showToast }) {
   const removeTrab = (letra) => {
     setTrab((p) => p.filter((t) => t.letra !== letra));
     setConteos((p) => { const c = { ...p }; delete c[letra]; return c; });
+  };
+  const cargarPlantilla = (key) => {
+    const p = PLANTILLAS.find((x) => x.key === key);
+    if (!p) return;
+    const d = p.data;
+    setFicha({ obra: d.obra, fecha: d.fecha, actividad: d.actividad, ubicacion: d.ubicacion, horaInicio: d.horaInicio, horaFin: d.horaFin });
+    setTrab(d.trabajadores);
+    setConteos(d.conteos);
+  };
+  const vaciar = () => {
+    setFicha({ obra: 'CREDITEX PTARI', fecha: '', actividad: '', ubicacion: '', horaInicio: '', horaFin: '' });
+    setTrab([{ letra: 'A', nombre: '', cargo: 'Operario' }]);
+    setConteos({});
   };
 
   // ── KPIs en vivo ──
@@ -207,6 +248,17 @@ export default function ImportarCartaBalance({ showToast }) {
           ✅ {okMsg}
         </div>
       )}
+
+      {/* Selector de plantillas */}
+      <div style={{ background: BASE.navySoft, border: `1px solid ${BASE.border}`, borderRadius: '10px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: '12px', fontWeight: 800, color: BASE.navy }}>📋 Cargar plantilla:</span>
+        <select onChange={(e) => { cargarPlantilla(e.target.value); e.target.value = ''; }} defaultValue=""
+          style={{ ...inp({ width: 'auto', minWidth: '260px', padding: '8px 10px' }) }}>
+          <option value="" disabled>Elegir una carta ya digitada…</option>
+          {PLANTILLAS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+        </select>
+        <button onClick={vaciar} style={{ fontSize: '11px', fontWeight: 800, color: BASE.muted, background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '7px', padding: '7px 12px', cursor: 'pointer' }}>🗑️ Vaciar</button>
+      </div>
 
       {/* Ficha */}
       <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', padding: '14px 16px', boxShadow: BASE.shadowSm, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
