@@ -1,431 +1,269 @@
+// src/views/CartaBalanceAnalisis.jsx
+// Tablero ejecutivo INTERACTIVO (estilo Power BI) de Carta Balance.
+// Una sola página: tabla por fecha + barras TP/TC/TNC + dona + KPIs, todo
+// enlazado por cross-filter (seleccionas una fecha y todo se filtra).
+// Menos es más: pensado para gerencia.
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { collection, query, orderBy, onSnapshot, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import * as XLSX from 'xlsx';
 import {
-  ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine,
-  PieChart, Pie, Cell, BarChart, Bar,
+  ResponsiveContainer, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip,
+  PieChart, Pie, Legend,
 } from 'recharts';
 import { db } from '../firebaseConfig';
 import { BASE, CB_COL } from '../utils/styles';
 import EmptyState from '../components/EmptyState';
-import {
-  calcularKPIs,
-  clasificarLUF,
-  agruparPorPersona,
-  paretoTNC,
-  causasCriticasTNC,
-  rankingHistorico,
-  generarRecomendaciones,
-} from '../utils/cartaBalanceAnalytics';
-import {
-  tendenciaSemanal, compararPorActividad, evaluarMetas, METAS_CB_DEFAULT,
-} from '../utils/cartaBalanceProductividad';
+import { calcularKPIs, clasificarLUF, paretoTNC, rankingHistorico } from '../utils/cartaBalanceAnalytics';
+import { METAS_CB_DEFAULT } from '../utils/cartaBalanceProductividad';
 
-const TABS = [
-  { id: 'resumen',   l: 'Resumen General', desc: 'Consolidado de todas las cartas' },
-  { id: 'tendencia', l: 'Tendencia',      desc: 'TP/TC/TNC en el tiempo' },
-  { id: 'comparar',  l: 'Comparar',       desc: 'Productividad por actividad' },
-  { id: 'ranking',   l: 'Ranking',        desc: 'Personas ordenadas por LUF' },
-  { id: 'pareto',    l: 'Pareto TNC',     desc: 'Causas de tiempo perdido' },
-  { id: 'crew',      l: 'Crew Balance',   desc: 'Visualizacion por persona' },
-  { id: 'recoms',    l: 'Recomendaciones', desc: 'Acciones sugeridas' },
-  { id: 'metas',     l: 'Metas',          desc: 'Objetivos de productividad' },
-];
+const fmtCorta = (f) => (f && f.length >= 10) ? `${f.slice(8, 10)}/${f.slice(5, 7)}` : (f || '—');
+const cardBox = { background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 14, padding: '14px 16px', boxShadow: BASE.shadowMd };
+const titBox = { fontSize: 11, fontWeight: 900, color: BASE.muted, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 8 };
 
 export default function CartaBalanceAnalisis() {
   const [cartas, setCartas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('resumen');
-  const [cbSel, setCbSel] = useState(null);
+  const [sel, setSel] = useState(null);     // fecha seleccionada (cross-filter) | null = todas
   const [filtro, setFiltro] = useState('');
   const [metas, setMetas] = useState(METAS_CB_DEFAULT);
 
   useEffect(() => {
     const q = query(collection(db, 'Cartas_Balance'), orderBy('fecha', 'desc'));
-    const unsub = onSnapshot(q,
-      (snap) => {
-        setCartas(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-        setLoading(false);
-      },
-      (err) => { console.error(err); setLoading(false); }
-    );
-    return () => unsub();
+    return onSnapshot(q, (s) => { setCartas(s.docs.map((d) => ({ id: d.id, ...d.data() }))); setLoading(false); },
+      (e) => { console.error(e); setLoading(false); });
   }, []);
+  useEffect(() => onSnapshot(doc(db, 'Configuracion', 'metas_cb'), (s) => {
+    if (s.exists()) setMetas({ ...METAS_CB_DEFAULT, ...(s.data() || {}) });
+  }, (e) => console.warn('[metas_cb]', e)), []);
 
-  // Metas de productividad (configurables, guardadas en Configuracion/metas_cb)
-  useEffect(() => {
-    return onSnapshot(doc(db, 'Configuracion', 'metas_cb'), (s) => {
-      if (s.exists()) setMetas({ ...METAS_CB_DEFAULT, ...(s.data() || {}) });
-    }, (e) => console.warn('[metas_cb]', e));
-  }, []);
+  const cartasFiltradas = useMemo(
+    () => cartas.filter((c) => !filtro || (c.actividad || '').toLowerCase().includes(filtro.toLowerCase())),
+    [cartas, filtro],
+  );
 
-  const cartasFiltradas = useMemo(() => {
-    return cartas.filter(cb => {
-      if (!filtro) return true;
-      return (cb.actividad || '').toLowerCase().includes(filtro.toLowerCase());
-    });
-  }, [cartas, filtro]);
+  // Agrupado por fecha → filas de tabla y barras
+  const porFecha = useMemo(() => {
+    const g = {};
+    cartasFiltradas.forEach((c) => { if (c.fecha) (g[c.fecha] = g[c.fecha] || []).push(c); });
+    return Object.entries(g).map(([fecha, cs]) => {
+      const obs = []; cs.forEach((c) => (c.observaciones || []).forEach((o) => obs.push(o)));
+      const k = calcularKPIs(obs);
+      return { fecha, label: fmtCorta(fecha), tp: Math.round(k.tp), tc: Math.round(k.tc), tnc: Math.round(k.tnc), luf: Math.round(k.luf), n: k.n };
+    }).sort((a, b) => (a.fecha < b.fecha ? -1 : 1));
+  }, [cartasFiltradas]);
 
-  const ranking = useMemo(() => rankingHistorico(cartasFiltradas), [cartasFiltradas]);
-  const tendencia = useMemo(() => tendenciaSemanal(cartasFiltradas), [cartasFiltradas]);
-  const comparativa = useMemo(() => compararPorActividad(cartasFiltradas), [cartasFiltradas]);
+  // Selección (cross-filter): si hay fecha seleccionada, todo se calcula sobre ella.
+  const cartasSel = useMemo(() => (sel ? cartasFiltradas.filter((c) => c.fecha === sel) : cartasFiltradas), [cartasFiltradas, sel]);
+  const { k, pareto, ranking, nPersonas } = useMemo(() => {
+    const obs = []; cartasSel.forEach((c) => (c.observaciones || []).forEach((o) => obs.push(o)));
+    const ids = new Set(); cartasSel.forEach((c) => (c.personas || []).forEach((p) => ids.add(p.nombre || p.id)));
+    return { k: calcularKPIs(obs), pareto: paretoTNC(obs), ranking: rankingHistorico(cartasSel), nPersonas: ids.size };
+  }, [cartasSel]);
 
-  // Exportar a Excel: tendencia + comparación por actividad + ranking.
   const exportarExcel = useCallback(() => {
     try {
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(
-        tendencia.map(t => ({ Periodo: t.periodo, 'TP %': t.tp, 'TC %': t.tc, 'TNC %': t.tnc, 'LUF %': t.luf, Sesiones: t.sesiones, Observaciones: t.totalObs }))
-      ), 'Tendencia');
+        porFecha.map((f) => ({ Fecha: f.fecha, 'TP %': f.tp, 'TC %': f.tc, 'TNC %': f.tnc, 'LUF %': f.luf, Observaciones: f.n })),
+      ), 'Por fecha');
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(
-        comparativa.map(c => ({ Actividad: c.actividad, 'TP %': c.tp, 'TC %': c.tc, 'TNC %': c.tnc, 'LUF %': c.luf, Sesiones: c.sesiones, Estado: evaluarMetas(c, metas).label }))
-      ), 'Por actividad');
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(
-        ranking.map((r, i) => ({ '#': i + 1, Persona: r.nombre, 'LUF %': r.lufPromedio, 'TP %': r.tpPromedio, 'TC %': r.tcPromedio, 'TNC %': r.tncPromedio, Sesiones: r.sesiones, Confianza: r.confianza }))
+        ranking.map((r, i) => ({ '#': i + 1, Persona: r.nombre, 'LUF %': Math.round(r.lufPromedio), 'TP %': Math.round(r.tpPromedio), 'TC %': Math.round(r.tcPromedio), 'TNC %': Math.round(r.tncPromedio), Sesiones: r.sesiones })),
       ), 'Ranking');
-      XLSX.writeFile(wb, `CartaBalance_Productividad_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      XLSX.writeFile(wb, `CartaBalance_${new Date().toISOString().slice(0, 10)}.xlsx`);
     } catch (e) { console.error('[exportarExcel]', e); }
-  }, [tendencia, comparativa, ranking, metas]);
+  }, [porFecha, ranking]);
 
   const guardarMetas = useCallback(async (nuevas) => {
     setMetas(nuevas);
-    try {
-      await setDoc(doc(db, 'Configuracion', 'metas_cb'), { ...nuevas, actualizadoEn: serverTimestamp() }, { merge: true });
-    } catch (e) { console.warn('[guardarMetas]', e); }
+    try { await setDoc(doc(db, 'Configuracion', 'metas_cb'), { ...nuevas, actualizadoEn: serverTimestamp() }, { merge: true }); }
+    catch (e) { console.warn('[guardarMetas]', e); }
   }, []);
 
-  useEffect(() => {
-    if (!cbSel && cartasFiltradas.length > 0) {
-      setCbSel(cartasFiltradas[0]);
-    }
-  }, [cartasFiltradas, cbSel]);
-
-  if (loading) {
-    return (
-      <div style={{ padding: '40px', textAlign: 'center', color: BASE.muted }}>
-        Cargando datos de Cartas Balance...
-      </div>
-    );
-  }
-
+  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: BASE.muted }}>Cargando Cartas Balance…</div>;
   if (cartas.length === 0) {
-    return (
-      <EmptyState
-        icono="CB"
-        titulo="Sin Cartas Balance registradas"
-        descripcion="Cuando los capataces hagan al menos una Carta Balance, aparecera aqui el analisis estadistico."
-      />
-    );
+    return <EmptyState icono="CB" titulo="Sin Cartas Balance registradas" descripcion="Carga una carta en la pestaña 📥 Importar y aquí verás el resumen." />;
   }
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '4px 0' }}>
-      <div style={{
-        background: 'linear-gradient(135deg, ' + BASE.navy + ', ' + BASE.navyDark + ')',
-        color: '#fff',
-        borderRadius: '14px',
-        padding: '18px 24px',
-        borderLeft: '5px solid ' + BASE.gold,
-      }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center' }}>
-          <div style={{ flex: 1, minWidth: '220px' }}>
-            <p style={{ fontSize: '10px', fontWeight: '900', color: BASE.gold, letterSpacing: '1.6px' }}>
-              ANALISIS DE CARTA BALANCE
-            </p>
-            <h2 style={{ fontSize: '20px', fontWeight: '900', marginTop: '4px' }}>
-              Productividad y composicion de cuadrillas
-            </h2>
-            <p style={{ fontSize: '12px', opacity: 0.85, marginTop: '4px' }}>
-              {cartasFiltradas.length} cartas balance, {ranking.length} personas en historial
-            </p>
-          </div>
-          <input
-            type="text"
-            value={filtro}
-            onChange={(e) => setFiltro(e.target.value)}
-            placeholder="Filtrar por actividad..."
-            style={{
-              padding: '10px 14px',
-              borderRadius: '8px',
-              border: 'none',
-              fontSize: '12px',
-              background: 'rgba(255,255,255,0.1)',
-              color: '#fff',
-              minWidth: '200px',
-            }}
-          />
-          <button onClick={exportarExcel} title="Exportar a Excel" style={{
-            padding: '10px 16px', borderRadius: '8px', border: `1px solid ${BASE.gold}`,
-            background: `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`, color: '#fff',
-            fontSize: '12px', fontWeight: 900, cursor: 'pointer', whiteSpace: 'nowrap',
-          }}>⬇ Exportar Excel</button>
-        </div>
-      </div>
-
-      <div style={{
-        background: BASE.white,
-        border: '1px solid ' + BASE.border,
-        borderRadius: '12px',
-        padding: '6px',
-        display: 'flex',
-        gap: '4px',
-        flexWrap: 'wrap',
-      }}>
-        {TABS.map((t) => {
-          const activo = tab === t.id;
-          return (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              style={{
-                padding: '10px 18px',
-                flex: '1 1 auto',
-                minWidth: '140px',
-                background: activo
-                  ? 'linear-gradient(135deg, ' + BASE.navy + ', ' + BASE.navyDark + ')'
-                  : 'transparent',
-                color: activo ? '#fff' : BASE.muted,
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '12px',
-                fontWeight: '800',
-                cursor: 'pointer',
-                transition: 'all 0.18s ease',
-              }}
-            >
-              {t.l}
-            </button>
-          );
-        })}
-      </div>
-
-      {tab === 'resumen' && <TabResumen cartas={cartasFiltradas} ranking={ranking} tendencia={tendencia} comparativa={comparativa} metas={metas} />}
-      {tab === 'tendencia' && <TabTendencia data={tendencia} metas={metas} />}
-      {tab === 'comparar' && <TabComparar data={comparativa} metas={metas} />}
-      {tab === 'ranking' && <TabRanking ranking={ranking} />}
-      {tab === 'pareto' && cbSel && <TabPareto cb={cbSel} />}
-      {tab === 'crew' && cbSel && <TabCrew cb={cbSel} />}
-      {tab === 'recoms' && cbSel && <TabRecoms cb={cbSel} />}
-      {tab === 'metas' && <TabMetas metas={metas} onGuardar={guardarMetas} />}
-    </div>
-  );
-}
-
-// Subcomponente del Resumen (módulo-scope para no recrearlo en cada render).
-function CardResumen({ color, titulo, valor, detalle }) {
-  return (
-    <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderLeft: `5px solid ${color}`, borderRadius: 12, padding: '12px 14px', boxShadow: BASE.shadowSm, flex: '1 1 200px' }}>
-      <p style={{ fontSize: 11, fontWeight: 900, color: BASE.navy }}>{titulo}</p>
-      <p style={{ fontSize: 18, fontWeight: 900, color, marginTop: 2 }}>{valor}</p>
-      {detalle && <p style={{ fontSize: 11, color: BASE.muted, marginTop: 2 }}>{detalle}</p>}
-    </div>
-  );
-}
-
-// ── Resumen General: consolidado de TODAS las cartas balance ──
-function TabResumen({ cartas, ranking, tendencia, metas }) {
-  const { k, pareto, fechas, nPersonas } = useMemo(() => {
-    const obs = [];
-    cartas.forEach((c) => (c.observaciones || []).forEach((o) => obs.push(o)));
-    const ids = new Set();
-    cartas.forEach((c) => (c.personas || []).forEach((p) => ids.add(p.nombre || p.id)));
-    return {
-      k: calcularKPIs(obs),
-      pareto: paretoTNC(obs),
-      fechas: cartas.map((c) => c.fecha).filter(Boolean).sort(),
-      nPersonas: ids.size,
-    };
-  }, [cartas]);
-
-  if (!cartas.length) {
-    return <EmptyState icono="∑" titulo="Sin cartas para resumir" descripcion="Carga al menos una Carta Balance para ver el consolidado general." />;
-  }
   const cls = clasificarLUF(k.luf);
+  const cumpleMeta = k.luf >= metas.lufObjetivo;
   const best = ranking[0];
-  const rango = fechas.length ? `${fmtCorta(fechas[0])} – ${fmtCorta(fechas[fechas.length - 1])}` : '—';
-  const trend = tendencia.map((t) => ({ periodo: t.periodo.replace('-', ' '), LUF: Math.round(t.luf), TP: Math.round(t.tp) }));
   const donut = [
     { name: 'Productivo (TP)', value: Math.round(k.tp), color: CB_COL.TP },
     { name: 'Contributorio (TC)', value: Math.round(k.tc), color: CB_COL.TC },
     { name: 'No contributorio (TNC)', value: Math.round(k.tnc), color: CB_COL.TNC },
   ];
-  const causas = pareto.slice(0, 5).map((p) => ({ name: p.label, value: Math.round(p.porcentaje) }));
-  const cumpleMeta = k.luf >= metas.lufObjetivo;
-  const cardBox = { background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 14, padding: '16px 18px', boxShadow: BASE.shadowMd };
-  const titBox = { fontSize: 11, fontWeight: 900, color: BASE.muted, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 10 };
+  const causas = pareto.slice(0, 4).map((p) => ({ name: p.label, value: Math.round(p.porcentaje) }));
+  const fechas = cartasFiltradas.map((c) => c.fecha).filter(Boolean).sort();
+  const rango = fechas.length ? `${fmtCorta(fechas[0])} – ${fmtCorta(fechas[fechas.length - 1])}` : '—';
+  const toggleSel = (fecha) => setSel((s) => (s === fecha ? null : fecha));
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {/* ── HERO ejecutivo: LUF + cumplimiento + cobertura mínima ── */}
-      <div style={{ background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', borderRadius: 16, padding: '20px 24px', boxShadow: BASE.shadowMd, display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 18 }}>
-        <div>
-          <p style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: BASE.gold }}>PRODUCTIVIDAD DE OBRA · CARTA BALANCE</p>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginTop: 6 }}>
-            <span style={{ fontSize: 52, fontWeight: 900, lineHeight: 1 }}>{Math.round(k.luf)}%</span>
-            <span style={{ fontSize: 14, fontWeight: 900, padding: '5px 12px', borderRadius: 999, background: cumpleMeta ? 'rgba(16,185,129,0.22)' : 'rgba(229,168,47,0.22)', border: `1px solid ${cumpleMeta ? '#10B981' : BASE.gold}` }}>
-              {cls.emoji} {cls.label}
-            </span>
-          </div>
-          <p style={{ fontSize: 12, opacity: 0.85, marginTop: 6 }}>Índice de uso de mano de obra (LUF) · meta {metas.lufObjetivo}%</p>
-        </div>
-        <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 12 }}>
-          {[['Cartas', cartas.length], ['Observaciones', k.n], ['Trabajadores', nPersonas], ['Período', rango]].map(([l, v]) => (
-            <div key={l} style={{ textAlign: 'center' }}>
-              <p style={{ fontSize: 20, fontWeight: 900 }}>{v}</p>
-              <p style={{ fontSize: 10, opacity: 0.8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.4 }}>{l}</p>
-            </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '4px 0' }}>
+      {/* Barra superior: título, filtro, export, tabs */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 6, background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 10, padding: 5 }}>
+          {[['resumen', '📊 Resumen'], ['metas', '🎯 Metas']].map(([id, l]) => (
+            <button key={id} onClick={() => setTab(id)} style={{
+              padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 800,
+              background: tab === id ? `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})` : 'transparent',
+              color: tab === id ? '#fff' : BASE.muted,
+            }}>{l}</button>
           ))}
         </div>
-      </div>
-
-      {/* ── Fila: Dona de distribución + 3 claves ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 14 }}>
-        <div style={cardBox}>
-          <p style={titBox}>Distribución del tiempo</p>
-          <div style={{ position: 'relative' }}>
-            <ResponsiveContainer width="100%" height={210}>
-              <PieChart>
-                <Pie data={donut} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={58} outerRadius={88} paddingAngle={2} stroke="none">
-                  {donut.map((d, i) => <Cell key={i} fill={d.color} />)}
-                </Pie>
-                <Tooltip formatter={(v) => `${v}%`} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div style={{ position: 'absolute', top: '38%', left: 0, right: 0, textAlign: 'center', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-              <p style={{ fontSize: 26, fontWeight: 900, color: CB_COL.TP, lineHeight: 1 }}>{Math.round(k.tp)}%</p>
-              <p style={{ fontSize: 10, fontWeight: 800, color: BASE.muted, textTransform: 'uppercase' }}>Productivo</p>
-            </div>
+        {tab === 'resumen' && (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <input value={filtro} onChange={(e) => setFiltro(e.target.value)} placeholder="Filtrar actividad…"
+              style={{ padding: '8px 12px', borderRadius: 8, border: `1px solid ${BASE.border}`, fontSize: 12, color: BASE.navy }} />
+            <button onClick={exportarExcel} style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`, color: '#fff', fontSize: 12, fontWeight: 900, cursor: 'pointer' }}>⬇ Excel</button>
           </div>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <CardResumen color={cumpleMeta ? BASE.greenDark : '#d97706'} titulo="🎯 Cumplimiento de meta (LUF)" valor={`${Math.round(k.luf)}% / ${metas.lufObjetivo}%`} detalle={cumpleMeta ? 'Por encima de la meta' : `Faltan ${Math.round(metas.lufObjetivo - k.luf)} pts para la meta`} />
-          {causas[0] && <CardResumen color={BASE.red} titulo="🔴 Dónde se pierde el tiempo" valor={causas[0].name} detalle={`${causas[0].value}% del tiempo no contributorio`} />}
-          {best && <CardResumen color={BASE.greenDark} titulo="🏆 Mejor desempeño" valor={best.nombre} detalle={`LUF ${Math.round(best.lufPromedio)}%`} />}
-        </div>
-      </div>
-
-      {/* ── Evolución (tendencia) ── */}
-      {trend.length >= 2 && (
-        <div style={cardBox}>
-          <p style={titBox}>Evolución de la productividad (por semana)</p>
-          <ResponsiveContainer width="100%" height={210}>
-            <LineChart data={trend} margin={{ top: 6, right: 12, left: -12, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={BASE.border} />
-              <XAxis dataKey="periodo" tick={{ fontSize: 11, fill: BASE.muted }} />
-              <YAxis tick={{ fontSize: 11, fill: BASE.muted }} unit="%" domain={[0, 100]} />
-              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v) => `${v}%`} />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
-              <ReferenceLine y={metas.lufObjetivo} stroke={BASE.green} strokeDasharray="5 4" label={{ value: `Meta ${metas.lufObjetivo}%`, fontSize: 10, fill: BASE.greenDark, position: 'insideTopRight' }} />
-              <Line type="monotone" dataKey="LUF" stroke={BASE.navy} strokeWidth={3} dot={{ r: 3 }} name="LUF" />
-              <Line type="monotone" dataKey="TP" stroke={CB_COL.TP} strokeWidth={2} dot={false} name="Productivo" />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-
-      {/* ── Causas de pérdida (Pareto TNC) en barras ── */}
-      {causas.length > 0 && (
-        <div style={cardBox}>
-          <p style={titBox}>Principales causas de tiempo perdido (TNC)</p>
-          <ResponsiveContainer width="100%" height={Math.max(120, causas.length * 40)}>
-            <BarChart data={causas} layout="vertical" margin={{ top: 0, right: 30, left: 10, bottom: 0 }}>
-              <XAxis type="number" hide domain={[0, 100]} />
-              <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 11, fill: BASE.text }} />
-              <Tooltip formatter={(v) => `${v}%`} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-              <Bar dataKey="value" fill={CB_COL.TNC} radius={[0, 7, 7, 0]} label={{ position: 'right', fontSize: 11, fontWeight: 800, fill: BASE.navy, formatter: (v) => `${v}%` }} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Fecha 'YYYY-MM-DD' → 'DD/MM'
-function fmtCorta(f) {
-  return (f && f.length >= 10) ? `${f.slice(8, 10)}/${f.slice(5, 7)}` : (f || '—');
-}
-
-// ── Tendencia de TP/TC/TNC/LUF en el tiempo ──
-function TabTendencia({ data, metas }) {
-  if (!data || data.length < 2) {
-    return <EmptyState icono="~" titulo="Faltan datos para la tendencia" descripcion="Se necesitan Cartas Balance de al menos 2 semanas distintas para ver la evolución." />;
-  }
-  const chart = data.map(d => ({ periodo: d.periodo.replace('-', ' '), TP: d.tp, TC: d.tc, TNC: d.tnc, LUF: d.luf }));
-  const ult = data[data.length - 1];
-  const prev = data.length >= 2 ? data[data.length - 2] : null;
-  const deltaLuf = prev ? +(ult.luf - prev.luf).toFixed(1) : null;
-  return (
-    <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 12, padding: '18px 20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-        <h3 style={{ fontSize: 13, fontWeight: 900, color: BASE.navy }}>EVOLUCIÓN DE PRODUCTIVIDAD (por semana)</h3>
-        {deltaLuf != null && (
-          <span style={{ fontSize: 12, fontWeight: 900, color: deltaLuf >= 0 ? BASE.greenDark : BASE.red }}>
-            LUF {deltaLuf >= 0 ? '▲ +' : '▼ '}{deltaLuf} pts vs semana anterior
-          </span>
         )}
       </div>
-      <ResponsiveContainer width="100%" height={280}>
-        <LineChart data={chart} margin={{ top: 6, right: 12, left: -10, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke={BASE.border} />
-          <XAxis dataKey="periodo" tick={{ fontSize: 11, fill: BASE.muted }} />
-          <YAxis tick={{ fontSize: 11, fill: BASE.muted }} unit="%" domain={[0, 100]} />
-          <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v) => `${v}%`} />
-          <Legend wrapperStyle={{ fontSize: 11 }} />
-          <ReferenceLine y={metas.tpMin} stroke={BASE.green} strokeDasharray="5 4" label={{ value: `Meta TP ${metas.tpMin}%`, fontSize: 10, fill: BASE.greenDark, position: 'insideTopRight' }} />
-          <ReferenceLine y={metas.tncMax} stroke={BASE.red} strokeDasharray="5 4" label={{ value: `Máx TNC ${metas.tncMax}%`, fontSize: 10, fill: BASE.red, position: 'insideBottomRight' }} />
-          <Line type="monotone" dataKey="TP" stroke={BASE.green} strokeWidth={2.5} dot={{ r: 2 }} />
-          <Line type="monotone" dataKey="TC" stroke={BASE.gold} strokeWidth={2} dot={false} />
-          <Line type="monotone" dataKey="TNC" stroke={BASE.red} strokeWidth={2} dot={false} />
-          <Line type="monotone" dataKey="LUF" stroke={BASE.navy} strokeWidth={2.5} strokeDasharray="6 4" dot={false} />
-        </LineChart>
-      </ResponsiveContainer>
-      <p style={{ fontSize: 10.5, color: BASE.muted, marginTop: 8, fontStyle: 'italic' }}>
-        TP = Trabajo Productivo · TC = Contributorio · TNC = No Contributorio · LUF = TP + ½·TC. Líneas punteadas = metas.
-      </p>
-    </div>
-  );
-}
 
-// ── Comparación por actividad con semáforo de metas ──
-function TabComparar({ data, metas }) {
-  if (!data || data.length === 0) {
-    return <EmptyState icono="-" titulo="Sin datos por actividad" descripcion="Aún no hay Cartas Balance con actividad registrada." />;
-  }
-  return (
-    <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 12, padding: '18px 20px' }}>
-      <h3 style={{ fontSize: 13, fontWeight: 900, color: BASE.navy, marginBottom: 4 }}>PRODUCTIVIDAD POR ACTIVIDAD</h3>
-      <p style={{ fontSize: 11, color: BASE.muted, marginBottom: 14 }}>Ordenado por LUF. El semáforo evalúa TP ≥ {metas.tpMin}% y TNC ≤ {metas.tncMax}%.</p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {data.map((d) => {
-          const ev = evaluarMetas(d, metas);
-          return (
-            <div key={d.actividad} style={{ borderLeft: `5px solid ${ev.color}`, background: BASE.bgSoft, borderRadius: 10, padding: '10px 14px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 13, fontWeight: 800, color: BASE.navy }}>{d.actividad}</span>
-                <span style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <span style={{ fontSize: 11, color: BASE.muted }}>{d.sesiones} ses · {d.totalObs} obs</span>
-                  <span style={{ fontSize: 11, fontWeight: 900, color: '#fff', background: ev.color, padding: '3px 10px', borderRadius: 999 }}>{ev.label}</span>
-                  <span style={{ fontSize: 15, fontWeight: 900, color: BASE.navy, fontFamily: 'monospace', minWidth: 56, textAlign: 'right' }}>LUF {Math.round(d.luf)}%</span>
+      {tab === 'metas' && <TabMetas metas={metas} onGuardar={guardarMetas} />}
+
+      {tab === 'resumen' && (
+        <>
+          {/* HERO: LUF de la selección + estado + selección activa */}
+          <div style={{ background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', borderRadius: 16, padding: '18px 22px', boxShadow: BASE.shadowMd, display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+            <div>
+              <p style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: BASE.gold }}>
+                PRODUCTIVIDAD · {sel ? `CARTA DEL ${fmtCorta(sel)}` : 'TODAS LAS CARTAS'}
+              </p>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginTop: 6 }}>
+                <span style={{ fontSize: 50, fontWeight: 900, lineHeight: 1 }}>{Math.round(k.luf)}%</span>
+                <span style={{ fontSize: 13, fontWeight: 900, padding: '5px 12px', borderRadius: 999, background: cumpleMeta ? 'rgba(16,185,129,0.22)' : 'rgba(229,168,47,0.22)', border: `1px solid ${cumpleMeta ? '#10B981' : BASE.gold}` }}>
+                  {cls.emoji} {cls.label}
                 </span>
+                {sel && (
+                  <button onClick={() => setSel(null)} style={{ fontSize: 11, fontWeight: 800, color: '#fff', background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 999, padding: '5px 12px', cursor: 'pointer' }}>✕ Ver todas</button>
+                )}
               </div>
-              <div style={{ display: 'flex', height: 16, borderRadius: 5, overflow: 'hidden', marginTop: 8 }}>
-                {d.tp > 0 && <div style={{ width: d.tp + '%', background: BASE.green }} title={`TP ${d.tp}%`} />}
-                {d.tc > 0 && <div style={{ width: d.tc + '%', background: BASE.gold }} title={`TC ${d.tc}%`} />}
-                {d.tnc > 0 && <div style={{ width: d.tnc + '%', background: BASE.red }} title={`TNC ${d.tnc}%`} />}
-              </div>
-              <p style={{ fontSize: 10, color: BASE.muted, marginTop: 4 }}>TP {Math.round(d.tp)}% · TC {Math.round(d.tc)}% · TNC {Math.round(d.tnc)}%</p>
+              <p style={{ fontSize: 11.5, opacity: 0.85, marginTop: 6 }}>Índice de uso de MO (LUF) · meta {metas.lufObjetivo}%</p>
             </div>
-          );
-        })}
-      </div>
+            <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
+              {[['TP', Math.round(k.tp)], ['TC', Math.round(k.tc)], ['TNC', Math.round(k.tnc)], ['Obs.', k.n], ['Trab.', nPersonas]].map(([l, v]) => (
+                <div key={l} style={{ textAlign: 'center' }}>
+                  <p style={{ fontSize: 20, fontWeight: 900 }}>{v}{l.startsWith('T') && l.length === 2 ? '%' : ''}</p>
+                  <p style={{ fontSize: 10, opacity: 0.8, fontWeight: 700, textTransform: 'uppercase' }}>{l}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Grid: izquierda (tabla + dona + claves) · derecha (3 barras por fecha) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: 14 }}>
+            {/* Columna izquierda */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {/* Tabla por fecha (clickable) */}
+              <div style={cardBox}>
+                <p style={titBox}>Resultados por fecha <span style={{ textTransform: 'none', fontWeight: 600 }}>· clic para filtrar</span></p>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
+                    <thead>
+                      <tr style={{ background: BASE.navySoft, color: BASE.navy }}>
+                        {['Fecha', 'TP', 'TC', 'TNC', 'LUF'].map((h, i) => (
+                          <th key={h} style={{ padding: '8px 10px', textAlign: i === 0 ? 'left' : 'right', fontSize: 10.5, fontWeight: 900 }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {porFecha.map((f) => {
+                        const activo = sel === f.fecha;
+                        return (
+                          <tr key={f.fecha} onClick={() => toggleSel(f.fecha)} style={{
+                            cursor: 'pointer', borderTop: `1px solid ${BASE.border}`,
+                            background: activo ? BASE.gold + '22' : 'transparent',
+                          }}>
+                            <td style={{ padding: '8px 10px', fontWeight: 800, color: BASE.navy }}>{f.fecha.slice(8, 10)}/{f.fecha.slice(5, 7)}/{f.fecha.slice(2, 4)}</td>
+                            <td style={{ padding: '8px 10px', textAlign: 'right', color: CB_COL.TP, fontWeight: 700 }}>{f.tp}%</td>
+                            <td style={{ padding: '8px 10px', textAlign: 'right', color: CB_COL.TC, fontWeight: 700 }}>{f.tc}%</td>
+                            <td style={{ padding: '8px 10px', textAlign: 'right', color: CB_COL.TNC, fontWeight: 700 }}>{f.tnc}%</td>
+                            <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 900, color: BASE.navy }}>{f.luf}%</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <p style={{ fontSize: 10, color: BASE.muted, marginTop: 8 }}>{porFecha.length} fecha(s) · período {rango}</p>
+              </div>
+
+              {/* Dona de distribución (de la selección) */}
+              <div style={cardBox}>
+                <p style={titBox}>Distribución del tiempo {sel ? `(${fmtCorta(sel)})` : '(global)'}</p>
+                <div style={{ position: 'relative' }}>
+                  <ResponsiveContainer width="100%" height={190}>
+                    <PieChart>
+                      <Pie data={donut} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={52} outerRadius={80} paddingAngle={2} stroke="none">
+                        {donut.map((d, i) => <Cell key={i} fill={d.color} />)}
+                      </Pie>
+                      <Tooltip formatter={(v) => `${v}%`} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                      <Legend wrapperStyle={{ fontSize: 11 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div style={{ position: 'absolute', top: '36%', left: 0, right: 0, textAlign: 'center', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                    <p style={{ fontSize: 24, fontWeight: 900, color: CB_COL.TP, lineHeight: 1 }}>{Math.round(k.tp)}%</p>
+                    <p style={{ fontSize: 9.5, fontWeight: 800, color: BASE.muted, textTransform: 'uppercase' }}>Productivo</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Claves */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <CardResumen color={cumpleMeta ? BASE.greenDark : '#d97706'} titulo="🎯 Meta LUF" valor={`${Math.round(k.luf)}% / ${metas.lufObjetivo}%`} detalle={cumpleMeta ? 'Cumple' : `Faltan ${Math.round(metas.lufObjetivo - k.luf)} pts`} />
+                {causas[0] && <CardResumen color={BASE.red} titulo="🔴 Dónde se pierde el tiempo" valor={causas[0].name} detalle={`${causas[0].value}% del TNC`} />}
+                {best && <CardResumen color={BASE.greenDark} titulo="🏆 Mejor desempeño" valor={best.nombre} detalle={`LUF ${Math.round(best.lufPromedio)}%`} />}
+              </div>
+            </div>
+
+            {/* Columna derecha: 3 barras por fecha (estilo del Excel) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <BarPorFecha titulo="Trabajo Productivo (TP)" data={porFecha} dk="tp" color={CB_COL.TP} sel={sel} onSel={toggleSel} />
+              <BarPorFecha titulo="Trabajo Contributorio (TC)" data={porFecha} dk="tc" color={CB_COL.TC} sel={sel} onSel={toggleSel} />
+              <BarPorFecha titulo="Trabajo No Contributorio (TNC)" data={porFecha} dk="tnc" color={CB_COL.TNC} sel={sel} onSel={toggleSel} />
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
 
-// ── Configuración de metas de productividad ──
+// ── Barras por fecha con cross-filter (clic resalta/filtra esa fecha) ──
+function BarPorFecha({ titulo, data, dk, color, sel, onSel }) {
+  return (
+    <div style={cardBox}>
+      <p style={{ ...titBox, color }}>{titulo}</p>
+      <ResponsiveContainer width="100%" height={160}>
+        <BarChart data={data} margin={{ top: 16, right: 8, left: -18, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke={BASE.border} vertical={false} />
+          <XAxis dataKey="label" tick={{ fontSize: 11, fill: BASE.muted }} />
+          <YAxis tick={{ fontSize: 10, fill: BASE.muted }} unit="%" domain={[0, 'auto']} />
+          <Tooltip formatter={(v) => `${v}%`} cursor={{ fill: BASE.bg }} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+          <Bar dataKey={dk} radius={[6, 6, 0, 0]} cursor="pointer"
+            onClick={(d) => d && d.fecha && onSel(d.fecha)}
+            label={{ position: 'top', fontSize: 10, fontWeight: 800, fill: BASE.navy, formatter: (v) => `${v}%` }}>
+            {data.map((e, i) => <Cell key={i} fill={sel && sel !== e.fecha ? `${color}44` : color} />)}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function CardResumen({ color, titulo, valor, detalle }) {
+  return (
+    <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderLeft: `5px solid ${color}`, borderRadius: 12, padding: '11px 14px', boxShadow: BASE.shadowSm }}>
+      <p style={{ fontSize: 11, fontWeight: 900, color: BASE.navy }}>{titulo}</p>
+      <p style={{ fontSize: 17, fontWeight: 900, color, marginTop: 2 }}>{valor}</p>
+      {detalle && <p style={{ fontSize: 11, color: BASE.muted, marginTop: 2 }}>{detalle}</p>}
+    </div>
+  );
+}
+
+// ── Metas de productividad (config) ──
 function TabMetas({ metas, onGuardar }) {
   const [tpMin, setTpMin] = useState(metas.tpMin);
   const [tncMax, setTncMax] = useState(metas.tncMax);
@@ -434,15 +272,13 @@ function TabMetas({ metas, onGuardar }) {
   const [ok, setOk] = useState(false);
   const num = (v, d) => { const n = parseFloat(v); return isNaN(n) ? d : n; };
   return (
-    <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 12, padding: '20px 22px', maxWidth: 520 }}>
-      <h3 style={{ fontSize: 13, fontWeight: 900, color: BASE.navy, marginBottom: 4 }}>METAS DE PRODUCTIVIDAD</h3>
-      <p style={{ fontSize: 11.5, color: BASE.muted, marginBottom: 16 }}>
-        Estos objetivos definen el semáforo de la Tendencia y la Comparación. Aplican a toda la obra.
-      </p>
+    <div style={{ ...cardBox, maxWidth: 520 }}>
+      <p style={titBox}>Metas de productividad</p>
+      <p style={{ fontSize: 11.5, color: BASE.muted, marginBottom: 14 }}>Definen el semáforo y la línea de meta del tablero. Aplican a toda la obra.</p>
       {[
-        { l: 'TP mínimo (Trabajo Productivo) %', v: tpMin, set: setTpMin, hint: 'Estándar de obra: 60%' },
-        { l: 'TNC máximo (Trabajo No Contributorio) %', v: tncMax, set: setTncMax, hint: 'Estándar: ≤ 15%' },
-        { l: 'LUF objetivo %', v: lufObjetivo, set: setLufObjetivo, hint: 'Bueno ≥ 65%' },
+        { l: 'TP mínimo (%)', v: tpMin, set: setTpMin, hint: 'Estándar: 60%' },
+        { l: 'TNC máximo (%)', v: tncMax, set: setTncMax, hint: 'Estándar: ≤ 15%' },
+        { l: 'LUF objetivo (%)', v: lufObjetivo, set: setLufObjetivo, hint: 'Bueno ≥ 65%' },
       ].map((f) => (
         <div key={f.l} style={{ marginBottom: 14 }}>
           <label style={{ fontSize: 12, fontWeight: 700, color: BASE.navy, display: 'block', marginBottom: 4 }}>{f.l}</label>
@@ -452,173 +288,9 @@ function TabMetas({ metas, onGuardar }) {
         </div>
       ))}
       <button onClick={() => { onGuardar({ tpMin: num(tpMin, 60), tncMax: num(tncMax, 15), lufObjetivo: num(lufObjetivo, 65) }); setOk(true); setTimeout(() => setOk(false), 2500); }}
-        style={{ marginTop: 6, padding: '11px 22px', borderRadius: 10, border: 'none', cursor: 'pointer',
-          background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', fontSize: 13, fontWeight: 900 }}>
+        style={{ marginTop: 6, padding: '11px 22px', borderRadius: 10, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', fontSize: 13, fontWeight: 900 }}>
         {ok ? '✓ Metas guardadas' : 'Guardar metas'}
       </button>
     </div>
   );
 }
-
-function TabRanking({ ranking }) {
-  if (ranking.length === 0) {
-    return <EmptyState icono="-" titulo="Sin datos" descripcion="Necesitas Cartas Balance con observaciones por persona." />;
-  }
-  return (
-    <div style={{
-      background: BASE.white,
-      border: '1px solid ' + BASE.border,
-      borderRadius: '12px',
-      overflow: 'hidden',
-    }}>
-      <div style={{ padding: '14px 20px', background: BASE.bgSoft, borderBottom: '1px solid ' + BASE.border }}>
-        <h3 style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>
-          RANKING DE PRODUCTIVIDAD INDIVIDUAL
-        </h3>
-        <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '4px' }}>
-          Ordenado por LUF (Labor Utilization Factor) = TP + 0.5 x TC
-        </p>
-      </div>
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: '700px' }}>
-          <thead>
-            <tr style={{ background: BASE.navy, color: '#fff' }}>
-              <th style={th()}>#</th>
-              <th style={th()}>Persona</th>
-              <th style={th()}>LUF</th>
-              <th style={th()}>TP</th>
-              <th style={th()}>TC</th>
-              <th style={th()}>TNC</th>
-              <th style={th()}>Sesiones</th>
-              <th style={th()}>Obs</th>
-              <th style={th()}>Confianza</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ranking.map((r, i) => (
-              <tr key={r.personaId} style={{
-                background: i % 2 === 0 ? BASE.white : BASE.bgSoft,
-                borderBottom: '1px solid ' + BASE.border,
-              }}>
-                <td style={{ ...td(), fontWeight: '900', color: BASE.gold }}>{i + 1}</td>
-                <td style={{ ...td(), fontWeight: '800', color: BASE.navy }}>{r.nombre}</td>
-                <td style={{ ...td(), fontWeight: '900', color: r.clasificacion.color }}>{Math.round(r.lufPromedio)}%</td>
-                <td style={td()}>{Math.round(r.tpPromedio)}%</td>
-                <td style={td()}>{Math.round(r.tcPromedio)}%</td>
-                <td style={td()}>{Math.round(r.tncPromedio)}%</td>
-                <td style={td()}>{r.sesiones}</td>
-                <td style={td()}>{r.totalObs}</td>
-                <td style={td()}>{Math.round(r.confianza)}%</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function TabPareto({ cb }) {
-  const pareto = useMemo(() => paretoTNC(cb.observaciones || []), [cb]);
-  const criticas = useMemo(() => causasCriticasTNC(pareto), [pareto]);
-  if (pareto.length === 0) {
-    return <EmptyState icono="-" titulo="Sin TNC" descripcion="Esta carta balance no tiene tiempo no contributorio." />;
-  }
-  return (
-    <div style={{ background: BASE.white, border: '1px solid ' + BASE.border, borderRadius: '12px', padding: '18px 20px' }}>
-      <h3 style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy, marginBottom: '12px' }}>
-        PARETO DE CAUSAS DE TIEMPO NO CONTRIBUTORIO
-      </h3>
-      {pareto.map((fila) => (
-        <div key={fila.subcategoria} style={{
-          padding: '10px 14px',
-          marginBottom: '6px',
-          background: BASE.bgSoft,
-          borderRadius: '8px',
-          borderLeft: '4px solid ' + (fila.critico ? BASE.red : BASE.gold),
-          display: 'flex',
-          justifyContent: 'space-between',
-          fontSize: '12px',
-        }}>
-          <span style={{ fontWeight: '800', color: BASE.navy }}>{fila.label}</span>
-          <span style={{ fontWeight: '900', color: BASE.navy }}>{Math.round(fila.porcentaje)}% (acum {Math.round(fila.acumulado)}%)</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function TabCrew({ cb }) {
-  const grupos = useMemo(() => agruparPorPersona(cb), [cb]);
-  if (grupos.length === 0) {
-    return <EmptyState icono="-" titulo="Sin datos por persona" descripcion="Esta CB no tiene observaciones por persona individual." />;
-  }
-  return (
-    <div style={{ background: BASE.white, border: '1px solid ' + BASE.border, borderRadius: '12px', padding: '18px 20px' }}>
-      <h3 style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy, marginBottom: '12px' }}>
-        CREW BALANCE CHART
-      </h3>
-      {grupos.map((g) => {
-        const cls = clasificarLUF(g.kpis.luf);
-        return (
-          <div key={g.personaId} style={{
-            padding: '12px 14px',
-            marginBottom: '8px',
-            background: BASE.bgSoft,
-            borderRadius: '10px',
-            borderLeft: '4px solid ' + cls.color,
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-              <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>{g.nombre}</p>
-              <span style={{ color: cls.color, fontWeight: '900' }}>LUF {Math.round(g.kpis.luf)}%</span>
-            </div>
-            <div style={{ display: 'flex', height: '20px', borderRadius: '6px', overflow: 'hidden' }}>
-              {g.kpis.tp > 0 && <div style={{ width: g.kpis.tp + '%', background: BASE.green }} />}
-              {g.kpis.tc > 0 && <div style={{ width: g.kpis.tc + '%', background: BASE.gold }} />}
-              {g.kpis.tnc > 0 && <div style={{ width: g.kpis.tnc + '%', background: BASE.red }} />}
-            </div>
-            <p style={{ fontSize: '10px', color: BASE.muted, marginTop: '4px' }}>
-              TP {Math.round(g.kpis.tp)}% / TC {Math.round(g.kpis.tc)}% / TNC {Math.round(g.kpis.tnc)}% / {g.kpis.n} obs
-            </p>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function TabRecoms({ cb }) {
-  const recs = useMemo(() => generarRecomendaciones(cb), [cb]);
-  if (recs.length === 0) {
-    return (
-      <div style={{ background: BASE.greenLight, borderRadius: '14px', padding: '24px', textAlign: 'center' }}>
-        <p style={{ fontSize: '15px', fontWeight: '900', color: BASE.greenDark }}>
-          Sin recomendaciones para esta Carta Balance
-        </p>
-        <p style={{ fontSize: '12px', color: BASE.text, marginTop: '6px' }}>
-          El equipo esta dentro de parametros sanos.
-        </p>
-      </div>
-    );
-  }
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-      {recs.map((r, i) => (
-        <div key={i} style={{
-          background: BASE.white,
-          border: '1px solid ' + BASE.border,
-          borderRadius: '12px',
-          padding: '14px 18px',
-          borderLeft: '4px solid ' + (r.severidad === 'alta' ? BASE.red : r.severidad === 'positiva' ? BASE.green : BASE.gold),
-        }}>
-          <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy, marginBottom: '4px' }}>{r.titulo}</p>
-          <p style={{ fontSize: '12px', color: BASE.text, marginBottom: '6px' }}>{r.mensaje}</p>
-          <p style={{ fontSize: '11px', color: BASE.muted }}>Accion: {r.accion}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-const th = () => ({ padding: '10px 12px', textAlign: 'left', fontSize: '10px', fontWeight: '900' });
-const td = () => ({ padding: '10px 12px', fontSize: '12px', color: BASE.text });

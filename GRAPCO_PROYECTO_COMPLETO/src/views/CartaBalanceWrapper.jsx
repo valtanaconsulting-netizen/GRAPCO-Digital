@@ -10,20 +10,16 @@ import React, { useState } from 'react';
 import { BASE } from '../utils/styles';
 import CartaBalance from './CartaBalance';
 import CartaBalanceAnalisis from './CartaBalanceAnalisis';
-import OptimizadorCuadrillas from './OptimizadorCuadrillas';
-import ValidacionOptimizador from './ValidacionOptimizador';
 import ImportarCartaBalance from './ImportarCartaBalance';
 
 const SUB_TABS = [
-  { id: 'capturar',    l: '⚖️ Capturar',     desc: 'Realizar una nueva Carta Balance' },
   { id: 'importar',    l: '📥 Importar',     desc: 'Cargar carta por conteos (formato GP-GCR-FOR)' },
-  { id: 'analisis',    l: '📊 Análisis',     desc: 'Ranking, Pareto, Crew Balance Chart' },
-  { id: 'optimizador', l: '🤖 Optimizador',  desc: 'Generar cuadrilla óptima por actividad' },
-  { id: 'validacion',  l: '🧪 Validación',   desc: 'Precisión del modelo (cross-validation)' },
+  { id: 'analisis',    l: '📊 Resumen / Análisis', desc: 'Tablero interactivo de productividad' },
+  { id: 'capturar',    l: '⚖️ Capturar',     desc: 'Registrar una carta a mano (matriz)' },
 ];
 
 export default function CartaBalanceWrapper({ cuadrillasActivas, personalDB, isMobile, showToast }) {
-  const [tab, setTab] = useState('capturar');
+  const [tab, setTab] = useState('analisis');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -72,8 +68,6 @@ export default function CartaBalanceWrapper({ cuadrillasActivas, personalDB, isM
         )}
         {tab === 'importar'    && <ImportarCartaBalance showToast={showToast} />}
         {tab === 'analisis'    && <CartaBalanceAnalisis />}
-        {tab === 'optimizador' && <OptimizadorCuadrillas showToast={showToast} />}
-        {tab === 'validacion'  && <ValidacionOptimizador />}
       </div>
     </div>
   );
