@@ -12,6 +12,7 @@ import { clasificarLUF } from '../utils/cartaBalanceAnalytics';
 import { useAuth } from '../contexts/AuthContext';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 import VistaHeader from '../components/VistaHeader';
+import ConfirmModal from '../components/ConfirmModal';
 
 // Catálogo de códigos (cubre el formato GP-GCR-FOR de habilitado/colocación de acero).
 const CODIGOS = {
@@ -158,6 +159,7 @@ export default function ImportarCartaBalance({ showToast }) {
   const [conteos, setConteos] = useState(PRECARGA.conteos);
   const [guardando, setGuardando] = useState(false);
   const [okMsg, setOkMsg] = useState('');
+  const [confirm, setConfirm] = useState(null); // { ids, docData, obs, actNorm, fecha }
 
   const setCount = (letra, cod, val) => {
     setConteos((prev) => ({ ...prev, [letra]: { ...(prev[letra] || {}), [cod]: val === '' ? '' : n(val) } }));
@@ -251,24 +253,13 @@ export default function ImportarCartaBalance({ showToast }) {
       });
 
       if (dups.length > 0) {
-        const ok = window.confirm(
-          `Ya guardaste ${dups.length === 1 ? 'una Carta Balance' : `${dups.length} Cartas Balance`} de "${actNorm}" del ${ficha.fecha}.\n\n` +
-          `¿Reemplazar con estos datos?${dups.length > 1 ? ` (se conservará 1 y se eliminarán las ${dups.length - 1} copias extra)` : ''}`
-        );
-        if (!ok) { setGuardando(false); return; }
-        // Reemplaza la primera y elimina el resto (limpia duplicados).
-        await setDoc(doc(db, 'Cartas_Balance', dups[0].id), docData);
-        let borradas = 0;
-        for (let i = 1; i < dups.length; i++) {
-          try { await deleteDoc(doc(db, 'Cartas_Balance', dups[i].id)); borradas++; } catch { /* requiere admin */ }
-        }
-        setOkMsg(`Carta Balance reemplazada ✓${borradas ? ` · ${borradas} copia(s) duplicada(s) eliminada(s)` : ''}`);
-        showToast?.('Carta Balance reemplazada ✓', 'success');
-      } else {
-        await addDoc(collection(db, 'Cartas_Balance'), docData);
-        setOkMsg(`Carta Balance guardada ✓ (${observaciones.length} observaciones)`);
-        showToast?.('Carta Balance importada a la base de datos ✓', 'success');
+        // Abre el modal premium y espera la decisión del usuario.
+        setConfirm({ ids: dups.map((d) => d.id), docData, obs: observaciones.length, actNorm, fecha: ficha.fecha });
+        return;
       }
+      await addDoc(collection(db, 'Cartas_Balance'), docData);
+      setOkMsg(`Carta Balance guardada ✓ (${observaciones.length} observaciones)`);
+      showToast?.('Carta Balance importada a la base de datos ✓', 'success');
       setTimeout(() => setOkMsg(''), 6000);
     } catch (e) {
       console.error('[ImportarCB]', e);
@@ -276,11 +267,48 @@ export default function ImportarCartaBalance({ showToast }) {
     } finally { setGuardando(false); }
   }, [user, ficha, trab, conteos, kpis, proyectoActivoId, frenteActivoId, modoTodosFrentes, showToast]);
 
+  // Reemplazo confirmado desde el modal: sobreescribe 1 y elimina las copias extra.
+  const ejecutarReemplazo = useCallback(async () => {
+    const c = confirm;
+    setConfirm(null);
+    if (!c) return;
+    setGuardando(true);
+    try {
+      await setDoc(doc(db, 'Cartas_Balance', c.ids[0]), c.docData);
+      let borradas = 0;
+      for (let i = 1; i < c.ids.length; i++) {
+        try { await deleteDoc(doc(db, 'Cartas_Balance', c.ids[i])); borradas++; } catch { /* requiere admin */ }
+      }
+      setOkMsg(`Carta Balance reemplazada ✓${borradas ? ` · ${borradas} copia(s) duplicada(s) eliminada(s)` : ''}`);
+      showToast?.('Carta Balance reemplazada ✓', 'success');
+      setTimeout(() => setOkMsg(''), 6000);
+    } catch (e) {
+      console.error('[ImportarCB reemplazo]', e);
+      showToast?.('Error al reemplazar: ' + (e?.message || e), 'error');
+    } finally { setGuardando(false); }
+  }, [confirm, showToast]);
+
   const clsLuf = clasificarLUF(kpis.luf);
   const inpMini = { width: '52px', padding: '5px 4px', textAlign: 'center', border: `1px solid ${BASE.border}`, borderRadius: '6px', fontSize: '12px', fontWeight: 700, color: BASE.navy };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <ConfirmModal
+        abierto={!!confirm}
+        icono="🗂️"
+        titulo="Esta Carta Balance ya existe"
+        mensaje={confirm
+          ? `Ya guardaste ${confirm.ids.length === 1 ? 'una Carta Balance' : `${confirm.ids.length} Cartas Balance`} de “${confirm.actNorm}” del ${confirm.fecha}. ¿Reemplazar con estos datos?`
+          : ''}
+        detalle={confirm && confirm.ids.length > 1
+          ? `Se conservará 1 y se eliminarán las ${confirm.ids.length - 1} copias duplicadas.`
+          : undefined}
+        textoConfirmar="Reemplazar"
+        textoCancelar="Cancelar"
+        onConfirmar={ejecutarReemplazo}
+        onCancelar={() => setConfirm(null)}
+      />
+
       <VistaHeader icono="registro" eyebrow="Carta Balance"
         titulo="Importar por conteos"
         subtitulo="Ingresa los conteos del bloque 'ORDEN DE DATOS' del formato. Genera la carta y la guarda en la base."
