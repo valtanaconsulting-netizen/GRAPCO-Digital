@@ -154,7 +154,7 @@ export default function CartaBalanceAnalisis() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '4px 0' }}>
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 6, background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 10, padding: 5, alignSelf: 'flex-start' }}>
+      <div className="no-print" style={{ display: 'flex', gap: 6, background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 10, padding: 5, alignSelf: 'flex-start' }}>
         {[['resumen', '📊 Tablero'], ['metas', '🎯 Metas']].map(([id, l]) => (
           <button key={id} onClick={() => setTab(id)} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 800, background: tab === id ? `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})` : 'transparent', color: tab === id ? '#fff' : BASE.muted }}>{l}</button>
         ))}
@@ -163,9 +163,13 @@ export default function CartaBalanceAnalisis() {
       {tab === 'metas' && <TabMetas metas={metas} onGuardar={guardarMetas} />}
 
       {tab === 'resumen' && (
-        <>
+        <div id="print-area" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {/* Encabezado solo visible en el PDF impreso */}
+          <div className="solo-print" style={{ display: 'none' }}>
+            <p style={{ fontSize: 16, fontWeight: 900, color: BASE.navy }}>GRAPCO S.A.C. · Resumen Carta Balance</p>
+          </div>
           {/* ── BARRA DE CONTROL ── */}
-          <div style={{ ...cardBox, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+          <div className="no-print" style={{ ...cardBox, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ fontSize: 11, fontWeight: 900, color: BASE.muted }}>📅 PERÍODO</span>
               <input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} style={inpTop} title="Desde" />
@@ -186,6 +190,7 @@ export default function CartaBalanceAnalisis() {
             </div>
             <button onClick={() => setVerConclu((v) => !v)} style={{ ...inpTop, cursor: 'pointer', fontWeight: 800, background: verConclu ? BASE.navy : BASE.white, color: verConclu ? '#fff' : BASE.navy, border: `1px solid ${verConclu ? BASE.navy : BASE.border}` }}>📝 Conclusiones: {verConclu ? 'ON' : 'OFF'}</button>
             <button onClick={exportarExcel} style={{ ...inpTop, cursor: 'pointer', fontWeight: 900, background: `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`, color: '#fff', border: 'none' }}>⬇ Excel</button>
+            <button onClick={() => window.print()} style={{ ...inpTop, cursor: 'pointer', fontWeight: 900, background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', border: 'none' }}>🖨️ PDF</button>
             {(chips.length > 0 || desde || hasta || selAct) && (
               <button onClick={clearAll} style={{ ...inpTop, cursor: 'pointer', fontWeight: 800, color: BASE.red, border: `1px solid ${BASE.red}55` }}>Limpiar todo</button>
             )}
@@ -333,7 +338,7 @@ export default function CartaBalanceAnalisis() {
               )}
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );
