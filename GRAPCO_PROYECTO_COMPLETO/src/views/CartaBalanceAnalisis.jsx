@@ -3,9 +3,10 @@ import { collection, query, orderBy, onSnapshot, doc, setDoc, serverTimestamp } 
 import * as XLSX from 'xlsx';
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine,
+  PieChart, Pie, Cell, BarChart, Bar,
 } from 'recharts';
 import { db } from '../firebaseConfig';
-import { BASE } from '../utils/styles';
+import { BASE, CB_COL } from '../utils/styles';
 import EmptyState from '../components/EmptyState';
 import {
   calcularKPIs,
@@ -210,15 +211,7 @@ export default function CartaBalanceAnalisis() {
   );
 }
 
-// Subcomponentes del Resumen (módulo-scope para no recrearlos en cada render).
-function ChipResumen({ icon, v, l }) {
-  return (
-    <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 12, padding: '12px 14px', boxShadow: BASE.shadowSm, flex: '1 1 130px' }}>
-      <p style={{ fontSize: 22, fontWeight: 900, color: BASE.navy, fontFamily: 'monospace' }}>{icon} {v}</p>
-      <p style={{ fontSize: 10.5, fontWeight: 800, color: BASE.muted, textTransform: 'uppercase', letterSpacing: 0.4 }}>{l}</p>
-    </div>
-  );
-}
+// Subcomponente del Resumen (módulo-scope para no recrearlo en cada render).
 function CardResumen({ color, titulo, valor, detalle }) {
   return (
     <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderLeft: `5px solid ${color}`, borderRadius: 12, padding: '12px 14px', boxShadow: BASE.shadowSm, flex: '1 1 200px' }}>
@@ -248,74 +241,111 @@ function TabResumen({ cartas, ranking, tendencia, metas }) {
     return <EmptyState icono="∑" titulo="Sin cartas para resumir" descripcion="Carga al menos una Carta Balance para ver el consolidado general." />;
   }
   const cls = clasificarLUF(k.luf);
-  const topTNC = pareto[0];
   const best = ranking[0];
-  const worst = ranking.length > 1 ? ranking[ranking.length - 1] : null;
-  const rango = fechas.length ? `${fechas[0]} → ${fechas[fechas.length - 1]}` : '—';
-  const chart = tendencia.map((t) => ({ periodo: t.periodo.replace('-', ' '), LUF: Math.round(t.luf), TP: Math.round(t.tp) }));
+  const rango = fechas.length ? `${fmtCorta(fechas[0])} – ${fmtCorta(fechas[fechas.length - 1])}` : '—';
+  const trend = tendencia.map((t) => ({ periodo: t.periodo.replace('-', ' '), LUF: Math.round(t.luf), TP: Math.round(t.tp) }));
+  const donut = [
+    { name: 'Productivo (TP)', value: Math.round(k.tp), color: CB_COL.TP },
+    { name: 'Contributorio (TC)', value: Math.round(k.tc), color: CB_COL.TC },
+    { name: 'No contributorio (TNC)', value: Math.round(k.tnc), color: CB_COL.TNC },
+  ];
+  const causas = pareto.slice(0, 5).map((p) => ({ name: p.label, value: Math.round(p.porcentaje) }));
+  const cumpleMeta = k.luf >= metas.lufObjetivo;
+  const cardBox = { background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 14, padding: '16px 18px', boxShadow: BASE.shadowMd };
+  const titBox = { fontSize: 11, fontWeight: 900, color: BASE.muted, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 10 };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {/* Hero consolidado */}
-      <div style={{ background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', borderRadius: 16, padding: '18px 22px', boxShadow: BASE.shadowMd }}>
-        <p style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1.6, color: BASE.gold }}>RESUMEN GENERAL · CARTA BALANCE</p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 22, alignItems: 'flex-end', marginTop: 8 }}>
-          <div>
-            <p style={{ fontSize: 11, opacity: 0.8, fontWeight: 700 }}>LUF GLOBAL</p>
-            <p style={{ fontSize: 40, fontWeight: 900, lineHeight: 1, color: '#fff' }}>{Math.round(k.luf)}%</p>
-            <p style={{ fontSize: 12, fontWeight: 800, color: cls.color === '#dc2626' ? '#fca5a5' : '#86efac' }}>{cls.emoji} {cls.label}</p>
+      {/* ── HERO ejecutivo: LUF + cumplimiento + cobertura mínima ── */}
+      <div style={{ background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', borderRadius: 16, padding: '20px 24px', boxShadow: BASE.shadowMd, display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 18 }}>
+        <div>
+          <p style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1.8, color: BASE.gold }}>PRODUCTIVIDAD DE OBRA · CARTA BALANCE</p>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginTop: 6 }}>
+            <span style={{ fontSize: 52, fontWeight: 900, lineHeight: 1 }}>{Math.round(k.luf)}%</span>
+            <span style={{ fontSize: 14, fontWeight: 900, padding: '5px 12px', borderRadius: 999, background: cumpleMeta ? 'rgba(16,185,129,0.22)' : 'rgba(229,168,47,0.22)', border: `1px solid ${cumpleMeta ? '#10B981' : BASE.gold}` }}>
+              {cls.emoji} {cls.label}
+            </span>
           </div>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            {[['TP', k.tp, '#86efac'], ['TC', k.tc, '#fcd34d'], ['TNC', k.tnc, '#fca5a5']].map(([l, v, c]) => (
-              <div key={l} style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 10, padding: '8px 16px', textAlign: 'center' }}>
-                <p style={{ fontSize: 22, fontWeight: 900, color: c, fontFamily: 'monospace' }}>{Math.round(v)}%</p>
-                <p style={{ fontSize: 10, fontWeight: 800, opacity: 0.85 }}>{l}</p>
-              </div>
-            ))}
-          </div>
+          <p style={{ fontSize: 12, opacity: 0.85, marginTop: 6 }}>Índice de uso de mano de obra (LUF) · meta {metas.lufObjetivo}%</p>
+        </div>
+        <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 12 }}>
+          {[['Cartas', cartas.length], ['Observaciones', k.n], ['Trabajadores', nPersonas], ['Período', rango]].map(([l, v]) => (
+            <div key={l} style={{ textAlign: 'center' }}>
+              <p style={{ fontSize: 20, fontWeight: 900 }}>{v}</p>
+              <p style={{ fontSize: 10, opacity: 0.8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.4 }}>{l}</p>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Chips de cobertura */}
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-        <ChipResumen icon="📋" v={cartas.length} l="Cartas balance" />
-        <ChipResumen icon="👁" v={k.n} l="Observaciones" />
-        <ChipResumen icon="👷" v={nPersonas} l="Trabajadores" />
-        <ChipResumen icon="📅" v={rango} l="Período" />
+      {/* ── Fila: Dona de distribución + 3 claves ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 14 }}>
+        <div style={cardBox}>
+          <p style={titBox}>Distribución del tiempo</p>
+          <div style={{ position: 'relative' }}>
+            <ResponsiveContainer width="100%" height={210}>
+              <PieChart>
+                <Pie data={donut} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={58} outerRadius={88} paddingAngle={2} stroke="none">
+                  {donut.map((d, i) => <Cell key={i} fill={d.color} />)}
+                </Pie>
+                <Tooltip formatter={(v) => `${v}%`} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div style={{ position: 'absolute', top: '38%', left: 0, right: 0, textAlign: 'center', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+              <p style={{ fontSize: 26, fontWeight: 900, color: CB_COL.TP, lineHeight: 1 }}>{Math.round(k.tp)}%</p>
+              <p style={{ fontSize: 10, fontWeight: 800, color: BASE.muted, textTransform: 'uppercase' }}>Productivo</p>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <CardResumen color={cumpleMeta ? BASE.greenDark : '#d97706'} titulo="🎯 Cumplimiento de meta (LUF)" valor={`${Math.round(k.luf)}% / ${metas.lufObjetivo}%`} detalle={cumpleMeta ? 'Por encima de la meta' : `Faltan ${Math.round(metas.lufObjetivo - k.luf)} pts para la meta`} />
+          {causas[0] && <CardResumen color={BASE.red} titulo="🔴 Dónde se pierde el tiempo" valor={causas[0].name} detalle={`${causas[0].value}% del tiempo no contributorio`} />}
+          {best && <CardResumen color={BASE.greenDark} titulo="🏆 Mejor desempeño" valor={best.nombre} detalle={`LUF ${Math.round(best.lufPromedio)}%`} />}
+        </div>
       </div>
 
-      {/* Insights */}
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-        {best && <CardResumen color={BASE.greenDark} titulo="🏆 Mejor productividad" valor={best.nombre} detalle={`LUF ${Math.round(best.lufPromedio)}% · ${best.sesiones} sesión(es)`} />}
-        {worst && worst.personaId !== best?.personaId && <CardResumen color="#d97706" titulo="⚠️ A reforzar" valor={worst.nombre} detalle={`LUF ${Math.round(worst.lufPromedio)}%`} />}
-        {topTNC && <CardResumen color={BASE.red} titulo="🔴 Principal pérdida (TNC)" valor={topTNC.label} detalle={`${Math.round(topTNC.porcentaje)}% del tiempo no contributorio`} />}
-        <CardResumen color={k.luf >= metas.lufObjetivo ? BASE.greenDark : '#d97706'} titulo="🎯 vs Meta LUF" valor={`${Math.round(k.luf)}% / ${metas.lufObjetivo}%`} detalle={k.luf >= metas.lufObjetivo ? 'Cumple la meta' : `Faltan ${Math.round(metas.lufObjetivo - k.luf)} pts`} />
-      </div>
-
-      {/* Mini tendencia */}
-      {chart.length >= 2 && (
-        <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 12, padding: '14px 16px', boxShadow: BASE.shadowSm }}>
-          <p style={{ fontSize: 12, fontWeight: 900, color: BASE.navy, marginBottom: 10 }}>📈 EVOLUCIÓN (LUF y TP por semana)</p>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={chart} margin={{ top: 6, right: 12, left: -12, bottom: 0 }}>
+      {/* ── Evolución (tendencia) ── */}
+      {trend.length >= 2 && (
+        <div style={cardBox}>
+          <p style={titBox}>Evolución de la productividad (por semana)</p>
+          <ResponsiveContainer width="100%" height={210}>
+            <LineChart data={trend} margin={{ top: 6, right: 12, left: -12, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={BASE.border} />
               <XAxis dataKey="periodo" tick={{ fontSize: 11, fill: BASE.muted }} />
               <YAxis tick={{ fontSize: 11, fill: BASE.muted }} unit="%" domain={[0, 100]} />
               <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v) => `${v}%`} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
-              <ReferenceLine y={metas.lufObjetivo} stroke={BASE.green} strokeDasharray="5 4" />
-              <Line type="monotone" dataKey="LUF" stroke={BASE.navy} strokeWidth={2.5} dot={{ r: 2 }} />
-              <Line type="monotone" dataKey="TP" stroke={BASE.green} strokeWidth={2} dot={false} />
+              <ReferenceLine y={metas.lufObjetivo} stroke={BASE.green} strokeDasharray="5 4" label={{ value: `Meta ${metas.lufObjetivo}%`, fontSize: 10, fill: BASE.greenDark, position: 'insideTopRight' }} />
+              <Line type="monotone" dataKey="LUF" stroke={BASE.navy} strokeWidth={3} dot={{ r: 3 }} name="LUF" />
+              <Line type="monotone" dataKey="TP" stroke={CB_COL.TP} strokeWidth={2} dot={false} name="Productivo" />
             </LineChart>
           </ResponsiveContainer>
         </div>
       )}
 
-      <p style={{ fontSize: 10.5, color: BASE.muted, textAlign: 'center', fontStyle: 'italic' }}>
-        Consolidado de todas las Cartas Balance guardadas (filtradas por la actividad si hay filtro). LUF global = promedio ponderado por observación.
-      </p>
+      {/* ── Causas de pérdida (Pareto TNC) en barras ── */}
+      {causas.length > 0 && (
+        <div style={cardBox}>
+          <p style={titBox}>Principales causas de tiempo perdido (TNC)</p>
+          <ResponsiveContainer width="100%" height={Math.max(120, causas.length * 40)}>
+            <BarChart data={causas} layout="vertical" margin={{ top: 0, right: 30, left: 10, bottom: 0 }}>
+              <XAxis type="number" hide domain={[0, 100]} />
+              <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 11, fill: BASE.text }} />
+              <Tooltip formatter={(v) => `${v}%`} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+              <Bar dataKey="value" fill={CB_COL.TNC} radius={[0, 7, 7, 0]} label={{ position: 'right', fontSize: 11, fontWeight: 800, fill: BASE.navy, formatter: (v) => `${v}%` }} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   );
+}
+
+// Fecha 'YYYY-MM-DD' → 'DD/MM'
+function fmtCorta(f) {
+  return (f && f.length >= 10) ? `${f.slice(8, 10)}/${f.slice(5, 7)}` : (f || '—');
 }
 
 // ── Tendencia de TP/TC/TNC/LUF en el tiempo ──
