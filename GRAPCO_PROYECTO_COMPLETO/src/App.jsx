@@ -17,7 +17,7 @@ const ROL_ITEMS = {
   carta_balance:     [{ key: 'carta',    label: 'Carta Balance',           iconName: 'balance',    color: '#7c3aed', group: 'MI ÁREA' }],
   almacenero:        [{ key: 'almacen',  label: 'Almacén',                 iconName: 'package',    color: '#7c3aed', group: 'MI ÁREA' }],
   logistica:         [{ key: 'almacen',  label: 'Logística',               iconName: 'cart',       color: '#2563eb', group: 'MI ÁREA' }],
-  calidad:           [{ key: 'calidad',  label: 'Control de Calidad',      iconName: 'shield',     color: '#ec4899', group: 'MI ÁREA' }],
+  calidad:           [{ key: 'calidad',  label: 'Gestión de Calidad',      iconName: 'shield',     color: '#ec4899', group: 'MI ÁREA' }],
   supervisor_cliente:[{ key: 'calidad',  label: 'Supervisión del Cliente', iconName: 'shield',     color: '#0ea5e9', group: 'MI ÁREA' }],
   oficina_tecnica:   [{ key: 'ot',       label: 'Oficina Técnica',         iconName: 'fileText',   color: '#6366f1', group: 'MI ÁREA' }],
   seguridad:         [{ key: 'seguridad',label: 'Seguridad y Medio Ambiente', iconName: 'alert',   color: '#dc2626', group: 'MI ÁREA' }],
@@ -543,7 +543,7 @@ function AppInner() {
             { key: 'compras',     label: 'Compras y Logística',     iconName: 'truck',       color: '#93c5fd',    group: 'ADMINISTRACIÓN DE OBRA' },
             // Cada uno es su propio grupo
             { key: 'bim',         label: 'Coordinación BIM',        iconName: 'layers',      color: '#38bdf8',    group: 'COORDINACIÓN BIM' },
-            { key: 'calidad',     label: 'Control de Calidad',      iconName: 'checkSquare', color: '#f9a8d4',    group: 'CONTROL DE CALIDAD' },
+            { key: 'calidad',     label: 'Gestión de Calidad',      iconName: 'checkSquare', color: '#f9a8d4',    group: 'GESTIÓN DE CALIDAD' },
             { key: 'ot',          label: 'Oficina Técnica',         iconName: 'ruler',       color: '#a5b4fc',    group: 'OFICINA TÉCNICA' },
             // SSOMA — seguridad y medio ambiente
             { key: 'seguridad',   label: 'Seguridad y Medio Ambiente', iconName: 'alert',    color: '#f87171',    group: 'SSOMA' },

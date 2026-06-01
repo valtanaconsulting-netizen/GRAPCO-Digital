@@ -47,7 +47,7 @@ const BLOQUES_META = [
     { id: 'obreros', nombre: 'Obreros presentes' },
     { id: 'asist', nombre: 'HH asistencia hoy' },
   ] },
-  { id: 'cal', titulo: 'Calidad', color: '#ec4899', cards: [
+  { id: 'cal', titulo: 'Gestión de Calidad', color: '#ec4899', cards: [
     { id: 'protlib', nombre: 'Protocolos liberados' },
     { id: 'ncs', nombre: 'NCs abiertas' },
   ] },

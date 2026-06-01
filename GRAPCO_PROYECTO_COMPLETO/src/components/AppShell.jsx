@@ -28,7 +28,7 @@ const ROL_META = {
   ingeniero:        { titulo: 'Producción',           icono: '📊', badge: 'INGENIERIA',  color: BASE.gold },
   carta_balance:    { titulo: 'Carta Balance',        icono: '⚖️', badge: 'C.BALANCE',  color: '#7c3aed' },
   capataz:          { titulo: 'Registro de Produccion', icono: '👷', badge: 'CAPATAZ',   color: BASE.green },
-  calidad:          { titulo: 'Calidad GRAPCO',       icono: '🦺', badge: 'CALIDAD',    color: '#ec4899' },
+  calidad:          { titulo: 'Gestión de Calidad',   icono: '🦺', badge: 'CALIDAD',    color: '#ec4899' },
   oficina_tecnica:  { titulo: 'Oficina Tecnica',      icono: '📐', badge: 'OT',         color: '#6366f1' },
   seguridad:        { titulo: 'Seguridad SSOMA',      icono: '⚠️', badge: 'SSOMA',      color: BASE.red },
   almacenero:       { titulo: 'Almacen',              icono: '📦', badge: 'ALMACEN',    color: '#7c3aed' },

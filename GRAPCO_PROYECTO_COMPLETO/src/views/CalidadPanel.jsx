@@ -65,7 +65,7 @@ export default function CalidadPanel({ showToast, tabExterna, onChangeTab }) {
           boxShadow: '0 4px 20px rgba(236, 72, 153, 0.25)',
         }}>
           <p style={{ fontSize: '10px', fontWeight: '900', color: BASE.gold, letterSpacing: '1.6px' }}>
-            🦺 MODULO CALIDAD · CONTROL Y LIBERACION
+            🦺 GESTIÓN DE CALIDAD · CONTROL Y LIBERACION
           </p>
           <h2 style={{ fontSize: '22px', fontWeight: '900', marginTop: '4px' }}>
             Protocolos por elemento, PETs, No Conformidades, Ensayos

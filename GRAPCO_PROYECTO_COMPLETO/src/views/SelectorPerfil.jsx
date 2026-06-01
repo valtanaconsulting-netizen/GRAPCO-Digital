@@ -54,7 +54,7 @@ const PERFILES = [
   },
   {
     rol: 'calidad',
-    titulo: 'Aseguramiento de Calidad',
+    titulo: 'Gestión de Calidad',
     iconName: 'shield',
     color: '#7E22CE',
     descripcion: 'Protocolos, PETs, No Conformidades, ensayos, evidencia fotográfica y modelo BIM para liberación.',

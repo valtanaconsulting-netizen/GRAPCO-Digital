@@ -17,7 +17,7 @@ const ROLES_INFO = {
   admin:              { label: 'Admin / Gerente General',  color: BASE.red,    icon: '🛡️', desc: 'Acceso TOTAL, todos los proyectos, crea proyectos' },
   ingeniero:          { label: 'Ingeniero',                color: BASE.gold,   icon: '📊', desc: 'Producción (Auditoría + CPI/EAC + Control Gerencial), residente, admin de obra' },
   oficina_tecnica:    { label: 'Oficina Técnica',          color: '#6366f1',   icon: '📐', desc: 'RDO, valorizaciones, partidas contractuales' },
-  calidad:            { label: 'Calidad',                  color: '#ec4899',   icon: '🦺', desc: 'Protocolos, PETs, NCs, ensayos' },
+  calidad:            { label: 'Gestión de Calidad',      color: '#ec4899',   icon: '🦺', desc: 'Protocolos, PETs, NCs, ensayos' },
   seguridad:          { label: 'SSOMA / Seguridad',        color: BASE.red,    icon: '⚠️', desc: 'PETs, ATS, inspecciones, incidencias' },
   almacenero:         { label: 'Almacenero',               color: '#7c3aed',   icon: '📦', desc: 'Almacén, kardex, vales, recepciones' },
   logistica:          { label: 'Logística / Compras',      color: '#2563eb',   icon: '🚛', desc: 'OCs, OSs, proveedores' },

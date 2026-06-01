@@ -22,9 +22,14 @@ const fetch = (...args) => import('node-fetch').then(({default: f}) => f(...args
 if (!admin.apps.length) admin.initializeApp();
 
 // ── CONFIG ──
-const APS_CLIENT_ID     = process.env.APS_CLIENT_ID     || functions.config().aps?.client_id;
-const APS_CLIENT_SECRET = process.env.APS_CLIENT_SECRET || functions.config().aps?.client_secret;
-const APS_BUCKET_KEY    = (process.env.APS_BUCKET_KEY  || functions.config().aps?.bucket_key || 'grapco-models').toLowerCase();
+// functions.config() ya NO existe en el runtime 2nd Gen (lanza error al llamarse).
+// Como este index.js también lo carga la función 2nd Gen `protocoloPdfFirmadoSync`,
+// envolvemos la llamada para que no rompa el arranque del contenedor. Las funciones
+// APS (1st Gen) lo siguen leyendo igual en su propio runtime.
+const _apsCfg = () => { try { return functions.config().aps || {}; } catch (_) { return {}; } };
+const APS_CLIENT_ID     = process.env.APS_CLIENT_ID     || _apsCfg().client_id;
+const APS_CLIENT_SECRET = process.env.APS_CLIENT_SECRET || _apsCfg().client_secret;
+const APS_BUCKET_KEY    = (process.env.APS_BUCKET_KEY  || _apsCfg().bucket_key || 'grapco-models').toLowerCase();
 const APS_BASE          = 'https://developer.api.autodesk.com';
 
 // ── CACHE TOKEN EN MEMORIA (cold-start friendly) ──
