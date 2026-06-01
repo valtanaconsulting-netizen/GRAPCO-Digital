@@ -9,7 +9,7 @@
 // Drag&drop + file picker. Acepta solo PDF. Muestra progreso y permite reemplazar.
 
 import React, { useRef, useState } from 'react';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL, getBlob } from 'firebase/storage';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db, storage } from '../firebaseConfig';
 import { archivarBlobProtocoloEnDrive } from '../utils/archivarProtocoloDrive';
@@ -35,6 +35,12 @@ export default function PdfFirmadoUploader({ protocolo, onUploaded, showToast })
   // si la semana ya existe sube ahí; si no, la crea (find-or-create, sin duplicar carpetas).
   // Si el archivo {numeroRegistro}.pdf ya existe en esa semana, lo REEMPLAZA.
   const archivarEnDrive = async (blob) => {
+    // Guarda de seguridad: nunca subir un blob vacío/diminuto (p.ej. un cuerpo de
+    // error JSON ~50 bytes) como si fuera el PDF. Un PDF real pesa varios KB.
+    if (!blob || blob.size < 1024) {
+      showToast?.('El PDF está vacío o no se pudo leer correctamente. Usa "🔄 Reemplazar".', 'error');
+      return null;
+    }
     setSubiendoDrive(true);
     try {
       const { url: driveUrl, id: driveId } = await archivarBlobProtocoloEnDrive(protocolo, blob);
@@ -177,11 +183,13 @@ export default function PdfFirmadoUploader({ protocolo, onUploaded, showToast })
                 <button
                   onClick={async () => {
                     try {
-                      const resp = await fetch(arch.url);
-                      const blob = await resp.blob();
+                      // getBlob lee los bytes REALES del objeto (autenticado por el SDK).
+                      // Si no hay permiso LANZA error (a diferencia de fetch(url), que
+                      // devolvía el cuerpo del 403 y se subía como "PDF" corrupto).
+                      const blob = await getBlob(ref(storage, arch.path));
                       await archivarEnDrive(blob);
                     } catch (e) {
-                      showToast?.('No se pudo leer el PDF de Storage: ' + (e.message || e), 'error');
+                      showToast?.('No se pudo leer el PDF de Storage: ' + (e.message || e) + ' — usa "🔄 Reemplazar".', 'error');
                     }
                   }}
                   disabled={subiendoDrive}
