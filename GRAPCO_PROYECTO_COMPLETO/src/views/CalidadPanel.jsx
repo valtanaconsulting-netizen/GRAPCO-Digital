@@ -17,9 +17,8 @@ import BIM from './BIM';
 
 const TABS = [
   { id: 'dashboard',  l: 'Dashboard',         icono: '📊', desc: 'KPIs ejecutivos',         color: '#ec4899' },
-  { id: 'prevaciado', l: 'Pre-Vaciado',       icono: '🧱', desc: 'CAL-FOR-006 · Liberación de concreto', color: '#0F2A47' },
+  { id: 'protocolos', l: 'Protocolos',        icono: '📋', desc: 'Pre-Vaciado y por elemento', color: '#7c3aed' },
   { id: 'archivo',    l: 'Archivo',           icono: '📁', desc: 'PDFs firmados por Frente y Semana',     color: '#0d9488' },
-  { id: 'protocolos', l: 'Protocolos',        icono: '📋', desc: 'Liberación por elemento', color: '#7c3aed' },
   { id: 'calfor',     l: 'CAL-FOR',           icono: '📄', desc: 'Plantilla GRAPCO con firmas', color: '#a855f7' },
   { id: 'pets',       l: 'PETs',              icono: '📜', desc: 'PETs (10 secciones)',     color: '#0ea5e9' },
   { id: 'ncs',        l: 'No Conformidades',  icono: '🚨', desc: 'NCs abiertas y cerradas', color: '#dc2626' },
@@ -30,7 +29,7 @@ const TABS = [
 // Mapa de keys del sidebar (calidad.dashboard, calidad.protocolos, ...) a tab interno
 const KEY_TO_TAB = {
   'calidad.dashboard': 'dashboard',
-  'calidad.prevaciado': 'prevaciado',
+  'calidad.prevaciado': 'protocolos',
   'calidad.archivo':    'archivo',
   'calidad.protocolos': 'protocolos',
   'calidad.calfor': 'calfor',
@@ -51,6 +50,8 @@ export default function CalidadPanel({ showToast, tabExterna, onChangeTab }) {
   };
   const [protocoloEdit, setProtocoloEdit] = useState(null); // { id, modo } — para editar uno especifico
   const [pvEdit, setPvEdit] = useState(null); // { id } — null = lista; { id: null } = nuevo; { id: 'xxx' } = editar
+  // Tipo activo dentro del tab 'protocolos' (selector). Default: pre-vaciado (CAL-FOR-006).
+  const [tipoProtocolo, setTipoProtocolo] = useState('prevaciado');
 
   return (
     <RoleGuard rolesPermitidos={['admin', 'ingeniero', 'calidad', 'supervisor_cliente']}>
@@ -119,32 +120,74 @@ export default function CalidadPanel({ showToast, tabExterna, onChangeTab }) {
         {/* CONTENIDO */}
         <div className="anim-fade-in" key={tab}>
           {tab === 'dashboard'  && <DashboardCalidad showToast={showToast} />}
-          {tab === 'prevaciado' && !pvEdit && (
-            <ProtocolosPreVaciadoView
-              showToast={showToast}
-              onNuevo={() => setPvEdit({ id: null })}
-              onEdit={(id) => setPvEdit({ id })}
-            />
-          )}
-          {tab === 'prevaciado' && pvEdit && (
-            <ProtocoloPreVaciadoEditor
-              showToast={showToast}
-              protocoloId={pvEdit.id}
-              onClose={() => setPvEdit(null)}
-            />
-          )}
           {tab === 'archivo' && (
             <ArchivoProtocolosView
-              onEdit={(id) => { setTab('prevaciado'); setPvEdit({ id }); }}
+              onEdit={(id) => { setTab('protocolos'); setTipoProtocolo('prevaciado'); setPvEdit({ id }); }}
             />
           )}
-          {tab === 'protocolos' && !protocoloEdit && <ProtocolosView showToast={showToast} onEdit={(id) => setProtocoloEdit({ id })} />}
-          {tab === 'protocolos' && protocoloEdit && (
-            <ProtocoloEditor
-              showToast={showToast}
-              protocoloId={protocoloEdit.id}
-              onClose={() => setProtocoloEdit(null)}
-            />
+
+          {/* PROTOCOLOS: hub único con selector de tipo (Pre-Vaciado por defecto) */}
+          {tab === 'protocolos' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {/* Selector de tipo — solo en modo lista, no dentro de un editor */}
+              {!pvEdit && !protocoloEdit && (
+                <div style={{
+                  background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px',
+                  padding: '10px 14px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center',
+                }}>
+                  <span style={{ fontSize: '11px', fontWeight: 900, color: BASE.muted, letterSpacing: '0.5px' }}>
+                    TIPO DE PROTOCOLO:
+                  </span>
+                  {[
+                    { id: 'prevaciado', l: '🧱 Pre-Vaciado (CAL-FOR-006)' },
+                    { id: 'elemento',   l: '📋 Por elemento (concreto, acero…)' },
+                  ].map(t => {
+                    const activo = tipoProtocolo === t.id;
+                    return (
+                      <button key={t.id}
+                        onClick={() => { setTipoProtocolo(t.id); setPvEdit(null); setProtocoloEdit(null); }}
+                        style={{
+                          padding: '8px 14px', borderRadius: '8px', cursor: 'pointer',
+                          border: `1.5px solid ${activo ? '#7c3aed' : BASE.border}`,
+                          background: activo ? '#7c3aed' : 'transparent',
+                          color: activo ? '#fff' : BASE.muted,
+                          fontSize: '12px', fontWeight: 800, transition: 'all 0.15s',
+                        }}>
+                        {t.l}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Pre-Vaciado (CAL-FOR-006) */}
+              {tipoProtocolo === 'prevaciado' && !pvEdit && (
+                <ProtocolosPreVaciadoView
+                  showToast={showToast}
+                  onNuevo={() => setPvEdit({ id: null })}
+                  onEdit={(id) => setPvEdit({ id })}
+                />
+              )}
+              {tipoProtocolo === 'prevaciado' && pvEdit && (
+                <ProtocoloPreVaciadoEditor
+                  showToast={showToast}
+                  protocoloId={pvEdit.id}
+                  onClose={() => setPvEdit(null)}
+                />
+              )}
+
+              {/* Por elemento (genérico) */}
+              {tipoProtocolo === 'elemento' && !protocoloEdit && (
+                <ProtocolosView showToast={showToast} onEdit={(id) => setProtocoloEdit({ id })} />
+              )}
+              {tipoProtocolo === 'elemento' && protocoloEdit && (
+                <ProtocoloEditor
+                  showToast={showToast}
+                  protocoloId={protocoloEdit.id}
+                  onClose={() => setProtocoloEdit(null)}
+                />
+              )}
+            </div>
           )}
           {tab === 'calfor'     && <ProtocoloCALFOR showToast={showToast} />}
           {tab === 'pets'       && <PETsView showToast={showToast} />}
