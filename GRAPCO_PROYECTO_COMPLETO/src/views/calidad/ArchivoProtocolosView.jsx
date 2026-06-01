@@ -26,16 +26,17 @@ export default function ArchivoProtocolosView({ onEdit }) {
 
   useEffect(() => {
     // Lee todos los protocolos con PDF firmado archivado en Storage.
+    // Sin orderBy en la query para NO requerir indice compuesto (tipo + fechaCreacion).
     const q = query(
       collection(db, 'Protocolos'),
       where('tipo', '==', tipoSel),
-      orderBy('fechaCreacion', 'desc'),
     );
     const unsub = onSnapshot(q,
       (snap) => {
         const todos = snap.docs
           .map(d => ({ id: d.id, ...d.data() }))
-          .filter(p => !!p.archivado?.storage?.url);
+          .filter(p => !!p.archivado?.storage?.url)
+          .sort((a, b) => (b.fechaCreacion?.seconds || 0) - (a.fechaCreacion?.seconds || 0));
         setItems(filtrarPorContexto(todos));
         setLoading(false);
       },

@@ -24,14 +24,16 @@ export default function ProtocolosPreVaciadoView({ onEdit, onNuevo }) {
   const [busqueda, setBusqueda] = useState('');
 
   useEffect(() => {
+    // Sin orderBy en la query para NO requerir un indice compuesto (tipo + fechaCreacion),
+    // que no existe y hacia que la lista saliera vacia. Ordenamos en cliente.
     const q = query(
       collection(db, 'Protocolos'),
       where('tipo', '==', TIPO),
-      orderBy('fechaCreacion', 'desc'),
     );
     const unsub = onSnapshot(q,
       (snap) => {
-        const todos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const todos = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+          .sort((a, b) => (b.fechaCreacion?.seconds || 0) - (a.fechaCreacion?.seconds || 0));
         setItems(filtrarPorContexto(todos));
         setLoading(false);
       },
