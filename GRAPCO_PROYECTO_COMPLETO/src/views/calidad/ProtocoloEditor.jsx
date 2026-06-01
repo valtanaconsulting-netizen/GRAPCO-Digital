@@ -12,12 +12,14 @@ import {
   calcularEstadoProtocolo,
 } from '../../utils/calidadOTAnalytics';
 import FotoUploader from '../../components/FotoUploader';
+import VisorPlanos from '../../components/VisorPlanos';
 
 export default function ProtocoloEditor({ protocoloId, showToast, onClose }) {
   const { user, rol } = useAuth();
   const [protocolo, setProtocolo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [guardando, setGuardando] = useState(false);
+  const [verPlanos, setVerPlanos] = useState(false);
 
   // Canvas para firmas
   const canvasResRef = useRef(null);
@@ -223,9 +225,22 @@ export default function ProtocoloEditor({ protocoloId, showToast, onClose }) {
               padding: '8px 16px', borderRadius: '14px',
               fontSize: '12px', fontWeight: '900', letterSpacing: '0.6px',
             }}>{estadoActual.icono} {estadoActual.label}</span>
+            <button onClick={() => setVerPlanos(true)} title="Ver los planos del frente (PDF/imagen) sin salir del protocolo" style={{
+              padding: '8px 14px', borderRadius: '8px', background: BASE.navy, color: '#fff',
+              border: 'none', fontSize: '12px', fontWeight: '900', cursor: 'pointer', whiteSpace: 'nowrap',
+            }}>📐 Ver plano</button>
           </div>
         </div>
       </div>
+
+      {verPlanos && (
+        <VisorPlanos
+          proyectoId={protocolo.proyectoId}
+          frenteCodigo={protocolo.frenteCodigo}
+          onClose={() => setVerPlanos(false)}
+          showToast={showToast}
+        />
+      )}
 
       {/* Indicador de siguiente accion */}
       <div style={{
