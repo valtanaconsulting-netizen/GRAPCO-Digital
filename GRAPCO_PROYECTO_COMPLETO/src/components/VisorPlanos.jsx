@@ -2,10 +2,16 @@
 // ════════════════════════════════════════════════════════════════
 // Biblioteca de planos por FRENTE + visor embebido (PDF e imágenes).
 // Sube planos (PDF/PNG/JPG) que quedan guardados en Storage por proyecto+frente
-// y los muestra sin salir del protocolo. Costo $0 (Firebase Storage).
+// y los muestra. Costo $0 (Firebase Storage).
 //
 // Ruta Storage:  planos/{proyectoId}/{frenteCodigo}/{archivo}
 // Reglas: el catch-all ya permite read (autenticado) + write (≤15MB, image/* o pdf).
+//
+// Exporta:
+//   • BibliotecaPlanos  → contenido reutilizable (lista + subir + visor), SIN Modal.
+//                          Úsalo embebido (p.ej. pestaña "Planos").
+//   • VisorPlanos (default) → BibliotecaPlanos envuelto en Modal, para abrir desde
+//                          un protocolo con un botón "Ver plano".
 //
 // CAD: .dwg nativo NO se puede ver gratis en el navegador (solo Autodesk/APS, con
 // costo). Lo gratis y recomendado: exportar el plano a PDF desde el CAD y verlo aquí.
@@ -25,7 +31,8 @@ const tipoDeArchivo = (name = '') => {
   return 'otro';
 };
 
-export default function VisorPlanos({ proyectoId, frenteCodigo, onClose, showToast }) {
+// ── Contenido reutilizable (sin Modal) ──────────────────────────
+export function BibliotecaPlanos({ proyectoId, frenteCodigo, showToast }) {
   const [planos, setPlanos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [sel, setSel] = useState(null);
@@ -51,16 +58,17 @@ export default function VisorPlanos({ proyectoId, frenteCodigo, onClose, showToa
       );
       items.sort((a, b) => a.name.localeCompare(b.name));
       setPlanos(items);
-      setSel((prev) => prev || items[0] || null);
+      setSel((prev) => (prev && items.some((i) => i.fullPath === prev.fullPath) ? prev : items[0] || null));
     } catch (e) {
-      console.warn('[VisorPlanos]', e);
+      console.warn('[BibliotecaPlanos]', e);
       showToast?.('No se pudieron cargar los planos: ' + (e.message || e), 'error');
     } finally {
       setCargando(false);
     }
   };
 
-  useEffect(() => { cargar(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [proyectoId, frenteCodigo]);
+  // Recargar al cambiar de frente/proyecto (y reset de selección).
+  useEffect(() => { setSel(null); cargar(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [proyectoId, frenteCodigo]);
 
   const subir = async (file) => {
     if (!file || !carpeta) return;
@@ -94,65 +102,74 @@ export default function VisorPlanos({ proyectoId, frenteCodigo, onClose, showToa
     }
   };
 
+  if (faltaFrente) {
+    return (
+      <p style={{ color: BASE.muted, fontSize: 13, padding: 12 }}>
+        Selecciona un <b>frente</b> para ver y subir sus planos.
+      </p>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', gap: 14, minHeight: '60vh', flexWrap: 'wrap' }}>
+      {/* Sidebar: subir + lista */}
+      <div style={{ width: 230, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <button onClick={() => fileRef.current?.click()} disabled={subiendo} style={btnSubir}>
+          {subiendo ? `⏳ Subiendo ${progreso}%` : '⬆️ Subir plano (PDF/imagen)'}
+        </button>
+        <input ref={fileRef} type="file" hidden
+          accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/*"
+          onChange={(e) => subir(e.target.files?.[0])} />
+        <div style={{ fontSize: 10.5, color: BASE.muted }}>
+          Frente: <b style={{ color: BASE.text }}>{frenteCodigo}</b>
+        </div>
+        <div style={{ overflowY: 'auto', flex: 1, borderTop: `1px solid ${BASE.border}`, paddingTop: 8, maxHeight: '60vh' }}>
+          {cargando ? (
+            <p style={{ fontSize: 12, color: BASE.muted }}>Cargando…</p>
+          ) : planos.length === 0 ? (
+            <p style={{ fontSize: 12, color: BASE.muted }}>Aún no hay planos en este frente. Sube el primero ⬆️</p>
+          ) : planos.map((p) => (
+            <button key={p.fullPath} onClick={() => setSel(p)} title={p.name}
+              style={{ ...itemPlano, ...(sel?.fullPath === p.fullPath ? itemPlanoSel : {}) }}>
+              <span>{p.tipo === 'pdf' ? '📄' : p.tipo === 'img' ? '🖼️' : '📐'}</span>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Visor */}
+      <div style={{ flex: 1, minWidth: 280, border: `1px solid ${BASE.border}`, borderRadius: 10, overflow: 'hidden', background: '#0b1220', display: 'flex', flexDirection: 'column' }}>
+        {!sel ? (
+          <div style={visorVacio}>Selecciona un plano de la lista 👈</div>
+        ) : sel.tipo === 'pdf' ? (
+          <iframe title={sel.name} src={sel.url} style={{ width: '100%', height: '72vh', border: 0, background: '#fff' }} />
+        ) : sel.tipo === 'img' ? (
+          <div style={{ height: '72vh', overflow: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img src={sel.url} alt={sel.name} style={{ maxWidth: '100%', maxHeight: '72vh', objectFit: 'contain' }} />
+          </div>
+        ) : (
+          <div style={visorVacio}>
+            Este formato no se previsualiza aquí.&nbsp;
+            <a href={sel.url} target="_blank" rel="noopener noreferrer" style={{ color: BASE.gold }}>Abrir / descargar ↗</a>
+          </div>
+        )}
+        {sel && (
+          <div style={barraVisor}>
+            <span style={{ fontSize: 11, color: '#cbd5e1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sel.name}</span>
+            <a href={sel.url} target="_blank" rel="noopener noreferrer" style={linkAbrir}>Abrir en pestaña ↗</a>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Envoltorio Modal (para abrir desde un protocolo) ────────────
+export default function VisorPlanos({ proyectoId, frenteCodigo, onClose, showToast }) {
   return (
     <Modal title="📐 Planos del frente" onClose={onClose} maxW="1100px">
-      {faltaFrente ? (
-        <p style={{ color: BASE.muted, fontSize: 13, padding: 12 }}>
-          Selecciona un <b>frente</b> en el protocolo para ver y subir sus planos.
-        </p>
-      ) : (
-        <div style={{ display: 'flex', gap: 14, minHeight: '60vh', flexWrap: 'wrap' }}>
-          {/* Sidebar: subir + lista */}
-          <div style={{ width: 230, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <button onClick={() => fileRef.current?.click()} disabled={subiendo} style={btnSubir}>
-              {subiendo ? `⏳ Subiendo ${progreso}%` : '⬆️ Subir plano (PDF/imagen)'}
-            </button>
-            <input ref={fileRef} type="file" hidden
-              accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/*"
-              onChange={(e) => subir(e.target.files?.[0])} />
-            <div style={{ fontSize: 10.5, color: BASE.muted }}>
-              Frente: <b style={{ color: BASE.text }}>{frenteCodigo}</b>
-            </div>
-            <div style={{ overflowY: 'auto', flex: 1, borderTop: `1px solid ${BASE.border}`, paddingTop: 8, maxHeight: '60vh' }}>
-              {cargando ? (
-                <p style={{ fontSize: 12, color: BASE.muted }}>Cargando…</p>
-              ) : planos.length === 0 ? (
-                <p style={{ fontSize: 12, color: BASE.muted }}>Aún no hay planos en este frente. Sube el primero ⬆️</p>
-              ) : planos.map((p) => (
-                <button key={p.fullPath} onClick={() => setSel(p)} title={p.name}
-                  style={{ ...itemPlano, ...(sel?.fullPath === p.fullPath ? itemPlanoSel : {}) }}>
-                  <span>{p.tipo === 'pdf' ? '📄' : p.tipo === 'img' ? '🖼️' : '📐'}</span>
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Visor */}
-          <div style={{ flex: 1, minWidth: 280, border: `1px solid ${BASE.border}`, borderRadius: 10, overflow: 'hidden', background: '#0b1220', display: 'flex', flexDirection: 'column' }}>
-            {!sel ? (
-              <div style={visorVacio}>Selecciona un plano de la lista 👈</div>
-            ) : sel.tipo === 'pdf' ? (
-              <iframe title={sel.name} src={sel.url} style={{ width: '100%', height: '72vh', border: 0, background: '#fff' }} />
-            ) : sel.tipo === 'img' ? (
-              <div style={{ height: '72vh', overflow: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <img src={sel.url} alt={sel.name} style={{ maxWidth: '100%', maxHeight: '72vh', objectFit: 'contain' }} />
-              </div>
-            ) : (
-              <div style={visorVacio}>
-                Este formato no se previsualiza aquí.&nbsp;
-                <a href={sel.url} target="_blank" rel="noopener noreferrer" style={{ color: BASE.gold }}>Abrir / descargar ↗</a>
-              </div>
-            )}
-            {sel && (
-              <div style={barraVisor}>
-                <span style={{ fontSize: 11, color: '#cbd5e1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sel.name}</span>
-                <a href={sel.url} target="_blank" rel="noopener noreferrer" style={linkAbrir}>Abrir en pestaña ↗</a>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <BibliotecaPlanos proyectoId={proyectoId} frenteCodigo={frenteCodigo} showToast={showToast} />
     </Modal>
   );
 }

@@ -14,11 +14,13 @@ import NoConformidadesView from './calidad/NoConformidadesView';
 import EnsayosView from './calidad/EnsayosView';
 import PETsView from './modulos/petsWBS/PETsView';
 import BIM from './BIM';
+import PlanosView from './calidad/PlanosView';
 
 const TABS = [
   { id: 'dashboard',  l: 'Dashboard',         icono: '📊', desc: 'KPIs ejecutivos',         color: '#ec4899' },
   { id: 'protocolos', l: 'Protocolos',        icono: '📋', desc: 'Pre-Vaciado y por elemento', color: '#7c3aed' },
   { id: 'archivo',    l: 'Archivo',           icono: '📁', desc: 'PDFs firmados por Frente y Semana',     color: '#0d9488' },
+  { id: 'planos',     l: 'Planos',            icono: '📐', desc: 'Por frente · PDF/imágenes',  color: '#0284c7' },
   { id: 'calfor',     l: 'CAL-FOR',           icono: '📄', desc: 'Plantilla GRAPCO con firmas', color: '#a855f7' },
   { id: 'pets',       l: 'PETs',              icono: '📜', desc: 'PETs (10 secciones)',     color: '#0ea5e9' },
   { id: 'ncs',        l: 'No Conformidades',  icono: '🚨', desc: 'NCs abiertas y cerradas', color: '#dc2626' },
@@ -31,6 +33,7 @@ const KEY_TO_TAB = {
   'calidad.dashboard': 'dashboard',
   'calidad.prevaciado': 'protocolos',
   'calidad.archivo':    'archivo',
+  'calidad.planos':     'planos',
   'calidad.protocolos': 'protocolos',
   'calidad.calfor': 'calfor',
   'calidad.pets': 'pets',
@@ -194,6 +197,7 @@ export default function CalidadPanel({ showToast, tabExterna, onChangeTab }) {
           {tab === 'ncs'        && <NoConformidadesView showToast={showToast} />}
           {tab === 'ensayos'    && <EnsayosView showToast={showToast} />}
           {tab === 'bim'        && <BIM showToast={showToast} />}
+          {tab === 'planos'     && <PlanosView showToast={showToast} />}
         </div>
       </div>
     </RoleGuard>
