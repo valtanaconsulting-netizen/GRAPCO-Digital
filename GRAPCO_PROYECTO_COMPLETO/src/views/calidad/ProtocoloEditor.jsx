@@ -5,7 +5,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../firebaseConfig';
-import { archivarProtocoloEnDrive } from '../../utils/archivarProtocoloDrive';
 import { BASE } from '../../utils/styles';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -19,29 +18,6 @@ export default function ProtocoloEditor({ protocoloId, showToast, onClose }) {
   const [protocolo, setProtocolo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [guardando, setGuardando] = useState(false);
-  const protocoloRef = useRef(null);
-  const [subiendoDrive, setSubiendoDrive] = useState(false);
-
-  // Genera el PDF del protocolo (lo que se ve en pantalla) y lo sube a Google Drive
-  // con la cuenta del usuario (popup de Google la primera vez de la sesión).
-  const handleSubirDrive = async () => {
-    if (!protocoloRef.current) return;
-    setSubiendoDrive(true);
-    try {
-      const { url } = await archivarProtocoloEnDrive(protocolo, protocoloRef.current);
-      try {
-        await updateDoc(doc(db, 'Protocolos', protocoloId), {
-          'archivado.driveUrl': url, 'archivado.driveEn': serverTimestamp(),
-        });
-      } catch (_) { /* el PDF ya está en Drive; registrar la URL es secundario */ }
-      showToast?.('✅ Protocolo subido a Google Drive', 'success');
-    } catch (e) {
-      console.error('[Drive]', e);
-      showToast?.('No se pudo subir a Drive: ' + (e.message || e), 'error');
-    } finally {
-      setSubiendoDrive(false);
-    }
-  };
 
   // Canvas para firmas
   const canvasResRef = useRef(null);
@@ -214,7 +190,7 @@ export default function ProtocoloEditor({ protocoloId, showToast, onClose }) {
   };
 
   return (
-    <div ref={protocoloRef} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {/* Header */}
       <div style={{
         background: BASE.white, border: `1px solid ${BASE.border}`,
@@ -247,15 +223,6 @@ export default function ProtocoloEditor({ protocoloId, showToast, onClose }) {
               padding: '8px 16px', borderRadius: '14px',
               fontSize: '12px', fontWeight: '900', letterSpacing: '0.6px',
             }}>{estadoActual.icono} {estadoActual.label}</span>
-            <button onClick={handleSubirDrive} disabled={subiendoDrive} style={{
-              padding: '9px 16px', borderRadius: '8px',
-              background: subiendoDrive ? '#94a3b8' : '#0F2A47', color: '#fff',
-              border: 'none', fontSize: '12px', fontWeight: '900',
-              cursor: subiendoDrive ? 'wait' : 'pointer', whiteSpace: 'nowrap',
-              boxShadow: '0 3px 10px rgba(15,42,71,0.3)',
-            }} title="Genera el PDF de este protocolo y lo sube a tu Google Drive">
-              {subiendoDrive ? '⏳ Subiendo a Drive...' : '📤 Subir a Google Drive'}
-            </button>
           </div>
         </div>
       </div>
