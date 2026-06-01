@@ -12,6 +12,7 @@ import React, { useRef, useState } from 'react';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db, storage } from '../firebaseConfig';
+import { archivarBlobProtocoloEnDrive } from '../utils/archivarProtocoloDrive';
 import { BASE } from '../utils/styles';
 
 export default function PdfFirmadoUploader({ protocolo, onUploaded, showToast }) {
@@ -19,6 +20,7 @@ export default function PdfFirmadoUploader({ protocolo, onUploaded, showToast })
   const [arrastrando, setArrastrando] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
   const [progreso, setProgreso] = useState(0);
+  const [subiendoDrive, setSubiendoDrive] = useState(false);
 
   const yaSubido = !!protocolo?.archivado?.storage?.url;
   const incompleto = !protocolo?.numeroRegistro || !protocolo?.tipo
@@ -27,6 +29,28 @@ export default function PdfFirmadoUploader({ protocolo, onUploaded, showToast })
   const rutaCanonica = !incompleto
     ? `protocolos-firmados/${protocolo.tipo}/${protocolo.frenteCodigo}/${protocolo.semanaISO}/${protocolo.numeroRegistro}.pdf`
     : null;
+
+  // Archiva el MISMO PDF firmado en Google Drive (cuenta del usuario → costo $0).
+  // Reusa/crea la ruta 1. PROTOCOLOS / FRENTE {frenteCodigo} / SEMANA {semanaISO}:
+  // si la semana ya existe sube ahí; si no, la crea (find-or-create, sin duplicar carpetas).
+  // Si el archivo {numeroRegistro}.pdf ya existe en esa semana, lo REEMPLAZA.
+  const archivarEnDrive = async (blob) => {
+    setSubiendoDrive(true);
+    try {
+      const { url: driveUrl, id: driveId } = await archivarBlobProtocoloEnDrive(protocolo, blob);
+      await updateDoc(doc(db, 'Protocolos', protocolo.id), {
+        'archivado.drive': { url: driveUrl, id: driveId, fecha: new Date().toISOString() },
+      });
+      showToast?.('✅ Archivado también en Google Drive', 'success');
+      return driveUrl;
+    } catch (e) {
+      console.warn('[Drive]', e);
+      showToast?.('PDF en Storage ✅, pero Drive falló: ' + (e.message || e), 'error');
+      return null;
+    } finally {
+      setSubiendoDrive(false);
+    }
+  };
 
   const subir = async (file) => {
     if (!file) return;
@@ -86,6 +110,10 @@ export default function PdfFirmadoUploader({ protocolo, onUploaded, showToast })
 
       showToast?.(`✅ PDF archivado en Storage · ${protocolo.numeroRegistro}`, 'success');
       onUploaded?.({ url, path });
+
+      // Además: archivar el MISMO PDF firmado en Google Drive (mejor-esfuerzo).
+      // La 1ª vez abre el popup de Google para autorizar Drive (drive.file, $0).
+      await archivarEnDrive(file);
     } catch (e) {
       console.error('[PdfFirmadoUploader]', e);
       showToast?.('Error al subir: ' + e.message, 'error');
@@ -144,9 +172,28 @@ export default function PdfFirmadoUploader({ protocolo, onUploaded, showToast })
               </p>
               <SyncStatus protocolo={protocolo} />
             </div>
-            <button onClick={() => fileRef.current?.click()} style={btnGhost}>
-              🔄 Reemplazar
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {!protocolo.archivado?.drive?.url && (
+                <button
+                  onClick={async () => {
+                    try {
+                      const resp = await fetch(arch.url);
+                      const blob = await resp.blob();
+                      await archivarEnDrive(blob);
+                    } catch (e) {
+                      showToast?.('No se pudo leer el PDF de Storage: ' + (e.message || e), 'error');
+                    }
+                  }}
+                  disabled={subiendoDrive}
+                  style={{ ...btnGhost, ...(subiendoDrive ? { opacity: 0.6, cursor: 'wait' } : {}) }}
+                >
+                  {subiendoDrive ? '⏳ Subiendo…' : '📤 Archivar en Drive'}
+                </button>
+              )}
+              <button onClick={() => fileRef.current?.click()} style={btnGhost}>
+                🔄 Reemplazar
+              </button>
+            </div>
           </div>
           <input ref={fileRef} type="file" accept="application/pdf" hidden
             onChange={e => subir(e.target.files?.[0])} />

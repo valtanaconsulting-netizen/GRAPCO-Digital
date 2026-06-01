@@ -26,8 +26,7 @@ import {
   generarNumeroRegistro, codigoFrente, formatSemanaISO,
   calcularEstadoProtocolo,
 } from '../../utils/calidadOTAnalytics';
-import { descargarProtocoloPreVaciadoPDF, blobProtocoloPreVaciadoPDF } from '../../utils/pdf/ProtocoloPreVaciadoPDF';
-import { archivarBlobProtocoloEnDrive } from '../../utils/archivarProtocoloDrive';
+import { descargarProtocoloPreVaciadoPDF } from '../../utils/pdf/ProtocoloPreVaciadoPDF';
 import PdfFirmadoUploader from '../../components/PdfFirmadoUploader';
 
 const TIPO = 'prevaciado';
@@ -67,7 +66,6 @@ export default function ProtocoloPreVaciadoEditor({ protocoloId, showToast, onCl
   const [form, setForm] = useState(FORM_VACIO);
   const [cargando, setCargando] = useState(!!protocoloId);
   const [guardando, setGuardando] = useState(false);
-  const [subiendoDrive, setSubiendoDrive] = useState(false);
   const esNuevo = !protocoloId;
 
   // Cargar protocolo existente
@@ -223,31 +221,6 @@ export default function ProtocoloPreVaciadoEditor({ protocoloId, showToast, onCl
     }
   };
 
-  // Sube el PDF oficial CAL-FOR-006 a Google Drive con la cuenta del usuario
-  // (popup de Google la 1ª vez). Mismo destino que "Por elemento": $0, tu espacio.
-  const subirADrive = async () => {
-    const id = await guardar(false);   // asegura N°/frente/semana y crea el doc si es nuevo
-    if (!id) return;
-    setSubiendoDrive(true);
-    try {
-      const blob = await blobProtocoloPreVaciadoPDF(form);
-      const { url, id: driveId } = await archivarBlobProtocoloEnDrive(form, blob);
-      try {
-        await updateDoc(doc(db, 'Protocolos', id), {
-          'archivado.drive': { url, id: driveId, fecha: new Date().toISOString() },
-          'archivado.driveUrl': url,
-          actualizadoEn: serverTimestamp(),
-        });
-      } catch (_) { /* el PDF ya está en Drive; registrar la URL es secundario */ }
-      showToast?.('✅ Protocolo subido a Google Drive', 'success');
-    } catch (e) {
-      console.error('[Drive]', e);
-      showToast?.('No se pudo subir a Drive: ' + (e.message || e), 'error');
-    } finally {
-      setSubiendoDrive(false);
-    }
-  };
-
   if (cargando) {
     return <p style={{ padding: 30, textAlign: 'center', color: BASE.muted }}>⏳ Cargando protocolo...</p>;
   }
@@ -271,10 +244,6 @@ export default function ProtocoloPreVaciadoEditor({ protocoloId, showToast, onCl
           <button onClick={onClose} style={btnGhost}>← Volver</button>
           <button onClick={generarPDF} disabled={guardando} style={btnGold}>
             📄 GENERAR PDF PARA FIRMA
-          </button>
-          <button onClick={subirADrive} disabled={guardando || subiendoDrive}
-            style={{ ...btnDrive, ...(subiendoDrive ? { background: '#94a3b8', cursor: 'wait' } : {}) }}>
-            {subiendoDrive ? '⏳ SUBIENDO…' : '📤 SUBIR A DRIVE'}
           </button>
           <button onClick={() => guardar(true)} disabled={guardando} style={btnNavy}>
             {guardando ? '⏳' : '💾'} GUARDAR
@@ -598,11 +567,6 @@ const btnGold = {
   padding: '10px 18px', borderRadius: 8, background: `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`,
   color: '#fff', border: 'none', fontSize: 12, fontWeight: 900, cursor: 'pointer', letterSpacing: 0.4,
   boxShadow: '0 4px 12px rgba(229,168,47,0.35)',
-};
-const btnDrive = {
-  padding: '10px 18px', borderRadius: 8, background: 'linear-gradient(135deg, #1f6feb, #0b4fc4)',
-  color: '#fff', border: 'none', fontSize: 12, fontWeight: 900, cursor: 'pointer', letterSpacing: 0.4,
-  boxShadow: '0 4px 12px rgba(31,111,235,0.32)',
 };
 const btnGhost = {
   padding: '10px 14px', borderRadius: 8, background: BASE.bgSoft,
