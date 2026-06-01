@@ -69,14 +69,20 @@ function rutaDrive(p) {
   return ['1. PROTOCOLOS', `FRENTE ${frente}`, `SEMANA ${semana}`];
 }
 
-// Genera el PDF del protocolo (desde su elemento en pantalla) y lo sube a Drive.
-// Devuelve { url, id }.
-export async function archivarProtocoloEnDrive(protocolo, elemento) {
-  const blob = await generarPdfBlob(elemento);
+// Sube a Drive un Blob de PDF ya generado (p.ej. el CAL-FOR-006 oficial vía
+// @react-pdf/renderer), usando la misma ruta canónica. Devuelve { url, id }.
+export async function archivarBlobProtocoloEnDrive(protocolo, blob) {
   const base = (protocolo.numeroRegistro || protocolo.codigo || 'protocolo').replace(/[^\w.-]/g, '_');
   return archivarPdfEnDrive({
     rutaNombres: rutaDrive(protocolo),
     nombreArchivo: `${base}.pdf`,
     blob,
   });
+}
+
+// Genera el PDF del protocolo (desde su elemento en pantalla) y lo sube a Drive.
+// Devuelve { url, id }.
+export async function archivarProtocoloEnDrive(protocolo, elemento) {
+  const blob = await generarPdfBlob(elemento);
+  return archivarBlobProtocoloEnDrive(protocolo, blob);
 }

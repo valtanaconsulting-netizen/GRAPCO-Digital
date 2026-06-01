@@ -473,12 +473,17 @@ export function ProtocoloPreVaciadoPDF({ data = {}, logoUrl = '/brand/grapco-192
   );
 }
 
+/** Genera el PDF oficial CAL-FOR-006 como Blob (sin descargar). Reutilizable para Drive/Storage. */
+export async function blobProtocoloPreVaciadoPDF(data) {
+  return pdf(<ProtocoloPreVaciadoPDF data={data} />).toBlob();
+}
+
 /**
  * Genera el PDF como blob y dispara la descarga en el navegador.
  * Llamar desde el botón "Generar PDF para firma".
  */
 export async function descargarProtocoloPreVaciadoPDF(data) {
-  const blob = await pdf(<ProtocoloPreVaciadoPDF data={data} />).toBlob();
+  const blob = await blobProtocoloPreVaciadoPDF(data);
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
