@@ -28,6 +28,7 @@ import {
 } from '../../utils/calidadOTAnalytics';
 import { descargarProtocoloPreVaciadoPDF } from '../../utils/pdf/ProtocoloPreVaciadoPDF';
 import PdfFirmadoUploader from '../../components/PdfFirmadoUploader';
+import VisorPlanos from '../../components/VisorPlanos';
 
 const TIPO = 'prevaciado';
 
@@ -66,6 +67,7 @@ export default function ProtocoloPreVaciadoEditor({ protocoloId, showToast, onCl
   const [form, setForm] = useState(FORM_VACIO);
   const [cargando, setCargando] = useState(!!protocoloId);
   const [guardando, setGuardando] = useState(false);
+  const [verPlanos, setVerPlanos] = useState(false);
   const esNuevo = !protocoloId;
 
   // Cargar protocolo existente
@@ -261,7 +263,11 @@ export default function ProtocoloPreVaciadoEditor({ protocoloId, showToast, onCl
       </Card>
 
       {/* ── Identificación del elemento ── */}
-      <Card title="Identificación del elemento">
+      <Card title="Identificación del elemento" right={(
+        <button onClick={() => setVerPlanos(true)} style={btnVerPlano} title="Ver los planos del frente (PDF/imagen) sin salir del protocolo">
+          📐 Ver plano
+        </button>
+      )}>
         <Grid cols={5}>
           <Field label="Estructura / Elemento *">
             <Inp value={form.estructuraElemento} onChange={v => upd('estructuraElemento', v)} placeholder="Ej: Zapata almacén" />
@@ -441,6 +447,15 @@ export default function ProtocoloPreVaciadoEditor({ protocoloId, showToast, onCl
           💡 Guarda primero el protocolo para habilitar la subida del PDF firmado.
         </div>
       )}
+
+      {verPlanos && (
+        <VisorPlanos
+          proyectoId={proyectoActivoId}
+          frenteCodigo={form.frenteCodigo}
+          onClose={() => setVerPlanos(false)}
+          showToast={showToast}
+        />
+      )}
     </div>
   );
 }
@@ -567,6 +582,10 @@ const btnGold = {
   padding: '10px 18px', borderRadius: 8, background: `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`,
   color: '#fff', border: 'none', fontSize: 12, fontWeight: 900, cursor: 'pointer', letterSpacing: 0.4,
   boxShadow: '0 4px 12px rgba(229,168,47,0.35)',
+};
+const btnVerPlano = {
+  padding: '7px 12px', borderRadius: 8, background: BASE.navy, color: '#fff',
+  border: 'none', fontSize: 11, fontWeight: 800, cursor: 'pointer', letterSpacing: 0.3,
 };
 const btnGhost = {
   padding: '10px 14px', borderRadius: 8, background: BASE.bgSoft,
