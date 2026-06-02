@@ -30,34 +30,26 @@ const PINS_OBRA = {
 const PERFILES = [
   {
     rol: 'ingeniero',
-    titulo: 'Ingeniería de Producción',
-    iconName: 'dashboard',
+    titulo: 'Planeamiento y Producción',
+    iconName: 'barChart3',
     color: '#047857',
-    descripcion: 'Producción (Auditoría + CPI/EAC + Control Gerencial), registro de producción, Carta Balance, Sala de Operaciones, materiales y coordinación BIM.',
-    accesos: ['Producción', 'Registro', 'Carta Balance', 'Sala de Operaciones', 'Materiales'],
+    descripcion: 'Gestión integral de la planificación y control de obra mediante metodologías Lean Construction y VDC. Integra producción, recursos, materiales y seguimiento de indicadores para optimizar productividad, cumplimiento y toma de decisiones.',
+    accesos: ['Producción', 'Registro', 'Carta Balance', 'Sala de Operaciones', 'Plan Maestro', 'APU', 'Pull Planning', 'Materiales'],
   },
   {
     rol: 'oficina_tecnica',
     titulo: 'Oficina Técnica',
-    iconName: 'fileText',
+    iconName: 'coins',
     color: '#1D4ED8',
-    descripcion: 'Resultado Operativo, valorizaciones, adicionales y deductivos, sustento fotográfico, partidas y BIM.',
+    descripcion: 'Administración centralizada de valorizaciones, adicionales, deductivos y control documental. Facilita el seguimiento técnico-económico del proyecto, garantizando trazabilidad, sustento y control de los resultados operativos.',
     accesos: ['RO', 'Valorizaciones', 'Sustento', 'Partidas', 'BIM'],
-  },
-  {
-    rol: 'planeamiento',
-    titulo: 'Planeamiento y Programación',
-    iconName: 'tree',
-    color: '#0E7490',
-    descripcion: 'Plan Maestro (WBS), Análisis de Precios Unitarios, Last Planner / Pull Planning, hitos y cronograma.',
-    accesos: ['Plan Maestro', 'APU', 'Pull Planning', 'Hitos'],
   },
   {
     rol: 'calidad',
     titulo: 'Gestión de Calidad',
     iconName: 'shield',
     color: '#7E22CE',
-    descripcion: 'Protocolos, PETs, No Conformidades, ensayos, evidencia fotográfica y modelo BIM para liberación.',
+    descripcion: 'Control y aseguramiento de la calidad mediante protocolos, ensayos, liberaciones y gestión de no conformidades. Integra evidencia digital y trazabilidad para asegurar el cumplimiento de especificaciones y estándares del proyecto.',
     accesos: ['Protocolos', 'PETs', 'No Conformidades', 'Ensayos', 'BIM'],
   },
   {
@@ -65,7 +57,7 @@ const PERFILES = [
     titulo: 'Seguridad, Salud y Medio Ambiente',
     iconName: 'alert',
     color: '#BE123C',
-    descripcion: 'Reporte de incidencias con fotos, inspección diaria con checklist y apertura automática de No Conformidades.',
+    descripcion: 'Gestión preventiva de riesgos mediante inspecciones, reportes de incidentes y seguimiento de acciones correctivas. Promueve una cultura de seguridad basada en control, cumplimiento y mejora continua.',
     accesos: ['Reportar', 'Inspección', 'Historial'],
   },
   {
@@ -81,7 +73,7 @@ const PERFILES = [
     titulo: 'Administración del Sistema',
     iconName: 'shieldAdmin',
     color: BASE.navy,
-    descripcion: 'Acceso completo a todos los módulos GRAPCO, gestión de usuarios, configuración global y auditoría.',
+    descripcion: 'Configuración y control global de la plataforma, gestión de usuarios, permisos y auditoría de información. Garantiza seguridad, gobernanza y trazabilidad sobre todos los procesos del sistema.',
     accesos: ['Todos los módulos', 'Usuarios', 'Auditoría'],
     destacado: true,
   },
@@ -90,12 +82,12 @@ const PERFILES = [
 // Mapeo de rolPermitido (almacenado en /Usuarios) → cards visibles en el selector.
 // admin / ingeniero ven TODAS las áreas (perfiles senior multi-área).
 // Roles específicos solo ven su propia área (más una de soporte cuando aplica).
-const TODAS = ['ingeniero','oficina_tecnica','planeamiento','calidad','seguridad','almacenero','admin'];
+const TODAS = ['ingeniero','oficina_tecnica','calidad','seguridad','almacenero','admin'];
 const ROL_CARDS_PERMITIDAS = {
   admin:              TODAS,
   ingeniero:          TODAS,
-  oficina_tecnica:    ['oficina_tecnica','planeamiento','calidad'],
-  planeamiento:       ['planeamiento','oficina_tecnica'],
+  oficina_tecnica:    ['oficina_tecnica','ingeniero','calidad'],
+  planeamiento:       ['ingeniero','oficina_tecnica'],
   calidad:            ['calidad','seguridad'],
   seguridad:          ['seguridad','calidad'],
   almacenero:         ['almacenero'],
@@ -113,12 +105,20 @@ export default function SelectorPerfil() {
   const [modoPin, setModoPin] = useState(false);
   const [pin, setPin] = useState('');
   const [errorPin, setErrorPin] = useState('');
+  const [clienteSel, setClienteSel] = useState('');
   const videoRef = useRef(null);
 
   // Cards visibles según el rol almacenado del usuario
   // Sin escalada: si el rol no está mapeado, solo ve su propia área (no TODAS).
   const permitidos = ROL_CARDS_PERMITIDAS[rolPermitido] || (rolPermitido ? [rolPermitido] : []);
   const perfilesFiltrados = PERFILES.filter(p => permitidos.includes(p.rol));
+
+  // Cliente de cada proyecto (campo cliente/empresa). El cliente filtra los proyectos visibles.
+  const clienteDe = (p) => p?.cliente || p?.clienteNombre || p?.empresa || '';
+  const clientes = Array.from(new Set((proyectos || []).map(clienteDe).filter(Boolean))).sort();
+  const proyectosFiltrados = clienteSel
+    ? (proyectos || []).filter(p => clienteDe(p) === clienteSel)
+    : (proyectos || []);
 
   // Atajo: si el usuario teclea 4 dígitos, intenta entrar por PIN.
   useEffect(() => {
@@ -372,7 +372,7 @@ export default function SelectorPerfil() {
         </button>
       </div>
 
-      {/* Selector de PROYECTO (y frente) — al inicio de la plataforma */}
+      {/* Selector de CLIENTE + PROYECTO — al inicio de la plataforma */}
       {!modoPin && (
         <div style={{
           position: 'relative', zIndex: 1,
@@ -386,17 +386,17 @@ export default function SelectorPerfil() {
           boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 14px 34px -22px rgba(0,0,0,0.8)',
         }}>
           <div>
-            <label style={lblKiosk}>🏗️ PROYECTO ACTIVO</label>
-            <select value={proyectoActivoId || ''} onChange={e => setProyectoActivoId(e.target.value)} style={selKiosk}>
-              <option value="" style={optKiosk}>— Selecciona proyecto —</option>
-              {(proyectos || []).map(p => <option key={p.id} value={p.id} style={optKiosk}>{p.nombre || p.codigo || p.id}</option>)}
+            <label style={lblKiosk}>🏢 CLIENTE</label>
+            <select value={clienteSel} onChange={e => setClienteSel(e.target.value)} style={selKiosk}>
+              <option value="" style={optKiosk}>— Todos los clientes —</option>
+              {clientes.map(c => <option key={c} value={c} style={optKiosk}>{c}</option>)}
             </select>
           </div>
           <div>
-            <label style={lblKiosk}>📍 FRENTE</label>
-            <select value={frenteActivoId || ''} onChange={e => setFrenteActivoId(e.target.value)} style={selKiosk}>
-              <option value="" style={optKiosk}>— Todos / sin frente —</option>
-              {(frentesDelProyecto || []).map(f => <option key={f.id} value={f.id} style={optKiosk}>{f.codigo ? `${f.codigo} · ` : ''}{f.nombre || f.id}</option>)}
+            <label style={lblKiosk}>🏗️ PROYECTO</label>
+            <select value={proyectoActivoId || ''} onChange={e => setProyectoActivoId(e.target.value)} style={selKiosk}>
+              <option value="" style={optKiosk}>— Selecciona proyecto —</option>
+              {proyectosFiltrados.map(p => <option key={p.id} value={p.id} style={optKiosk}>{p.nombre || p.codigo || p.id}</option>)}
             </select>
           </div>
         </div>
@@ -506,14 +506,14 @@ export default function SelectorPerfil() {
               background: `linear-gradient(145deg, ${BASE.gold}1F, ${BASE.gold}0A)`,
               border: `1px solid ${BASE.gold}33`,
               boxShadow: `inset 0 1px 0 rgba(255,255,255,0.6), 0 4px 10px -4px ${BASE.gold}55`,
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '20px',
-            }}>📷</span>
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}><Icon name="user" size={20} color={BASE.goldDark} strokeWidth={2} /></span>
             <span style={{ fontSize: '13.5px', fontWeight: '800', color: BASE.navy, lineHeight: 1.22, letterSpacing: '-0.015em' }}>
               Registro de Personal · Facial
             </span>
           </div>
           <p style={{ fontSize: '11.5px', color: BASE.muted, lineHeight: 1.5, margin: 0, flex: 1 }}>
-            Marca tu entrada/salida con la cara. Modo kiosko — no necesitas elegir perfil.
+            Control de asistencia mediante reconocimiento facial, con registro automático de ingresos y salidas en tiempo real. Permite trazabilidad del personal en obra y elimina registros manuales, asegurando mayor confiabilidad de la información.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
             {['Entrada/Salida', 'Sin perfil', 'Kiosko'].map(a => (
@@ -667,7 +667,7 @@ export default function SelectorPerfil() {
         marginTop: '16px', color: '#94a3b8',
         fontSize: '11px', textAlign: 'center', letterSpacing: '0.4px',
       }}>
-        GRAPCO SAC © {new Date().getFullYear()} · Plataforma integral de gestion de obra
+        © {new Date().getFullYear()} Valtana Consultoría & Construcción · Todos los derechos reservados
       </p>
     </div>
   );
