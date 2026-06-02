@@ -16,20 +16,16 @@ import React, { useState, useMemo } from 'react';
 import { BASE } from '../utils/styles';
 import {
   calcularReporteTareos, calcularControlHHVariaciones, calcularMatrizIP,
-  fmtMoney, fmt1, fmtCPIPct, COSTO_HORA_DEFAULT, codigoCortoPartida,
+  fmtMoney, fmt1, fmtCPIPct, COSTO_HORA_DEFAULT, COSTO_HORA_PROMEDIO, codigoCortoPartida,
 } from '../utils/helpers';
+import CostoRealOficial from './modulos/resultadoOperativo/CostoRealOficial';
 
 export default function ControlGerencial({ historialEnriquecido, personalDB, configuracion, isMobile, asistencia }) {
   const [tab, setTab] = useState('tareos');
   const [partidaExpandida, setPartidaExpandida] = useState(null);
 
-  const tarifaPromedio = useMemo(() => {
-    const tarifas = configuracion?.tarifas || {};
-    const valores = Object.values(tarifas).filter(v => v > 0);
-    if (valores.length > 0) return valores.reduce((s, v) => s + v, 0) / valores.length;
-    const defaults = Object.values(COSTO_HORA_DEFAULT);
-    return defaults.reduce((s, v) => s + v, 0) / defaults.length;
-  }, [configuracion]);
+  // Tarifa MO única de la plataforma (S/25.50/h) — fijada por el usuario para todo el costeo.
+  const tarifaPromedio = COSTO_HORA_PROMEDIO;
 
   const numTrabajadores = useMemo(() => (personalDB || []).length, [personalDB]);
 
@@ -64,6 +60,7 @@ export default function ControlGerencial({ historialEnriquecido, personalDB, con
       }}>
         {[
           { id: 'tareos',       l: 'Reporte de Tareos',     desc: 'Costos jerarquicos por partida', emoji: '💵' },
+          { id: 'crOficial',    l: 'CR Oficial (Excel)',    desc: 'Costo Real del ISP · S/25.50/h',  emoji: '🧾' },
           { id: 'variaciones',  l: 'Control HH Variaciones', desc: 'Real vs meta + heatmap',         emoji: '📊' },
           { id: 'ip',           l: 'Control de IP',          desc: 'IP por actividad y semana',      emoji: '🎯' },
         ].map(t => {
@@ -111,6 +108,7 @@ export default function ControlGerencial({ historialEnriquecido, personalDB, con
           isMobile={isMobile}
         />
       )}
+      {tab === 'crOficial' && <CostoRealOficial />}
       {tab === 'variaciones' && (
         <ControlVariaciones
           historial={historialEnriquecido}

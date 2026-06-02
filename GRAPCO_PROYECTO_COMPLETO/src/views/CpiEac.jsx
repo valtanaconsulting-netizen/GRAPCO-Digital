@@ -199,6 +199,12 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
     };
   };
 
+  // HH de PRESUPUESTO y META = SIEMPRE del catálogo (metrado × IP del presupuesto),
+  // nunca el IP histórico de campo. Si el IP del catálogo es 0 (p.ej. movimiento de
+  // tierras subcontratado), el HH presupuestado es 0 — igual que en el ISP del Excel.
+  const hhPptDe  = (aN) => { const d = INFO[String(aN).trim().toUpperCase()]; return d ? (parseFloat(d.metP) || 0) * (parseFloat(d.ipP) || 0) : 0; };
+  const hhMetaDe = (aN) => { const d = INFO[String(aN).trim().toUpperCase()]; return d ? (parseFloat(d.metM) || 0) * (parseFloat(d.ipM) || 0) : 0; };
+
   // Calcula el saldo de una actividad respetando los flags:
   //  · terminada:     saldo = 0 (no proyecta más HH); metFinal = lo realmente
   //                   ejecutado (act.met).
@@ -300,10 +306,11 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
   };
 
   const totalSaldo = useMemo(() => {
-    let saldoMet = 0, hhSaldoRef = 0, hhSaldoReal = 0, hhEAC = 0, hhRefTotal = 0, hhReal = 0;
+    let saldoMet = 0, hhSaldoRef = 0, hhSaldoReal = 0, hhEAC = 0, hhRefTotal = 0, hhReal = 0, hhRefAct = 0, hhP = 0, hhM = 0;
     Object.keys(wbs).forEach(pN => {
       const p = wbs[pN];
       hhReal += p.hhR;
+      hhRefAct += (p[REF.hhKey] || 0);
       Object.keys(p.subs).forEach(sN => Object.keys(p.subs[sN].acts).forEach(aN => {
         const act = p.subs[sN].acts[aN];
         const ad = obtenerDatosActividad(aN, act.met);
@@ -314,10 +321,15 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
         hhSaldoReal += sm * ipReal;
         hhEAC       += act.hhR + sm * ipReal;
         hhRefTotal  += metFinal * ipRef;
+        hhP += hhPptDe(aN);
+        hhM += hhMetaDe(aN);
       }));
     });
-    return { saldoMet, hhSaldoRef, hhSaldoReal, hhEAC, hhRefTotal, hhReal };
-  }, [wbs, REF.metKey, REF.ipKey, INFO]);
+    return { saldoMet, hhSaldoRef, hhSaldoReal, hhEAC, hhRefTotal, hhReal, hhRefAct, hhP, hhM };
+  }, [wbs, REF.metKey, REF.ipKey, REF.hhKey, INFO]);
+  // Estilo de celda para la fila de TOTALES (navy, números claros)
+  const TT = (extra = {}) => ({ background: HEAD_BG2, color: '#fff', fontWeight: 800, borderTop: `2px solid ${BASE.gold}`, borderBottom: `2px solid ${BASE.gold}`, ...extra });
+  const vcD = (n) => { const v = parseFloat(n); if (!v || isNaN(v)) return 'rgba(255,255,255,0.55)'; return v > 0 ? '#86efac' : '#fca5a5'; };
 
   return (
     <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
@@ -465,6 +477,36 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
               </tr>
             </thead>
             <tbody>
+              {/* ── FILA DE TOTALES DE OBRA (suma de HH de todas las partidas) ── */}
+              <tr>
+                <td style={{ padding:'10px 14px', background:HEAD_BG, color:'#fff', fontWeight:900, fontSize:'12px', letterSpacing:'0.5px', borderRight:SEP, borderTop:`2px solid ${BASE.gold}`, borderBottom:`2px solid ${BASE.gold}`, whiteSpace:'nowrap' }}>Σ TOTAL OBRA · HH</td>
+                {chipPpt && <>
+                  {td('—', TT({ color:'rgba(255,255,255,0.45)' }))}
+                  {td(fmt1(totalSaldo.hhP), TT())}
+                  {td('—', TT({ color:'rgba(255,255,255,0.45)', ...sepRight }))}
+                </>}
+                {chipMeta && <>
+                  {td('—', TT({ color:'rgba(255,255,255,0.45)' }))}
+                  {td(fmt1(totalSaldo.hhM), TT())}
+                  {td('—', TT({ color:'rgba(255,255,255,0.45)', ...sepRight }))}
+                </>}
+                {td('—', TT({ color:'rgba(255,255,255,0.45)' }))}
+                {td(fmt1(totalSaldo.hhReal), TT({ color:BASE.gold }))}
+                {td('—', TT({ color:'rgba(255,255,255,0.45)', ...sepRight }))}
+                {td(fmt1(totalSaldo.hhRefAct), TT())}
+                {td(fmtVar(totalSaldo.hhRefAct - totalSaldo.hhReal), TT({ color: vcD(totalSaldo.hhRefAct - totalSaldo.hhReal) }))}
+                {td(fmtCPIPct(calcCPI(totalSaldo.hhRefAct, totalSaldo.hhReal)), TT({ ...sepRight }))}
+                {td('—', TT({ color:'rgba(255,255,255,0.45)' }))}
+                {td(fmt1(totalSaldo.hhSaldoRef), TT())}
+                {td('—', TT({ color:'rgba(255,255,255,0.45)', ...sepRight }))}
+                {td('—', TT({ color:'rgba(255,255,255,0.45)' }))}
+                {td(fmt1(totalSaldo.hhEAC), TT())}
+                {td('—', TT({ color:'rgba(255,255,255,0.45)', ...sepRight }))}
+                {td(fmt1(totalSaldo.hhRefTotal), TT())}
+                {td(fmtVar(totalSaldo.hhRefTotal - totalSaldo.hhEAC), TT({ color: vcD(totalSaldo.hhRefTotal - totalSaldo.hhEAC) }))}
+                {td(fmtCPIPct(totalSaldo.hhEAC > 0 ? totalSaldo.hhRefTotal / totalSaldo.hhEAC : null), TT({ ...sepRight }))}
+                <td style={{ background:HEAD_BG, borderTop:`2px solid ${BASE.gold}`, borderBottom:`2px solid ${BASE.gold}` }} />
+              </tr>
               {Object.keys(wbs).map(pN=>{
                 const p=wbs[pN];
                 if (!mostrarVacias && p.hhR === 0 && p.hhM === 0 && p.hhP === 0) return null;
@@ -486,9 +528,9 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
                   pMetTot += metFinal;
                   // Chips
                   pMetP_tot += (ad.metP || 0);
-                  pHHP_tot  += (ad.metP || 0) * (ad.ipP || 0);
+                  pHHP_tot  += hhPptDe(aN);
                   pMetM_tot += (ad.metM || 0);
-                  pHHM_tot  += (ad.metM || 0) * (ad.ipM || 0);
+                  pHHM_tot  += hhMetaDe(aN);
                 }));
                 const pIPP_avg = pMetP_tot > 0 ? pHHP_tot / pMetP_tot : 0;
                 const pIPM_avg = pMetM_tot > 0 ? pHHM_tot / pMetM_tot : 0;
@@ -573,9 +615,9 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
                         spRefTot += metFinal * ipRef;
                         spMetTot += metFinal;
                         spMetP_tot += (ad.metP || 0);
-                        spHHP_tot  += (ad.metP || 0) * (ad.ipP || 0);
+                        spHHP_tot  += hhPptDe(aN);
                         spMetM_tot += (ad.metM || 0);
-                        spHHM_tot  += (ad.metM || 0) * (ad.ipM || 0);
+                        spHHM_tot  += hhMetaDe(aN);
                       });
                       const spIPP_avg = spMetP_tot > 0 ? spHHP_tot / spMetP_tot : 0;
                       const spIPM_avg = spMetM_tot > 0 ? spHHM_tot / spMetM_tot : 0;
@@ -727,12 +769,12 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
                                 </td>
                                 {chipPpt && <>
                                   {td(fmt1(ad.metP||0),{background:SEC.ppt.bgCell,color:SEC.ppt.text})}
-                                  {td(fmt1((ad.metP||0)*(ad.ipP||0)),{background:SEC.ppt.bgCell,color:SEC.ppt.text})}
+                                  {td(fmt1(hhPptDe(aN)),{background:SEC.ppt.bgCell,color:SEC.ppt.text})}
                                   {td((ad.ipP||0).toFixed(2),{background:SEC.ppt.bgCell,color:SEC.ppt.text,...sepRight})}
                                 </>}
                                 {chipMeta && <>
                                   {td(fmt1(ad.metM||0),{background:SEC.meta.bgCell,color:SEC.meta.text})}
-                                  {td(fmt1((ad.metM||0)*(ad.ipM||0)),{background:SEC.meta.bgCell,color:SEC.meta.text})}
+                                  {td(fmt1(hhMetaDe(aN)),{background:SEC.meta.bgCell,color:SEC.meta.text})}
                                   {td((ad.ipM||0).toFixed(2),{background:SEC.meta.bgCell,color:SEC.meta.text,...sepRight})}
                                 </>}
                                 {td(act.met>0?fmt1(act.met):'0')}

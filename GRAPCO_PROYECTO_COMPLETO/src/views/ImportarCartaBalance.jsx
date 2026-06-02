@@ -5,46 +5,127 @@
 // consume el motor de análisis y guarda en Cartas_Balance.
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { collection, addDoc, query, where, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { BASE, CB_COL, CARGOS, CARGOS_CORTO, inp } from '../utils/styles';
-import { clasificarLUF } from '../utils/cartaBalanceAnalytics';
 import { useAuth } from '../contexts/AuthContext';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 import VistaHeader from '../components/VistaHeader';
 import ConfirmModal from '../components/ConfirmModal';
 
-// Catálogo de códigos (cubre el formato GP-GCR-FOR de habilitado/colocación de acero).
-const CODIGOS = {
-  TP: [
-    { cod: 'ACE', desc: 'Armado de acero' },
-    { cod: 'AMA', desc: 'Amarrando acero' },
-  ],
-  TC: [
-    { cod: 'AM', desc: 'Acarreo de materiales' },
-    { cod: 'AV', desc: 'Alineado vertical (aplomado)' },
-    { cod: 'AP', desc: 'Alineado vertical / Aplomado' },
-    { cod: 'NA', desc: 'Nivelando acero' },
-    { cod: 'SA', desc: 'Subiendo acero' },
-    { cod: 'MD', desc: 'Midiendo distancias' },
-    { cod: 'COO', desc: 'Coordinación' },
-    { cod: 'CI', desc: 'Colocación de instrumentos' },
-    { cod: 'AA', desc: 'Armado de andamio' },
-    { cod: 'CA', desc: 'Cortando acero' },
-  ],
-  TNC: [
-    { cod: 'VI', desc: 'Viaje' },
-    { cod: 'TR', desc: 'Trabajo rehecho' },
-    { cod: 'BA', desc: 'Baño' },
-    { cod: 'ES', desc: 'Tiempo de espera' },
-    { cod: 'DE', desc: 'Descanso' },
-    { cod: 'CO', desc: 'Conversación' },
-  ],
+// Catálogos de códigos POR TIPO de actividad. Cada formato GP-GCR-FOR usa su
+// propia leyenda de códigos (acero ≠ encofrado: p.ej. AP=Aplomado en acero pero
+// AP=Apuntalamiento en encofrado). El importador cambia de catálogo según el tipo.
+const CATALOGOS = {
+  ACERO: {
+    TP: [
+      { cod: 'ACE', desc: 'Armado de acero' },
+      { cod: 'AMA', desc: 'Amarrando acero' },
+    ],
+    TC: [
+      { cod: 'AM', desc: 'Acarreo de materiales' },
+      { cod: 'AV', desc: 'Alineado vertical (aplomado)' },
+      { cod: 'AP', desc: 'Alineado vertical / Aplomado' },
+      { cod: 'NA', desc: 'Nivelando acero' },
+      { cod: 'SA', desc: 'Subiendo acero' },
+      { cod: 'MD', desc: 'Midiendo distancias' },
+      { cod: 'COO', desc: 'Coordinación' },
+      { cod: 'CI', desc: 'Colocación de instrumentos' },
+      { cod: 'AA', desc: 'Armado de andamio' },
+      { cod: 'CA', desc: 'Cortando acero' },
+    ],
+    TNC: [
+      { cod: 'VI', desc: 'Viaje' },
+      { cod: 'TR', desc: 'Trabajo rehecho' },
+      { cod: 'BA', desc: 'Baño' },
+      { cod: 'ES', desc: 'Tiempo de espera' },
+      { cod: 'DE', desc: 'Descanso' },
+      { cod: 'CO', desc: 'Conversación' },
+    ],
+  },
+  ENCOFRADO: {
+    TP: [
+      { cod: 'CE', desc: 'Colocación de encofrado' },
+    ],
+    TC: [
+      { cod: 'AM', desc: 'Acarreo de materiales' },
+      { cod: 'AV', desc: 'Alineamiento y verticalidad' },
+      { cod: 'AP', desc: 'Apuntalamiento' },
+      { cod: 'CD', desc: 'Colocación de desmoldante' },
+      { cod: 'PT', desc: 'Perfilar el terreno' },
+      { cod: 'CM', desc: 'Cortar madera' },
+      { cod: 'PM', desc: 'Plataforma de madera' },
+      { cod: 'CC', desc: 'Colocación de cachimba' },
+      { cod: 'UT', desc: 'Uso de tizalínea' },
+      { cod: 'COO', desc: 'Coordinación' },
+    ],
+    TNC: [
+      { cod: 'VI', desc: 'Viaje' },
+      { cod: 'TR', desc: 'Trabajo rehecho' },
+      { cod: 'BA', desc: 'Baño' },
+      { cod: 'ES', desc: 'Tiempo de espera' },
+      { cod: 'D', desc: 'Descanso' },
+      { cod: 'CO', desc: 'Conversación' },
+    ],
+  },
+  EXCAVACION: {
+    TP: [
+      { cod: 'EX', desc: 'Excavación' },
+      { cod: 'EXP', desc: 'Excavación con pala' },
+      { cod: 'EXM', desc: 'Excavación con rotomartillo' },
+    ],
+    TC: [
+      { cod: 'AM', desc: 'Acarreo de materiales' },
+      { cod: 'SP', desc: 'Selección de piedras' },
+      { cod: 'ME', desc: 'Medición de la calzadura' },
+      { cod: 'UT', desc: 'Uso de la tizalínea' },
+      { cod: 'COO', desc: 'Coordinación' },
+    ],
+    TNC: [
+      { cod: 'VI', desc: 'Viaje' },
+      { cod: 'TR', desc: 'Trabajo rehecho' },
+      { cod: 'BA', desc: 'Baño' },
+      { cod: 'ES', desc: 'Tiempo de espera' },
+      { cod: 'D', desc: 'Descanso' },
+      { cod: 'CO', desc: 'Conversación' },
+    ],
+  },
+  VACIADO: {
+    TP: [
+      { cod: 'VC', desc: 'Vaciado de concreto' },
+      { cod: 'CC', desc: 'Colocación de piedras' },
+    ],
+    TC: [
+      { cod: 'AM', desc: 'Acarreo de materiales' },
+      { cod: 'ST', desc: 'Sostener tubería' },
+      { cod: 'CP', desc: 'Sostener tubería (chute)' },
+      { cod: 'PC', desc: 'Preparar chute' },
+      { cod: 'VB', desc: 'Vibrado de concreto' },
+      { cod: 'CA', desc: 'Cachipa' },
+      { cod: 'COO', desc: 'Coordinación' },
+    ],
+    TNC: [
+      { cod: 'VI', desc: 'Viaje' },
+      { cod: 'TR', desc: 'Trabajo rehecho' },
+      { cod: 'BA', desc: 'Baño' },
+      { cod: 'ES', desc: 'Tiempo de espera' },
+      { cod: 'D', desc: 'Descanso' },
+      { cod: 'CO', desc: 'Conversación' },
+    ],
+  },
 };
-const DESC = {};
-Object.values(CODIGOS).flat().forEach((c) => { DESC[c.cod] = c.desc; });
-const CAT_DE = {};
-Object.entries(CODIGOS).forEach(([cat, arr]) => arr.forEach((c) => { CAT_DE[c.cod] = cat; }));
+const TIPOS = [
+  { id: 'ACERO', label: '🔩 Acero' },
+  { id: 'ENCOFRADO', label: '🪵 Encofrado de madera' },
+  { id: 'EXCAVACION', label: '⛏️ Excavación localizada' },
+  { id: 'VACIADO', label: '🏗️ Vaciado de concreto' },
+];
+// Construye los mapas DESC (cod→descripción) y CAT_DE (cod→TP/TC/TNC) de un catálogo.
+const mapasDe = (cat) => {
+  const desc = {}, catDe = {};
+  Object.entries(cat).forEach(([k, arr]) => arr.forEach((c) => { desc[c.cod] = c.desc; catDe[c.cod] = k; }));
+  return { desc, catDe };
+};
 
 // Plantillas precargadas (cartas reales ya digitadas) — se cargan con el selector.
 const PLANTILLAS = [
@@ -143,9 +224,229 @@ const PLANTILLAS = [
       },
     },
   },
+  // ── ENCOFRADO DE MADERA (CREDITEX · dic-2025) ── códigos del catálogo ENCOFRADO ──
+  {
+    key: 'enc051225', label: 'CREDITEX · 05-dic · Encofrado de madera (2)', tipo: 'ENCOFRADO',
+    data: {
+      obra: 'CREDITEX PTARI', fecha: '2025-12-05', actividad: 'ENCOFRADO DE MADERA - CALZADURA',
+      ubicacion: 'Av. Los Hornos 185, Ate.', horaInicio: '14:52', horaFin: '15:42',
+      conclusiones: '1. El Tiempo Productivo (TP) fue muy bajo (9.3%) debido a que la actividad evaluada estaba enfocada únicamente en la colocación del encofrado. Esto explica que el porcentaje de aporte directo sea reducido. 2. El Tiempo Contributorio (TC) representó la mayor parte del análisis (84.5%), evidenciando que los obreros dedicaron la mayor parte del tiempo a labores necesarias para preparar o habilitar la actividad principal. Las tareas de acarreo de materiales, alineamiento, corte de madera y preparación del terreno fueron predominantes. 3. El Tiempo No Contributorio (TNC) fue 6.2% en el análisis general, asociado principalmente al tiempo que se tomo en ir al baño. El análisis realizado en un lapso de 50 minutos y con 2 obreros muestra que la mayor parte de las ineficiencias no provienen de descansos o paradas, sino de la alta proporción de trabajos complementarios previos que son necesarios para iniciar la actividad productiva.',
+      trabajadores: [
+        { letra: 'A', nombre: 'CAVERO LOPEZ, JUAN ALBERTO', cargo: 'Operario' },
+        { letra: 'B', nombre: 'PALACIOS LUNA, GIOVANNI CLEYMER', cargo: 'Operario' },
+      ],
+      conteos: {
+        A: { AM: 9, CE: 6, AV: 16, AP: 18 },
+        B: { AM: 21, CD: 2, CE: 3, AV: 5, AP: 11, BA: 6 },
+      },
+    },
+  },
+  {
+    key: 'enc061225', label: 'CREDITEX · 06-dic · Encofrado de madera (5)', tipo: 'ENCOFRADO',
+    data: {
+      obra: 'CREDITEX PTARI', fecha: '2025-12-06', actividad: 'ENCOFRADO DE MADERA - CALZADURA',
+      ubicacion: 'Av. Los Hornos 185, Ate.', horaInicio: '11:10', horaFin: '12:46',
+      conclusiones: '1. El Trabajo Productivo (TP) fue solo 7.8% porque la actividad principal del momento era únicamente colocar el encofrado. 2. El Tiempo No Contributivo (TNC) llegó a 8.5%, y dentro de ese porcentaje, lo que más pesó fue el Tiempo de Espera, porque los trabajadores esperaban a que les alcancen madera, herramientas u otros materiales. También se registró un 23.5% de viaje, que corresponde a trabajadores caminando a distintos lugares sin material en la mano, lo cual muestra que la zona no estaba lo suficientemente preparada antes de iniciar. 3. El Tiempo Contributivo (TC) fue el más alto con 83.7%, principalmente por actividades necesarias como cortar madera, acarrear materiales, alinear y verificar verticalidad, trabajos previos indispensables para poder encofrar. RECOMENDACIONES: Tener la madera lista en el área de trabajo: se recomienda que el encofrado y madera necesaria esté previamente cortada y ubicada cerca del frente, porque durante la actividad se perdió tiempo buscando piezas fuera de la zona. Desencofrar calzaduras anteriores antes de iniciar: si se libera el área con anticipación, se evita que el lugar esté saturado cuando ya se está trabajando, ya que caminar y trasladar madera entre demasiados obstáculos genera retrasos.',
+      trabajadores: [
+        { letra: 'A', nombre: 'AGUEDO PAREDES, JOHN ROVY', cargo: 'Operario' },
+        { letra: 'B', nombre: 'CAVERO LOPEZ, JUAN ALBERTO', cargo: 'Operario' },
+        { letra: 'C', nombre: 'MINAYA SILUPU, MANUEL JUNIOR', cargo: 'Ayudante' },
+        { letra: 'D', nombre: 'GARCIA SIMON, LUIS', cargo: 'Operario' },
+        { letra: 'E', nombre: 'PALACIOS LUNA, GIOVANNI CLEYMER', cargo: 'Operario' },
+      ],
+      conteos: {
+        A: { ES: 2, AM: 9, VI: 2, BA: 6, CO: 1 },
+        B: { AM: 7, AP: 55, COO: 5, AV: 4, CE: 11, D: 3, ES: 3, PT: 3, CM: 1 },
+        C: { AM: 44, AV: 9, CE: 8, AP: 25, CM: 3, PM: 1, ES: 2, VI: 3 },
+        D: { AM: 21, AP: 33, CD: 1, CE: 10, AV: 14, ES: 2, CC: 14 },
+        E: { AM: 49, AP: 26, COO: 5, AV: 1, CD: 1, CE: 2, ES: 6, VI: 3, CO: 1, CC: 2 },
+      },
+    },
+  },
+  {
+    key: 'enc091225', label: 'CREDITEX · 09-dic · Encofrado de madera (4)', tipo: 'ENCOFRADO',
+    data: {
+      obra: 'CREDITEX PTARI', fecha: '2025-12-09', actividad: 'ENCOFRADO DE MADERA - CALZADURA',
+      ubicacion: 'Av. Los Hornos 185, Ate.', horaInicio: '11:35', horaFin: '12:25',
+      conclusiones: '',
+      trabajadores: [
+        { letra: 'A', nombre: 'PALACIOS LUNA, GIOVANNI CLEYMER', cargo: 'Operario' },
+        { letra: 'B', nombre: 'AGUEDO PAREDES, JOHN ROVY', cargo: 'Operario' },
+        { letra: 'C', nombre: 'GUTIERRES MIRANDA, JORGE LUIS', cargo: 'Capataz' },
+        { letra: 'D', nombre: 'MINAYA SILUPU, MANUEL JUNIOR', cargo: 'Ayudante' },
+      ],
+      conteos: {
+        A: { AP: 33, COO: 1, AM: 7, CE: 3, AV: 6 },
+        B: { AM: 5, PM: 1 },
+        C: { CE: 3, AM: 4, COO: 3, AP: 7, AV: 3 },
+        D: { CE: 1, PT: 1, COO: 1, AM: 4, VI: 1 },
+      },
+    },
+  },
+  {
+    key: 'enc111225', label: 'CREDITEX · 11-dic · Encofrado de madera (3)', tipo: 'ENCOFRADO',
+    data: {
+      obra: 'CREDITEX PTARI', fecha: '2025-12-11', actividad: 'ENCOFRADO DE MADERA - CALZADURA',
+      ubicacion: 'Av. Los Hornos 185, Ate.', horaInicio: '13:40', horaFin: '14:40',
+      conclusiones: '1. El Trabajo Productivo (TP) fue solo 8.6%, lo que indica que el equipo dedicó muy poco tiempo al trabajo principal del encofrado, esto debido a que se requiere un trabajo previo para su colocación. 2. El Trabajo Contributivo (TC) fue el dominante con 86.4%, concentrándose principalmente en acarreo de materiales (39%) y apuntalamiento (30%), lo que muestra que gran parte del tiempo se utilizó en mover materiales y asegurar la estructura al encofrar. 3. El Tiempo No Contributivo (TNC) llegó a 5%, siendo casi todo por tiempo de espera (71.4%) y viajes (28.6%). Esto se relaciona directamente con la falta de herramientas puntuales. RECOMENDACIÓN: ordenar y preparar los materiales y herramientas antes de iniciar. Contar con las maderas, herramientas y accesorios listos en un punto fijo reducirá viajes y esperas, lo que permitirá que los trabajadores pasen más tiempo en la actividad principal y menos en buscar o mover materiales.',
+      trabajadores: [
+        { letra: 'A', nombre: 'PALACIOS LUNA, GIOVANNI CLEYMER', cargo: 'Oficial' },
+        { letra: 'B', nombre: 'GARCIA SIMON, LUIS', cargo: 'Operario' },
+        { letra: 'C', nombre: 'GUTIERRES MIRANDA, JORGE LUIS', cargo: 'Capataz' },
+      ],
+      conteos: {
+        A: { AM: 18, VI: 1, CM: 9, PT: 10, ES: 4, CE: 4, AP: 13, AV: 1 },
+        B: { AM: 14, VI: 1, PT: 9, CD: 2, COO: 1, CE: 6, AP: 22, ES: 1, AV: 4 },
+        C: { AM: 15, CE: 2, AP: 1, COO: 1, AV: 1 },
+      },
+    },
+  },
+  // ── EXCAVACIÓN LOCALIZADA (CREDITEX · dic-2025) ── catálogo EXCAVACION ──
+  {
+    key: 'exc051225', label: 'CREDITEX · 05-dic · Excavación localizada (4)', tipo: 'EXCAVACION',
+    data: {
+      obra: 'CREDITEX PTARI', fecha: '2025-12-05', actividad: 'EXCAVACIÓN LOCALIZADA - CALZADURA',
+      ubicacion: 'Av. Los Hornos 185, Ate.', horaInicio: '12:04', horaFin: '12:30',
+      conclusiones: '1. Las actividades productivas (51.9%) muestran un desempeño adecuado para la excavación de calzaduras, donde el espacio reducido obliga al personal a turnarse, generando un trabajo continuo pero alternado. 2. El tiempo no contributivo (36.5%) se explica principalmente por descansos (89.5%), necesarios por el esfuerzo físico intenso de la excavación manual prolongada; el resto es baño (7.9%) y esperas (2.6%). 3. El tiempo contributivo (11.5%) se compone del uso de la tizalínea (75%) y acarreo de materiales (25%), necesarios para asegurar precisión en las dimensiones aunque no generen avance directo.',
+      trabajadores: [
+        { letra: 'A', nombre: 'RENGIFO IZQUIERDO, AARON', cargo: 'Ayudante' },
+        { letra: 'B', nombre: 'AGUEDO PAREDES, JOHN ROVY', cargo: 'Operario' },
+        { letra: 'C', nombre: 'MINAYA SILUPU, MANUEL JUNIOR', cargo: 'Ayudante' },
+        { letra: 'D', nombre: 'GARCIA SIMON, LUIS', cargo: 'Operario' },
+      ],
+      conteos: {
+        A: { EX: 13, D: 5, BA: 3, AM: 2, UT: 3 },
+        B: { EX: 10, D: 11, ES: 1, AM: 1, UT: 3 },
+        C: { EX: 14, D: 10, UT: 2 },
+        D: { EX: 17, D: 8, UT: 1 },
+      },
+    },
+  },
+  {
+    key: 'exc061225', label: 'CREDITEX · 06-dic · Excavación localizada (3)', tipo: 'EXCAVACION',
+    data: {
+      obra: 'CREDITEX PTARI', fecha: '2025-12-06', actividad: 'EXCAVACIÓN LOCALIZADA - CALZADURA',
+      ubicacion: 'Av. Los Hornos 185, Ate.', horaInicio: '10:15', horaFin: '11:05',
+      conclusiones: '1. El Trabajo Productivo (54.7%) tuvo el mayor porcentaje porque la cuadrilla estuvo la mayor parte del tiempo en la excavación directa con pala y martillo demoledor. 2. El Tiempo Contributivo (3.3%) se usó en acarreo del material excavado y toma de niveles para verificar dimensiones de la calzadura. 3. El TNC fue 42%: los descansos por hidratación representaron 61.9%, las esperas 22.2% (primero se retiraba material con la pala para luego continuar con el martillo) y la conversación 15.9%. Se recomienda que el almacén cuente con bebidas (agua fría/gaseosa) para el personal, o que las adquieran antes de ingresar a obra, evitando que un obrero salga a comprar durante la jornada.',
+      trabajadores: [
+        { letra: 'A', nombre: 'AGUEDO PAREDES, JOHN ROVY', cargo: 'Operario' },
+        { letra: 'B', nombre: 'MINAYA SILUPU, MANUEL JUNIOR', cargo: 'Ayudante' },
+        { letra: 'C', nombre: 'GARCIA SIMON, LUIS', cargo: 'Operario' },
+      ],
+      conteos: {
+        A: { EX: 35, D: 15 },
+        B: { EX: 25, AM: 2, CO: 5, ES: 6, D: 12 },
+        C: { EX: 22, AM: 1, UT: 2, ES: 8, CO: 5, D: 12 },
+      },
+    },
+  },
+  {
+    key: 'exc091225', label: 'CREDITEX · 09-dic · Excavación localizada (5)', tipo: 'EXCAVACION',
+    data: {
+      obra: 'CREDITEX PTARI', fecha: '2025-12-09', actividad: 'EXCAVACIÓN LOCALIZADA - CALZADURA',
+      ubicacion: 'Av. Los Hornos 185, Ate.', horaInicio: '08:20', horaFin: '09:20',
+      conclusiones: '1. El TP total es 58.3%: poco más de la mitad del tiempo se avanzó en la excavación con pala y rotomartillo, pero sigue siendo bajo para este trabajo, indicando interrupciones que redujeron el ritmo. 2. El TC total es 11.9%, concentrado en coordinación (40%) y acarreo (38.7%) por coordinaciones constantes entre ingeniero, capataz y obreros; medición (4%) y selección de piedras (17.3%) tuvieron poca participación. 3. El TNC total es 29.7%, y el 82.9% es tiempo de espera, generado por turnarse durante la actividad (solo uno trabaja mientras el otro espera). RECOMENDACIONES: elaborar antes de iniciar una lista del orden de trabajo y recursos/herramientas para evitar pausas y tiempos muertos; en la calzadura, iniciar con 2 trabajadores solo en la etapa de mayor movimiento de tierra y continuar con 1 al dar forma, reasignando al segundo a otra tarea.',
+      trabajadores: [
+        { letra: 'A', nombre: 'PALACIOS LUNA, GIOVANNI CLEYMER', cargo: 'Operario' },
+        { letra: 'B', nombre: 'AGUEDO PAREDES, JOHN ROVY', cargo: 'Operario' },
+        { letra: 'C', nombre: 'GARCIA SIMON, LUIS', cargo: 'Operario' },
+        { letra: 'D', nombre: 'MINAYA SILUPU, MANUEL JUNIOR', cargo: 'Ayudante' },
+        { letra: 'E', nombre: 'GUTIERRES MIRANDA, JORGE LUIS', cargo: 'Capataz' },
+      ],
+      conteos: {
+        A: { EXP: 62, COO: 9, ES: 37, D: 2, CO: 3, AM: 2, VI: 1, EXM: 9, ME: 1 },
+        B: { EXP: 76, EXM: 22, D: 1, AM: 9, ES: 24, COO: 4, SP: 3, CO: 1 },
+        C: { EXP: 48, EXM: 43, COO: 4, ES: 40, D: 3, AM: 2, BA: 3, VI: 1, SP: 5, ME: 1 },
+        D: { ES: 47, EXP: 71, ME: 1, COO: 6, D: 5, AM: 3, CO: 1, EXM: 4, SP: 5, BA: 6 },
+        E: { EXP: 23, EXM: 9, COO: 7, D: 3, ES: 7, AM: 13, VI: 1, CO: 1 },
+      },
+    },
+  },
+  {
+    key: 'exc111225', label: 'CREDITEX · 11-dic · Excavación localizada (4)', tipo: 'EXCAVACION',
+    data: {
+      obra: 'CREDITEX PTARI', fecha: '2025-12-11', actividad: 'EXCAVACIÓN LOCALIZADA - CALZADURA',
+      ubicacion: 'Av. Los Hornos 185, Ate.', horaInicio: '11:45', horaFin: '12:25',
+      conclusiones: '1. El Trabajo Productivo (TP) alcanzó 51.4%: más de la mitad del tiempo se dedicó a la excavación localizada, mostrando buen avance en la actividad principal. 2. El Trabajo Contributivo (TC) fue 16.9%, concentrado en acarreo de materiales (75%), lo que indica que aún se invierte bastante tiempo en mover herramientas/insumos. 3. El Tiempo No Contributivo (TNC) fue alto (31.7%), casi todo tiempo de espera (95.6%): un rotomartillo se malogró y, además, los trabajadores debían turnarse (mientras uno usaba el rotomartillo, el otro retiraba tierra con pala), generando pausas. RECOMENDACIÓN: realizar chequeo diario y seguimiento periódico de herramientas críticas, especialmente rotomartillos, para evitar fallas en plena excavación.',
+      trabajadores: [
+        { letra: 'A', nombre: 'ESCOBAR CHAVEZ, NEHEMIAS', cargo: 'Ayudante' },
+        { letra: 'B', nombre: 'PALACIOS LUNA, GIOVANNI CLEYMER', cargo: 'Oficial' },
+        { letra: 'C', nombre: 'GARCIA SIMON, LUIS', cargo: 'Operario' },
+        { letra: 'D', nombre: 'MINAYA SILUPU, MANUEL JUNIOR', cargo: 'Ayudante' },
+      ],
+      conteos: {
+        A: { EXM: 29, ES: 21, EXP: 41, AM: 2, BA: 2, CO: 1, SP: 2 },
+        B: { ES: 22, EXP: 15, EXM: 1, AM: 6 },
+        C: { AM: 11, EXM: 18, EXP: 6, ES: 7, SP: 3 },
+        D: { AM: 17, ES: 36, EXP: 33, CO: 1, SP: 7, EXM: 4 },
+      },
+    },
+  },
+  // ── VACIADO DE CONCRETO (CREDITEX · dic-2025) ── catálogo VACIADO ──
+  {
+    key: 'vac051225', label: 'CREDITEX · 05-dic · Vaciado de concreto (5)', tipo: 'VACIADO',
+    data: {
+      obra: 'CREDITEX PTARI', fecha: '2025-12-05', actividad: 'VACIADO DE CONCRETO - CALZADURA',
+      ubicacion: 'Av. Los Hornos 185, Ate.', horaInicio: '15:50', horaFin: '16:50',
+      conclusiones: '1. El trabajo productivo (TP) llegó al 19.6%, principalmente por el vaciado de concreto, actividad directa que solo requería orientar la tubería para un vaciado continuo. 2. El trabajo contributivo (TC) alcanzó 42.4%, siendo "sostener la tubería" lo que más tiempo consumió (54% del TC); el resto fue acarreo (11%) y colocación de piedras (34.6%). 3. El tiempo no contributivo (TNC) llegó a 38%, casi todo (95.1%) por esperas: los trabajadores se detuvieron por causas ajenas, como esperar a que se solucionen los problemas en el chute, ya que el concreto no fluía correctamente. RECOMENDACIÓN: revisar y asegurar el buen estado del chute y la tubería antes de iniciar el vaciado.',
+      trabajadores: [
+        { letra: 'A', nombre: 'RENGIFO IZQUIERDO, AARON', cargo: 'Ayudante' },
+        { letra: 'B', nombre: 'MINAYA SILUPU, MANUEL JUNIOR', cargo: 'Ayudante' },
+        { letra: 'C', nombre: 'PALACIOS LUNA, GIOVANNI CLEYMER', cargo: 'Operario' },
+        { letra: 'D', nombre: 'GARCIA SIMON, LUIS', cargo: 'Operario' },
+        { letra: 'E', nombre: 'AGUEDO PAREDES, JOHN ROVY', cargo: 'Operario' },
+      ],
+      conteos: {
+        A: { VC: 44, ES: 57, AM: 2, VI: 3 },
+        B: { VC: 40, ES: 55, AM: 2, CP: 1, CC: 8 },
+        C: { ES: 22, CP: 47, AM: 3, CC: 33 },
+        D: { CP: 2, CC: 2, VI: 5, AM: 9, ES: 1 },
+        E: { CP: 49, ES: 20, AM: 4, CC: 20 },
+      },
+    },
+  },
+  {
+    key: 'vac091225', label: 'CREDITEX · 09-dic · Vaciado de concreto (3)', tipo: 'VACIADO',
+    data: {
+      obra: 'CREDITEX PTARI', fecha: '2025-12-09', actividad: 'VACIADO DE CONCRETO - CALZADURA',
+      ubicacion: 'Av. Los Hornos 185, Ate.', horaInicio: '14:30', horaFin: '15:30',
+      conclusiones: '1. El TP es muy bajo, solo 15%: el avance real del vaciado fue mínimo, porque se realizó de manera lenta por miedo a romper el tubo y con un solo trabajador, reduciendo el ritmo. 2. El TC es el más alto (57.6%), principalmente por colocar piedras (50%) —necesario para aumentar el volumen de la calzadura y reducir el consumo de concreto—, sostener la tubería (29.4%) y preparar el chute (8.8%). 3. El TNC fue 27.4%, por tiempo de espera (81.4%) y retrabajo (18.6%), porque el vaciado avanzó muy lento por el cuidado excesivo para evitar romper la tubería. RECOMENDACIÓN: preparar con anticipación (un día antes) todos los recursos para el vaciado: chute, tuberías adecuadas, amarres, puntos de apoyo y herramientas, reduciendo esperas e improvisaciones.',
+      trabajadores: [
+        { letra: 'A', nombre: 'GUTIERRES MIRANDA, JORGE LUIS', cargo: 'Capataz' },
+        { letra: 'B', nombre: 'AGUEDO PAREDES, JOHN ROVY', cargo: 'Operario' },
+        { letra: 'C', nombre: 'PALACIOS LUNA, GIOVANNI CLEYMER', cargo: 'Operario' },
+      ],
+      conteos: {
+        A: { VC: 53, ES: 42, COO: 8, ST: 2, PC: 9, TR: 6 },
+        B: { ST: 13, CC: 53, ES: 29, AM: 14, PC: 3, TR: 6 },
+        C: { CC: 49, ST: 45, PC: 6, AM: 2, ES: 8, TR: 6 },
+      },
+    },
+  },
+  {
+    key: 'vac250226', label: 'CREDITEX · 25-feb · Vaciado de concreto (4)', tipo: 'VACIADO',
+    data: {
+      obra: 'CREDITEX PTARI', fecha: '2026-02-25', actividad: 'VACIADO DE CONCRETO - CALZADURA',
+      ubicacion: 'Av. Los Hornos 185, Ate.', horaInicio: '13:32', horaFin: '14:32',
+      conclusiones: 'Trabajo productivo (10.6%): porcentaje muy bajo, el proceso de vaciado no fue eficiente. Trabajo contributivo (45.5%): mayor al productivo, como es de esperarse, ya que la parte principal —vibrado de concreto (64.8%)— requiere más mano de obra que el propio vaciado; le siguen coordinación (17.6%), acarreo de materiales (13.7%) y cachipa (3.9%). Trabajo no contributivo (44.4%): valor muy alto que indica ineficiencia; se debió a la demora entre las llegadas de cada mixer, dejando a los obreros sin actividad por periodos prolongados. RECOMENDACIONES: reordenar/reducir el intervalo de llegada de los mixers para bajar el tiempo de espera entre vaciados, y asignar tareas secundarias a los trabajadores mientras esperan, para aprovechar su mano de obra.',
+      trabajadores: [
+        { letra: 'A', nombre: 'SULCA PALOMINO, MAYCOL', cargo: 'Oficial' },
+        { letra: 'B', nombre: 'QUISPE HUAMAN, ALFREDO', cargo: 'Operario' },
+        { letra: 'C', nombre: 'HUANACO QUISPE, PELE', cargo: 'Operario' },
+        { letra: 'D', nombre: 'PIZANGO YALTA, BRANNY', cargo: 'Operario' },
+      ],
+      conteos: {
+        A: { VB: 49, COO: 17, VI: 7, ES: 37, D: 2, CO: 3, AM: 14 },
+        B: { VB: 37, COO: 4, AM: 11, ES: 41, VC: 27, CO: 3, D: 5, CA: 2 },
+        C: { VB: 18, ES: 50, COO: 11, CO: 8, D: 5, VC: 28, AM: 3, CA: 7 },
+        D: { VB: 47, ES: 56, CO: 8, COO: 10, D: 3, VI: 1, AM: 5 },
+      },
+    },
+  },
 ];
 // Abre con la ÚLTIMA carta cargada (la más reciente) — lista para guardar.
 const PRECARGA = PLANTILLAS[PLANTILLAS.length - 1].data;
+const PRECARGA_TIPO = PLANTILLAS[PLANTILLAS.length - 1].tipo || 'ACERO';
 
 const LETRAS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
 const n = (v) => parseInt(v, 10) || 0;
@@ -161,9 +462,16 @@ export default function ImportarCartaBalance({ showToast }) {
   });
   const [trab, setTrab] = useState(PRECARGA.trabajadores);
   const [conteos, setConteos] = useState(PRECARGA.conteos);
+  const [tipo, setTipo] = useState(PRECARGA_TIPO); // ACERO | ENCOFRADO → catálogo activo
   const [guardando, setGuardando] = useState(false);
+  const [reparando, setReparando] = useState(false);
+  const [subiendoTodas, setSubiendoTodas] = useState(false);
   const [okMsg, setOkMsg] = useState('');
   const [confirm, setConfirm] = useState(null); // { ids, docData, obs, actNorm, fecha }
+
+  // Catálogo activo y sus mapas (cod→categoría, cod→descripción)
+  const CODIGOS = CATALOGOS[tipo] || CATALOGOS.ACERO;
+  const { desc: DESC, catDe: CAT_DE } = useMemo(() => mapasDe(CODIGOS), [CODIGOS]);
 
   const setCount = (letra, cod, val) => {
     setConteos((prev) => ({ ...prev, [letra]: { ...(prev[letra] || {}), [cod]: val === '' ? '' : n(val) } }));
@@ -185,6 +493,7 @@ export default function ImportarCartaBalance({ showToast }) {
     const p = PLANTILLAS.find((x) => x.key === key);
     if (!p) return;
     const d = p.data;
+    setTipo(p.tipo || 'ACERO');
     setFicha({ obra: d.obra, fecha: d.fecha, actividad: d.actividad, ubicacion: d.ubicacion, horaInicio: d.horaInicio, horaFin: d.horaFin, conclusiones: d.conclusiones || '' });
     setTrab(d.trabajadores);
     setConteos(d.conteos);
@@ -209,9 +518,20 @@ export default function ImportarCartaBalance({ showToast }) {
     const pTP = total ? (tp / total) * 100 : 0;
     const pTC = total ? (tc / total) * 100 : 0;
     const pTNC = total ? (tnc / total) * 100 : 0;
-    const luf = pTP + 0.5 * pTC;
-    return { tp, tc, tnc, total, pTP, pTC, pTNC, luf };
-  }, [conteos, trab]);
+    return { tp, tc, tnc, total, pTP, pTC, pTNC };
+  }, [conteos, trab, CAT_DE]);
+
+  // Resumen agregado por código (suma de todos los trabajadores) para el cuadro de solo lectura
+  const resumenCodigos = useMemo(() => {
+    const agg = {};
+    trab.forEach((t) => Object.entries(conteos[t.letra] || {}).forEach(([cod, v]) => { agg[cod] = (agg[cod] || 0) + n(v); }));
+    const totCat = { TP: kpis.tp, TC: kpis.tc, TNC: kpis.tnc };
+    return ['TP', 'TC', 'TNC'].map((cat) => ({
+      cat,
+      total: totCat[cat],
+      items: CODIGOS[cat].map((c) => ({ ...c, n: agg[c.cod] || 0 })).filter((c) => c.n > 0).sort((a, b) => b.n - a.n),
+    }));
+  }, [conteos, trab, CODIGOS, kpis]);
 
   const guardar = useCallback(async () => {
     if (!user?.uid) { showToast?.('Debes iniciar sesión para guardar', 'warning'); return; }
@@ -240,6 +560,7 @@ export default function ImportarCartaBalance({ showToast }) {
         obra: ficha.obra, fecha: ficha.fecha, actividad: actNorm,
         ubicacion: ficha.ubicacion, horaInicio: ficha.horaInicio, horaFin: ficha.horaFin,
         conclusiones: (ficha.conclusiones || '').trim(),
+        tipoActividad: tipo,
         trabajadores: trab.map((t) => ({ nombre: t.nombre.trim(), cargo: CARGOS_CORTO[t.cargo] || 'OP' })),
         personas, observaciones, formatoVersion: 2,
         proyectoId: proyectoActivoId || null,
@@ -270,7 +591,79 @@ export default function ImportarCartaBalance({ showToast }) {
       console.error('[ImportarCB]', e);
       showToast?.('Error al guardar: ' + (e?.message || e), 'error');
     } finally { setGuardando(false); }
-  }, [user, ficha, trab, conteos, kpis, proyectoActivoId, frenteActivoId, modoTodosFrentes, showToast]);
+  }, [user, ficha, trab, conteos, kpis, tipo, CAT_DE, DESC, proyectoActivoId, frenteActivoId, modoTodosFrentes, showToast]);
+
+  // Backfill: rellena conclusiones faltantes en cartas YA guardadas, tomándolas
+  // de las plantillas (emparejando por fecha + actividad). No retoca conteos.
+  const repararConclusiones = useCallback(async () => {
+    if (!user?.uid) { showToast?.('Debes iniciar sesión', 'warning'); return; }
+    setReparando(true);
+    try {
+      const fuente = {};
+      PLANTILLAS.forEach((p) => { if ((p.data.conclusiones || '').trim()) fuente[`${p.data.fecha}|${(p.data.actividad || '').toUpperCase()}`] = p.data.conclusiones.trim(); });
+      let actualizadas = 0, sinFuente = 0;
+      const snap = await getDocs(collection(db, 'Cartas_Balance'));
+      for (const d of snap.docs) {
+        const x = d.data() || {};
+        if ((x.conclusiones || '').trim()) continue; // ya tiene
+        const texto = fuente[`${x.fecha}|${(x.actividad || '').toUpperCase()}`];
+        if (!texto) { sinFuente++; continue; }
+        try { await updateDoc(doc(db, 'Cartas_Balance', d.id), { conclusiones: texto }); actualizadas++; } catch (e) { console.warn('[reparar]', e); }
+      }
+      const msg = actualizadas > 0
+        ? `Conclusiones reparadas ✓ · ${actualizadas} carta(s) actualizada(s)${sinFuente ? ` · ${sinFuente} sin plantilla de referencia` : ''}`
+        : 'Todas las cartas ya tenían conclusiones (o no hay plantilla de referencia para las vacías)';
+      setOkMsg(msg);
+      showToast?.(actualizadas > 0 ? 'Conclusiones reparadas ✓' : 'Nada que reparar', actualizadas > 0 ? 'success' : 'info');
+      setTimeout(() => setOkMsg(''), 8000);
+    } catch (e) {
+      console.error('[ImportarCB reparar]', e);
+      showToast?.('Error al reparar: ' + (e?.message || e), 'error');
+    } finally { setReparando(false); }
+  }, [user, showToast]);
+
+  // Sube TODAS las plantillas a la base de una vez (cada una con su catálogo de
+  // códigos según su tipo). Si una ya existe (misma fecha+actividad+proyecto), la
+  // reemplaza. Corre en la sesión del usuario (las reglas exigen su uid).
+  const subirTodas = useCallback(async () => {
+    if (!user?.uid) { showToast?.('Debes iniciar sesión', 'warning'); return; }
+    setSubiendoTodas(true);
+    try {
+      let creadas = 0, reemplazadas = 0, errores = 0;
+      for (const pl of PLANTILLAS) {
+        try {
+          const d = pl.data;
+          const { desc, catDe } = mapasDe(CATALOGOS[pl.tipo || 'ACERO'] || CATALOGOS.ACERO);
+          const personas = d.trabajadores.map((t) => ({ id: t.letra, nombre: (t.nombre || '').trim() || `Trabajador ${t.letra}`, cargo: CARGOS_CORTO[t.cargo] || 'OP' }));
+          const observaciones = [];
+          d.trabajadores.forEach((t) => {
+            Object.entries(d.conteos[t.letra] || {}).forEach(([cod, v]) => {
+              const k = catDe[cod]; const cnt = n(v);
+              if (!k || cnt <= 0) return;
+              for (let i = 0; i < cnt; i++) observaciones.push({ personaId: t.letra, categoria: k, subcategoria: k === 'TP' ? null : cod, codigo: cod, descripcion: desc[cod] || cod });
+            });
+          });
+          const actNorm = (d.actividad || '').trim().toUpperCase();
+          const docData = {
+            obra: d.obra, fecha: d.fecha, actividad: actNorm, ubicacion: d.ubicacion, horaInicio: d.horaInicio, horaFin: d.horaFin,
+            conclusiones: (d.conclusiones || '').trim(), tipoActividad: pl.tipo || 'ACERO',
+            trabajadores: d.trabajadores.map((t) => ({ nombre: (t.nombre || '').trim(), cargo: CARGOS_CORTO[t.cargo] || 'OP' })),
+            personas, observaciones, formatoVersion: 2,
+            proyectoId: proyectoActivoId || null, frenteId: modoTodosFrentes ? null : (frenteActivoId || null),
+            fuente: 'importador-masivo', timestamp: new Date(), uidAutor: user.uid,
+          };
+          const snap = await getDocs(query(collection(db, 'Cartas_Balance'), where('fecha', '==', d.fecha)));
+          const dups = snap.docs.filter((x) => { const y = x.data() || {}; return (y.actividad || '').toUpperCase() === actNorm && (y.proyectoId || null) === (proyectoActivoId || null); });
+          if (dups.length) { await setDoc(doc(db, 'Cartas_Balance', dups[0].id), docData); for (let i = 1; i < dups.length; i++) { try { await deleteDoc(doc(db, 'Cartas_Balance', dups[i].id)); } catch { /* admin */ } } reemplazadas++; }
+          else { await addDoc(collection(db, 'Cartas_Balance'), docData); creadas++; }
+        } catch (e) { console.warn('[bulk]', pl.key, e); errores++; }
+      }
+      setOkMsg(`Subida masiva ✓ · ${creadas} nuevas, ${reemplazadas} reemplazadas${errores ? `, ${errores} con error` : ''}`);
+      showToast?.('Todas las cartas subidas a la base ✓', 'success');
+      setTimeout(() => setOkMsg(''), 9000);
+    } catch (e) { console.error('[ImportarCB masivo]', e); showToast?.('Error en subida masiva: ' + (e?.message || e), 'error'); }
+    finally { setSubiendoTodas(false); }
+  }, [user, proyectoActivoId, frenteActivoId, modoTodosFrentes, showToast]);
 
   // Reemplazo confirmado desde el modal: sobreescribe 1 y elimina las copias extra.
   const ejecutarReemplazo = useCallback(async () => {
@@ -293,7 +686,6 @@ export default function ImportarCartaBalance({ showToast }) {
     } finally { setGuardando(false); }
   }, [confirm, showToast]);
 
-  const clsLuf = clasificarLUF(kpis.luf);
   const inpMini = { width: '52px', padding: '5px 4px', textAlign: 'center', border: `1px solid ${BASE.border}`, borderRadius: '6px', fontSize: '12px', fontWeight: 700, color: BASE.navy };
 
   return (
@@ -331,6 +723,23 @@ export default function ImportarCartaBalance({ showToast }) {
         </div>
       )}
 
+      {/* Tipo de carta → define el catálogo de códigos (TP/TC/TNC) */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: '12px', fontWeight: 800, color: BASE.navy }}>Tipo de carta:</span>
+        <div style={{ display: 'inline-flex', background: BASE.bg, border: `1px solid ${BASE.border}`, borderRadius: '9px', padding: '3px', gap: '3px' }}>
+          {TIPOS.map((t) => {
+            const on = tipo === t.id;
+            return (
+              <button key={t.id} onClick={() => setTipo(t.id)} style={{
+                padding: '6px 14px', borderRadius: '7px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 800,
+                background: on ? `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})` : 'transparent', color: on ? '#fff' : BASE.muted,
+              }}>{t.label}</button>
+            );
+          })}
+        </div>
+        <span style={{ fontSize: '11px', color: BASE.muted }}>Define los códigos disponibles abajo.</span>
+      </div>
+
       {/* Selector de plantillas */}
       <div style={{ background: BASE.navySoft, border: `1px solid ${BASE.border}`, borderRadius: '10px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
         <span style={{ fontSize: '12px', fontWeight: 800, color: BASE.navy }}>📋 Cargar plantilla:</span>
@@ -340,22 +749,33 @@ export default function ImportarCartaBalance({ showToast }) {
           {PLANTILLAS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
         </select>
         <button onClick={vaciar} style={{ fontSize: '11px', fontWeight: 800, color: BASE.muted, background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '7px', padding: '7px 12px', cursor: 'pointer' }}>🗑️ Vaciar</button>
+        <div style={{ flex: 1 }} />
+        <button onClick={subirTodas} disabled={subiendoTodas} title={`Sube las ${PLANTILLAS.length} cartas precargadas a la base (reemplaza las que ya existan)`}
+          style={{ fontSize: '11px', fontWeight: 900, color: '#fff', background: subiendoTodas ? 'rgba(180,130,20,0.5)' : `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`, border: 'none', borderRadius: '7px', padding: '7px 12px', cursor: subiendoTodas ? 'wait' : 'pointer' }}>
+          {subiendoTodas ? 'Subiendo…' : `⬆️ Subir TODAS a la base (${PLANTILLAS.length})`}
+        </button>
+        <button onClick={repararConclusiones} disabled={reparando} title="Rellena las conclusiones faltantes en las cartas ya guardadas, tomándolas de las plantillas"
+          style={{ fontSize: '11px', fontWeight: 800, color: '#fff', background: reparando ? 'rgba(8,26,46,0.5)' : `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, border: 'none', borderRadius: '7px', padding: '7px 12px', cursor: reparando ? 'wait' : 'pointer' }}>
+          {reparando ? 'Reparando…' : '🔧 Reparar conclusiones'}
+        </button>
       </div>
 
-      {/* Ficha */}
-      <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', padding: '14px 16px', boxShadow: BASE.shadowSm, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
-        <Campo l="Obra"><input style={inp()} value={ficha.obra} onChange={(e) => setFicha({ ...ficha, obra: e.target.value })} /></Campo>
-        <Campo l="Fecha"><input type="date" style={inp()} value={ficha.fecha} onChange={(e) => setFicha({ ...ficha, fecha: e.target.value })} /></Campo>
-        <Campo l="Actividad (enlaza con CPI)"><input style={inp()} value={ficha.actividad} onChange={(e) => setFicha({ ...ficha, actividad: e.target.value })} /></Campo>
-        <Campo l="Ubicación"><input style={inp()} value={ficha.ubicacion} onChange={(e) => setFicha({ ...ficha, ubicacion: e.target.value })} /></Campo>
-        <Campo l="Hora inicio"><input style={inp()} value={ficha.horaInicio} onChange={(e) => setFicha({ ...ficha, horaInicio: e.target.value })} /></Campo>
-        <Campo l="Hora término"><input style={inp()} value={ficha.horaFin} onChange={(e) => setFicha({ ...ficha, horaFin: e.target.value })} /></Campo>
-        <div style={{ gridColumn: '1 / -1' }}>
-          <label style={{ fontSize: '10px', fontWeight: 800, color: BASE.muted, letterSpacing: '0.4px', display: 'block', marginBottom: '3px', textTransform: 'uppercase' }}>Conclusiones / recomendaciones (opcional)</label>
-          <textarea value={ficha.conclusiones} onChange={(e) => setFicha({ ...ficha, conclusiones: e.target.value })} rows={3}
-            placeholder="Ej: TNC dominado por ESPERA. Recomendación: separar roles de subida y armado…"
-            style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: `1.5px solid ${BASE.border}`, fontSize: '12.5px', color: BASE.text, background: BASE.bgSoft, boxSizing: 'border-box', resize: 'vertical', fontFamily: BASE.font }} />
+      {/* Cabecera de la carta cargada (solo lectura) */}
+      <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', padding: '14px 16px', boxShadow: BASE.shadowSm }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
+          <div style={{ minWidth: 0 }}>
+            <p style={{ fontSize: '14px', fontWeight: 900, color: BASE.navy }}>{ficha.actividad || '— Elige una plantilla o usa «Subir TODAS» —'}</p>
+            <p style={{ fontSize: '11.5px', color: BASE.muted, marginTop: '2px' }}>
+              {ficha.obra}{ficha.fecha ? ` · ${ficha.fecha}` : ''}{ficha.horaInicio ? ` · ${ficha.horaInicio}–${ficha.horaFin}` : ''}{ficha.ubicacion ? ` · ${ficha.ubicacion}` : ''}
+            </p>
+          </div>
+          <span style={{ fontSize: '11px', fontWeight: 800, color: BASE.navy, background: BASE.goldSoft, border: `1px solid ${BASE.gold}66`, borderRadius: '999px', padding: '4px 11px', whiteSpace: 'nowrap' }}>
+            {TIPOS.find((t) => t.id === tipo)?.label || tipo} · {trab.length} trab · {kpis.total} obs
+          </span>
         </div>
+        {ficha.conclusiones && (
+          <p style={{ marginTop: '10px', fontSize: '12px', color: BASE.text, lineHeight: 1.5, background: BASE.bgSoft, borderLeft: `4px solid ${BASE.gold}`, borderRadius: '8px', padding: '8px 12px', whiteSpace: 'pre-wrap' }}>{ficha.conclusiones}</p>
+        )}
       </div>
 
       {/* KPIs en vivo */}
@@ -363,64 +783,42 @@ export default function ImportarCartaBalance({ showToast }) {
         <Kpi l="TP · Productivo" v={`${Math.round(kpis.pTP)}%`} c={CB_COL.TP} sub={`${kpis.tp} obs`} />
         <Kpi l="TC · Contributorio" v={`${Math.round(kpis.pTC)}%`} c={CB_COL.TC} sub={`${kpis.tc} obs`} />
         <Kpi l="TNC · No contrib." v={`${Math.round(kpis.pTNC)}%`} c={CB_COL.TNC} sub={`${kpis.tnc} obs`} />
-        <Kpi l="LUF" v={`${Math.round(kpis.luf)}%`} c={clsLuf.color} sub={clsLuf.label} />
       </div>
 
-      {/* Grid de conteos */}
+      {/* Resumen por código (solo lectura) — qué se subirá, sin matriz editable */}
       <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', boxShadow: BASE.shadowSm, overflow: 'hidden' }}>
         <div style={{ padding: '10px 14px', borderBottom: `1px solid ${BASE.border}`, background: BASE.bgSoft, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-          <span style={{ fontSize: '12px', fontWeight: 900, color: BASE.navy }}>CONTEOS POR CÓDIGO Y TRABAJADOR</span>
-          <button onClick={addTrab} style={{ fontSize: '11px', fontWeight: 800, color: BASE.navy, background: BASE.bg, border: `1px solid ${BASE.border}`, borderRadius: '7px', padding: '5px 10px', cursor: 'pointer' }}>+ Trabajador</button>
+          <span style={{ fontSize: '12px', fontWeight: 900, color: BASE.navy }}>RESUMEN DE LA CARTA <span style={{ fontSize: '10px', fontWeight: 800, color: BASE.muted }}>· solo lectura</span></span>
+          <span style={{ fontSize: '10.5px', fontWeight: 700, color: BASE.muted }}>🔒 La información se sube tal cual; para digitar a mano usa «⚖️ Capturar»</span>
         </div>
-        {/* Encabezado de trabajadores */}
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ borderCollapse: 'collapse', fontSize: '12px', minWidth: '640px', width: '100%' }}>
-            <thead>
-              <tr style={{ background: BASE.navySoft }}>
-                <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: '10px', color: BASE.navy, fontWeight: 800, minWidth: '180px' }}>CÓDIGO</th>
-                {trab.map((t, i) => (
-                  <th key={t.letra} style={{ padding: '6px 6px', minWidth: '120px' }}>
-                    <input value={t.nombre} onChange={(e) => setTrabajador(i, 'nombre', e.target.value)} placeholder={`Trab. ${t.letra}`}
-                      style={{ width: '110px', fontSize: '10px', fontWeight: 700, color: BASE.navy, border: 'none', background: 'transparent', textAlign: 'center' }} />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '3px', justifyContent: 'center', marginTop: '2px' }}>
-                      <span style={{ fontSize: '9px', fontWeight: 900, color: BASE.gold }}>{t.letra}</span>
-                      <select value={t.cargo} onChange={(e) => setTrabajador(i, 'cargo', e.target.value)}
-                        style={{ fontSize: '9px', border: `1px solid ${BASE.border}`, borderRadius: '4px', padding: '1px' }}>
-                        {CARGOS.map((c) => <option key={c} value={c}>{CARGOS_CORTO[c]}</option>)}
-                      </select>
-                      {trab.length > 1 && <button onClick={() => removeTrab(t.letra)} title="Quitar" style={{ border: 'none', background: 'transparent', color: BASE.red, cursor: 'pointer', fontSize: '11px', padding: 0 }}>✕</button>}
-                    </div>
-                  </th>
+        {kpis.total === 0 ? (
+          <p style={{ padding: '22px 16px', textAlign: 'center', fontSize: '12.5px', color: BASE.muted, fontStyle: 'italic' }}>
+            Elige una plantilla en «📋 Cargar plantilla» o usa «⬆️ Subir TODAS a la base».
+          </p>
+        ) : (
+          <div style={{ padding: '12px 14px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
+            {resumenCodigos.map(({ cat, total, items }) => (
+              <div key={cat} style={{ border: `1px solid ${BASE.border}`, borderTop: `3px solid ${CB_COL[cat]}`, borderRadius: '10px', padding: '10px 12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '10.5px', fontWeight: 900, color: CB_COL[cat], letterSpacing: '0.4px' }}>{cat === 'TP' ? 'PRODUCTIVO' : cat === 'TC' ? 'CONTRIBUTORIO' : 'NO CONTRIBUTORIO'}</span>
+                  <span style={{ fontSize: '12px', fontWeight: 900, color: BASE.navy }}>{total} obs</span>
+                </div>
+                {items.length === 0 ? <p style={{ fontSize: '11px', color: BASE.muted, fontStyle: 'italic' }}>—</p> : items.map((it) => (
+                  <div key={it.cod} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '3px 0' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: BASE.navy, minWidth: '30px' }}>{it.cod}</span>
+                    <span style={{ flex: 1, fontSize: '11px', color: BASE.muted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{it.desc}</span>
+                    <span style={{ fontSize: '11.5px', fontWeight: 800, color: CB_COL[cat] }}>{it.n}</span>
+                    <span style={{ fontSize: '10px', color: BASE.muted, minWidth: '30px', textAlign: 'right' }}>{total ? Math.round(it.n / total * 100) : 0}%</span>
+                  </div>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {['TP', 'TC', 'TNC'].map((cat) => (
-                <React.Fragment key={cat}>
-                  <tr><td colSpan={trab.length + 1} style={{ padding: '6px 12px', background: CB_COL[cat] + '18', color: CB_COL[cat], fontWeight: 900, fontSize: '10.5px', letterSpacing: '0.5px' }}>
-                    {cat === 'TP' ? 'TRABAJO PRODUCTIVO' : cat === 'TC' ? 'TRABAJO CONTRIBUTORIO' : 'TRABAJO NO CONTRIBUTORIO'}
-                  </td></tr>
-                  {CODIGOS[cat].map((c) => (
-                    <tr key={c.cod} style={{ borderTop: `1px solid ${BASE.borderSoft}` }}>
-                      <td style={{ padding: '5px 10px', color: BASE.text }}>
-                        <b style={{ color: BASE.navy }}>{c.cod}</b> <span style={{ color: BASE.muted, fontSize: '11px' }}>{c.desc}</span>
-                      </td>
-                      {trab.map((t) => (
-                        <td key={t.letra} style={{ padding: '4px 6px', textAlign: 'center' }}>
-                          <input type="number" min="0" value={conteos[t.letra]?.[c.cod] ?? ''} onChange={(e) => setCount(t.letra, c.cod, e.target.value)} style={inpMini} />
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </React.Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <p style={{ fontSize: '10.5px', color: BASE.muted, textAlign: 'center', fontStyle: 'italic' }}>
-        Tip: copia los números del bloque «ORDEN DE DATOS» del formato. Al guardar, la carta aparece en Análisis (tendencia, comparar, metas) y se cruza con el CPI por actividad.
+        Importar solo sube cartas ya digitadas (elige una plantilla o usa «Subir TODAS»). Al guardar, cada carta aparece en Análisis y se cruza con el CPI por su actividad/partida ISO.
       </p>
     </div>
   );

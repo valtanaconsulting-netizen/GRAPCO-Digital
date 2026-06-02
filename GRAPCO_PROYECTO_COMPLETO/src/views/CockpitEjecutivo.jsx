@@ -7,18 +7,14 @@
 
 import React, { useMemo } from 'react';
 import { BASE } from '../utils/styles';
-import { getEstado, fmtCPIPct, fmt1, COSTO_HORA_DEFAULT } from '../utils/helpers';
+import { getEstado, fmtCPIPct, fmt1, COSTO_HORA_PROMEDIO } from '../utils/helpers';
 
 const fmtS = (n) => 'S/ ' + Math.round(Number(n) || 0).toLocaleString('es-PE');
 const num = (v) => parseFloat(v) || 0;
 
 export default function CockpitEjecutivo({ historial = [], wbs = {}, filtrados = [], costosCustomMap = {}, isMobile }) {
-  // Costo S/./HH representativo de la cuadrilla (promedio de los 4 cargos)
-  const costoHH = useMemo(() => {
-    const cargos = ['Capataz', 'Operario', 'Oficial', 'Ayudante'];
-    const vals = cargos.map(c => num(costosCustomMap?.[c]) || COSTO_HORA_DEFAULT[c] || 0).filter(v => v > 0);
-    return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : 14;
-  }, [costosCustomMap]);
+  // Costo S/./HH único de la plataforma (fijado por el usuario en S/25.50/h)
+  const costoHH = COSTO_HORA_PROMEDIO;
 
   const k = useMemo(() => {
     // Acumulados ejecutados (respeta filtros)

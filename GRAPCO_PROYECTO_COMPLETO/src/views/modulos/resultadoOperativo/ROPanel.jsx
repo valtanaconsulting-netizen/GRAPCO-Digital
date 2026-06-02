@@ -10,8 +10,12 @@ import CurvaSFinanciera from './CurvaSFinanciera';
 import ControlRegistros from './ControlRegistros';
 import Adicionales from './Adicionales';
 import Deductivos from './Deductivos';
+import ResultadoOperativoOficial from './ResultadoOperativoOficial';
+import CostoRealOficial from './CostoRealOficial';
 
 const TABS = [
+  { id: 'oficial',    l: 'RO Oficial (Excel)', icono: '📑', desc: 'Importado tal cual · EVM completo', color: '#0f1f3a' },
+  { id: 'crOficial',  l: 'CR Costo Real (Excel)', icono: '🧾', desc: 'Reporte de Tareos · alimenta el AC', color: '#0ea5e9' },
   { id: 'dashboard',  l: 'Dashboard RO',     icono: '📊', desc: 'KPIs ejecutivos',     color: '#f59e0b' },
   { id: 'partidas',   l: 'Por Partida',      icono: '📋', desc: 'Detalle CPI/Margen',  color: '#7c3aed' },
   { id: 'cr',         l: 'CR · Controles',   icono: '🧾', desc: 'Facturas · Almacén · Tareos · GG', color: '#0ea5e9' },
@@ -22,10 +26,10 @@ const TABS = [
 ];
 
 export default function ROPanel({ showToast }) {
-  const [tab, setTab] = useState('dashboard');
+  const [tab, setTab] = useState('oficial');
 
   return (
-    <RoleGuard rolesPermitidos={['admin', 'ingeniero']}>
+    <RoleGuard rolesPermitidos={['admin', 'ingeniero', 'oficina_tecnica']}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         <div style={{
           background: `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`,
@@ -74,6 +78,8 @@ export default function ROPanel({ showToast }) {
         </div>
 
         <div className="anim-fade-in" key={tab}>
+          {tab === 'oficial'     && <ResultadoOperativoOficial />}
+          {tab === 'crOficial'   && <CostoRealOficial />}
           {tab === 'dashboard'   && <RODashboard showToast={showToast} />}
           {tab === 'partidas'    && <ROporPartida showToast={showToast} />}
           {tab === 'cr'          && <ControlRegistros showToast={showToast} />}

@@ -79,22 +79,25 @@ export const calcularCostoTrabajador = (hn, heTotal, costoHora) => {
   };
 };
 
-// Costos por defecto por cargo (S/. por hora) - configurable por usuario en personalDB
+// COSTO MO PROMEDIO ÚNICO de la plataforma (S/. por hora). El usuario lo fijó en
+// S/25.50/h para TODO (= el "Costo MO promedio" del RO/CR oficial del ISP). Cambiar
+// SOLO este valor para reajustar el costeo de mano de obra en toda la app.
+export const COSTO_HORA_PROMEDIO = 25.5;
+
+// Costos por defecto por cargo (S/. por hora). Unificados a la tarifa promedio
+// para que el costeo cuadre con el CR oficial. (Antes: 20/15/12.5/10.)
 export const COSTO_HORA_DEFAULT = {
-  'Capataz':  20.0,
-  'Operario': 15.0,
-  'Oficial':  12.5,
-  'Ayudante': 10.0,
+  'Capataz':  COSTO_HORA_PROMEDIO,
+  'Operario': COSTO_HORA_PROMEDIO,
+  'Oficial':  COSTO_HORA_PROMEDIO,
+  'Ayudante': COSTO_HORA_PROMEDIO,
 };
 
 export const costoHoraDeTrabajador = (trabajador, costosCustomMap = {}) => {
-  if (!trabajador) return 0;
-  // 1) costo individual configurado en la ficha del trabajador
-  if (trabajador.costoHora && trabajador.costoHora > 0) return parseFloat(trabajador.costoHora);
-  // 2) costo configurado por cargo en el mapa custom
-  if (costosCustomMap[trabajador.cargo] && costosCustomMap[trabajador.cargo] > 0) return parseFloat(costosCustomMap[trabajador.cargo]);
-  // 3) fallback al default
-  return COSTO_HORA_DEFAULT[trabajador.cargo] || 0;
+  // 1) costo individual EXPLÍCITO en la ficha del trabajador (excepción puntual)
+  if (trabajador && trabajador.costoHora && trabajador.costoHora > 0) return parseFloat(trabajador.costoHora);
+  // 2) tarifa única de la plataforma (ignora tarifas por cargo para uniformar el costeo)
+  return COSTO_HORA_PROMEDIO;
 };
 
 // ──────────────────────────────────────────────────────────────
