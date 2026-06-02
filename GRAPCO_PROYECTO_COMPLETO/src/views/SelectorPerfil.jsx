@@ -70,11 +70,11 @@ const PERFILES = [
   },
   {
     rol: 'almacenero',
-    titulo: 'Almacén y Logística',
+    titulo: 'Administración',
     iconName: 'package',
     color: '#B45309',
-    descripcion: 'Kardex de materiales, ingresos y salidas, stock por almacén, requerimientos del campo y valorizado S10.',
-    accesos: ['Kardex', 'Stock', 'Requerimientos', 'Materiales'],
+    descripcion: 'Gestión administrativa y de soporte operativo del proyecto: recursos, documentación y requerimientos. Los módulos específicos se configurarán próximamente.',
+    accesos: ['Administración', 'Recursos', 'Documentación'],
   },
   {
     rol: 'admin',
