@@ -29,11 +29,19 @@ const PINS_OBRA = {
 
 const PERFILES = [
   {
+    rol: 'almacenero',
+    titulo: 'Administración',
+    iconName: 'package',
+    color: '#B45309',
+    descripcion: 'Control y gestión de recursos, documentación y procesos administrativos que respaldan la operación del proyecto con orden, trazabilidad y eficiencia.',
+    accesos: ['Administración', 'Recursos', 'Documentación'],
+  },
+  {
     rol: 'ingeniero',
     titulo: 'Planeamiento y Producción',
     iconName: 'barChart3',
     color: '#047857',
-    descripcion: 'Gestión integral de la planificación y control de obra mediante metodologías Lean Construction y VDC. Integra producción, recursos, materiales y seguimiento de indicadores para optimizar productividad, cumplimiento y toma de decisiones.',
+    descripcion: 'Planificación, programación y control integral de obra bajo metodologías Lean Construction y VDC, orientadas a maximizar productividad, cumplimiento y desempeño operativo.',
     accesos: ['Producción', 'Registro', 'Carta Balance', 'Sala de Operaciones', 'Plan Maestro', 'APU', 'Pull Planning', 'Materiales'],
   },
   {
@@ -41,7 +49,7 @@ const PERFILES = [
     titulo: 'Oficina Técnica',
     iconName: 'coins',
     color: '#1D4ED8',
-    descripcion: 'Administración centralizada de valorizaciones, adicionales, deductivos y control documental. Facilita el seguimiento técnico-económico del proyecto, garantizando trazabilidad, sustento y control de los resultados operativos.',
+    descripcion: 'Gestión centralizada de RO, valorizaciones, adicionales, deductivos, garantizando control económico, trazabilidad y soporte para la toma de decisiones.',
     accesos: ['RO', 'Valorizaciones', 'Sustento', 'Partidas', 'BIM'],
   },
   {
@@ -49,7 +57,7 @@ const PERFILES = [
     titulo: 'Gestión de Calidad',
     iconName: 'shield',
     color: '#7E22CE',
-    descripcion: 'Control y aseguramiento de la calidad mediante protocolos, ensayos, liberaciones y gestión de no conformidades. Integra evidencia digital y trazabilidad para asegurar el cumplimiento de especificaciones y estándares del proyecto.',
+    descripcion: 'Administración integral de protocolos, ensayos, liberaciones y no conformidades para asegurar el cumplimiento de estándares, especificaciones y requisitos del proyecto.',
     accesos: ['Protocolos', 'PETs', 'No Conformidades', 'Ensayos', 'BIM'],
   },
   {
@@ -57,16 +65,8 @@ const PERFILES = [
     titulo: 'Seguridad, Salud y Medio Ambiente',
     iconName: 'alert',
     color: '#BE123C',
-    descripcion: 'Gestión preventiva de riesgos mediante inspecciones, reportes de incidentes y seguimiento de acciones correctivas. Promueve una cultura de seguridad basada en control, cumplimiento y mejora continua.',
+    descripcion: 'Gestión preventiva de riesgos mediante inspecciones, reportes y seguimiento de acciones correctivas, fortaleciendo una cultura de seguridad, cumplimiento y mejora continua.',
     accesos: ['Reportar', 'Inspección', 'Historial'],
-  },
-  {
-    rol: 'almacenero',
-    titulo: 'Administración',
-    iconName: 'package',
-    color: '#B45309',
-    descripcion: 'Gestión administrativa y de soporte operativo del proyecto: recursos, documentación y requerimientos. Los módulos específicos se configurarán próximamente.',
-    accesos: ['Administración', 'Recursos', 'Documentación'],
   },
   {
     rol: 'admin',
@@ -513,7 +513,7 @@ export default function SelectorPerfil() {
             </span>
           </div>
           <p style={{ fontSize: '11.5px', color: BASE.muted, lineHeight: 1.5, margin: 0, flex: 1 }}>
-            Control de asistencia mediante reconocimiento facial, con registro automático de ingresos y salidas en tiempo real. Permite trazabilidad del personal en obra y elimina registros manuales, asegurando mayor confiabilidad de la información.
+            Control inteligente de asistencia y accesos mediante reconocimiento facial, con información en tiempo real para una gestión eficiente, confiable y trazable del personal.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
             {['Entrada/Salida', 'Sin perfil', 'Kiosko'].map(a => (
