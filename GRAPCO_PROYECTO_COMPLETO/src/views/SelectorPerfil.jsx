@@ -113,12 +113,20 @@ export default function SelectorPerfil() {
   const [modoPin, setModoPin] = useState(false);
   const [pin, setPin] = useState('');
   const [errorPin, setErrorPin] = useState('');
+  const [clienteSel, setClienteSel] = useState('');
   const videoRef = useRef(null);
 
   // Cards visibles según el rol almacenado del usuario
   // Sin escalada: si el rol no está mapeado, solo ve su propia área (no TODAS).
   const permitidos = ROL_CARDS_PERMITIDAS[rolPermitido] || (rolPermitido ? [rolPermitido] : []);
   const perfilesFiltrados = PERFILES.filter(p => permitidos.includes(p.rol));
+
+  // Cliente de cada proyecto (campo cliente/empresa). El cliente filtra los proyectos visibles.
+  const clienteDe = (p) => p?.cliente || p?.clienteNombre || p?.empresa || '';
+  const clientes = Array.from(new Set((proyectos || []).map(clienteDe).filter(Boolean))).sort();
+  const proyectosFiltrados = clienteSel
+    ? (proyectos || []).filter(p => clienteDe(p) === clienteSel)
+    : (proyectos || []);
 
   // Atajo: si el usuario teclea 4 dígitos, intenta entrar por PIN.
   useEffect(() => {
@@ -372,7 +380,7 @@ export default function SelectorPerfil() {
         </button>
       </div>
 
-      {/* Selector de PROYECTO (y frente) — al inicio de la plataforma */}
+      {/* Selector de CLIENTE + PROYECTO — al inicio de la plataforma */}
       {!modoPin && (
         <div style={{
           position: 'relative', zIndex: 1,
@@ -386,17 +394,17 @@ export default function SelectorPerfil() {
           boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 14px 34px -22px rgba(0,0,0,0.8)',
         }}>
           <div>
-            <label style={lblKiosk}>🏗️ PROYECTO ACTIVO</label>
-            <select value={proyectoActivoId || ''} onChange={e => setProyectoActivoId(e.target.value)} style={selKiosk}>
-              <option value="" style={optKiosk}>— Selecciona proyecto —</option>
-              {(proyectos || []).map(p => <option key={p.id} value={p.id} style={optKiosk}>{p.nombre || p.codigo || p.id}</option>)}
+            <label style={lblKiosk}>🏢 CLIENTE</label>
+            <select value={clienteSel} onChange={e => setClienteSel(e.target.value)} style={selKiosk}>
+              <option value="" style={optKiosk}>— Todos los clientes —</option>
+              {clientes.map(c => <option key={c} value={c} style={optKiosk}>{c}</option>)}
             </select>
           </div>
           <div>
-            <label style={lblKiosk}>📍 FRENTE</label>
-            <select value={frenteActivoId || ''} onChange={e => setFrenteActivoId(e.target.value)} style={selKiosk}>
-              <option value="" style={optKiosk}>— Todos / sin frente —</option>
-              {(frentesDelProyecto || []).map(f => <option key={f.id} value={f.id} style={optKiosk}>{f.codigo ? `${f.codigo} · ` : ''}{f.nombre || f.id}</option>)}
+            <label style={lblKiosk}>🏗️ PROYECTO</label>
+            <select value={proyectoActivoId || ''} onChange={e => setProyectoActivoId(e.target.value)} style={selKiosk}>
+              <option value="" style={optKiosk}>— Selecciona proyecto —</option>
+              {proyectosFiltrados.map(p => <option key={p.id} value={p.id} style={optKiosk}>{p.nombre || p.codigo || p.id}</option>)}
             </select>
           </div>
         </div>
@@ -667,7 +675,7 @@ export default function SelectorPerfil() {
         marginTop: '16px', color: '#94a3b8',
         fontSize: '11px', textAlign: 'center', letterSpacing: '0.4px',
       }}>
-        GRAPCO SAC © {new Date().getFullYear()} · Plataforma integral de gestion de obra
+        © {new Date().getFullYear()} Valtana Consultoría & Construcción · Todos los derechos reservados
       </p>
     </div>
   );
