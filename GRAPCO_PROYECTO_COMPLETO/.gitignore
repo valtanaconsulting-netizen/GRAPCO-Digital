@@ -16,6 +16,9 @@ dist-ssr
 .env
 .env.*.local
 
+# Artefactos de despliegue Firebase
+.firebase/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

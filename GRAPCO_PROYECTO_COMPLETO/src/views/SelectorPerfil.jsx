@@ -30,34 +30,26 @@ const PINS_OBRA = {
 const PERFILES = [
   {
     rol: 'ingeniero',
-    titulo: 'Ingeniería de Producción',
-    iconName: 'dashboard',
+    titulo: 'Planeamiento y Producción',
+    iconName: 'barChart3',
     color: '#047857',
-    descripcion: 'Producción (Auditoría + CPI/EAC + Control Gerencial), registro de producción, Carta Balance, Sala de Operaciones, materiales y coordinación BIM.',
-    accesos: ['Producción', 'Registro', 'Carta Balance', 'Sala de Operaciones', 'Materiales'],
+    descripcion: 'Gestión integral de la planificación y control de obra mediante metodologías Lean Construction y VDC. Integra producción, recursos, materiales y seguimiento de indicadores para optimizar productividad, cumplimiento y toma de decisiones.',
+    accesos: ['Producción', 'Registro', 'Carta Balance', 'Sala de Operaciones', 'Plan Maestro', 'APU', 'Pull Planning', 'Materiales'],
   },
   {
     rol: 'oficina_tecnica',
     titulo: 'Oficina Técnica',
-    iconName: 'fileText',
+    iconName: 'coins',
     color: '#1D4ED8',
-    descripcion: 'Resultado Operativo, valorizaciones, adicionales y deductivos, sustento fotográfico, partidas y BIM.',
+    descripcion: 'Administración centralizada de valorizaciones, adicionales, deductivos y control documental. Facilita el seguimiento técnico-económico del proyecto, garantizando trazabilidad, sustento y control de los resultados operativos.',
     accesos: ['RO', 'Valorizaciones', 'Sustento', 'Partidas', 'BIM'],
-  },
-  {
-    rol: 'planeamiento',
-    titulo: 'Planeamiento y Programación',
-    iconName: 'tree',
-    color: '#0E7490',
-    descripcion: 'Plan Maestro (WBS), Análisis de Precios Unitarios, Last Planner / Pull Planning, hitos y cronograma.',
-    accesos: ['Plan Maestro', 'APU', 'Pull Planning', 'Hitos'],
   },
   {
     rol: 'calidad',
     titulo: 'Gestión de Calidad',
     iconName: 'shield',
     color: '#7E22CE',
-    descripcion: 'Protocolos, PETs, No Conformidades, ensayos, evidencia fotográfica y modelo BIM para liberación.',
+    descripcion: 'Control y aseguramiento de la calidad mediante protocolos, ensayos, liberaciones y gestión de no conformidades. Integra evidencia digital y trazabilidad para asegurar el cumplimiento de especificaciones y estándares del proyecto.',
     accesos: ['Protocolos', 'PETs', 'No Conformidades', 'Ensayos', 'BIM'],
   },
   {
@@ -65,7 +57,7 @@ const PERFILES = [
     titulo: 'Seguridad, Salud y Medio Ambiente',
     iconName: 'alert',
     color: '#BE123C',
-    descripcion: 'Reporte de incidencias con fotos, inspección diaria con checklist y apertura automática de No Conformidades.',
+    descripcion: 'Gestión preventiva de riesgos mediante inspecciones, reportes de incidentes y seguimiento de acciones correctivas. Promueve una cultura de seguridad basada en control, cumplimiento y mejora continua.',
     accesos: ['Reportar', 'Inspección', 'Historial'],
   },
   {
@@ -73,7 +65,7 @@ const PERFILES = [
     titulo: 'Almacén y Logística',
     iconName: 'package',
     color: '#B45309',
-    descripcion: 'Kardex de materiales, ingresos y salidas, stock por almacén, requerimientos del campo y valorizado S10.',
+    descripcion: 'Control de materiales, equipos y recursos desde el ingreso hasta su consumo en obra. Permite gestionar inventarios, requerimientos y valorización de stock para una operación más eficiente y trazable.',
     accesos: ['Kardex', 'Stock', 'Requerimientos', 'Materiales'],
   },
   {
@@ -81,7 +73,7 @@ const PERFILES = [
     titulo: 'Administración del Sistema',
     iconName: 'shieldAdmin',
     color: BASE.navy,
-    descripcion: 'Acceso completo a todos los módulos GRAPCO, gestión de usuarios, configuración global y auditoría.',
+    descripcion: 'Configuración y control global de la plataforma, gestión de usuarios, permisos y auditoría de información. Garantiza seguridad, gobernanza y trazabilidad sobre todos los procesos del sistema.',
     accesos: ['Todos los módulos', 'Usuarios', 'Auditoría'],
     destacado: true,
   },
@@ -90,12 +82,12 @@ const PERFILES = [
 // Mapeo de rolPermitido (almacenado en /Usuarios) → cards visibles en el selector.
 // admin / ingeniero ven TODAS las áreas (perfiles senior multi-área).
 // Roles específicos solo ven su propia área (más una de soporte cuando aplica).
-const TODAS = ['ingeniero','oficina_tecnica','planeamiento','calidad','seguridad','almacenero','admin'];
+const TODAS = ['ingeniero','oficina_tecnica','calidad','seguridad','almacenero','admin'];
 const ROL_CARDS_PERMITIDAS = {
   admin:              TODAS,
   ingeniero:          TODAS,
-  oficina_tecnica:    ['oficina_tecnica','planeamiento','calidad'],
-  planeamiento:       ['planeamiento','oficina_tecnica'],
+  oficina_tecnica:    ['oficina_tecnica','ingeniero','calidad'],
+  planeamiento:       ['ingeniero','oficina_tecnica'],
   calidad:            ['calidad','seguridad'],
   seguridad:          ['seguridad','calidad'],
   almacenero:         ['almacenero'],
@@ -514,14 +506,14 @@ export default function SelectorPerfil() {
               background: `linear-gradient(145deg, ${BASE.gold}1F, ${BASE.gold}0A)`,
               border: `1px solid ${BASE.gold}33`,
               boxShadow: `inset 0 1px 0 rgba(255,255,255,0.6), 0 4px 10px -4px ${BASE.gold}55`,
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '20px',
-            }}>📷</span>
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}><Icon name="user" size={20} color={BASE.goldDark} strokeWidth={2} /></span>
             <span style={{ fontSize: '13.5px', fontWeight: '800', color: BASE.navy, lineHeight: 1.22, letterSpacing: '-0.015em' }}>
               Registro de Personal · Facial
             </span>
           </div>
           <p style={{ fontSize: '11.5px', color: BASE.muted, lineHeight: 1.5, margin: 0, flex: 1 }}>
-            Marca tu entrada/salida con la cara. Modo kiosko — no necesitas elegir perfil.
+            Control de asistencia mediante reconocimiento facial, con registro automático de ingresos y salidas en tiempo real. Permite trazabilidad del personal en obra y elimina registros manuales, asegurando mayor confiabilidad de la información.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
             {['Entrada/Salida', 'Sin perfil', 'Kiosko'].map(a => (

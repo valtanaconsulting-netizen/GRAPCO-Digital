@@ -101,7 +101,8 @@ const SeguridadPanel      = lazy(() => import('./views/seguridad/SeguridadPanel'
 //   - ingeniero  → Producción: avance, registro, carta balance, sala de operaciones, materiales, BIM
 //   - planeamiento → WBS, APU, Last Planner
 //   - admin      → null = TODOS los módulos (acceso completo)
-const KEYS_PRODUCCION  = ['dashboard', 'radarProd', 'registro', 'carta', 'warroom', 'materiales', 'bim'];
+// Ingeniería de Producción ahora ABSORBE Planeamiento (Plan Maestro, APU, Last Planner).
+const KEYS_PRODUCCION  = ['dashboard', 'radarProd', 'registro', 'carta', 'warroom', 'planMaestro', 'apus', 'lps', 'materiales', 'bim'];
 const KEYS_PLANEAMIENTO = ['planMaestro', 'apus', 'lps'];
 // Devuelve la lista de keys permitidas para el rol, o null si ve todo (admin).
 const keysPermitidasPorRol = (rol) => {
@@ -528,21 +529,21 @@ function AppInner() {
           // luminancia suficiente para contrastar contra el fondo del sidebar y se ven en
           // estado activo (background del botón) y como icono (sin tornarse invisibles).
           const ITEMS_FULL = [
+            // PLANEAMIENTO — WBS, costos unitarios, cronograma (va primero)
+            { key: 'planMaestro', label: 'Plan Maestro (WBS)',      iconName: 'compass',     color: '#60a5fa',    group: 'PLANEAMIENTO' },
+            { key: 'apus',        label: 'Análisis de Precios (APU)', iconName: 'coins',     color: '#a5b4fc',    group: 'PLANEAMIENTO' },
+            { key: 'lps',         label: 'Last Planner System',     iconName: 'target',      color: '#34d399',    group: 'PLANEAMIENTO' },
             // PRODUCCIÓN — control de avance, productividad y carta balance
             { key: 'dashboard',   label: 'Producción',              iconName: 'barChart3',   color: BASE.gold,    group: 'PRODUCCIÓN' },
             { key: 'radarProd',   label: 'Radar de Producción',     iconName: 'target',      color: '#f87171',    group: 'PRODUCCIÓN' },
             { key: 'registro',    label: 'Registro de Producción',  iconName: 'registro',    color: BASE.green,   group: 'PRODUCCIÓN' },
             { key: 'carta',       label: 'Carta Balance',           iconName: 'balance',     color: BASE.orange,  group: 'PRODUCCIÓN' },
             { key: 'warroom',     label: 'Sala de Operaciones',     iconName: 'target',      color: '#f87171',    group: 'PRODUCCIÓN' },
-            // PLANEAMIENTO — WBS, costos unitarios, cronograma
-            { key: 'planMaestro', label: 'Plan Maestro (WBS)',      iconName: 'compass',     color: '#60a5fa',    group: 'PLANEAMIENTO' },
-            { key: 'apus',        label: 'Análisis de Precios (APU)', iconName: 'coins',     color: '#a5b4fc',    group: 'PLANEAMIENTO' },
-            { key: 'lps',         label: 'Last Planner System',     iconName: 'target',      color: '#34d399',    group: 'PLANEAMIENTO' },
-            // ADMINISTRACIÓN DE OBRA — abastecimiento y logística
-            { key: 'materiales',  label: 'Gestión de Materiales',   iconName: 'boxes',       color: '#c4b5fd',    group: 'ADMINISTRACIÓN DE OBRA' },
-            { key: 'compras',     label: 'Compras y Logística',     iconName: 'truck',       color: '#93c5fd',    group: 'ADMINISTRACIÓN DE OBRA' },
-            // Cada uno es su propio grupo
-            { key: 'bim',         label: 'Coordinación BIM',        iconName: 'layers',      color: '#38bdf8',    group: 'COORDINACIÓN BIM' },
+            // RECURSOS — abastecimiento y logística
+            { key: 'materiales',  label: 'Gestión de Materiales',   iconName: 'boxes',       color: '#c4b5fd',    group: 'RECURSOS' },
+            { key: 'compras',     label: 'Compras y Logística',     iconName: 'truck',       color: '#93c5fd',    group: 'RECURSOS' },
+            // BIM
+            { key: 'bim',         label: 'Coordinación BIM',        iconName: 'layers',      color: '#38bdf8',    group: 'BIM' },
             { key: 'calidad',     label: 'Gestión de Calidad',      iconName: 'checkSquare', color: '#f9a8d4',    group: 'GESTIÓN DE CALIDAD' },
             { key: 'ot',          label: 'Oficina Técnica',         iconName: 'ruler',       color: '#a5b4fc',    group: 'OFICINA TÉCNICA' },
             // SSOMA — seguridad y medio ambiente
