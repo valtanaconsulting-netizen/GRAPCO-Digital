@@ -13,7 +13,7 @@ import { BASE } from '../../utils/styles';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import { usePersonal } from '../../hooks/useFirebaseData';
-import { cargarModelos, obtenerDescriptor, buscarMatch, arrayToDescriptor, similitudPct, distanciaDeSimilitud } from '../../utils/faceapi';
+import { cargarModelos, obtenerDescriptor, buscarMatch, arrayToDescriptor, similitudPct, distanciaDeSimilitud, promediarDescriptores, faceapi } from '../../utils/faceapi';
 
 const hoyStr = () => new Date().toISOString().slice(0, 10);
 const horaStr = () => {
@@ -94,6 +94,7 @@ export default function MarcadorAsistencia({ showToast }) {
   const [cuenta, setCuenta] = useState(0);      // countdown auto-confirm
   const videoRef = useRef(null);
   const lastDetectAt = useRef(0);
+  const bufRef = useRef([]);   // buffer de descriptores recientes (suavizado temporal)
 
   useEffect(() => {
     setCargandoModelos(true);
@@ -118,7 +119,7 @@ export default function MarcadorAsistencia({ showToast }) {
       showToast?.('No se pudo acceder a la cámara: ' + e.message, 'error');
     }
   };
-  const cerrarCamara = () => { if (stream) stream.getTracks().forEach(t => t.stop()); setStream(null); setMatch(null); setNoId(false); };
+  const cerrarCamara = () => { if (stream) stream.getTracks().forEach(t => t.stop()); setStream(null); setMatch(null); setNoId(false); bufRef.current = []; };
 
   // Loop de detección
   useEffect(() => {
@@ -127,7 +128,7 @@ export default function MarcadorAsistencia({ showToast }) {
     const tick = async () => {
       if (cancel) return;
       const now = Date.now();
-      if (now - lastDetectAt.current < 700) { setTimeout(tick, 180); return; }
+      if (now - lastDetectAt.current < 420) { setTimeout(tick, 140); return; }
       lastDetectAt.current = now;
       if (!videoRef.current || !videoRef.current.videoWidth) { setTimeout(tick, 300); return; }
       setAnalizando(true);
@@ -138,12 +139,29 @@ export default function MarcadorAsistencia({ showToast }) {
         canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
         const det = await obtenerDescriptor(canvas);
         if (det) {
+          // ── Suavizado temporal ──
+          // Acumulamos las últimas capturas y promediamos el descriptor. Promediar
+          // varios frames del mismo rostro elimina el "salto" del % y baja la
+          // distancia real → reconocimiento mucho más exacto y estable.
+          const buf = bufRef.current;
+          // Si el rostro cambió mucho (otra persona / gran movimiento) reiniciamos.
+          if (buf.length) {
+            const dPrev = faceapi.euclideanDistance(det.descriptor, buf[buf.length - 1].d);
+            if (dPrev > 0.6) buf.length = 0;
+          }
+          buf.push({ d: det.descriptor, t: now });
+          while (buf.length > 6) buf.shift();                       // máx 6 capturas
+          while (buf.length && now - buf[0].t > 2500) buf.shift();  // y solo de los últimos 2.5 s
+
+          const descProm = promediarDescriptores(buf.map(x => x.d)) || det.descriptor;
           // Buscar el MEJOR candidato sin filtrar, y luego aplicar el piso de seguridad.
-          const best = buscarMatch(det.descriptor, personalEnrolado, Infinity);
+          const best = buscarMatch(descProm, personalEnrolado, Infinity);
           const sim = best?.obrero ? similitudPct(best.distancia) : 0;
-          // Solo se acepta si alcanza el mínimo obligatorio (≥ SIMILITUD_MIN).
-          if (best?.obrero && best.distancia <= DIST_MAX) {
+          // Aceptar solo si: alcanza el mínimo (≥ SIMILITUD_MIN) Y hay al menos 2
+          // frames coherentes (un único frame ruidoso nunca dispara un registro).
+          if (best?.obrero && best.distancia <= DIST_MAX && buf.length >= 2) {
             const accion = estadoDe(best.obrero.id);
+            bufRef.current = [];
             setNoId(false);
             setMatch({
               obrero: best.obrero,
@@ -159,10 +177,13 @@ export default function MarcadorAsistencia({ showToast }) {
           setNoIdSim(sim);
           setNoId(true);
           setTimeout(() => setNoId(false), 1800);
+        } else {
+          // Sin cara en el frame → vaciamos el buffer para no mezclar sesiones.
+          if (bufRef.current.length) bufRef.current = [];
         }
       } catch { /* reintenta */ }
       setAnalizando(false);
-      if (!cancel) setTimeout(tick, 500);
+      if (!cancel) setTimeout(tick, 320);
     };
     tick();
     return () => { cancel = true; };
