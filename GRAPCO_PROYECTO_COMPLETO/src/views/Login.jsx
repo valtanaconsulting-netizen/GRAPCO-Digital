@@ -306,7 +306,7 @@ export default function Login() {
             fontSize: '10px', color: BASE.gold,
             fontWeight: '800', letterSpacing: '2.4px',
           }}>
-            CONSTRUCCIÓN CIVIL
+            GESTIÓN DE PROYECTOS VDC
           </p>
         </div>
 
@@ -649,7 +649,7 @@ export default function Login() {
         </div>
 
         <p style={{ fontSize: '10px', color: '#94a3b8', marginTop: '20px' }}>
-          GRAPCO SAC © {new Date().getFullYear()} — Sistema de Control de Productividad
+          © {new Date().getFullYear()} Valtana Consultoría & Construcción
         </p>
         </div>
       </div>
