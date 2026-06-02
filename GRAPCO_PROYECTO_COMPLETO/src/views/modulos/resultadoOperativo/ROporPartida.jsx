@@ -49,9 +49,9 @@ export default function ROporPartida() {
         </div>
       </div>
 
-      <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', overflow: 'hidden' }}>
+      <div style={{ background: BASE.white, border: `2px solid ${BASE.navy}`, borderRadius: '6px', overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', minWidth: '1300px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', minWidth: '1300px', fontFamily: 'Calibri, Segoe UI, Arial, sans-serif' }}>
             <thead>
               <tr style={{ background: BASE.navy, color: '#fff' }}>
                 <th style={th}>Código</th>
@@ -80,8 +80,8 @@ export default function ROporPartida() {
                                  p.severidad === 'alta' ? '🟠' :
                                  p.severidad === 'media' ? '🟡' : '🟢';
                 return (
-                  <tr key={p.codigo} style={{ background: i % 2 === 0 ? BASE.white : BASE.bgSoft, borderBottom: `1px solid ${BASE.border}` }}>
-                    <td style={{ ...td, fontFamily: 'monospace', fontWeight: '900', color: BASE.navy }}>{p.codigo}</td>
+                  <tr key={`${p.codigo}-${i}`} style={{ background: i % 2 === 0 ? BASE.white : BASE.bgSoft, borderBottom: `1px solid ${BASE.border}` }}>
+                    <td style={{ ...td, fontFamily: 'monospace', fontWeight: '900', color: BASE.navy, background: BASE.bgSoft }}>{p.codigo}</td>
                     <td style={{ ...td, maxWidth: '180px' }}>{p.descripcion}</td>
                     <td style={{ ...td, textAlign: 'right', fontFamily: 'monospace' }}>{fmtPct(p.pctAvance, 1)}</td>
                     <td style={{ ...td, textAlign: 'right', fontFamily: 'monospace' }}>{fmtSoles(p.vendido)}</td>
@@ -145,5 +145,5 @@ export default function ROporPartida() {
 
 const inpS = { padding: '9px 12px', borderRadius: '8px', border: `1.5px solid ${BASE.border}`, fontSize: '12.5px', fontWeight: '600', background: '#fff' };
 const selS = { ...inpS, cursor: 'pointer', fontWeight: '700' };
-const th = { padding: '11px 12px', textAlign: 'left', fontSize: '10px', fontWeight: '900', letterSpacing: '0.4px', whiteSpace: 'nowrap' };
-const td = { padding: '9px 12px', fontSize: '11.5px', color: BASE.text, verticalAlign: 'top' };
+const th = { padding: '9px 12px', textAlign: 'left', fontSize: '10px', fontWeight: '900', letterSpacing: '0.4px', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.18)', borderBottom: `2px solid ${BASE.gold}` };
+const td = { padding: '6px 12px', fontSize: '11.5px', color: BASE.text, verticalAlign: 'top', borderRight: `1px solid ${BASE.border}`, borderBottom: `1px solid ${BASE.border}` };
