@@ -62,11 +62,11 @@ const PERFILES = [
   },
   {
     rol: 'almacenero',
-    titulo: 'Almacén y Logística',
+    titulo: 'Administración',
     iconName: 'package',
     color: '#B45309',
-    descripcion: 'Control de materiales, equipos y recursos desde el ingreso hasta su consumo en obra. Permite gestionar inventarios, requerimientos y valorización de stock para una operación más eficiente y trazable.',
-    accesos: ['Kardex', 'Stock', 'Requerimientos', 'Materiales'],
+    descripcion: 'Gestión administrativa y de soporte operativo del proyecto: recursos, documentación y requerimientos. Los módulos específicos se configurarán próximamente.',
+    accesos: ['Administración', 'Recursos', 'Documentación'],
   },
   {
     rol: 'admin',

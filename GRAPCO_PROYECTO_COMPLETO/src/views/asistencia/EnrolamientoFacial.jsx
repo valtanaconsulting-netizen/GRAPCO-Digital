@@ -8,7 +8,7 @@ import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage
 import { db, storage } from '../../firebaseConfig';
 import { BASE, RADIUS, SPACING } from '../../utils/styles';
 import { usePersonal } from '../../hooks/useFirebaseData';
-import { cargarModelos, obtenerDescriptor, descriptorToArray } from '../../utils/faceapi';
+import { cargarModelos, obtenerDescriptor, descriptorToArray, promediarDescriptores } from '../../utils/faceapi';
 import { CARGOS_STAFF } from '../../utils/styles';
 
 export default function EnrolamientoFacial({ showToast }) {
@@ -55,7 +55,7 @@ export default function EnrolamientoFacial({ showToast }) {
   const abrirCamara = async () => {
     try {
       const s = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 960 } },
       });
       setStream(s);
     } catch (e) {
@@ -73,19 +73,32 @@ export default function EnrolamientoFacial({ showToast }) {
     setBusy(true);
     try {
       const v = videoRef.current;
-      const canvas = document.createElement('canvas');
-      canvas.width = v.videoWidth;
-      canvas.height = v.videoHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
-
-      const detection = await obtenerDescriptor(canvas);
-      if (!detection) {
-        showToast?.('No se detectó ninguna cara. Acércate bien al centro.', 'warning');
+      // Tomamos varias lecturas rápidas de la MISMA pose y promediamos el descriptor.
+      // Solo aceptamos lecturas nítidas (buena confianza de detección y rostro grande),
+      // así la huella biométrica guardada queda limpia y representativa.
+      const muestras = [];
+      let ultimaDataUrl = null;
+      for (let i = 0; i < 5; i++) {
+        const canvas = document.createElement('canvas');
+        canvas.width = v.videoWidth;
+        canvas.height = v.videoHeight;
+        canvas.getContext('2d').drawImage(v, 0, 0, canvas.width, canvas.height);
+        const det = await obtenerDescriptor(canvas);
+        if (det) {
+          const score = det.detection?.score ?? 0;
+          const boxW = det.detection?.box?.width ?? 0;
+          if (score >= 0.6 && boxW >= canvas.width * 0.18) {
+            muestras.push(det.descriptor);
+            ultimaDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          }
+        }
+      }
+      if (muestras.length < 2) {
+        showToast?.('Rostro poco claro. Acércate al centro, mira de frente y mejora la luz.', 'warning');
         return;
       }
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-      setCapturas(prev => [...prev, { dataUrl, descriptor: detection.descriptor }]);
+      const descriptorLimpio = promediarDescriptores(muestras);
+      setCapturas(prev => [...prev, { dataUrl: ultimaDataUrl, descriptor: descriptorLimpio }]);
     } catch (e) {
       showToast?.('Error capturando: ' + e.message, 'error');
     } finally { setBusy(false); }
@@ -261,7 +274,7 @@ export default function EnrolamientoFacial({ showToast }) {
           </div>
 
           <div style={{ background: BASE.bgSoft, padding: '10px 14px', borderRadius: RADIUS.md, fontSize: '11px', color: BASE.muted }}>
-            💡 <strong>Tip:</strong> toma las 3 fotos desde ángulos ligeramente distintos (frontal, mirando un poco a la izquierda, un poco a la derecha) para mejor reconocimiento luego.
+            💡 <strong>Tip:</strong> toma las 3 fotos desde ángulos ligeramente distintos (frontal, un poco a la izquierda, un poco a la derecha). Mantén la pose <strong>~1 segundo</strong> tras pulsar: cada captura promedia 5 lecturas nítidas para una huella biométrica más exacta.
           </div>
         </div>
       )}

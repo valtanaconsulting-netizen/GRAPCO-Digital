@@ -240,14 +240,26 @@ html { scroll-behavior: smooth; }
   border-radius: 6px;
 }
 
-/* ── Impresión / Exportar a PDF (aísla un área marcada con #print-area) ── */
+/* ── Impresión / Exportar a PDF ──────────────────────────────────────────
+   Se imprime un CLON del tablero (#print-portal) escalado para entrar en UNA
+   sola hoja horizontal. El resto de la app se oculta por completo (sin huecos
+   ni segundas hojas en blanco). El portal lo crea/elimina imprimirTablero(). */
+#print-portal { display: none; }
+
 @media print {
-  @page { size: A4 landscape; margin: 10mm; }
-  body * { visibility: hidden !important; }
-  #print-area, #print-area * { visibility: visible !important; }
-  #print-area { position: absolute !important; left: 0; top: 0; width: 100% !important; padding: 0 !important; }
+  @page { size: A4 landscape; margin: 8mm; }
+  /* Oculta toda la app; solo queda el clon del tablero */
+  body.printing > *:not(#print-portal) { display: none !important; }
+  body.printing #print-portal { display: block !important; position: absolute; top: 0; left: 0; }
   .no-print, .no-print * { display: none !important; }
-  .solo-print { display: block !important; margin-bottom: 8px; }
-  /* Evita cortar tarjetas/gráficos a la mitad entre páginas */
-  #print-area .card-print { break-inside: avoid; page-break-inside: avoid; }
+
+  #print-portal .print-portal-header {
+    font: 700 13px 'Segoe UI', system-ui, sans-serif;
+    color: #0B2239; margin-bottom: 8px; padding-bottom: 6px;
+    border-bottom: 2px solid #E5A82F; display: flex; justify-content: space-between; align-items: baseline;
+  }
+  #print-portal .print-portal-header small { font-weight: 600; color: #5B6878; font-size: 11px; }
+
+  /* Colores fieles en impresión */
+  #print-portal, #print-portal * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 }

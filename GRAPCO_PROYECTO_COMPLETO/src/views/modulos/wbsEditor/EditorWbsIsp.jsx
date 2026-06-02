@@ -118,6 +118,32 @@ export default function EditorWbsIsp({ showToast }) {
       toast('Presupuesto CREDITEX cargado — revisa y pulsa "Guardar cambios"', 'success');
     }
   };
+  // Correcciones verificadas contra el ISP CREDITEX SEM26. Se aplican al catálogo
+  // cargado (sin tocar el resto); luego el usuario pulsa "Guardar cambios".
+  const CORRECCIONES_ISP = [
+    { act: 'HABILITADO DE ACERO', metContractual: 94371.13, frente: 'PTAR (F1)', ip: 0.0255 },
+  ];
+  const aplicarCorreccionesISP = () => {
+    if (!arbol.length) { toast('Primero carga el presupuesto (botón de la izquierda)', 'warning'); return; }
+    const nn = (s) => String(s || '').toUpperCase().replace(/\s+/g, ' ').trim();
+    const n = clonar(arbol);
+    const detalle = [];
+    n.forEach(p => (p.subpartidas || []).forEach(s => (s.actividades || []).forEach(act => {
+      const corr = CORRECCIONES_ISP.find(c => nn(c.act) === nn(act.nombre));
+      if (!corr) return;
+      let metActual = 0; Object.values(act.ofertas || {}).forEach(o => { metActual += num(o.met); }); metActual += num(act.adicional && act.adicional.met);
+      if (Math.abs(metActual - corr.metContractual) > 0.5) {
+        const otros = metActual - num(act.ofertas && act.ofertas[corr.frente] && act.ofertas[corr.frente].met);
+        (act.ofertas || (act.ofertas = {}));
+        (act.ofertas[corr.frente] || (act.ofertas[corr.frente] = { met: 0, ip: corr.ip }));
+        act.ofertas[corr.frente].met = +(corr.metContractual - otros).toFixed(2);
+        detalle.push(`${act.nombre}: ${fmt(metActual)} → ${fmt(corr.metContractual)} ${act.un || ''}`);
+      }
+    })));
+    if (detalle.length) { setArbol(n); setDirty(true); toast(`Corrección ISP aplicada (${detalle.length}): ${detalle.join(' · ')}. Pulsa «Guardar cambios».`, 'success'); }
+    else toast('El catálogo ya coincide con el ISP (nada que corregir)', 'info');
+  };
+
   const guardar = async () => {
     if (!proyectoActivoId) return toast('No hay proyecto activo', 'warning');
     setGuardando(true);
@@ -214,6 +240,7 @@ export default function EditorWbsIsp({ showToast }) {
           <Btn onClick={cargarCreditex} bg={BASE.gold} color={BASE.navy}>
             {existe ? '🔄 Recargar guardado' : '📋 Presupuesto CREDITEX'}
           </Btn>
+          <Btn onClick={aplicarCorreccionesISP} bg={BASE.white} color={BASE.navy} border>🔧 Aplicar correcciones ISP</Btn>
           <Btn onClick={descargarPlantilla} bg={BASE.white} color={BASE.navy} border>📥 Plantilla Excel</Btn>
           <Btn onClick={() => fileRef.current?.click()} bg={BASE.white} color={BASE.navy} border>📤 Importar Excel</Btn>
           <Btn onClick={guardar} bg={dirty ? BASE.navy : '#cbd5e1'} color="#fff" disabled={guardando || !dirty}>

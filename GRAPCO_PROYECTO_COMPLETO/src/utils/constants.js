@@ -275,7 +275,7 @@ export const DATA_ACTIVIDADES = {
 
   // ── ACERO ─────────────────────────────────────────────────────
   "HABILITADO DE ACERO":
-    { un:"KG",  ipP:0.01,  ipM:0.01,  metP:4673.56, metM:4673.56 },
+    { un:"KG",  ipP:0.01,  ipM:0.01,  metP:94371.13, metM:94371.13 },
   "COLOCADO DE ACERO":
     { un:"KG",  ipP:0.02,  ipM:0.03,  metP:94371.13,metM:94371.13},
 
