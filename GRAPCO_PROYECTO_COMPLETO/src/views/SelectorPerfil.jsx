@@ -372,6 +372,36 @@ export default function SelectorPerfil() {
         </button>
       </div>
 
+      {/* Selector de PROYECTO (y frente) — al inicio de la plataforma */}
+      {!modoPin && (
+        <div style={{
+          position: 'relative', zIndex: 1,
+          width: '100%', maxWidth: '1100px',
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))',
+          backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
+          border: `1px solid ${BASE.gold}44`,
+          borderRadius: '16px', padding: '14px 18px', marginBottom: '16px',
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '14px',
+          alignItems: 'end',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 14px 34px -22px rgba(0,0,0,0.8)',
+        }}>
+          <div>
+            <label style={lblKiosk}>🏗️ PROYECTO ACTIVO</label>
+            <select value={proyectoActivoId || ''} onChange={e => setProyectoActivoId(e.target.value)} style={selKiosk}>
+              <option value="" style={optKiosk}>— Selecciona proyecto —</option>
+              {(proyectos || []).map(p => <option key={p.id} value={p.id} style={optKiosk}>{p.nombre || p.codigo || p.id}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={lblKiosk}>📍 FRENTE</label>
+            <select value={frenteActivoId || ''} onChange={e => setFrenteActivoId(e.target.value)} style={selKiosk}>
+              <option value="" style={optKiosk}>— Todos / sin frente —</option>
+              {(frentesDelProyecto || []).map(f => <option key={f.id} value={f.id} style={optKiosk}>{f.codigo ? `${f.codigo} · ` : ''}{f.nombre || f.id}</option>)}
+            </select>
+          </div>
+        </div>
+      )}
+
       {/* Modo PIN: teclado numérico */}
       {modoPin && (
         <div style={{
@@ -432,47 +462,6 @@ export default function SelectorPerfil() {
         </div>
       )}
 
-      {/* Acceso directo: REGISTRO DE PERSONAL (facial) — kiosko sin login de rol */}
-      {!modoPin && (
-        <button
-          onClick={() => setModoMarcador(true)}
-          style={{
-            position: 'relative', zIndex: 1,
-            width: '100%', maxWidth: '1100px',
-            display: 'flex', alignItems: 'center', gap: '14px',
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))',
-            backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: '16px', padding: '12px 18px', marginBottom: '16px',
-            cursor: 'pointer', textAlign: 'left', transition: 'all 0.22s ease',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 14px 34px -22px rgba(0,0,0,0.8)',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = `${BASE.gold}88`; }}
-          onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; }}
-        >
-          <span style={{
-            width: '42px', height: '42px', borderRadius: '12px', flexShrink: 0,
-            background: `linear-gradient(145deg, ${BASE.gold}, ${BASE.goldDark})`, color: '#fff',
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.4), 0 6px 18px ${BASE.gold}55`, fontSize: '20px',
-          }}>📷</span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ color: '#fff', fontSize: '14.5px', fontWeight: 800, letterSpacing: '0.2px' }}>
-              Registro de Personal · Reconocimiento Facial
-            </p>
-            <p style={{ color: '#9fb2c8', fontSize: '11.5px', marginTop: '2px' }}>
-              Marca tu entrada/salida con la cara. Modo kiosko — no necesitas elegir perfil.
-            </p>
-          </div>
-          <span style={{
-            color: BASE.navy, background: `linear-gradient(145deg, ${BASE.gold}, ${BASE.goldDark})`,
-            fontSize: '11px', fontWeight: 900, letterSpacing: '0.8px', whiteSpace: 'nowrap',
-            padding: '7px 14px', borderRadius: '999px',
-            boxShadow: `0 5px 14px -4px ${BASE.gold}88`,
-          }}>ABRIR →</span>
-        </button>
-      )}
-
       {/* Grid de perfiles (solo cuando NO está en modo PIN) */}
       {!modoPin && (
       <div style={{
@@ -483,6 +472,73 @@ export default function SelectorPerfil() {
         width: '100%',
         maxWidth: '1180px',
       }}>
+        {/* Registro facial — ahora es una tarjeta más (no el banner ancho) */}
+        <button
+          onClick={() => setModoMarcador(true)}
+          style={{
+            cursor: 'pointer', position: 'relative', overflow: 'hidden',
+            background: 'linear-gradient(180deg, #ffffff 0%, #f5f8fc 100%)',
+            border: `1px solid ${BASE.gold}88`,
+            borderRadius: '16px', padding: '14px 15px 12px',
+            textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '8px',
+            transition: 'transform 0.24s cubic-bezier(0.34,1.4,0.64,1), box-shadow 0.24s ease, border-color 0.24s ease',
+            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.9), 0 20px 46px -22px rgba(229,168,47,0.45), 0 6px 16px -10px rgba(7,16,30,0.5)`,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-6px)';
+            e.currentTarget.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.9), 0 30px 60px -20px ${BASE.gold}5C, 0 0 0 1.5px ${BASE.gold}`;
+            e.currentTarget.style.borderColor = BASE.gold;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.9), 0 20px 46px -22px rgba(229,168,47,0.45), 0 6px 16px -10px rgba(7,16,30,0.5)`;
+            e.currentTarget.style.borderColor = `${BASE.gold}88`;
+          }}
+        >
+          <span style={{
+            position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
+            background: `linear-gradient(90deg, transparent, ${BASE.gold}, transparent)`,
+            boxShadow: `0 0 12px ${BASE.gold}99`,
+          }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{
+              width: '40px', height: '40px', borderRadius: '12px',
+              background: `linear-gradient(145deg, ${BASE.gold}1F, ${BASE.gold}0A)`,
+              border: `1px solid ${BASE.gold}33`,
+              boxShadow: `inset 0 1px 0 rgba(255,255,255,0.6), 0 4px 10px -4px ${BASE.gold}55`,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '20px',
+            }}>📷</span>
+            <span style={{ fontSize: '13.5px', fontWeight: '800', color: BASE.navy, lineHeight: 1.22, letterSpacing: '-0.015em' }}>
+              Registro de Personal · Facial
+            </span>
+          </div>
+          <p style={{ fontSize: '11.5px', color: BASE.muted, lineHeight: 1.5, margin: 0, flex: 1 }}>
+            Marca tu entrada/salida con la cara. Modo kiosko — no necesitas elegir perfil.
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+            {['Entrada/Salida', 'Sin perfil', 'Kiosko'].map(a => (
+              <span key={a} style={{
+                background: BASE.bg, color: BASE.muted, border: `1px solid ${BASE.border}`,
+                padding: '3px 9px', borderRadius: '999px', fontSize: '9.5px', fontWeight: 700, letterSpacing: '0.2px',
+              }}>{a}</span>
+            ))}
+          </div>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            borderTop: `1px solid ${BASE.borderSoft}`, paddingTop: '9px', marginTop: '1px',
+          }}>
+            <span style={{ fontSize: '10.5px', fontWeight: 900, color: BASE.gold, letterSpacing: '1px', textTransform: 'uppercase' }}>
+              Abrir
+            </span>
+            <span style={{
+              width: '26px', height: '26px', borderRadius: '999px',
+              background: `linear-gradient(145deg, ${BASE.gold}, ${BASE.goldDark})`,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              color: '#fff', fontSize: '13px', fontWeight: 900, boxShadow: `0 4px 10px -3px ${BASE.gold}88`,
+            }}>→</span>
+          </div>
+        </button>
+
         {perfilesFiltrados.map((p) => {
           const acento = p.destacado ? BASE.gold : p.color;
           // Sombra por capas + brillo interior superior (look "vidrio premium").

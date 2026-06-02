@@ -26,13 +26,12 @@ const GRUPOS = {
     ],
   },
   contrato: {
-    label: 'CONTRATO',
+    label: 'PARTIDA CONTROL',
     icono: '📋',
     color: '#7c3aed',
-    tagline: 'Base contractual y resultado económico',
+    tagline: 'Presupuesto y control de partidas',
     items: [
-      { id: 'partidas', l: 'Partidas',          icono: '📋', desc: 'Presupuesto contractual' },
-      { id: 'ro',       l: 'Resultado Operativo', icono: '📈', desc: 'RO · CR · Adicionales · Deductivos' },
+      { id: 'partidas', l: 'Partidas Control',   icono: '📋', desc: 'Presupuesto contractual' },
     ],
   },
   ejecucion: {
@@ -47,7 +46,7 @@ const GRUPOS = {
     ],
   },
   facturacion: {
-    label: 'FACTURACIÓN',
+    label: 'VALORIZACIÓN',
     icono: '💰',
     color: '#f59e0b',
     tagline: 'Valorización y cobro al cliente',
@@ -57,13 +56,22 @@ const GRUPOS = {
       { id: 'informe',  l: 'Informe PDF',    icono: '📑', desc: 'Genera el sustento imprimible' },
     ],
   },
+  ro: {
+    label: 'RO',
+    icono: '📈',
+    color: '#0ea5e9',
+    tagline: 'Resultado operativo del proyecto',
+    items: [
+      { id: 'ro', l: 'Resultado Operativo', icono: '📈', desc: 'RO · CR · Adicionales · Deductivos' },
+    ],
+  },
 };
 
 // Mapa inverso: tab → grupo (para auto-seleccionar el grupo al venir por deep-link)
 const TAB_TO_GRUPO = {
   dashboard:  'resumen',
   partidas:   'contrato',
-  ro:         'contrato',
+  ro:         'ro',
   rdo:        'ejecucion',
   fotografico:'ejecucion',
   bim:        'ejecucion',
