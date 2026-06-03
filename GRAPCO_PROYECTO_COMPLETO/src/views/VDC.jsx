@@ -353,7 +353,7 @@ export default function VDC({
           semanaActiva={semanaActiva}
           setSemanaActiva={setSemanaActiva}
           semanasDisponibles={semanasDisponibles}
-          compromisos={compromisos}
+          restricciones={restricciones}
         />
       )}
 
@@ -379,9 +379,9 @@ export default function VDC({
         />
       )}
 
-      {/* === DASHBOARD === */}
+      {/* === DASHBOARD PPC (conectado al LAP) === */}
       {tab === 'dashboard' && (
-        <DashboardPPC ppcSemanal={ppcSemanal} pareto={pareto} diag={diag} compromisos={compromisos} />
+        <PPCLap semanaActiva={semanaActiva} setSemanaActiva={setSemanaActiva} />
       )}
 
       {/* === PLAN SEMANAL === */}
@@ -1677,6 +1677,19 @@ function BotonImprimir({ titulo }) {
 const lapHash = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; return h.toString(36); };
 const lapClave = (actKey, fecha) => `a${lapHash(actKey)}_${fecha.replace(/-/g, '')}`;
 
+// Indexa restricciones por nombre de actividad (AR ↔ LAP).
+function restriccionesPorActividad(restricciones) {
+  const m = {};
+  (restricciones || []).forEach(r => {
+    const k = (r.actividad || '').toUpperCase().trim();
+    if (!k) return;
+    if (!m[k]) m[k] = { pend: 0, total: 0 };
+    m[k].total++;
+    if (r.estado !== 'liberada') m[k].pend++;
+  });
+  return m;
+}
+
 // HOOK COMPARTIDO: marcas editables del LAP (pintar/borrar días)
 // Persiste overrides del usuario en Configuracion/lapMarcas_<proyecto>. Lo usan
 // TANTO el Lookahead como la Programación Semanal → comparten las mismas marcas
@@ -1858,6 +1871,9 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
   const { estado, onCeldaDown, onCeldaEnter, colorPaint, setColorPaint } = useLapMarcas();
   const [hideUnmarked, setHideUnmarked] = useState(false);
 
+  // Restricciones por actividad (AR ↔ LAP): badge 🚧 si tiene pendientes.
+  const restrPorAct = useMemo(() => restriccionesPorActividad(restricciones), [restricciones]);
+
   // Cuenta restricciones que afectan cada semana
   const restriccionesPorSemana = useMemo(() => {
     const mapa = {};
@@ -2015,10 +2031,12 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
                     const esSub = a.nivel && !a.id && a.metrado == null;
                     const pad = esSub ? (a.nivel === 'N2' ? 6 : 16) : 26;
                     const bgRow = esSub ? `${sec.color}1a` : (ai % 2 ? '#f8fbff' : '#ffffff');
+                    const rr = restrPorAct[(a.actividad || '').toUpperCase().trim()];
                     return (
                       <div key={a.actKey} style={{ display: 'flex', borderBottom: `1px solid #eef2f6`, minHeight: ROW_H, background: bgRow }}>
                         <div style={{ ...leftColsStyle, background: bgRow, borderLeft: esSub ? `3px solid ${sec.color}` : `3px solid transparent` }}>
                           <span style={{ flex: 1, fontSize: esSub ? '9px' : '9.5px', paddingLeft: pad, color: esSub ? BASE.navy : BASE.text, fontWeight: esSub ? 900 : 600, textTransform: esSub ? 'uppercase' : 'none', letterSpacing: esSub ? '0.3px' : 0, whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.18 }} title={a.actividad}>
+                            {rr && rr.pend > 0 ? <span title={`${rr.pend} restricción(es) pendiente(s)`}>🚧 </span> : (rr && rr.total > 0 ? <span title="Restricciones liberadas">✅ </span> : '')}
                             {a.id ? <b style={{ color: sec.color }}>{a.id} </b> : ''}{a.actividad}
                           </span>
                           <span style={colNum}>{fmtN(a.metrado)}</span>
@@ -2076,9 +2094,10 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
 // SUB-COMPONENTE: PROGRAMACIÓN SEMANAL (formato Excel S0/S1/S2)
 // Replica imagen 2: tabla con días lun-dom + colores S0/S1/S2 por celda
 // ════════════════════════════════════════════════════════════════
-function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, semanasDisponibles }) {
+function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, semanasDisponibles, restricciones = [] }) {
   const dias = useMemo(() => fechasDeSemana(semanaActiva, INICIO_PROYECTO), [semanaActiva]);
   const semIni = dias[0]?.fecha, semFin = dias[6]?.fecha;
+  const restrPorAct = useMemo(() => restriccionesPorActividad(restricciones), [restricciones]);
 
   // Plan LAP consolidado (carga bajo demanda) + edición compartida con el Lookahead.
   const [plan, setPlan] = useState([]);
@@ -2199,11 +2218,14 @@ function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, semanasDisponib
                     const esSub = a.nivel && !a.id && a.metrado == null;   // sub-partida (encabezado de nivel)
                     const pad = esSub ? (a.nivel === 'N2' ? 4 : 14) : 0;
                     const bgRow = esSub ? `${sec.color}1a` : (ai % 2 ? '#f8fbff' : '#ffffff');
+                    const rr = restrPorAct[(a.actividad || '').toUpperCase().trim()];
                     return (
                       <div key={a.actKey} style={{ display: 'flex', borderBottom: `1px solid #eef2f6`, minHeight: 26, alignItems: 'stretch', background: bgRow }}>
                         <div style={{ ...cCod, ...pc, justifyContent: 'center', fontWeight: 800, color: sec.color, fontSize: '9px', borderLeft: esSub ? `3px solid ${sec.color}` : '3px solid transparent' }}>{a.id || ''}</div>
                         <div style={{ ...cAct, ...pc, paddingLeft: 6 + pad }}>
-                          <span style={{ whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.18, fontWeight: esSub ? 900 : 600, color: esSub ? BASE.navy : BASE.text, textTransform: esSub ? 'uppercase' : 'none', fontSize: esSub ? '9.5px' : '10px' }} title={a.actividad}>{a.actividad}</span>
+                          <span style={{ whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.18, fontWeight: esSub ? 900 : 600, color: esSub ? BASE.navy : BASE.text, textTransform: esSub ? 'uppercase' : 'none', fontSize: esSub ? '9.5px' : '10px' }} title={a.actividad}>
+                            {rr && rr.pend > 0 ? <span title={`${rr.pend} restricción(es) pendiente(s)`}>🚧 </span> : (rr && rr.total > 0 ? '✅ ' : '')}{a.actividad}
+                          </span>
                         </div>
                         <div style={{ ...cSm, ...pr, color: BASE.muted }} />
                         <div style={{ ...cSm, ...pr, color: BASE.muted }}>{a.und || ''}</div>
@@ -2239,6 +2261,184 @@ function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, semanasDisponib
       <div style={{ background: BASE.bgSoft, borderRadius: '10px', padding: '12px 16px', fontSize: '11px', color: BASE.muted, lineHeight: 1.6 }}>
         <strong style={{ color: BASE.navy }}>📖 Programación Semanal (F05):</strong> una semana (Lun–Dom) con las actividades del LAP. Cada celda de color = día programado; <strong>clic/arrastra</strong> para editar. Comparte marcas con el Lookahead; la columna roja es hoy.
       </div>
+    </div>
+  );
+}
+
+// Causas de No Cumplimiento (CNC) para el PPC.
+const CNC_CATS = [
+  { k: 'materiales', l: 'Materiales' },
+  { k: 'mano_obra', l: 'Mano de obra' },
+  { k: 'equipos', l: 'Equipos' },
+  { k: 'diseno', l: 'Diseño / Información' },
+  { k: 'prerequisito', l: 'Prerrequisito (act. previa)' },
+  { k: 'externos', l: 'Externos / Clima' },
+  { k: 'programacion', l: 'Programación' },
+  { k: 'calidad', l: 'Calidad' },
+  { k: 'otros', l: 'Otros' },
+];
+
+// ════════════════════════════════════════════════════════════════
+// SUB-COMPONENTE: PPC DASHBOARD (conectado al LAP)
+// Planificado = actividades pintadas en el LAP esa semana; el usuario marca lo
+// ejecutado (✓/✗+causa) y el PPC% se calcula solo. Tendencia + Pareto de CNC.
+// ════════════════════════════════════════════════════════════════
+function PPCLap({ semanaActiva, setSemanaActiva }) {
+  const { proyectoActivoId } = useProyectoActivo();
+  const [plan, setPlan] = useState([]);
+  useEffect(() => { let v = true; import('../data/lapCreditex').then(m => { if (v) setPlan(m.LAP_PLAN || []); }).catch(() => {}); return () => { v = false; }; }, []);
+  const [docData, setDocData] = useState({ marcas: {}, cumpl: {} });
+  useEffect(() => {
+    if (!proyectoActivoId) return;
+    return onSnapshot(doc(db, 'Configuracion', `lapMarcas_${proyectoActivoId}`),
+      s => setDocData(s.exists() ? { marcas: s.data().marcas || {}, cumpl: s.data().cumpl || {} } : { marcas: {}, cumpl: {} }), () => {});
+  }, [proyectoActivoId]);
+  const { marcas, cumpl } = docData;
+  const sem = semanaActiva;
+  const cumplKey = (actKey, semana) => `c${lapHash(actKey)}_${semana}`;
+  const setEstado = (actKey, semana, val) => {
+    const k = cumplKey(actKey, semana);
+    const nuevo = { ...cumpl };
+    if (val == null) delete nuevo[k]; else nuevo[k] = val;
+    setDocData(d => ({ ...d, cumpl: nuevo }));
+    if (proyectoActivoId) setDoc(doc(db, 'Configuracion', `lapMarcas_${proyectoActivoId}`), { cumpl: nuevo }, { merge: true }).catch(() => {});
+  };
+
+  const planificadasDe = (semana) => {
+    const fechas = fechasDeSemana(semana, INICIO_PROYECTO).map(d => d.fecha);
+    return plan.filter(a => {
+      const actKey = `${a.seccion || 'OTROS'}|${a.actividad}`;
+      const baseSet = new Set(a.dias || []);
+      return fechas.some(f => { const ov = marcas[lapClave(actKey, f)]; return ov === undefined ? baseSet.has(f) : ov !== false; });
+    }).map(a => ({ ...a, actKey: `${a.seccion || 'OTROS'}|${a.actividad}` }));
+  };
+
+  const planif = useMemo(() => planificadasDe(sem), [plan, marcas, sem]);
+  const estadoDe = (actKey) => cumpl[cumplKey(actKey, sem)];
+  const ok = planif.filter(a => estadoDe(a.actKey) === 'ok').length;
+  const no = planif.filter(a => { const c = estadoDe(a.actKey); return c && c !== 'ok'; }).length;
+  const ppc = planif.length ? Math.round(ok / planif.length * 100) : null;
+
+  const tendencia = useMemo(() => {
+    const semanas = new Set();
+    Object.keys(cumpl).forEach(k => { const m = k.match(/_(\d+)$/); if (m) semanas.add(parseInt(m[1], 10)); });
+    return [...semanas].sort((a, b) => a - b).map(s => {
+      const p = planificadasDe(s);
+      const okk = p.filter(a => cumpl[cumplKey(a.actKey, s)] === 'ok').length;
+      return { s, ppc: p.length ? Math.round(okk / p.length * 100) : 0 };
+    });
+  }, [cumpl, plan, marcas]);
+
+  const cncPareto = useMemo(() => {
+    const cont = {};
+    Object.values(cumpl).forEach(v => { if (v && v !== 'ok') cont[v] = (cont[v] || 0) + 1; });
+    return Object.entries(cont).map(([k, n]) => ({ l: (CNC_CATS.find(c => c.k === k) || {}).l || k, n })).sort((a, b) => b.n - a.n);
+  }, [cumpl]);
+  const maxCnc = Math.max(1, ...cncPareto.map(c => c.n));
+  const ppcColor = ppc == null ? BASE.muted : ppc >= 80 ? BASE.greenDark : ppc >= 50 ? '#d97706' : BASE.red;
+  const card = { background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', padding: '14px 16px', boxShadow: '0 1px 4px rgba(15,23,42,0.04)' };
+  const fechas = fechasDeSemana(sem, INICIO_PROYECTO);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      {/* Encabezado + navegación de semana */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        <div>
+          <h3 style={{ fontSize: '16px', fontWeight: 900, color: BASE.navy }}>📈 PPC · Percent Plan Complete</h3>
+          <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
+            Lo <strong>planificado</strong> sale del LAP que pintaste esa semana. Marca lo <strong>ejecutado</strong> (✓/✗) y el PPC% se calcula solo.
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <button onClick={() => setSemanaActiva(Math.max(1, sem - 1))} style={{ padding: '7px 11px', background: BASE.white, color: BASE.navy, border: `1px solid ${BASE.border}`, borderRadius: '8px', fontWeight: 800, cursor: 'pointer' }}>‹</button>
+          <span style={{ fontSize: '13px', fontWeight: 900, color: BASE.navy, minWidth: 90, textAlign: 'center' }}>SEMANA {sem}</span>
+          <button onClick={() => setSemanaActiva(sem + 1)} style={{ padding: '7px 11px', background: BASE.white, color: BASE.navy, border: `1px solid ${BASE.border}`, borderRadius: '8px', fontWeight: 800, cursor: 'pointer' }}>›</button>
+          <BotonImprimir titulo={`PPC Semana ${sem}`} />
+        </div>
+      </div>
+
+      {/* KPIs */}
+      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+        <div style={{ ...card, flex: '1 1 160px', textAlign: 'center', borderTop: `4px solid ${ppcColor}` }}>
+          <p style={{ fontSize: '10px', fontWeight: 800, color: BASE.muted, letterSpacing: '0.5px' }}>PPC SEMANA</p>
+          <p style={{ fontSize: '34px', fontWeight: 900, color: ppcColor, lineHeight: 1.1 }}>{ppc == null ? '—' : ppc + '%'}</p>
+          <p style={{ fontSize: '10px', color: BASE.muted }}>{fechas[0]?.dia}/{fechas[0]?.mes} – {fechas[6]?.dia}/{fechas[6]?.mes}</p>
+        </div>
+        {[['Planificadas', planif.length, BASE.navy], ['Cumplidas', ok, BASE.greenDark], ['No cumplidas', no, BASE.red], ['Sin marcar', planif.length - ok - no, BASE.muted]].map(([l, v, c]) => (
+          <div key={l} style={{ ...card, flex: '1 1 120px', textAlign: 'center', borderTop: `4px solid ${c}` }}>
+            <p style={{ fontSize: '10px', fontWeight: 800, color: BASE.muted, letterSpacing: '0.5px' }}>{l.toUpperCase()}</p>
+            <p style={{ fontSize: '26px', fontWeight: 900, color: c }}>{v}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Tendencia + CNC */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '12px' }}>
+        <div style={card}>
+          <p style={{ fontSize: '11px', fontWeight: 900, color: BASE.navy, marginBottom: '8px' }}>TENDENCIA PPC POR SEMANA</p>
+          {tendencia.length === 0 ? (
+            <p style={{ fontSize: '11px', color: BASE.muted, fontStyle: 'italic' }}>Aún no hay semanas evaluadas. Marca cumplimiento abajo.</p>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '90px' }}>
+              {tendencia.map(t => (
+                <div key={t.s} title={`SEM ${t.s}: ${t.ppc}%`} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', cursor: 'pointer' }} onClick={() => setSemanaActiva(t.s)}>
+                  <div style={{ width: '100%', height: `${Math.max(3, t.ppc * 0.8)}px`, background: t.ppc >= 80 ? BASE.greenDark : t.ppc >= 50 ? '#d97706' : BASE.red, borderRadius: '3px 3px 0 0' }} />
+                  <span style={{ fontSize: '7.5px', color: BASE.muted }}>{t.s}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div style={card}>
+          <p style={{ fontSize: '11px', fontWeight: 900, color: BASE.navy, marginBottom: '8px' }}>CAUSAS DE NO CUMPLIMIENTO (CNC)</p>
+          {cncPareto.length === 0 ? (
+            <p style={{ fontSize: '11px', color: BASE.muted, fontStyle: 'italic' }}>Sin incumplimientos registrados. 👏</p>
+          ) : cncPareto.map(c => (
+            <div key={c.l} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
+              <span style={{ fontSize: '10px', color: BASE.text, width: 130, flexShrink: 0 }}>{c.l}</span>
+              <div style={{ flex: 1, background: '#f1f5f9', borderRadius: '4px', height: '14px' }}>
+                <div style={{ width: `${c.n / maxCnc * 100}%`, height: '100%', background: BASE.red, borderRadius: '4px' }} />
+              </div>
+              <b style={{ fontSize: '11px', color: BASE.red, width: 18, textAlign: 'right' }}>{c.n}</b>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Lista de actividades planificadas + cierre de cumplimiento */}
+      <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
+        <div style={{ padding: '10px 14px', background: BASE.navy, color: '#fff', fontSize: '11px', fontWeight: 900, letterSpacing: '0.4px' }}>
+          ACTIVIDADES PLANIFICADAS · SEMANA {sem} ({planif.length})
+        </div>
+        {planif.length === 0 ? (
+          <p style={{ padding: '30px', textAlign: 'center', color: BASE.muted, fontSize: '12px' }}>
+            {plan.length === 0 ? 'Cargando…' : 'Nada programado esta semana. Pinta el LAP o cambia de semana (‹ ›).'}
+          </p>
+        ) : planif.map((a, i) => {
+          const est = estadoDe(a.actKey);
+          const esNo = est && est !== 'ok';
+          return (
+            <div key={a.actKey} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 14px', borderBottom: `1px solid #eef2f6`, background: i % 2 ? '#f8fbff' : '#fff' }}>
+              <span style={{ flex: 1, fontSize: '11px', color: BASE.text }}>{a.id ? <b style={{ color: BASE.navy }}>{a.id} </b> : ''}{a.actividad}</span>
+              {a.hh != null && <span style={{ fontSize: '9.5px', color: BASE.muted, flexShrink: 0 }}>{Math.round(a.hh)} HH</span>}
+              <button onClick={() => setEstado(a.actKey, sem, est === 'ok' ? null : 'ok')}
+                style={{ padding: '4px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: '11px', background: est === 'ok' ? BASE.greenDark : '#e8f5ee', color: est === 'ok' ? '#fff' : BASE.greenDark }}>✓</button>
+              <button onClick={() => setEstado(a.actKey, sem, esNo ? null : 'otros')}
+                style={{ padding: '4px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: '11px', background: esNo ? BASE.red : '#fdecec', color: esNo ? '#fff' : BASE.red }}>✗</button>
+              {esNo && (
+                <select value={est} onChange={e => setEstado(a.actKey, sem, e.target.value)}
+                  style={inp({ width: 'auto', fontSize: '10px', padding: '4px 6px' })}>
+                  {CNC_CATS.map(c => <option key={c.k} value={c.k}>{c.l}</option>)}
+                </select>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <p style={{ fontSize: '10.5px', color: BASE.muted, textAlign: 'center', fontStyle: 'italic' }}>
+        PPC = cumplidas / planificadas. El programa viene del LAP (pestaña 🔭 / 📋); aquí solo cierras lo ejecutado. Todo conversa por proyecto.
+      </p>
     </div>
   );
 }
