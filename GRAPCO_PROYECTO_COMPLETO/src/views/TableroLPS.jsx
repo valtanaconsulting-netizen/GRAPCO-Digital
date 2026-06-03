@@ -124,9 +124,10 @@ export default function TableroLPS({
           : '✅ Sistema sano: programa confiable, restricciones bajo control y sin compromisos en riesgo.')
     : null;
   const saludTiles = saludLPS ? [
-    { l: 'PPC · PLAN CUMPLIDO', tipo: 'pct', v: salud.ppc, sub: 'Did — lo ejecutado vs comprometido' },
+    { l: 'PPC · PLAN CUMPLIDO', tipo: 'pct', v: salud.ppc, sub: 'Did — ejecutado vs comprometido' },
+    { l: 'TMR · TAREAS LISTAS', tipo: 'pct', v: salud.tmr, sub: `${(salud.progTotal || 0) - (salud.bloqProg || 0)}/${salud.progTotal || 0} del LAP (predice plazo)` },
     { l: 'PCR · RESTRIC. REMOVIDAS', tipo: 'pct', v: salud.pcr, sub: `${salud.lib}/${salud.tot} liberadas (Make-Ready)` },
-    { l: 'PPR · ACTIVIDADES LISTAS', tipo: 'pct', v: salud.ppr, sub: `${salud.listas}/${salud.nAct} sin restricción (Can)` },
+    { l: 'PPR · ACT. SIN RESTRICCIÓN', tipo: 'pct', v: salud.ppr, sub: `${salud.listas}/${salud.nAct} (Can)` },
     { l: 'SHIELDING · EN RIESGO', tipo: 'num', v: salud.bloqProg, sub: `de ${salud.progTotal} programadas (Will)` },
   ] : [];
 
@@ -166,8 +167,8 @@ export default function TableroLPS({
       {/* KPIs superiores */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
         {[
-          { l: 'PPC ACTUAL', v: `${ppcActual}%`, c: ppcColor, sub: diag.diagnostico || '—' },
-          { l: 'COMPROMISOS', v: totalComp, c: BASE.navy, sub: `${cumplidos} ✓ · ${incumplidos} ✕ · ${pendientes} ⏳` },
+          { l: 'PPC GLOBAL', v: salud.ppc == null ? '—' : `${salud.ppc}%`, c: ppcColor, sub: 'Plan cumplido (oficial)' },
+          { l: 'PROGRAMADO (LAP)', v: salud.progTotal ?? 0, c: BASE.navy, sub: `${salud.bloqProg ?? 0} 🔒 en riesgo` },
           { l: 'RESTRICCIONES', v: kpiRestr.total, c: '#7c3aed', sub: `${kpiRestr.liberadas} liberadas · ${kpiRestr.vencidas} vencidas` },
           { l: 'SEMANA ACTIVA', v: `S${semanaActiva}`, c: '#0891b2', sub: 'Lookahead 6 sem' },
         ].map(k => (
@@ -196,7 +197,7 @@ export default function TableroLPS({
               </thead>
               <tbody>
                 {lookahead.filas.length === 0 ? (
-                  <tr><td colSpan={7} style={{ padding: '20px', textAlign: 'center', color: BASE.muted }}>Sin compromisos cargados</td></tr>
+                  <tr><td colSpan={7} style={{ padding: '20px', textAlign: 'center', color: BASE.muted }}>Sin actividades programadas en el LAP</td></tr>
                 ) : lookahead.filas.map(f => (
                   <tr key={f.actividad}>
                     <td style={{ padding: '5px 8px', fontWeight: '700', color: BASE.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '160px' }}>{f.actividad}</td>
@@ -264,7 +265,7 @@ export default function TableroLPS({
           <p style={titulo}>3 · Plan de Trabajo Semanal (S{semanaActiva})</p>
           <div style={{ maxHeight: '260px', overflowY: 'auto' }}>
             {planSemana.length === 0 ? (
-              <p style={{ padding: '20px', textAlign: 'center', color: BASE.muted, fontSize: '12px' }}>Sin compromisos para la semana {semanaActiva}</p>
+              <p style={{ padding: '20px', textAlign: 'center', color: BASE.muted, fontSize: '12px' }}>Sin actividades programadas para la semana {semanaActiva}</p>
             ) : planSemana.map((p, i) => (
               <div key={i} style={{
                 display: 'flex', alignItems: 'center', gap: '10px',
@@ -339,12 +340,12 @@ export default function TableroLPS({
           <p style={titulo}>6 · Indicadores de Gestión</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
             {[
-              { l: 'Compromisos cumplidos', v: `${cumplidos}/${totalComp}`, c: '#16a34a' },
-              { l: 'Compromisos incumplidos', v: incumplidos, c: '#dc2626' },
+              { l: 'TMR · tareas listas', v: salud.tmr == null ? '—' : `${salud.tmr}%`, c: '#16a34a' },
+              { l: 'PPR · act. sin restricción', v: salud.ppr == null ? '—' : `${salud.ppr}%`, c: BASE.navy },
               { l: 'Restricciones pendientes', v: kpiRestr.pendientes, c: '#d97706' },
               { l: 'Restricciones vencidas', v: kpiRestr.vencidas, c: '#dc2626' },
-              { l: 'Restricciones liberadas', v: kpiRestr.liberadas, c: '#16a34a' },
-              { l: 'PPC promedio (4 sem)', v: `${diag.promedioPct ?? '—'}%`, c: ppcColor },
+              { l: 'Restricciones liberadas (PCR)', v: `${kpiRestr.liberadas} · ${salud.pcr ?? '—'}%`, c: '#16a34a' },
+              { l: 'PPC global', v: `${salud.ppc ?? '—'}%`, c: ppcColor },
             ].map(k => (
               <div key={k.l} style={{ background: BASE.bgSoft, border: `1px solid ${BASE.border}`, borderRadius: '8px', padding: '10px 12px' }}>
                 <p style={{ fontSize: '9.5px', fontWeight: '800', color: BASE.muted }}>{k.l.toUpperCase()}</p>

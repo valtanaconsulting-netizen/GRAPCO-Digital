@@ -7,20 +7,15 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { db } from '../firebaseConfig';
 import {
-  collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, setDoc,
+  collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, setDoc,
 } from 'firebase/firestore';
-import {
-  ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, ReferenceLine, BarChart, Bar, Cell, ComposedChart,
-} from 'recharts';
 import { BASE, inp } from '../utils/styles';
 import {
   RNC_CATEGORIAS, RNC_LABELS, RNC_COLORS, RNC_ICONS,
-  calcularPPCSemanal, calcularParetoRNC, diagnosticarPPC,
   obtenerSemana as obtSem,
   RESTRICCION_TIPOS, RESTRICCION_TIPOS_MAP,
   calcularKPIRestricciones,
-  sugerirLecciones, calcularKPILecciones,
+  calcularKPILecciones,
   fmtFechaCorta,
   fechasDeSemana, generarLookahead,
 } from '../utils/helpers';
@@ -49,10 +44,8 @@ export default function VDC({
   showToast,
 }) {
   const [tab, setTab] = useState('tablero');
-  const [compromisos, setCompromisos] = useState([]);
   const [restriccionesFS, setRestriccionesFS] = useState([]);   // de Firestore (VDC_Restricciones)
   const [lecciones, setLecciones] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [semanaActiva, setSemanaActiva] = useState(obtenerSemana(new Date().toISOString().split('T')[0]));
 
   const [modalRestriccion, setModalRestriccion] = useState(null);   // { editando } | null
@@ -67,19 +60,6 @@ export default function VDC({
 
   // ── Suscripción Firebase (filtradas por proyecto activo) ──
   const { filtrarPorContexto } = useProyectoActivo();
-  useEffect(() => {
-    try {
-      const q = query(collection(db, 'PPC_Compromisos'), orderBy('semana', 'desc'));
-      return onSnapshot(q, snap => {
-        try {
-          const todos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-          setCompromisos(filtrarPorContexto(todos));
-          setLoading(false);
-        } catch (e) { console.warn('[snap PPC]', e); }
-      });
-    } catch (e) { console.warn('[useEffect PPC]', e); setLoading(false); }
-  }, [filtrarPorContexto]);
-
   useEffect(() => {
     try {
       return onSnapshot(collection(db, 'VDC_Restricciones'), snap => {
@@ -191,14 +171,9 @@ export default function VDC({
     return m;
   }, [ppcOficial, restricciones, lapProgramado]);
 
-  // ── Datos calculados ──
-  const ppcSemanal = useMemo(() => calcularPPCSemanal(compromisos), [compromisos]);
-  const pareto = useMemo(() => calcularParetoRNC(compromisos), [compromisos]);
-  const diag = useMemo(() => diagnosticarPPC(ppcSemanal, 4), [ppcSemanal]);
-
-  // Salud del Sistema LPS (consolidado para el Tablero): las 4 métricas maestras
-  // del Last Planner conversando — PPC (Did), PCR (Make-Ready), PPR (Can/listo) y
-  // Shielding (Will: comprometido en riesgo). Todo derivado, automático.
+  // Salud del Sistema LPS (consolidado para el Tablero): las 5 métricas maestras del
+  // Last Planner conversando — PPC (Did), PCR (Make-Ready), PPR + TMR (Can/listo) y
+  // Shielding (Will: comprometido en riesgo). Todo derivado del Excel, automático.
   const saludLPS = useMemo(() => {
     const tot = restricciones.length;
     const lib = restricciones.filter(r => r.estado === 'liberada').length;
@@ -210,23 +185,18 @@ export default function VDC({
     const ppr = nAct ? Math.round(listas / nAct * 100) : null;
     const progActs = [...new Set(lapProgramado.map(c => c.actividad).filter(Boolean))];
     const bloqProg = progActs.filter(act => readyDe(rpa[normActividad(act)]) === 'bloq').length;
-    const ppc = ppcOficial.global ?? diag.promedioPct ?? null;
-    return { ppc, pcr, ppr, bloqProg, progTotal: progActs.length, lib, tot, pend: tot - lib, listas, nAct };
-  }, [restricciones, lapProgramado, ppcOficial, diag]);
+    // TMR (Tasks Made Ready): de TODO lo programado en el LAP, % que llegó LISTO
+    // (sin restricción pendiente). Mejor predictor de plazo que el PPC.
+    const tmr = progActs.length ? Math.round((progActs.length - bloqProg) / progActs.length * 100) : null;
+    const ppc = ppcOficial.global ?? null;
+    return { ppc, pcr, ppr, tmr, bloqProg, progTotal: progActs.length, lib, tot, pend: tot - lib, listas, nAct };
+  }, [restricciones, lapProgramado, ppcOficial]);
 
   // Lazo Learn: retroalimentación automática (CNC + restricciones + shielding).
   const retro = useMemo(
     () => generarRetroalimentacion({ cnc: ppcOficial.cnc, restricciones, salud: saludLPS }),
     [ppcOficial, restricciones, saludLPS]
   );
-
-  if (loading) {
-    return (
-      <div style={{ background: BASE.white, borderRadius: '14px', padding: '60px', textAlign: 'center' }}>
-        <p style={{ color: BASE.muted, fontSize: '13px' }}>⏳ Cargando datos VDC...</p>
-      </div>
-    );
-  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -244,19 +214,19 @@ export default function VDC({
             VDC · Last Planner System
           </span>
           <span style={{ fontSize: '11px', color: BASE.muted, fontWeight: '600' }}>
-            {compromisos.length} compromisos · {ppcSemanal.length} semanas
+            {saludLPS.tot} restricciones · {saludLPS.progTotal} actividades programadas
           </span>
         </div>
-        {diag.promedio !== null && (
+        {saludLPS.ppc != null && (
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: '8px',
-            background: `${diag.color}15`, color: diag.color,
+            background: `${ppcTone(saludLPS.ppc)}15`, color: ppcTone(saludLPS.ppc),
             padding: '4px 12px', borderRadius: '999px',
-            border: `1px solid ${diag.color}55`,
+            border: `1px solid ${ppcTone(saludLPS.ppc)}55`,
           }}>
-            <span style={{ fontSize: '9px', fontWeight: '800', letterSpacing: '0.6px', opacity: 0.85 }}>PPC PROMEDIO</span>
+            <span style={{ fontSize: '9px', fontWeight: '800', letterSpacing: '0.6px', opacity: 0.85 }}>PPC GLOBAL</span>
             <span style={{ fontSize: '14px', fontWeight: '900', fontFamily: 'var(--grapco-font-mono, monospace)' }}>
-              {diag.promedioPct}%
+              {saludLPS.ppc}%
             </span>
           </div>
         )}
@@ -309,11 +279,11 @@ export default function VDC({
       {/* === TABLERO CONSOLIDADO (Power BI) === */}
       {tab === 'tablero' && (
         <TableroLPS
-          compromisos={[...compromisos, ...lapProgramado]}
+          compromisos={lapProgramado}
           restricciones={restricciones}
-          ppcSemanal={ppcSemanalReal.length ? ppcSemanalReal : ppcSemanal}
-          pareto={paretoReal.items.length ? paretoReal : pareto}
-          diag={{ ...diag, promedioPct: ppcOficial.global ?? diag.promedioPct }}
+          ppcSemanal={ppcSemanalReal}
+          pareto={paretoReal}
+          diag={{ promedioPct: ppcOficial.global }}
           semanaActiva={semanaActiva}
           saludLPS={saludLPS}
         />
@@ -327,7 +297,6 @@ export default function VDC({
       {/* === LAP · LOOKAHEAD 6 SEMANAS === */}
       {tab === 'lap' && (
         <LookaheadView
-          compromisos={compromisos}
           restricciones={restricciones}
           semanaActiva={semanaActiva}
           setSemanaActiva={setSemanaActiva}
@@ -417,7 +386,7 @@ export default function VDC({
       {tab === 'lecciones' && (
         <Lecciones
           lecciones={lecciones}
-          sugerencias={sugerirLecciones(compromisos, lecciones)}
+          sugerencias={[]}
           retro={retro}
           onNueva={(prefill) => {
             setFormLeccion({
@@ -721,6 +690,28 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
     return ent.length ? { sem: parseInt(ent[0][0], 10), n: ent[0][1] } : null;
   }, [kpi.lista]);
 
+  // CONSTRAINT BURNDOWN (métrica de clase mundial): restricciones ABIERTAS por
+  // semana = identificadas con fecha-límite ≤ n − liberadas hasta n. La curva debe
+  // tender a 0; si en semanas pasadas sigue alta, el Make-Ready va ahogándose.
+  const burndown = useMemo(() => {
+    const wk = (f) => f ? obtenerSemana(f) : null;
+    const need = (kpi.lista || []).map(r => ({
+      req: wk(r.fechaCompromisoLiberacion),
+      rel: r._estado === 'liberada' ? (wk(r.fechaConciliada) || wk(r.fechaCompromisoLiberacion)) : null,
+    }));
+    let maxW = curWeek;
+    need.forEach(n => { maxW = Math.max(maxW, n.req || 0, n.rel || 0); });
+    const hi = Math.min(Math.max(maxW, 6), 40);
+    const arr = [];
+    for (let n = 1; n <= hi; n++) {
+      const ident = need.filter(x => x.req != null && x.req <= n).length;
+      const lib = need.filter(x => x.rel != null && x.rel <= n).length;
+      arr.push({ n, abiertas: Math.max(0, ident - lib), lib });
+    }
+    return arr;
+  }, [kpi.lista, curWeek]);
+  const maxBurn = Math.max(1, ...burndown.map(b => b.abiertas));
+
   const ordenadas = useMemo(
     () => [...filtradas].sort((a, b) => {
       // vencidas primero, después por fecha de compromiso ascendente
@@ -800,6 +791,29 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
           )}
         </div>
       )}
+
+      {/* CONSTRAINT BURNDOWN — restricciones abiertas por semana (debe tender a 0) */}
+      <div style={{ background: BASE.white, borderRadius: '12px', border: `1px solid ${BASE.border}`, padding: '12px 16px', boxShadow: BASE.shadowSm }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+          <span style={{ fontSize: '12px', fontWeight: 900, color: BASE.navy }}>📉 CONSTRAINT BURNDOWN</span>
+          <span style={{ fontSize: '10.5px', color: BASE.muted }}>restricciones <strong>abiertas</strong> por semana (identificadas − liberadas) · debe tender a 0</span>
+          <span style={{ marginLeft: 'auto', fontSize: '10px', color: BASE.muted }}>clic en una barra para ir a esa semana</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: '92px', overflowX: 'auto' }}>
+          {burndown.map(b => {
+            const past = b.n < curWeek, actual = b.n === curWeek;
+            const col = b.abiertas === 0 ? BASE.green : (past ? BASE.red : actual ? BASE.gold : BASE.navyLight);
+            return (
+              <div key={b.n} onClick={() => { setVerTodasSem(false); setSemanaAR(b.n); }} title={`Semana ${b.n}: ${b.abiertas} abiertas · ${b.lib} liberadas`}
+                style={{ flex: '1 0 16px', minWidth: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', cursor: 'pointer' }}>
+                <span style={{ fontSize: '7.5px', fontWeight: 800, color: b.abiertas ? col : BASE.mutedSoft }}>{b.abiertas || ''}</span>
+                <div style={{ width: '74%', height: `${Math.max(2, b.abiertas / maxBurn * 64)}px`, background: col, borderRadius: '2px 2px 0 0', outline: actual ? `1.5px solid ${BASE.gold}` : 'none' }} />
+                <span style={{ fontSize: '7px', color: actual ? BASE.gold : BASE.muted, fontWeight: actual ? 900 : 600 }}>{b.n}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       {/* KPIs Restricciones */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
@@ -1601,7 +1615,7 @@ function SemanaNav({ semana, setSemana, total = 35, meta = {}, titulo = '', rang
 // SUB-COMPONENTE: LAP · LOOKAHEAD A 6 SEMANAS
 // Muestra ventana móvil de 6 semanas con actividades planificadas
 // ════════════════════════════════════════════════════════════════
-function LookaheadView({ compromisos, restricciones, semanaActiva, setSemanaActiva, semanasMeta = {}, total = 35 }) {
+function LookaheadView({ restricciones, semanaActiva, setSemanaActiva, semanasMeta = {}, total = 35 }) {
   const INICIO = INICIO_PROYECTO;
   // Ventana de 6 semanas anclada en la SEMANA ACTIVA compartida: el filtro de
   // semana unificado la mueve y, con ella, la Prog. Semanal, el AR y el PPC.
@@ -1624,14 +1638,6 @@ function LookaheadView({ compromisos, restricciones, semanaActiva, setSemanaActi
     [semanas]
   );
   const winIni = dias[0]?.fecha, winFin = dias[dias.length - 1]?.fecha;
-
-  // Compromisos PPC por semana (contadores ✅/❌ — para que converse con lo real).
-  const compromisosPorSemana = useMemo(() => {
-    const mapa = {};
-    semanas.forEach(s => { mapa[s.numero] = []; });
-    (compromisos || []).forEach(c => { if (mapa[c.semana]) mapa[c.semana].push(c); });
-    return mapa;
-  }, [compromisos, semanas]);
 
   // Secciones con TODAS las actividades (partidas) del LAP. NO se filtran por la
   // ventana: se ven todas para poder programarlas; un toggle oculta las no pintadas.
@@ -1738,9 +1744,6 @@ function LookaheadView({ compromisos, restricciones, semanaActiva, setSemanaActi
                   {semanas.map((s, wi) => {
                     const esActual = s.numero === semanaActiva;
                     const rp = restriccionesPorSemana[s.numero] || 0;
-                    const cmp = compromisosPorSemana[s.numero] || [];
-                    const ok = cmp.filter(c => c.cumplido === true).length;
-                    const no = cmp.filter(c => c.cumplido === false).length;
                     return (
                       <div key={wi} onClick={() => setSemanaActiva && setSemanaActiva(s.numero)}
                         title={`Fijar Semana ${s.numero} como activa (afecta PS, AR y PPC)`} style={{
@@ -1750,10 +1753,8 @@ function LookaheadView({ compromisos, restricciones, semanaActiva, setSemanaActi
                       }}>
                         <div style={{ fontSize: '10px', fontWeight: 900, whiteSpace: 'nowrap' }}>{esActual ? '⭐ ' : ''}{s.label}</div>
                         <div style={{ fontSize: '8.5px', opacity: 0.9, whiteSpace: 'nowrap' }}>{s.dias[0].dia}/{s.dias[0].mes}–{s.dias[6].dia}/{s.dias[6].mes}</div>
-                        {(rp > 0 || ok > 0 || no > 0) && (
-                          <div style={{ fontSize: '8px', fontWeight: 800, marginTop: '1px' }}>
-                            {rp > 0 && <span>🚧{rp} </span>}{ok > 0 && <span>✅{ok} </span>}{no > 0 && <span>❌{no}</span>}
-                          </div>
+                        {rp > 0 && (
+                          <div style={{ fontSize: '8px', fontWeight: 800, marginTop: '1px' }}>🚧{rp}</div>
                         )}
                       </div>
                     );
