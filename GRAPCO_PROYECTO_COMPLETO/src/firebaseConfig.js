@@ -6,7 +6,10 @@
 //   3. Fallback a valores por defecto si no hay .env (modo desarrollo)
 
 import { initializeApp } from 'firebase/app';
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import {
+  initializeFirestore, getFirestore, connectFirestoreEmulator,
+  persistentLocalCache, persistentMultipleTabManager, CACHE_SIZE_UNLIMITED,
+} from 'firebase/firestore';
 import { getAuth, connectAuthEmulator } from 'firebase/auth';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
 
@@ -23,7 +26,25 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-export const db      = getFirestore(app);
+// ── Firestore OFFLINE-FIRST (a prueba de "cerro sin señal") ──
+// Cache persistente en IndexedDB: la app lee del cache sin conexión y las
+// escrituras (setDoc/addDoc/updateDoc) se ENCOLAN localmente y se sincronizan
+// solas al volver la señal (last-write-wins por timestamp del servidor).
+// persistentMultipleTabManager → seguro con varias pestañas abiertas.
+// Si el navegador no soporta IndexedDB, cae a Firestore en memoria (sin romper).
+let _db;
+try {
+  _db = initializeFirestore(app, {
+    localCache: persistentLocalCache({
+      tabManager: persistentMultipleTabManager(),
+      cacheSizeBytes: CACHE_SIZE_UNLIMITED,
+    }),
+  });
+} catch (e) {
+  console.warn('[firebase] persistencia offline no disponible, usando memoria:', e?.message || e);
+  _db = getFirestore(app);
+}
+export const db      = _db;
 export const auth    = getAuth(app);
 export const storage = getStorage(app);
 

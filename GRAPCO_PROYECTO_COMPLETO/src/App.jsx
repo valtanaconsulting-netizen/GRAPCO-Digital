@@ -36,6 +36,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { NotificationProvider, useNotifications } from './contexts/NotificationContext';
 import PwaInstallPrompt from './components/PwaInstallPrompt';
 import CommandPalette from './components/CommandPalette';
+import OfflineBanner from './components/OfflineBanner';
 
 import {
   useHistorial, useCuadrillas, usePersonal,
@@ -504,6 +505,9 @@ function AppInner() {
           <SelectorProyectoFrente />
         </div>
       )}
+
+      {/* Indicador de conexión (offline-first para obra sin señal) */}
+      <OfflineBanner />
 
       {/* Contenido principal — compensa navbar fixed (60px arriba) y sidebar fixed (dinámico). */}
       <main id="main-content" style={{
