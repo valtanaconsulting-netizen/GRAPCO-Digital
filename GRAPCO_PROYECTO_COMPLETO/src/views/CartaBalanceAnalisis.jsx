@@ -278,8 +278,6 @@ export default function CartaBalanceAnalisis() {
   if (cartas.length === 0) return <EmptyState icono="CB" titulo="Sin Cartas Balance" descripcion="Carga una carta en 📥 Importar." />;
 
   const tpMeta = metas.tpMin || 60;
-  const grade = tpGrade(k.pTP);
-  const cumpleMeta = k.pTP >= tpMeta;
   const chips = [];
   if (filtros.fecha) chips.push(['fecha', `📅 ${fmtCorta(filtros.fecha)}`]);
   if (filtros.persona) chips.push(['persona', `👷 ${filtros.persona}`]);
@@ -398,22 +396,53 @@ export default function CartaBalanceAnalisis() {
             ))}
           </div>
         </div>
-        {/* Calificación — por TP + delta vs meta */}
-        <div style={{ ...panel({ borderRadius: 14 }), gridColumn: '3', gridRow: '1', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: 6 }}>
-          <div style={{ width: 58, height: 58, borderRadius: '50%', background: grade.c + '18', border: `3px solid ${grade.c}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: 27, fontWeight: 900, color: grade.c }}>{grade.g}</span>
+        {/* Conclusiones + Recomendación (reemplaza la calificación) — lo clave para los jefes */}
+        <div style={{ ...panel({ borderRadius: 14 }), gridColumn: '3', gridRow: '1 / 3', minHeight: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 6, marginBottom: 6 }}>
+            <p style={{ ...titBox, marginBottom: 0 }}>📋 Conclusiones y recomendación</p>
+            {selAct && <span style={{ fontSize: 9, fontWeight: 800, color: BASE.gold, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 140 }} title={`${selAct} · ${fechaLabel}`}>{fechaLabel}</span>}
           </div>
-          <p style={{ fontSize: 12, fontWeight: 900, color: grade.c }}>{grade.l}</p>
-          {(() => {
-            const delta = Math.round(k.pTP) - tpMeta;
-            const ok = delta >= 0;
-            return (
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                <span style={{ fontSize: 10, color: BASE.muted, fontWeight: 700 }}>TP vs meta {tpMeta}%</span>
-                <span style={{ fontSize: 11, fontWeight: 900, color: ok ? BASE.greenDark : BASE.red, background: ok ? '#16a34a18' : '#dc262618', borderRadius: 999, padding: '2px 8px' }}>{ok ? '▲ +' : '▼ '}{delta} pts</span>
-              </div>
-            );
-          })()}
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 11, paddingRight: 2 }}>
+            {/* Conclusiones del campo */}
+            <div>
+              <p style={{ fontSize: 9.5, fontWeight: 900, color: BASE.navy, letterSpacing: 0.6, marginBottom: 5 }}>📝 CONCLUSIONES</p>
+              {cartasConclu.length === 0 ? (
+                <p style={{ fontSize: 11.5, color: BASE.muted, fontStyle: 'italic', lineHeight: 1.45 }}>
+                  {selAct && (filtros.fecha || diaSel || (desde && desde === hasta))
+                    ? 'Sin conclusiones registradas para esta actividad y día.'
+                    : 'Elige una actividad y un día específico para ver las conclusiones del campo.'}
+                </p>
+              ) : cartasConclu.map((c) => (
+                <div key={c.id} style={{ borderLeft: `3px solid ${BASE.gold}`, background: BASE.bgSoft, borderRadius: 8, padding: '7px 10px', marginBottom: 6 }}>
+                  <p style={{ fontSize: 10.5, fontWeight: 900, color: BASE.navy }}>{fmtCorta(c.fecha)} · {c.actividad}</p>
+                  <p style={{ fontSize: 11.5, color: BASE.text, lineHeight: 1.5, marginTop: 2, whiteSpace: 'pre-wrap' }}>{c.conclusiones}</p>
+                </div>
+              ))}
+            </div>
+            {/* Recomendación de cuadrilla */}
+            <div>
+              <p style={{ fontSize: 9.5, fontWeight: 900, color: CB_COL.TP, letterSpacing: 0.6, marginBottom: 5 }}>🤖 RECOMENDACIÓN DE CUADRILLA</p>
+              {reco?.recomendados?.length ? (
+                <>
+                  <p style={{ fontSize: 11.5, color: BASE.text, lineHeight: 1.45, marginBottom: 6 }}>{reco.justificacion}</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    {reco.recomendados.map((r, i) => {
+                      const w = crew.find((c) => c.nombre === r.nombre);
+                      return (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, background: BASE.bgSoft, border: `1px solid ${BASE.border}`, borderRadius: 8, padding: '5px 9px' }}>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: BASE.navy, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.rol ? `${r.rol}: ` : ''}{nombreCorto(r.nombre)}</span>
+                          <span style={{ fontSize: 11, fontWeight: 900, color: CB_COL.TP, flexShrink: 0 }}>TP {w ? Math.round(w.ptp) : '—'}%</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {reco.advertencias?.length > 0 && <p style={{ fontSize: 10.5, color: '#d97706', marginTop: 6, fontStyle: 'italic', lineHeight: 1.4 }}>⚠️ {reco.advertencias[0]}</p>}
+                </>
+              ) : (
+                <p style={{ fontSize: 11.5, color: BASE.muted, fontStyle: 'italic', lineHeight: 1.45 }}>{reco?.justificacion || 'Selecciona una actividad para recomendar la mejor cuadrilla.'}</p>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Dona */}
@@ -498,8 +527,8 @@ export default function CartaBalanceAnalisis() {
           </div>
         </div>
 
-        {/* Causas de pérdida TNC (col 3, filas 2–3) */}
-        <div style={{ ...panel(), gridColumn: '3', gridRow: '2 / 4' }}>
+        {/* Causas de pérdida TNC (col 3, fila 3) */}
+        <div style={{ ...panel(), gridColumn: '3', gridRow: '3' }}>
           <p style={titBox}>Causas de pérdida (TNC) · clic filtra</p>
           <div style={{ flex: 1, minHeight: 0 }}>
             <ResponsiveContainer width="100%" height="100%">
