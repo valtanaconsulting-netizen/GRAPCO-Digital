@@ -111,23 +111,35 @@ export default function VDC({
     return onSnapshot(doc(db, 'Configuracion', `arEdits_${proyIdVDC}`), s => setArEdits((s.exists() && s.data().edits) || {}), () => {});
   }, [proyIdVDC]);
   const restricciones = useMemo(() => [
-    ...arBase.map(r => (arEdits[r.id] ? { ...r, ...arEdits[r.id] } : r)),
+    ...arBase.map(r => (arEdits[r.id] ? { ...r, ...arEdits[r.id] } : r)).filter(r => !r._oculta),
     ...restriccionesFS,
   ], [arBase, arEdits, restriccionesFS]);
   // Secciones/frentes del LAP + LOOKUP fase-aware (enlaza AR↔LAP por actividad o
   // por fase/sección). Fuente única (todo el LAP) → se pasa a LAP/PS/PPC/Huddle.
   const lapSecciones = useMemo(() => [...new Set(lapPlan.map(a => a.seccion).filter(Boolean))], [lapPlan]);
   const lookupRestr = useMemo(() => crearLookupRestr(restricciones, lapNombres), [restricciones, lapNombres]);
-  // Cambiar el estado de una restricción (modificable). AR-excel → override; Firestore → doc real.
+  // ── Edición de restricciones AR-excel vs Firestore ──
+  // Las del Excel (id 'ar-N') NO son documentos en VDC_Restricciones: se editan en
+  // el override Configuracion/arEdits_<proyecto>. Las creadas por el usuario sí son
+  // docs reales. Estos helpers unifican el branch (antes editar/liberar/eliminar una
+  // 'ar-*' fallaba con "No document to update").
+  const guardarEdicionAR = (r, cambios) => {
+    if (String(r.id).startsWith('ar-')) {
+      const nuevo = { ...arEdits, [r.id]: { ...(arEdits[r.id] || {}), ...cambios } };
+      setArEdits(nuevo);
+      if (proyIdVDC) return setDoc(doc(db, 'Configuracion', `arEdits_${proyIdVDC}`), { edits: nuevo }, { merge: true });
+      return Promise.resolve();
+    }
+    return updateDoc(doc(db, 'VDC_Restricciones', r.id), cambios);
+  };
+  const eliminarAR = (r) => {
+    if (String(r.id).startsWith('ar-')) return guardarEdicionAR(r, { _oculta: true });   // soft-delete del Excel
+    return deleteDoc(doc(db, 'VDC_Restricciones', r.id));
+  };
+  // Cambiar el estado de una restricción (modificable).
   const cambiarEstadoAR = (r, estado) => {
     const extra = (estado === 'liberada' && !r.fechaConciliada) ? { fechaConciliada: new Date().toISOString().slice(0, 10) } : {};
-    if (String(r.id).startsWith('ar-')) {
-      const nuevo = { ...arEdits, [r.id]: { ...(arEdits[r.id] || {}), estado, ...extra } };
-      setArEdits(nuevo);
-      if (proyIdVDC) setDoc(doc(db, 'Configuracion', `arEdits_${proyIdVDC}`), { edits: nuevo }, { merge: true }).catch(() => {});
-    } else {
-      updateDoc(doc(db, 'VDC_Restricciones', r.id), { estado, ...extra }).catch(() => {});
-    }
+    guardarEdicionAR(r, { estado, ...extra }).catch(() => {});
   };
   // ── Evidencia fotográfica de restricciones (offline-first) ──
   // Cada foto = un doc en VDC_Evidencias con la imagen comprimida en base64; ride
@@ -396,10 +408,10 @@ export default function VDC({
           }}
           onLiberar={async (r) => {
             try {
-              await updateDoc(doc(db, 'VDC_Restricciones', r.id), {
+              await guardarEdicionAR(r, {
                 estado: 'liberada',
                 fechaLiberacionReal: new Date().toISOString().split('T')[0],
-                liberadoEn: new Date(),
+                fechaConciliada: r.fechaConciliada || new Date().toISOString().slice(0, 10),
               });
               showToast('✅ Restricción liberada', 'success');
             } catch (e) { showToast(`Error: ${e.message}`, 'error'); }
@@ -407,7 +419,7 @@ export default function VDC({
           onEliminar={async (r) => {
             if (!window.confirm(`¿Eliminar la restricción "${r.actividad}"?`)) return;
             try {
-              await deleteDoc(doc(db, 'VDC_Restricciones', r.id));
+              await eliminarAR(r);
               showToast('🗑️ Restricción eliminada', 'info');
             } catch (e) { showToast(`Error: ${e.message}`, 'error'); }
           }}
@@ -550,7 +562,7 @@ export default function VDC({
                     datos.liberadoEn = new Date();
                   }
                   if (modalRestriccion.editando) {
-                    await updateDoc(doc(db, 'VDC_Restricciones', modalRestriccion.editando.id), datos);
+                    await guardarEdicionAR(modalRestriccion.editando, datos);   // 'ar-*' → override; real → updateDoc
                     showToast('✅ Restricción actualizada', 'success');
                   } else {
                     await addDoc(collection(db, 'VDC_Restricciones'), { ...datos, creadoEn: new Date() });
