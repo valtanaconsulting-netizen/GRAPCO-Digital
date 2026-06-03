@@ -223,7 +223,9 @@ export default function CartaBalanceAnalisis() {
   const crew = useMemo(() => {
     const g = {}; const cargoDe = {};
     sets.persona.forEach((o) => { const e = g[o.persona] || (g[o.persona] = { nombre: o.persona, tp: 0, tc: 0, tnc: 0, n: 0 }); if (o.categoria === 'TP') e.tp++; else if (o.categoria === 'TC') e.tc++; else if (o.categoria === 'TNC') e.tnc++; e.n++; cargoDe[o.persona] = o.cargo; });
-    return Object.values(g).map((e) => ({ ...e, cargo: cargoDe[e.nombre] || 'Sin cargo', ptp: e.n ? e.tp / e.n * 100 : 0 })).sort((a, b) => b.ptp - a.ptp);
+    const ordC = (c) => { const i = CARGO_ORDEN.indexOf(c); return i === -1 ? 99 : i; };
+    return Object.values(g).map((e) => ({ ...e, cargo: cargoDe[e.nombre] || 'Sin cargo', ptp: e.n ? e.tp / e.n * 100 : 0 }))
+      .sort((a, b) => ordC(a.cargo) - ordC(b.cargo) || b.ptp - a.ptp);
   }, [sets.persona]);
   const cargoDeTrab = useMemo(() => { const m = {}; crew.forEach((c) => { m[c.nombre] = c.cargo; }); return m; }, [crew]);
   const donut = useMemo(() => { const kk = kpisDe(sets.categoria); return [{ cat: 'TP', name: 'Productivo', value: Math.round(kk.pTP), color: CB_COL.TP }, { cat: 'TC', name: 'Contributorio', value: Math.round(kk.pTC), color: CB_COL.TC }, { cat: 'TNC', name: 'No contributorio', value: Math.round(kk.pTNC), color: CB_COL.TNC }]; }, [sets.categoria]);
@@ -260,13 +262,20 @@ export default function CartaBalanceAnalisis() {
   const tpMeta = metas.tpMin || 60;
   const grade = tpGrade(k.pTP);
   const cumpleMeta = k.pTP >= tpMeta;
-  const best = crew[0];
   const chips = [];
   if (filtros.fecha) chips.push(['fecha', `📅 ${fmtCorta(filtros.fecha)}`]);
   if (filtros.persona) chips.push(['persona', `👷 ${filtros.persona}`]);
   if (filtros.cargo) chips.push(['cargo', `🏷️ ${filtros.cargo}`]);
   if (filtros.categoria) chips.push(['categoria', `🔵 ${CAT_NOMBRE[filtros.categoria]}`]);
   if (filtros.codigo) chips.push(['codigo', `🔖 ${filtros.codigo}`]);
+  // Etiqueta de la fecha/rango que se está analizando (para el panel azul).
+  const fechaLabel = filtros.fecha ? fmtCorta(filtros.fecha)
+    : diaSel ? fmtCorta(diaSel)
+    : semanaSel ? (semanas.find((x) => x.key === semanaSel)?.label || 'Semana')
+    : (desde && hasta) ? (desde === hasta ? fmtCorta(desde) : `${fmtCorta(desde)} – ${fmtCorta(hasta)}`)
+    : desde ? `desde ${fmtCorta(desde)}`
+    : hasta ? `hasta ${fmtCorta(hasta)}`
+    : 'Todas las fechas';
   const btn = (extra) => ({ ...inpTop, cursor: 'pointer', fontWeight: 900, ...extra });
 
   // Tick del Crew Balance: nombre + cargo (con color por cargo)
@@ -339,13 +348,11 @@ export default function CartaBalanceAnalisis() {
       <div id="print-area" style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '1.25fr 1fr 1fr', gridTemplateRows: 'auto 1fr 1.05fr', gap: 10 }}>
         {/* Hero — TP + medidores TP/TC/TNC */}
         <div style={{ gridColumn: '1 / 3', gridRow: '1', background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', borderRadius: 14, padding: '14px 22px', boxShadow: BASE.shadowMd, display: 'flex', alignItems: 'center', gap: 22, minWidth: 0 }}>
-          <div style={{ flexShrink: 0 }}>
-            <p style={{ fontSize: 9.5, fontWeight: 900, letterSpacing: 1.4, color: BASE.gold }}>PRODUCTIVIDAD · TP {chips.length || selAct || desde ? '· FILTRADO' : '· GLOBAL'}</p>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 3 }}>
-              <span style={{ fontSize: 44, fontWeight: 900, lineHeight: 1, color: '#4ade80' }}>{Math.round(k.pTP)}%</span>
-              <span style={{ fontSize: 12, fontWeight: 900, padding: '4px 11px', borderRadius: 999, background: cumpleMeta ? 'rgba(16,185,129,0.22)' : 'rgba(229,168,47,0.22)', border: `1px solid ${cumpleMeta ? '#10B981' : BASE.gold}` }}>{grade.emoji} {grade.l}</span>
-            </div>
-            <p style={{ fontSize: 11, opacity: 0.8, marginTop: 5 }}>{k.n} observaciones · meta TP {tpMeta}%</p>
+          <div style={{ flexShrink: 0, minWidth: 0, maxWidth: 300 }}>
+            <p style={{ fontSize: 9.5, fontWeight: 900, letterSpacing: 1.4, color: BASE.gold }}>ANÁLISIS DE PRODUCTIVIDAD {chips.length || selAct || desde || filtros.fecha ? '· FILTRADO' : '· GLOBAL'}</p>
+            <p title={selAct || 'Todas las actividades'} style={{ fontSize: 17, fontWeight: 900, lineHeight: 1.2, marginTop: 5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>🏗️ {selAct || 'Todas las actividades'}</p>
+            <p style={{ fontSize: 12.5, fontWeight: 700, opacity: 0.92, marginTop: 4 }}>📅 {fechaLabel}</p>
+            <p style={{ fontSize: 11, opacity: 0.75, marginTop: 6 }}>{k.n} observaciones · meta TP {tpMeta}%</p>
           </div>
           <div style={{ width: 1, alignSelf: 'stretch', background: 'rgba(255,255,255,0.14)', margin: '2px 0' }} />
           <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 18, minWidth: 0 }}>
@@ -421,12 +428,7 @@ export default function CartaBalanceAnalisis() {
           </div>
         </div>
 
-        {/* Tarjetas clave (col 3, fila 2) */}
-        <div style={{ gridColumn: '3', gridRow: '2', display: 'flex', flexDirection: 'column', gap: 8, minHeight: 0, overflow: 'hidden' }}>
-          {compTP[0] && <MiniCard color={CB_COL.TP} t="🟢 Principal Productivo" v={compTP[0].name} d={`${compTP[0].value}% del TP`} />}
-          {compTNC[0] && <MiniCard color={CB_COL.TNC} t="🔴 Mayor pérdida (TNC)" v={compTNC[0].name} d={`${compTNC[0].value}% del TNC`} />}
-          {best && <MiniCard color={BASE.greenDark} t="🏆 Mejor desempeño" v={`${nombreCorto(best.nombre)} · ${CARGO_ABBR[best.cargo] || best.cargo}`} d={`TP ${Math.round(best.ptp)}%`} />}
-        </div>
+        {/* (Tarjetas clave eliminadas a pedido; "Causas de pérdida" ocupa col 3, filas 2–3) */}
 
         {/* Crew Balance — por trabajador (con cargo) */}
         <div style={{ ...panel(), gridColumn: '1 / 3', gridRow: '3' }}>
@@ -461,8 +463,8 @@ export default function CartaBalanceAnalisis() {
           </div>
         </div>
 
-        {/* Causas de pérdida TNC (col 3, fila 3) */}
-        <div style={{ ...panel(), gridColumn: '3', gridRow: '3' }}>
+        {/* Causas de pérdida TNC (col 3, filas 2–3) */}
+        <div style={{ ...panel(), gridColumn: '3', gridRow: '2 / 4' }}>
           <p style={titBox}>Causas de pérdida (TNC) · clic filtra</p>
           <div style={{ flex: 1, minHeight: 0 }}>
             <ResponsiveContainer width="100%" height="100%">
