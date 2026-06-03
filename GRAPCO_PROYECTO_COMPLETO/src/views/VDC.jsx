@@ -1254,6 +1254,18 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
       .sort((a, b) => (a.items[0].fechaCompromisoLiberacion || 'zzz').localeCompare(b.items[0].fechaCompromisoLiberacion || 'zzz'));
   }, [filtradas]);
 
+  // Rango de semanas para la grilla (como el Excel AR): cada restricción se ve a lo
+  // largo de las SEMANAS desde su fecha requerida hasta que se libera.
+  const curWeek = obtenerSemana(new Date().toISOString().slice(0, 10));
+  const semGrid = useMemo(() => {
+    let maxW = curWeek;
+    filtradas.forEach(r => { [r.fechaCompromisoLiberacion, r.fechaConciliada].forEach(f => { if (f) maxW = Math.max(maxW, obtenerSemana(f)); }); });
+    maxW = Math.min(Math.max(maxW, 6), 34);
+    const arr = [];
+    for (let n = 1; n <= maxW; n++) { const d = fechasDeSemana(n, INICIO_PROYECTO)[0]; arr.push({ n, dia: d ? d.dia : '', mes: d ? d.mes : '' }); }
+    return arr;
+  }, [filtradas, curWeek]);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {/* KPIs Restricciones */}
@@ -1366,13 +1378,16 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
                   {[['FRENTE', 'left'], ['ACTIVIDAD', 'left'], ['RESTRICCIÓN', 'left'], ['TIPO', 'left'], ['RESP', 'center'], ['F. REQ.', 'center'], ['F. CONCIL.', 'center'], ['LEVANTA', 'center'], ['ESTADO', 'center'], ['', 'right']].map(([h, al], i) => (
                     <th key={i} style={{ position: 'sticky', top: 0, background: BASE.navy, padding: '9px 8px', textAlign: al, fontSize: '9px', fontWeight: 900, letterSpacing: '0.4px', borderRight: `1px solid rgba(255,255,255,0.14)`, whiteSpace: 'nowrap', zIndex: 1 }}>{h}</th>
                   ))}
+                  {semGrid.map(s => (
+                    <th key={'w' + s.n} title={`Semana ${s.n} · ${s.dia}/${s.mes}`} style={{ position: 'sticky', top: 0, background: s.n === curWeek ? BASE.gold : BASE.navy, color: '#fff', padding: '3px 0', textAlign: 'center', fontSize: '7.5px', fontWeight: 800, width: 16, minWidth: 16, borderRight: '1px solid rgba(255,255,255,0.12)', zIndex: 1 }}>{s.n}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {grupos.map(g => (
                   <React.Fragment key={g.act}>
                     <tr>
-                      <td colSpan={10} style={{ background: '#fff7e6', borderLeft: `4px solid ${BASE.gold}`, borderTop: `1px solid ${BASE.border}`, borderBottom: `1px solid ${BASE.border}`, padding: '6px 12px', fontWeight: 900, fontSize: '10.5px', color: BASE.navy, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                      <td colSpan={10 + semGrid.length} style={{ background: '#fff7e6', borderLeft: `4px solid ${BASE.gold}`, borderTop: `1px solid ${BASE.border}`, borderBottom: `1px solid ${BASE.border}`, padding: '6px 12px', fontWeight: 900, fontSize: '10.5px', color: BASE.navy, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
                         {g.act} <span style={{ color: BASE.muted, fontWeight: 700 }}>· {g.items.length} restric.</span>
                       </td>
                     </tr>
@@ -1397,6 +1412,18 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
                             <button onClick={() => onEditar(r)} title="Editar" style={arMini(BASE.bgSoft, BASE.navy)}>✏️</button>
                             <button onClick={() => onEliminar(r)} title="Eliminar" style={arMini('#fee2e2', BASE.red)}>🗑️</button>
                           </td>
+                          {(() => {
+                            const reqW = r.fechaCompromisoLiberacion ? obtenerSemana(r.fechaCompromisoLiberacion) : null;
+                            const concW = r.fechaConciliada ? obtenerSemana(r.fechaConciliada) : null;
+                            const startW = reqW || concW;
+                            const endW = r._estado === 'liberada' ? (concW || reqW || 0) : Math.max(reqW || 0, concW || 0, curWeek);
+                            const col = r._estado === 'liberada' ? '#22c55e' : r._estado === 'en_proceso' ? '#f59e0b' : '#ef4444';
+                            return semGrid.map(s => {
+                              const on = startW && s.n >= Math.min(startW, endW) && s.n <= Math.max(startW, endW);
+                              const rel = concW && s.n === concW && r._estado === 'liberada';
+                              return <td key={'w' + s.n} style={{ padding: 0, width: 16, minWidth: 16, borderRight: '1px solid #eef2f6', background: on ? (rel ? '#15803d' : col) : (s.n === curWeek ? 'rgba(225,29,72,0.06)' : 'transparent') }} />;
+                            });
+                          })()}
                         </tr>
                       );
                     })}
