@@ -4,10 +4,10 @@
 // - Cierre semanal: marcar cumplido / no cumplido + razón (RNC)
 // - Dashboard: PPC tendencia + Pareto RNC + diagnóstico
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { db } from '../firebaseConfig';
 import {
-  collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy,
+  collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, setDoc,
 } from 'firebase/firestore';
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid,
@@ -1692,6 +1692,54 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
     return rows;
   }, [plan, winIni, winFin]);
 
+  // ── EDICIÓN: pintar / borrar / mover días (persistente por proyecto) ──
+  // Se guardan SOLO los cambios del usuario (overrides) sobre el LAP base, en un
+  // único doc Configuracion/lapMarcas_<proyecto> (mapa clave→bool). El LAP oficial
+  // queda intacto; pintar/borrar una celda añade o quita un día programado.
+  const { proyectoActivoId } = useProyectoActivo();
+  const [edits, setEdits] = useState({});
+  const editsRef = useRef({});
+  const saveTimer = useRef(null);
+  const pintando = useRef(null);   // { valor } mientras se arrastra para pintar/borrar
+  useEffect(() => {
+    if (!proyectoActivoId) return;
+    const ref = doc(db, 'Configuracion', `lapMarcas_${proyectoActivoId}`);
+    return onSnapshot(ref, snap => {
+      const server = (snap.exists() && snap.data().marcas) || {};
+      editsRef.current = { ...server, ...editsRef.current };
+      setEdits({ ...editsRef.current });
+    }, () => {});
+  }, [proyectoActivoId]);
+  useEffect(() => {
+    const up = () => { pintando.current = null; };
+    window.addEventListener('mouseup', up);
+    window.addEventListener('touchend', up);
+    return () => { window.removeEventListener('mouseup', up); window.removeEventListener('touchend', up); };
+  }, []);
+  const hashStr = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; return h.toString(36); };
+  const claveMarca = (actKey, fecha) => `a${hashStr(actKey)}_${fecha.replace(/-/g, '')}`;
+  const guardar = () => {
+    if (!proyectoActivoId) return;
+    clearTimeout(saveTimer.current);
+    const mapa = { ...editsRef.current };
+    saveTimer.current = setTimeout(() => {
+      setDoc(doc(db, 'Configuracion', `lapMarcas_${proyectoActivoId}`),
+        { marcas: mapa, actualizadoEn: new Date() }).catch(() => {});
+    }, 450);
+  };
+  const aplicarMarca = (actKey, fecha, base, valor) => {
+    const k = claveMarca(actKey, fecha);
+    const nuevo = { ...editsRef.current };
+    if (valor === base) delete nuevo[k]; else nuevo[k] = valor;   // si vuelve al base, no guardamos override
+    editsRef.current = nuevo;
+    setEdits(nuevo);
+    guardar();
+  };
+  const estaMarcado = (actKey, fecha, base) => {
+    const k = claveMarca(actKey, fecha);
+    return k in edits ? edits[k] : base;
+  };
+
   // Cuenta restricciones que afectan cada semana
   const restriccionesPorSemana = useMemo(() => {
     const mapa = {};
@@ -1710,8 +1758,8 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
     return mapa;
   }, [restricciones, semanas]);
 
-  // ── Geometría y navegación ──
-  const DAY_W = 18, LEFT_W = 320, ROW_H = 22;
+  // ── Geometría y navegación (ancho completo: días en flex) ──
+  const LEFT_W = 300, ROW_H = 24, MIN_DAY = 15;
   const hoy = new Date();
   const hoyISO = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
   const nAct = filas.filter(f => f.tipo === 'act').length;
@@ -1719,8 +1767,9 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
   const irA = (n) => setWinStart(Math.max(1, Math.min(60, n)));
   const fmtN = (n) => n == null ? '' : Number(n).toLocaleString('es-PE', { maximumFractionDigits: n < 100 ? 1 : 0 });
   const navBtn = { padding: '8px 12px', background: BASE.white, color: BASE.navy, border: `1px solid ${BASE.border}`, borderRadius: '8px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' };
-  const leftColsStyle = { width: LEFT_W, minWidth: LEFT_W, display: 'flex', alignItems: 'center', gap: '4px', padding: '0 8px', position: 'sticky', left: 0, zIndex: 2, background: BASE.white, borderRight: `2px solid ${BASE.border}` };
-  const colNum = { width: '34px', minWidth: '34px', textAlign: 'right', fontSize: '9.5px', color: BASE.text, flexShrink: 0 };
+  const leftColsStyle = { width: LEFT_W, minWidth: LEFT_W, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px', padding: '0 8px', background: BASE.white, borderRight: `2px solid ${BASE.border}` };
+  const cellWrap = { flex: 1, minWidth: 0, display: 'flex' };
+  const colNum = { width: '32px', minWidth: '32px', textAlign: 'right', fontSize: '9.5px', color: BASE.text, flexShrink: 0 };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -1757,55 +1806,59 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
         <strong style={{ color: BASE.navy }}>{nAct}</strong> actividades programadas · <strong style={{ color: BASE.navy }}>{Math.round(totalHH).toLocaleString('es-PE')}</strong> HH en la ventana
       </p>
 
-      {/* MATRIZ tipo Excel: actividades × días */}
+      {/* MATRIZ tipo Excel: actividades × días — ancho completo y EDITABLE */}
       <div style={{ background: BASE.white, borderRadius: '14px', border: `1px solid ${BASE.border}`, overflow: 'hidden', boxShadow: BASE.shadowSm }}>
-        <div style={{ overflow: 'auto', maxHeight: '70vh' }}>
-          <div style={{ minWidth: LEFT_W + dias.length * DAY_W }}>
+        <div style={{ overflow: 'auto', maxHeight: '72vh' }}>
+          <div style={{ width: '100%', minWidth: LEFT_W + dias.length * MIN_DAY, userSelect: 'none' }}>
 
             {/* CABECERA sticky */}
             <div style={{ position: 'sticky', top: 0, zIndex: 3 }}>
               {/* fila SEMANA */}
               <div style={{ display: 'flex' }}>
-                <div style={{ ...leftColsStyle, zIndex: 4, background: BASE.navy, color: '#fff', borderRight: `2px solid ${BASE.navyDark}`, fontWeight: 900, fontSize: '10px', letterSpacing: '0.5px', padding: '6px 8px' }}>
+                <div style={{ ...leftColsStyle, background: BASE.navy, color: '#fff', borderRight: `2px solid ${BASE.navyDark}`, fontWeight: 900, fontSize: '10px', letterSpacing: '0.5px', padding: '6px 8px' }}>
                   PROGRAMACIÓN · LAP
                 </div>
-                {semanas.map((s, wi) => {
-                  const esActual = s.numero === semanaActiva;
-                  const rp = restriccionesPorSemana[s.numero] || 0;
-                  const cmp = compromisosPorSemana[s.numero] || [];
-                  const ok = cmp.filter(c => c.cumplido === true).length;
-                  const no = cmp.filter(c => c.cumplido === false).length;
-                  return (
-                    <div key={wi} style={{
-                      width: 7 * DAY_W, minWidth: 7 * DAY_W,
-                      background: esActual ? `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})` : `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
-                      color: '#fff', textAlign: 'center', padding: '5px 2px', borderRight: `1px solid rgba(255,255,255,0.25)`,
-                    }}>
-                      <div style={{ fontSize: '10px', fontWeight: 900 }}>{esActual ? '⭐ ' : ''}{s.label}</div>
-                      <div style={{ fontSize: '8.5px', opacity: 0.9 }}>{s.dias[0].dia}/{s.dias[0].mes}–{s.dias[6].dia}/{s.dias[6].mes}</div>
-                      {(rp > 0 || ok > 0 || no > 0) && (
-                        <div style={{ fontSize: '8px', fontWeight: 800, marginTop: '1px' }}>
-                          {rp > 0 && <span>🚧{rp} </span>}{ok > 0 && <span>✅{ok} </span>}{no > 0 && <span>❌{no}</span>}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                <div style={cellWrap}>
+                  {semanas.map((s, wi) => {
+                    const esActual = s.numero === semanaActiva;
+                    const rp = restriccionesPorSemana[s.numero] || 0;
+                    const cmp = compromisosPorSemana[s.numero] || [];
+                    const ok = cmp.filter(c => c.cumplido === true).length;
+                    const no = cmp.filter(c => c.cumplido === false).length;
+                    return (
+                      <div key={wi} style={{
+                        flex: 1, minWidth: 0, overflow: 'hidden',
+                        background: esActual ? `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})` : `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
+                        color: '#fff', textAlign: 'center', padding: '5px 2px', borderRight: `1px solid rgba(255,255,255,0.25)`,
+                      }}>
+                        <div style={{ fontSize: '10px', fontWeight: 900, whiteSpace: 'nowrap' }}>{esActual ? '⭐ ' : ''}{s.label}</div>
+                        <div style={{ fontSize: '8.5px', opacity: 0.9, whiteSpace: 'nowrap' }}>{s.dias[0].dia}/{s.dias[0].mes}–{s.dias[6].dia}/{s.dias[6].mes}</div>
+                        {(rp > 0 || ok > 0 || no > 0) && (
+                          <div style={{ fontSize: '8px', fontWeight: 800, marginTop: '1px' }}>
+                            {rp > 0 && <span>🚧{rp} </span>}{ok > 0 && <span>✅{ok} </span>}{no > 0 && <span>❌{no}</span>}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
               {/* fila columnas + día del mes */}
               <div style={{ display: 'flex', borderBottom: `2px solid ${BASE.border}` }}>
-                <div style={{ ...leftColsStyle, zIndex: 4, height: '22px', fontSize: '8.5px', fontWeight: 900, color: BASE.muted, letterSpacing: '0.3px', background: '#f8fafc' }}>
+                <div style={{ ...leftColsStyle, height: '20px', fontSize: '8.5px', fontWeight: 900, color: BASE.muted, letterSpacing: '0.3px', background: '#f8fafc' }}>
                   <span style={{ flex: 1 }}>ACTIVIDAD</span>
-                  <span style={colNum}>MET</span><span style={colNum}>UND</span><span style={colNum}>IP</span><span style={colNum}>HH</span><span style={{ ...colNum, width: '26px', minWidth: '26px' }}>MO</span>
+                  <span style={colNum}>MET</span><span style={colNum}>UND</span><span style={colNum}>IP</span><span style={colNum}>HH</span><span style={{ ...colNum, width: '24px', minWidth: '24px' }}>MO</span>
                 </div>
-                {dias.map((d, i) => (
-                  <div key={i} style={{
-                    width: DAY_W, minWidth: DAY_W, height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '8px', fontWeight: 700, color: d.fecha === hoyISO ? '#fff' : BASE.muted,
-                    background: d.fecha === hoyISO ? BASE.red : d.finde ? '#eef2f6' : '#fbfdff',
-                    borderRight: `1px solid ${BASE.border}`,
-                  }}>{d.dia}</div>
-                ))}
+                <div style={cellWrap}>
+                  {dias.map((d, i) => (
+                    <div key={i} style={{
+                      flex: 1, minWidth: 0, height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '8px', fontWeight: 700, color: d.fecha === hoyISO ? '#fff' : BASE.muted,
+                      background: d.fecha === hoyISO ? BASE.red : d.finde ? '#eef2f6' : '#fbfdff',
+                      borderRight: `1px solid ${BASE.border}`,
+                    }}>{d.dia}</div>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -1819,35 +1872,45 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
                 <div style={{ ...leftColsStyle, background: '#f1f5f9', borderLeft: `4px solid ${f.color}` }}>
                   <span style={{ fontSize: '10.5px', fontWeight: 900, color: BASE.navy, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.seccion}</span>
                 </div>
-                <div style={{ width: dias.length * DAY_W, background: '#f1f5f9' }} />
+                <div style={{ flex: 1, minWidth: 0, background: '#f1f5f9' }} />
               </div>
-            ) : (
-              <div key={f.key} style={{ display: 'flex', borderBottom: `1px solid #eef2f6`, height: ROW_H }}>
-                <div style={leftColsStyle}>
-                  <span style={{ flex: 1, fontSize: '9.5px', color: BASE.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={f.actividad}>
-                    {f.id ? <b style={{ color: f.color }}>{f.id} </b> : ''}{f.actividad}
-                  </span>
-                  <span style={colNum}>{fmtN(f.metrado)}</span>
-                  <span style={{ ...colNum, color: BASE.muted }}>{f.und || ''}</span>
-                  <span style={colNum}>{f.ip != null ? Number(f.ip).toFixed(2) : ''}</span>
-                  <span style={{ ...colNum, fontWeight: 800, color: BASE.navy }}>{f.hh != null ? Math.round(f.hh) : ''}</span>
-                  <span style={{ ...colNum, width: '26px', minWidth: '26px' }}>{f.mo != null ? f.mo : ''}</span>
+            ) : (() => {
+              const actKey = `${f.seccion || 'OTROS'}|${f.actividad}`;
+              return (
+                <div key={f.key} style={{ display: 'flex', borderBottom: `1px solid #eef2f6`, height: ROW_H }}>
+                  <div style={leftColsStyle}>
+                    <span style={{ flex: 1, fontSize: '9.5px', color: BASE.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={f.actividad}>
+                      {f.id ? <b style={{ color: f.color }}>{f.id} </b> : ''}{f.actividad}
+                    </span>
+                    <span style={colNum}>{fmtN(f.metrado)}</span>
+                    <span style={{ ...colNum, color: BASE.muted }}>{f.und || ''}</span>
+                    <span style={colNum}>{f.ip != null ? Number(f.ip).toFixed(2) : ''}</span>
+                    <span style={{ ...colNum, fontWeight: 800, color: BASE.navy }}>{f.hh != null ? Math.round(f.hh) : ''}</span>
+                    <span style={{ ...colNum, width: '24px', minWidth: '24px' }}>{f.mo != null ? f.mo : ''}</span>
+                  </div>
+                  <div style={cellWrap}>
+                    {dias.map((d, i) => {
+                      const base = f.set.has(d.fecha);
+                      const on = estaMarcado(actKey, d.fecha, base);
+                      return (
+                        <div key={i}
+                          onMouseDown={(e) => { e.preventDefault(); const val = !on; pintando.current = { valor: val }; aplicarMarca(actKey, d.fecha, base, val); }}
+                          onMouseEnter={() => { if (pintando.current) aplicarMarca(actKey, d.fecha, base, pintando.current.valor); }}
+                          title={`${f.actividad} · ${d.dia}/${d.mes} — clic para ${on ? 'borrar' : 'pintar'}`}
+                          style={{
+                            flex: 1, minWidth: 0, height: ROW_H, cursor: 'pointer',
+                            borderRight: `1px solid ${d.fecha === hoyISO ? BASE.red : '#eef2f6'}`,
+                            background: d.finde && !on ? '#f6f8fa' : '#fff',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}>
+                          {on && <span style={{ width: '86%', height: '64%', background: f.color, borderRadius: '2px', boxShadow: `0 1px 2px ${f.color}66`, pointerEvents: 'none' }} />}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                {dias.map((d, i) => {
-                  const on = f.set.has(d.fecha);
-                  return (
-                    <div key={i} style={{
-                      width: DAY_W, minWidth: DAY_W, height: ROW_H,
-                      borderRight: `1px solid ${d.fecha === hoyISO ? BASE.red : '#eef2f6'}`,
-                      background: d.finde && !on ? '#f6f8fa' : '#fff',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      {on && <span style={{ width: '88%', height: '68%', background: f.color, borderRadius: '2px', boxShadow: `0 1px 2px ${f.color}66` }} />}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
+              );
+            })())}
 
           </div>
         </div>
@@ -1855,12 +1918,12 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
 
       {/* Leyenda */}
       <div style={{ background: BASE.bgSoft, borderRadius: '10px', padding: '12px 16px', fontSize: '11px', color: BASE.muted, lineHeight: 1.6 }}>
-        <strong style={{ color: BASE.navy }}>📖 Cómo leer:</strong>
+        <strong style={{ color: BASE.navy }}>📖 Cómo usar:</strong>
         <span style={{ marginLeft: '6px' }}>
-          Matriz <strong>actividades × días</strong> tal cual el LAP. Cada <strong>celda de color</strong> = día programado de esa actividad;
-          el color identifica su <strong>frente/sección</strong>. La <strong style={{ color: BASE.gold }}>semana actual</strong> va resaltada en dorado
-          y la columna <strong style={{ color: BASE.red }}>roja</strong> es el día de hoy. Usa <strong>‹ Anterior / Siguiente ›</strong> para
-          recorrer las 28 semanas. 🚧 restricciones · ✅/❌ compromisos cumplidos/no cumplidos de la semana.
+          Matriz <strong>actividades × días</strong> tal cual el LAP. <strong style={{ color: BASE.navy }}>Haz clic</strong> en una celda para
+          pintar/borrar un día programado; <strong>arrastra</strong> para pintar varios o moverlos. Los cambios se <strong>guardan solos</strong> por
+          proyecto (no tocan el LAP oficial). El color identifica el <strong>frente/sección</strong>; la <strong style={{ color: BASE.gold }}>semana actual</strong> va
+          en dorado y la columna <strong style={{ color: BASE.red }}>roja</strong> es hoy. Usa <strong>‹ Anterior / Siguiente ›</strong> para recorrer las 28 semanas.
         </span>
       </div>
     </div>
