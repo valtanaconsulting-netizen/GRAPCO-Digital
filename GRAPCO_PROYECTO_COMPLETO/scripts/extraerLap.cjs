@@ -85,6 +85,7 @@ function parseArchivo(file) {
 
   // Actividades.
   const actividades = [];
+  let seccionActual = null;   // último grupo N1/N2 visto (NAVE, ESTRUCTURAS, …)
   for (let r = hdr+1; r < rows.length; r++) {
     const row = rows[r] || [];
     const A = txt(row[0]), B = txt(row[1]);
@@ -97,18 +98,23 @@ function parseArchivo(file) {
     const esNivel = /^N\d/i.test(A);
     const tipo = (metrado == null && !tieneMarca && esNivel) ? 'grupo'
                : (metrado == null && !tieneMarca) ? 'grupo' : 'tarea';
+    const nivelUp = esNivel ? A.toUpperCase() : null;
+    // Cabecera de sección: los grupos N1/N2 definen el frente/familia (NAVE, ESTRUCTURAS…).
+    if (tipo === 'grupo' && (nivelUp === 'N1' || nivelUp === 'N2') && B) seccionActual = B;
     fechasMarca.sort();
     actividades.push({
       tipo,
-      nivel: esNivel ? A.toUpperCase() : null,
+      nivel: nivelUp,
       id: esNivel ? null : (A || null),
       actividad: B,
+      seccion: seccionActual,
       metrado, und: txt(row[3]) || null,
       sectores: num(row[4]),
       ip: num(row[6]), hh: num(row[7]), mo: num(row[8]),
       fechaIni: fechasMarca[0] || null,
       fechaFin: fechasMarca[fechasMarca.length-1] || null,
       nDias: fechasMarca.length,
+      dias: fechasMarca,
     });
   }
 
@@ -162,14 +168,46 @@ for (const file of archivos) {
 }
 semanas.sort((a,b)=>(a.semana||0)-(b.semana||0));
 
+// ── Plan consolidado por actividad (con días marcados) ──
+// Recorremos las semanas en orden ascendente y nos quedamos con la ÚLTIMA
+// programación conocida de cada actividad (la del LAP más reciente que la incluye).
+// Esto es lo que alimenta el Lookahead 6-sem en la plataforma, tal cual el Excel.
+const porNombre = new Map();
+for (const snap of semanas) {
+  for (const a of (snap.actividades || [])) {
+    if (a.tipo !== 'tarea' || !(a.dias && a.dias.length)) continue;
+    const key = (a.actividad || '').toUpperCase().trim();
+    if (!key) continue;
+    porNombre.set(key, {
+      actividad: a.actividad, nivel: a.nivel || null, id: a.id || null, seccion: a.seccion || null,
+      metrado: a.metrado, und: a.und, sectores: a.sectores,
+      ip: a.ip, hh: a.hh, mo: a.mo,
+      ini: a.fechaIni, fin: a.fechaFin, nDias: a.nDias, dias: a.dias,
+      semanaLAP: snap.semana,
+    });
+  }
+}
+const plan = [...porNombre.values()].sort((x, y) => (x.ini || '').localeCompare(y.ini || ''));
+
+// Para LAP_CREDITEX (snapshots) quitamos 'dias' (pesado); el detalle vive en LAP_PLAN.
+const semanasLite = semanas.map(s => ({
+  ...s, actividades: (s.actividades || []).map(a => { const { dias, ...rest } = a; return rest; }),
+}));
+
+const replacer = (k, v) => (v === null || v === '') ? undefined : v;
 const out = `// src/data/lapCreditex.js
 // LOOKAHEAD PLANNING (LAP) — Last Planner System · Proyecto PTARI CREDITEX.
 // Generado automáticamente desde los ${semanas.length} archivos GP-GCR-FOR-F03_LAP SEMxx
 // (carpeta "04. Gestión Cronograma/5. Last Planner System/1. LAP").
 // NO editar a mano: re-generar con scripts/extraerLap.cjs si cambian los Excel.
-// Cada actividad trae su rango programado (fechaIni→fechaFin) y nº de días marcados.
+//
+//  LAP_CREDITEX → 28 snapshots semanales (actividades con rango fechaIni→fechaFin, sin días).
+//  LAP_PLAN     → plan consolidado por actividad (última programación) CON 'dias' (ISO marcados),
+//                 'seccion' (frente N1/N2) y métricas; alimenta el Lookahead 6-sem.
 
-export const LAP_CREDITEX = ${JSON.stringify(semanas, (k, v) => (v === null || v === '') ? undefined : v)};
+export const LAP_CREDITEX = ${JSON.stringify(semanasLite, replacer)};
+
+export const LAP_PLAN = ${JSON.stringify(plan, replacer)};
 
 export const LAP_SEMANAS = LAP_CREDITEX.map(s => s.semana);
 export default LAP_CREDITEX;

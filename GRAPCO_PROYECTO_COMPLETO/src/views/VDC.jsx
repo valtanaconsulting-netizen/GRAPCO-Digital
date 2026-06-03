@@ -30,6 +30,8 @@ import { FECHA_INICIO_PROYECTO } from '../utils/constants';
 // LPS (Lookahead, Prog. Semanal, Ejecución). Debe coincidir con obtenerSemana para
 // que la "semana actual" y las fechas conversen entre sí y con el LAP oficial.
 const INICIO_PROYECTO = FECHA_INICIO_PROYECTO.toISOString().slice(0, 10);
+// Paleta para colorear secciones/frentes del LAP en la matriz Lookahead.
+const PALETA_LAP = ['#0ea5e9', '#7c3aed', '#0d9488', '#f59e0b', '#e11d48', '#2563eb', '#65a30d', '#c026d3'];
 import Modal from '../components/Modal';
 import PlanDiario from './PlanDiario';
 import TableroLPS from './TableroLPS';
@@ -1637,59 +1639,58 @@ function BotonImprimir({ titulo }) {
 // Muestra ventana móvil de 6 semanas con actividades planificadas
 // ════════════════════════════════════════════════════════════════
 function LookaheadView({ compromisos, restricciones, semanaActiva }) {
-  // Mismo inicio de proyecto que TODA la app (obtenerSemana, tareos, etc.) para que
-  // la "SEMANA ACTUAL" y las fechas conversen con el resto y con el LAP real.
   const INICIO = INICIO_PROYECTO;
-  const semanas = useMemo(
-    () => generarLookahead(semanaActiva, 6, INICIO),
-    [semanaActiva, INICIO]
-  );
+  // Ventana móvil NAVEGABLE de 6 semanas: arranca en la semana actual pero se puede
+  // mover atrás/adelante para revisar (o construir) cualquier tramo del lookahead.
+  const [winStart, setWinStart] = useState(semanaActiva);
+  const semanas = useMemo(() => generarLookahead(winStart, 6, INICIO), [winStart, INICIO]);
 
-  // ── Plan LAP oficial (28 semanas) cargado bajo demanda ──
-  // Consolidamos las 28 semanas en UN plan por actividad: conservamos la última
-  // programación conocida de cada una (la del LAP más reciente que la incluye).
-  // Así el lookahead muestra el plan vigente y "vivo", no un snapshot viejo.
-  const [planLAP, setPlanLAP] = useState([]);
+  // Plan LAP consolidado CON días marcados (carga bajo demanda).
+  const [plan, setPlan] = useState([]);
   useEffect(() => {
     let vivo = true;
-    import('../data/lapCreditex').then(m => {
-      if (!vivo) return;
-      const porNombre = new Map();
-      [...m.LAP_CREDITEX].sort((a, b) => (a.semana || 0) - (b.semana || 0)).forEach(snap => {
-        (snap.actividades || []).forEach(a => {
-          if (a.tipo !== 'tarea' || !a.fechaIni) return;
-          const key = (a.actividad || '').toUpperCase().trim();
-          if (!key) return;
-          porNombre.set(key, {
-            id: 'lap-' + key, actividad: a.actividad, metrado: a.metrado, und: a.und,
-            hh: a.hh, mo: a.mo, ini: a.fechaIni, fin: a.fechaFin, semanaLAP: snap.semana, fuente: 'LAP',
-          });
-        });
-      });
-      setPlanLAP([...porNombre.values()]);
-    }).catch(() => {});
+    import('../data/lapCreditex').then(m => { if (vivo) setPlan(m.LAP_PLAN || []); }).catch(() => {});
     return () => { vivo = false; };
   }, []);
 
-  // Compromisos reales (Firestore PPC) por semana — se respetan tal cual.
+  // Eje de los 42 días de la ventana (6 semanas × 7 días).
+  const dias = useMemo(
+    () => semanas.flatMap((s, wi) => (s.dias || []).map((d, di) => ({
+      fecha: d.fecha, dia: d.dia, mes: d.mes, wi, semNum: s.numero, finde: di >= 5,
+    }))),
+    [semanas]
+  );
+  const winIni = dias[0]?.fecha, winFin = dias[dias.length - 1]?.fecha;
+
+  // Compromisos PPC por semana (contadores ✅/❌ — para que converse con lo real).
   const compromisosPorSemana = useMemo(() => {
     const mapa = {};
     semanas.forEach(s => { mapa[s.numero] = []; });
-    (compromisos || []).forEach(c => {
-      if (mapa[c.semana]) mapa[c.semana].push(c);
-    });
+    (compromisos || []).forEach(c => { if (mapa[c.semana]) mapa[c.semana].push(c); });
     return mapa;
   }, [compromisos, semanas]);
 
-  // Actividades del LAP que caen en cada semana, por solapamiento de fechas reales.
-  const lapPorSemana = useMemo(() => {
-    const mapa = {};
-    semanas.forEach(s => {
-      const ini = s.dias[0]?.fecha, fin = s.dias[6]?.fecha;
-      mapa[s.numero] = (planLAP || []).filter(a => ini && fin && a.ini <= fin && a.fin >= ini);
-    });
-    return mapa;
-  }, [planLAP, semanas]);
+  // Filas de la MATRIZ (tal cual el Excel): actividades del LAP con marcas dentro de
+  // la ventana, agrupadas por sección/frente. Cada actividad lleva su set de días.
+  const filas = useMemo(() => {
+    if (!winIni) return [];
+    const acts = (plan || [])
+      .filter(a => a.ini <= winFin && a.fin >= winIni && (a.dias || []).some(f => f >= winIni && f <= winFin))
+      .map(a => ({ ...a, set: new Set(a.dias) }));
+    const grupos = {};
+    acts.forEach(a => { const k = a.seccion || 'OTROS'; (grupos[k] || (grupos[k] = [])).push(a); });
+    const rows = [];
+    Object.keys(grupos)
+      .sort((A, B) => Math.min(...grupos[A].map(x => Date.parse(x.ini || '2100-01-01')))
+                    - Math.min(...grupos[B].map(x => Date.parse(x.ini || '2100-01-01'))))
+      .forEach((sec, si) => {
+        const color = PALETA_LAP[si % PALETA_LAP.length];
+        rows.push({ tipo: 'sec', seccion: sec, color, key: 'sec-' + sec });
+        grupos[sec].sort((x, y) => (x.ini || '').localeCompare(y.ini || ''))
+          .forEach((a, ai) => rows.push({ tipo: 'act', color, key: sec + '-' + ai, ...a }));
+      });
+    return rows;
+  }, [plan, winIni, winFin]);
 
   // Cuenta restricciones que afectan cada semana
   const restriccionesPorSemana = useMemo(() => {
@@ -1709,149 +1710,157 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
     return mapa;
   }, [restricciones, semanas]);
 
+  // ── Geometría y navegación ──
+  const DAY_W = 18, LEFT_W = 320, ROW_H = 22;
+  const hoy = new Date();
+  const hoyISO = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+  const nAct = filas.filter(f => f.tipo === 'act').length;
+  const totalHH = filas.reduce((s, f) => s + (f.tipo === 'act' ? (f.hh || 0) : 0), 0);
+  const irA = (n) => setWinStart(Math.max(1, Math.min(60, n)));
+  const fmtN = (n) => n == null ? '' : Number(n).toLocaleString('es-PE', { maximumFractionDigits: n < 100 ? 1 : 0 });
+  const navBtn = { padding: '8px 12px', background: BASE.white, color: BASE.navy, border: `1px solid ${BASE.border}`, borderRadius: '8px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' };
+  const leftColsStyle = { width: LEFT_W, minWidth: LEFT_W, display: 'flex', alignItems: 'center', gap: '4px', padding: '0 8px', position: 'sticky', left: 0, zIndex: 2, background: BASE.white, borderRight: `2px solid ${BASE.border}` };
+  const colNum = { width: '34px', minWidth: '34px', textAlign: 'right', fontSize: '9.5px', color: BASE.text, flexShrink: 0 };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      {/* Encabezado */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
         <div>
-          <h3 style={{ fontSize: '16px', fontWeight: '900', color: BASE.navy }}>
-            🔭 LOOKAHEAD · 6 semanas hacia adelante
-          </h3>
+          <h3 style={{ fontSize: '16px', fontWeight: '900', color: BASE.navy }}>🔭 LOOKAHEAD · 6 semanas</h3>
           <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
-            Ventana móvil de planificación alimentada por el <strong style={{ color: BASE.gold }}>LAP oficial</strong> (28 semanas
-            importadas) más los compromisos registrados. Cada actividad debe tener restricciones liberadas
-            antes de bajar al Plan Semanal.
+            Programación intermedia tal cual el <strong style={{ color: BASE.gold }}>LAP oficial</strong> (28 semanas).
+            Cada celda marcada = día programado de la actividad. Navega para ver cualquier tramo.
           </p>
         </div>
         <BotonImprimir titulo="Lookahead 6 semanas" />
       </div>
 
-      {/* Grid de 6 semanas */}
-      <div style={{
-        background: BASE.white, borderRadius: '14px',
-        border: `1px solid ${BASE.border}`, overflow: 'hidden',
-        boxShadow: BASE.shadowSm,
-      }}>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', minWidth: '900px' }}>
-            <thead>
-              <tr>
-                {semanas.map((s, idx) => {
-                  const esActual = idx === 0;
-                  const restriccionesPend = restriccionesPorSemana[s.numero] || 0;
+      {/* Barra de navegación */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', flexWrap: 'wrap', background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', padding: '10px 14px', boxShadow: BASE.shadowSm }}>
+        <button onClick={() => irA(winStart - 6)} style={navBtn} title="6 semanas atrás">«</button>
+        <button onClick={() => irA(winStart - 1)} style={navBtn}>‹ Anterior</button>
+        <div style={{ textAlign: 'center', minWidth: '230px' }}>
+          <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>SEMANAS {winStart} – {winStart + 5}</p>
+          <p style={{ fontSize: '10.5px', color: BASE.muted }}>
+            {dias[0] && `${dias[0].dia}/${dias[0].mes}`} – {dias[41] && `${dias[41].dia}/${dias[41].mes}`}
+            {winStart !== semanaActiva && (
+              <button onClick={() => setWinStart(semanaActiva)} style={{ marginLeft: '8px', padding: '2px 8px', background: BASE.gold, color: BASE.navy, border: 'none', borderRadius: '999px', fontSize: '10px', fontWeight: 800, cursor: 'pointer' }}>⭐ Ir a hoy</button>
+            )}
+          </p>
+        </div>
+        <button onClick={() => irA(winStart + 1)} style={navBtn}>Siguiente ›</button>
+        <button onClick={() => irA(winStart + 6)} style={navBtn} title="6 semanas adelante">»</button>
+      </div>
+
+      <p style={{ fontSize: '11px', color: BASE.muted, textAlign: 'center' }}>
+        <strong style={{ color: BASE.navy }}>{nAct}</strong> actividades programadas · <strong style={{ color: BASE.navy }}>{Math.round(totalHH).toLocaleString('es-PE')}</strong> HH en la ventana
+      </p>
+
+      {/* MATRIZ tipo Excel: actividades × días */}
+      <div style={{ background: BASE.white, borderRadius: '14px', border: `1px solid ${BASE.border}`, overflow: 'hidden', boxShadow: BASE.shadowSm }}>
+        <div style={{ overflow: 'auto', maxHeight: '70vh' }}>
+          <div style={{ minWidth: LEFT_W + dias.length * DAY_W }}>
+
+            {/* CABECERA sticky */}
+            <div style={{ position: 'sticky', top: 0, zIndex: 3 }}>
+              {/* fila SEMANA */}
+              <div style={{ display: 'flex' }}>
+                <div style={{ ...leftColsStyle, zIndex: 4, background: BASE.navy, color: '#fff', borderRight: `2px solid ${BASE.navyDark}`, fontWeight: 900, fontSize: '10px', letterSpacing: '0.5px', padding: '6px 8px' }}>
+                  PROGRAMACIÓN · LAP
+                </div>
+                {semanas.map((s, wi) => {
+                  const esActual = s.numero === semanaActiva;
+                  const rp = restriccionesPorSemana[s.numero] || 0;
+                  const cmp = compromisosPorSemana[s.numero] || [];
+                  const ok = cmp.filter(c => c.cumplido === true).length;
+                  const no = cmp.filter(c => c.cumplido === false).length;
                   return (
-                    <th key={s.numero} style={{
-                      padding: '14px 10px',
-                      background: esActual
-                        ? `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`
-                        : `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
-                      color: '#fff',
-                      borderRight: `1px solid ${BASE.border}`,
-                      textAlign: 'center',
-                      width: `${100 / 6}%`,
+                    <div key={wi} style={{
+                      width: 7 * DAY_W, minWidth: 7 * DAY_W,
+                      background: esActual ? `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})` : `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
+                      color: '#fff', textAlign: 'center', padding: '5px 2px', borderRight: `1px solid rgba(255,255,255,0.25)`,
                     }}>
-                      <p style={{ fontSize: '10px', fontWeight: '800', letterSpacing: '0.6px' }}>
-                        {esActual ? '⭐ SEMANA ACTUAL' : `+ ${idx} sem`}
-                      </p>
-                      <p style={{ fontSize: '18px', fontWeight: '900', marginTop: '4px' }}>
-                        {s.label}
-                      </p>
-                      <p style={{ fontSize: '10px', opacity: 0.85, marginTop: '4px' }}>
-                        {s.dias[0].dia}/{s.dias[0].mes} – {s.dias[6].dia}/{s.dias[6].mes}
-                      </p>
-                      {restriccionesPend > 0 && (
-                        <span style={{
-                          display: 'inline-block', marginTop: '6px',
-                          padding: '2px 8px', background: BASE.red, color: '#fff',
-                          borderRadius: '12px', fontSize: '9px', fontWeight: '900',
-                        }}>
-                          🚧 {restriccionesPend} restric.
-                        </span>
-                      )}
-                    </th>
-                  );
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                {semanas.map(s => {
-                  // Mezcla: compromisos reales (PPC) + actividades planificadas del LAP.
-                  // Así la información "conversa": lo registrado en obra y lo programado
-                  // en el Lookahead oficial conviven en la misma ventana.
-                  const reales = compromisosPorSemana[s.numero] || [];
-                  const lap = lapPorSemana[s.numero] || [];
-                  const lista = [...reales, ...lap];
-                  const cumplidos = lista.filter(c => c.cumplido === true).length;
-                  const incumplidos = lista.filter(c => c.cumplido === false).length;
-                  const nLAP = lap.length;
-                  return (
-                    <td key={s.numero} style={{
-                      padding: '12px',
-                      borderRight: `1px solid ${BASE.border}`,
-                      verticalAlign: 'top',
-                      minHeight: '300px',
-                      background: BASE.white,
-                    }}>
-                      {lista.length === 0 ? (
-                        <p style={{ fontSize: '11px', color: BASE.mutedSoft, fontStyle: 'italic', textAlign: 'center', padding: '20px 0' }}>
-                          Sin actividades en la ventana
-                        </p>
-                      ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                          <p style={{ fontSize: '9px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.5px', marginBottom: '4px' }}>
-                            {lista.length} {lista.length === 1 ? 'actividad' : 'actividades'}
-                            {cumplidos > 0 && <span style={{ color: BASE.greenDark }}> · ✅ {cumplidos}</span>}
-                            {incumplidos > 0 && <span style={{ color: BASE.red }}> · ❌ {incumplidos}</span>}
-                            {nLAP > 0 && <span style={{ color: BASE.gold }}> · 🔭 {nLAP} LAP</span>}
-                          </p>
-                          {lista.slice(0, 7).map(c => {
-                            const esLAP = c.fuente === 'LAP';
-                            const colorBorde = c.cumplido === true ? BASE.green : c.cumplido === false ? BASE.red : BASE.gold;
-                            return (
-                              <div key={c.id} style={{
-                                background: BASE.bgSoft,
-                                borderLeft: `3px solid ${colorBorde}`,
-                                padding: '6px 8px',
-                                borderRadius: '4px',
-                              }}>
-                                <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.text, lineHeight: 1.3 }}>
-                                  {c.actividad}
-                                </p>
-                                <p style={{ fontSize: '9px', color: BASE.muted, marginTop: '2px' }}>
-                                  {esLAP
-                                    ? `📐 ${c.metrado != null ? Number(c.metrado).toLocaleString('es-PE') : '—'}${c.und ? ' ' + c.und : ''}${c.hh != null ? ` · ⏱️ ${Math.round(c.hh)} HH` : ''}`
-                                    : `👷 ${c.capataz} · ${c.metradoComprometido} und`}
-                                </p>
-                              </div>
-                            );
-                          })}
-                          {lista.length > 7 && (
-                            <p style={{ fontSize: '9px', color: BASE.muted, fontStyle: 'italic', textAlign: 'center' }}>
-                              + {lista.length - 7} más...
-                            </p>
-                          )}
+                      <div style={{ fontSize: '10px', fontWeight: 900 }}>{esActual ? '⭐ ' : ''}{s.label}</div>
+                      <div style={{ fontSize: '8.5px', opacity: 0.9 }}>{s.dias[0].dia}/{s.dias[0].mes}–{s.dias[6].dia}/{s.dias[6].mes}</div>
+                      {(rp > 0 || ok > 0 || no > 0) && (
+                        <div style={{ fontSize: '8px', fontWeight: 800, marginTop: '1px' }}>
+                          {rp > 0 && <span>🚧{rp} </span>}{ok > 0 && <span>✅{ok} </span>}{no > 0 && <span>❌{no}</span>}
                         </div>
                       )}
-                    </td>
+                    </div>
                   );
                 })}
-              </tr>
-            </tbody>
-          </table>
+              </div>
+              {/* fila columnas + día del mes */}
+              <div style={{ display: 'flex', borderBottom: `2px solid ${BASE.border}` }}>
+                <div style={{ ...leftColsStyle, zIndex: 4, height: '22px', fontSize: '8.5px', fontWeight: 900, color: BASE.muted, letterSpacing: '0.3px', background: '#f8fafc' }}>
+                  <span style={{ flex: 1 }}>ACTIVIDAD</span>
+                  <span style={colNum}>MET</span><span style={colNum}>UND</span><span style={colNum}>IP</span><span style={colNum}>HH</span><span style={{ ...colNum, width: '26px', minWidth: '26px' }}>MO</span>
+                </div>
+                {dias.map((d, i) => (
+                  <div key={i} style={{
+                    width: DAY_W, minWidth: DAY_W, height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '8px', fontWeight: 700, color: d.fecha === hoyISO ? '#fff' : BASE.muted,
+                    background: d.fecha === hoyISO ? BASE.red : d.finde ? '#eef2f6' : '#fbfdff',
+                    borderRight: `1px solid ${BASE.border}`,
+                  }}>{d.dia}</div>
+                ))}
+              </div>
+            </div>
+
+            {/* FILAS */}
+            {filas.length === 0 ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: BASE.muted, fontSize: '12px' }}>
+                {plan.length === 0 ? 'Cargando programación LAP…' : 'Sin actividades del LAP en esta ventana. Usa ‹ Anterior / Siguiente › para moverte a otro tramo.'}
+              </div>
+            ) : filas.map(f => f.tipo === 'sec' ? (
+              <div key={f.key} style={{ display: 'flex', borderBottom: `1px solid ${BASE.border}` }}>
+                <div style={{ ...leftColsStyle, background: '#f1f5f9', borderLeft: `4px solid ${f.color}` }}>
+                  <span style={{ fontSize: '10.5px', fontWeight: 900, color: BASE.navy, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.seccion}</span>
+                </div>
+                <div style={{ width: dias.length * DAY_W, background: '#f1f5f9' }} />
+              </div>
+            ) : (
+              <div key={f.key} style={{ display: 'flex', borderBottom: `1px solid #eef2f6`, height: ROW_H }}>
+                <div style={leftColsStyle}>
+                  <span style={{ flex: 1, fontSize: '9.5px', color: BASE.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={f.actividad}>
+                    {f.id ? <b style={{ color: f.color }}>{f.id} </b> : ''}{f.actividad}
+                  </span>
+                  <span style={colNum}>{fmtN(f.metrado)}</span>
+                  <span style={{ ...colNum, color: BASE.muted }}>{f.und || ''}</span>
+                  <span style={colNum}>{f.ip != null ? Number(f.ip).toFixed(2) : ''}</span>
+                  <span style={{ ...colNum, fontWeight: 800, color: BASE.navy }}>{f.hh != null ? Math.round(f.hh) : ''}</span>
+                  <span style={{ ...colNum, width: '26px', minWidth: '26px' }}>{f.mo != null ? f.mo : ''}</span>
+                </div>
+                {dias.map((d, i) => {
+                  const on = f.set.has(d.fecha);
+                  return (
+                    <div key={i} style={{
+                      width: DAY_W, minWidth: DAY_W, height: ROW_H,
+                      borderRight: `1px solid ${d.fecha === hoyISO ? BASE.red : '#eef2f6'}`,
+                      background: d.finde && !on ? '#f6f8fa' : '#fff',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {on && <span style={{ width: '88%', height: '68%', background: f.color, borderRadius: '2px', boxShadow: `0 1px 2px ${f.color}66` }} />}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+
+          </div>
         </div>
       </div>
 
       {/* Leyenda */}
-      <div style={{
-        background: BASE.bgSoft, borderRadius: '10px',
-        padding: '12px 16px', fontSize: '11px', color: BASE.muted, lineHeight: 1.6,
-      }}>
-        <strong style={{ color: BASE.navy }}>📖 Cómo leer el Lookahead:</strong>
+      <div style={{ background: BASE.bgSoft, borderRadius: '10px', padding: '12px 16px', fontSize: '11px', color: BASE.muted, lineHeight: 1.6 }}>
+        <strong style={{ color: BASE.navy }}>📖 Cómo leer:</strong>
         <span style={{ marginLeft: '6px' }}>
-          Ventana de 6 semanas con actividades comprometidas. La <strong style={{ color: BASE.gold }}>semana actual</strong> es
-          la que se está ejecutando. Cada barra es una actividad. <strong style={{ color: BASE.greenDark }}>Verde</strong> = cumplido,
-          <strong style={{ color: BASE.red }}> rojo</strong> = no cumplido, <strong style={{ color: BASE.gold }}> amarillo</strong> = programado en el LAP / pendiente (🔭 = del Lookahead oficial).
-          Las restricciones pendientes deben liberarse <strong>antes</strong> de que la actividad llegue a la semana actual.
+          Matriz <strong>actividades × días</strong> tal cual el LAP. Cada <strong>celda de color</strong> = día programado de esa actividad;
+          el color identifica su <strong>frente/sección</strong>. La <strong style={{ color: BASE.gold }}>semana actual</strong> va resaltada en dorado
+          y la columna <strong style={{ color: BASE.red }}>roja</strong> es el día de hoy. Usa <strong>‹ Anterior / Siguiente ›</strong> para
+          recorrer las 28 semanas. 🚧 restricciones · ✅/❌ compromisos cumplidos/no cumplidos de la semana.
         </span>
       </div>
     </div>
