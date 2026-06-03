@@ -121,6 +121,14 @@ export default function VDC({
   const [arBase, setArBase] = useState([]);
   useEffect(() => { let v = true; import('../data/arCreditex').then(m => { if (v) setArBase(m.AR_CREDITEX || []); }).catch(() => {}); return () => { v = false; }; }, []);
   const restricciones = useMemo(() => [...arBase, ...restriccionesFS], [arBase, restriccionesFS]);
+  // PPC oficial del Excel (26 semanas + CNC) → alimenta el Power BI con valores reales.
+  const [ppcOficial, setPpcOficial] = useState({ sem: [], cnc: [], global: null });
+  useEffect(() => { let v = true; import('../data/ppcCreditex').then(m => { if (v) setPpcOficial({ sem: m.PPC_SEMANAL || [], cnc: m.PPC_CNC || [], global: m.PPC_GLOBAL ?? null }); }).catch(() => {}); return () => { v = false; }; }, []);
+  const ppcSemanalReal = useMemo(() => ppcOficial.sem.map(s => ({ semana: s.semana, ppcPct: s.ppc })), [ppcOficial]);
+  const paretoReal = useMemo(() => {
+    const PAL = ['#dc2626', '#ea580c', '#d97706', '#7c3aed', '#2563eb', '#0891b2', '#16a34a', '#64748b'];
+    return { items: ppcOficial.cnc.map((c, i) => ({ label: c.cat, count: c.n, color: PAL[i % PAL.length] })) };
+  }, [ppcOficial]);
   const { proyectoActivoId: proyIdVDC } = useProyectoActivo();
   const [marcasLap, setMarcasLap] = useState({});
   useEffect(() => {
@@ -331,9 +339,9 @@ export default function VDC({
         <TableroLPS
           compromisos={[...compromisos, ...lapProgramado]}
           restricciones={restricciones}
-          ppcSemanal={ppcSemanal}
-          pareto={pareto}
-          diag={diag}
+          ppcSemanal={ppcSemanalReal.length ? ppcSemanalReal : ppcSemanal}
+          pareto={paretoReal.items.length ? paretoReal : pareto}
+          diag={{ ...diag, promedioPct: ppcOficial.global ?? diag.promedioPct }}
           semanaActiva={semanaActiva}
         />
       )}
@@ -2299,6 +2307,8 @@ function PPCLap({ semanaActiva, setSemanaActiva }) {
       s => setDocData(s.exists() ? { marcas: s.data().marcas || {}, cumpl: s.data().cumpl || {} } : { marcas: {}, cumpl: {} }), () => {});
   }, [proyectoActivoId]);
   const { marcas, cumpl } = docData;
+  const [ppcOficial, setPpcOficial] = useState({ sem: [], cnc: [], global: null });
+  useEffect(() => { let v = true; import('../data/ppcCreditex').then(m => { if (v) setPpcOficial({ sem: m.PPC_SEMANAL || [], cnc: m.PPC_CNC || [], global: m.PPC_GLOBAL ?? null }); }).catch(() => {}); return () => { v = false; }; }, []);
   const sem = semanaActiva;
   const cumplKey = (actKey, semana) => `c${lapHash(actKey)}_${semana}`;
   const setEstado = (actKey, semana, val) => {
@@ -2322,23 +2332,33 @@ function PPCLap({ semanaActiva, setSemanaActiva }) {
   const estadoDe = (actKey) => cumpl[cumplKey(actKey, sem)];
   const ok = planif.filter(a => estadoDe(a.actKey) === 'ok').length;
   const no = planif.filter(a => { const c = estadoDe(a.actKey); return c && c !== 'ok'; }).length;
-  const ppc = planif.length ? Math.round(ok / planif.length * 100) : null;
+  const ppcCalc = planif.length ? Math.round(ok / planif.length * 100) : null;
+  const ppcOf = (ppcOficial.sem || []).find(o => o.semana === sem);
+  // PPC de la semana: si el usuario marcó ejecución, se recalcula; si no, el oficial del Excel.
+  const ppc = (ok + no > 0) ? ppcCalc : (ppcOf ? ppcOf.ppc : ppcCalc);
 
+  // Tendencia: PPC oficial del Excel; recalcula la semana donde el usuario marcó.
   const tendencia = useMemo(() => {
-    const semanas = new Set();
-    Object.keys(cumpl).forEach(k => { const m = k.match(/_(\d+)$/); if (m) semanas.add(parseInt(m[1], 10)); });
-    return [...semanas].sort((a, b) => a - b).map(s => {
-      const p = planificadasDe(s);
-      const okk = p.filter(a => cumpl[cumplKey(a.actKey, s)] === 'ok').length;
-      return { s, ppc: p.length ? Math.round(okk / p.length * 100) : 0 };
+    const userSem = {};
+    Object.keys(cumpl).forEach(k => { const m = k.match(/_(\d+)$/); if (m) userSem[+m[1]] = true; });
+    return (ppcOficial.sem || []).map(o => {
+      if (userSem[o.semana]) {
+        const p = planificadasDe(o.semana);
+        const okk = p.filter(a => cumpl[cumplKey(a.actKey, o.semana)] === 'ok').length;
+        const tot = p.filter(a => { const c = cumpl[cumplKey(a.actKey, o.semana)]; return c; }).length;
+        return { s: o.semana, ppc: tot ? Math.round(okk / p.length * 100) : o.ppc };
+      }
+      return { s: o.semana, ppc: o.ppc };
     });
-  }, [cumpl, plan, marcas]);
+  }, [ppcOficial, cumpl, plan, marcas]);
 
+  // CNC: causas oficiales del Excel + las que el usuario marque.
   const cncPareto = useMemo(() => {
     const cont = {};
-    Object.values(cumpl).forEach(v => { if (v && v !== 'ok') cont[v] = (cont[v] || 0) + 1; });
-    return Object.entries(cont).map(([k, n]) => ({ l: (CNC_CATS.find(c => c.k === k) || {}).l || k, n })).sort((a, b) => b.n - a.n);
-  }, [cumpl]);
+    (ppcOficial.cnc || []).forEach(c => { cont[c.cat] = (cont[c.cat] || 0) + c.n; });
+    Object.values(cumpl).forEach(v => { if (v && v !== 'ok') { const l = (CNC_CATS.find(c => c.k === v) || {}).l || v; cont[l] = (cont[l] || 0) + 1; } });
+    return Object.entries(cont).map(([l, n]) => ({ l, n })).sort((a, b) => b.n - a.n);
+  }, [ppcOficial, cumpl]);
   const maxCnc = Math.max(1, ...cncPareto.map(c => c.n));
   const ppcColor = ppc == null ? BASE.muted : ppc >= 80 ? BASE.greenDark : ppc >= 50 ? '#d97706' : BASE.red;
   const card = { background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', padding: '14px 16px', boxShadow: '0 1px 4px rgba(15,23,42,0.04)' };
@@ -2364,13 +2384,18 @@ function PPCLap({ semanaActiva, setSemanaActiva }) {
 
       {/* KPIs */}
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-        <div style={{ ...card, flex: '1 1 160px', textAlign: 'center', borderTop: `4px solid ${ppcColor}` }}>
-          <p style={{ fontSize: '10px', fontWeight: 800, color: BASE.muted, letterSpacing: '0.5px' }}>PPC SEMANA</p>
+        <div style={{ ...card, flex: '1 1 150px', textAlign: 'center', borderTop: `4px solid ${ppcColor}` }}>
+          <p style={{ fontSize: '10px', fontWeight: 800, color: BASE.muted, letterSpacing: '0.5px' }}>PPC SEMANA {sem}</p>
           <p style={{ fontSize: '34px', fontWeight: 900, color: ppcColor, lineHeight: 1.1 }}>{ppc == null ? '—' : ppc + '%'}</p>
-          <p style={{ fontSize: '10px', color: BASE.muted }}>{fechas[0]?.dia}/{fechas[0]?.mes} – {fechas[6]?.dia}/{fechas[6]?.mes}</p>
+          <p style={{ fontSize: '10px', color: BASE.muted }}>{fechas[0]?.dia}/{fechas[0]?.mes} – {fechas[6]?.dia}/{fechas[6]?.mes}{ok + no === 0 && ppcOf ? ' · oficial' : ''}</p>
         </div>
-        {[['Planificadas', planif.length, BASE.navy], ['Cumplidas', ok, BASE.greenDark], ['No cumplidas', no, BASE.red], ['Sin marcar', planif.length - ok - no, BASE.muted]].map(([l, v, c]) => (
-          <div key={l} style={{ ...card, flex: '1 1 120px', textAlign: 'center', borderTop: `4px solid ${c}` }}>
+        <div style={{ ...card, flex: '1 1 130px', textAlign: 'center', borderTop: `4px solid ${BASE.gold}` }}>
+          <p style={{ fontSize: '10px', fontWeight: 800, color: BASE.muted, letterSpacing: '0.5px' }}>PPC GLOBAL</p>
+          <p style={{ fontSize: '30px', fontWeight: 900, color: BASE.navy }}>{ppcOficial.global == null ? '—' : ppcOficial.global + '%'}</p>
+          <p style={{ fontSize: '10px', color: BASE.muted }}>{ppcOficial.sem.length} sem · oficial</p>
+        </div>
+        {[['Cumplidas', (ok + no > 0) ? ok : (ppcOf ? ppcOf.realizadas : 0), BASE.greenDark], ['No cumplidas', (ok + no > 0) ? no : (ppcOf ? ppcOf.noCumplidas : 0), BASE.red], ['Planificadas (LAP)', planif.length, BASE.navy]].map(([l, v, c]) => (
+          <div key={l} style={{ ...card, flex: '1 1 110px', textAlign: 'center', borderTop: `4px solid ${c}` }}>
             <p style={{ fontSize: '10px', fontWeight: 800, color: BASE.muted, letterSpacing: '0.5px' }}>{l.toUpperCase()}</p>
             <p style={{ fontSize: '26px', fontWeight: 900, color: c }}>{v}</p>
           </div>
