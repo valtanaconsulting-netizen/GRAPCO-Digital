@@ -50,7 +50,7 @@ export default function VDC({
 }) {
   const [tab, setTab] = useState('tablero');
   const [compromisos, setCompromisos] = useState([]);
-  const [restricciones, setRestricciones] = useState([]);
+  const [restriccionesFS, setRestriccionesFS] = useState([]);   // de Firestore (VDC_Restricciones)
   const [lecciones, setLecciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [semanaActiva, setSemanaActiva] = useState(obtenerSemana(new Date().toISOString().split('T')[0]));
@@ -89,7 +89,7 @@ export default function VDC({
       return onSnapshot(collection(db, 'VDC_Restricciones'), snap => {
         try {
           const todos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-          setRestricciones(filtrarPorContexto(todos));
+          setRestriccionesFS(filtrarPorContexto(todos));
         }
         catch (e) { console.warn('[snap Restr]', e); }
       });
@@ -116,6 +116,11 @@ export default function VDC({
     return () => { vivo = false; };
   }, []);
   const lapNombres = useMemo(() => [...new Set(lapPlan.map(a => a.actividad).filter(Boolean))], [lapPlan]);
+  // Restricciones del Excel AR (base, 101) fusionadas con las de Firestore → así la
+  // vista AR, los badges del LAP y el Power BI muestran valores reales sin tipear.
+  const [arBase, setArBase] = useState([]);
+  useEffect(() => { let v = true; import('../data/arCreditex').then(m => { if (v) setArBase(m.AR_CREDITEX || []); }).catch(() => {}); return () => { v = false; }; }, []);
+  const restricciones = useMemo(() => [...arBase, ...restriccionesFS], [arBase, restriccionesFS]);
   const { proyectoActivoId: proyIdVDC } = useProyectoActivo();
   const [marcasLap, setMarcasLap] = useState({});
   useEffect(() => {
