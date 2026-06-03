@@ -25,8 +25,8 @@ const FASES = [
     n: '2', fase: 'PROGRAMACIÓN MAESTRA', color: '#0d9488', icon: '🗓️',
     desc: 'Del contrato al programa ejecutable: secuenciado y sectorizado.',
     etapas: [
-      { cod: 'F02', n: 'Cronograma de Obra', d: 'Programa vigente por frente (PTAR + NAVE). Fin de obra 30/06/2026.', estado: 'doc', kpi: 'PTAR Rev.03 · NAVE Rvs4' },
-      { cod: 'F08', n: 'Normal Tecnológica', d: 'Secuencia y precedencias constructivas (qué va antes de qué).', estado: 'doc' },
+      { cod: 'F02', n: 'Cronograma de Obra', d: 'Programa vigente por frente. Gantt NAVE; fin de obra 30/06/2026. (PTAR en MS Project).', estado: 'app', kpi: '53 act · 28 sem', modulo: 'cronogramaobra' },
+      { cod: 'F08', n: 'Normal Tecnológica', d: 'Secuencia y precedencias constructivas (qué va antes de qué).', estado: 'app', kpi: '30 act · 7 fases', modulo: 'normaltec' },
       { cod: 'F09', n: 'Sectorización', d: 'Divide el frente en sectores balanceados (anillos/sectores/paños): base del tren de actividades.', estado: 'app', kpi: '18 sectores · 3 anillos', modulo: 'lps' },
     ],
   },
@@ -34,8 +34,8 @@ const FASES = [
     n: '3', fase: 'PLANIFICACIÓN COLABORATIVA', color: '#7c3aed', icon: '🤝',
     desc: 'Se "jala" desde la entrega: tren de actividades, alternativas e hitos.',
     etapas: [
-      { cod: 'F14', n: 'Pull Planning', d: 'Planificación colaborativa de fases. Cerró el plazo en 4.4 meses (calzadura 2AC/2AM + grúa).', estado: 'doc', kpi: '3 versiones' },
-      { cod: 'F17', n: 'Plan de Vaciado', d: 'Tren de vaciado de concreto por sector (solado → cimentación → muros), con HH/MO meta.', estado: 'doc' },
+      { cod: 'F14', n: 'Pull Planning', d: 'Planificación colaborativa de fases. Cerró el plazo en 4.4 meses (calzadura 2AC/2AM + grúa).', estado: 'app', kpi: '74 act · 4.4 meses', modulo: 'pullplanning' },
+      { cod: 'F17', n: 'Plan de Vaciado', d: 'Tren de vaciado de concreto por sector (solado → cimentación → muros), con HH/MO meta.', estado: 'app', kpi: '39 act · 1.293 HH', modulo: 'planvaciado' },
     ],
   },
   {

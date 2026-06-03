@@ -89,6 +89,10 @@ const PlanMaestroPanel    = lazy(() => import('./views/modulos/planMaestro/PlanM
 const APUsPanel           = lazy(() => import('./views/modulos/apus/APUsPanel'));
 const FlujoPlaneamiento   = lazy(() => import('./views/planeamiento/FlujoPlaneamiento'));
 const MetricasVDC         = lazy(() => import('./views/planeamiento/MetricasVDC'));
+const PullPlanning        = lazy(() => import('./views/planeamiento/PullPlanning'));
+const PlanVaciado         = lazy(() => import('./views/planeamiento/PlanVaciado'));
+const CronogramaObra      = lazy(() => import('./views/planeamiento/CronogramaObra'));
+const NormalTecnologica   = lazy(() => import('./views/planeamiento/NormalTecnologica'));
 const PanelGerencia       = lazy(() => import('./views/modulos/panelGerencia/PanelGerencia'));
 const ProyectosPanel      = lazy(() => import('./views/modulos/proyectos/ProyectosPanel'));
 const PortfolioPanel      = lazy(() => import('./views/modulos/portfolio/PortfolioPanel'));
@@ -104,8 +108,8 @@ const SeguridadPanel      = lazy(() => import('./views/seguridad/SeguridadPanel'
 //   - planeamiento → WBS, APU, Last Planner
 //   - admin      → null = TODOS los módulos (acceso completo)
 // Ingeniería de Producción ahora ABSORBE Planeamiento (Plan Maestro, APU, Last Planner).
-const KEYS_PRODUCCION  = ['flujo', 'dashboard', 'radarProd', 'registro', 'carta', 'warroom', 'planMaestro', 'apus', 'lps', 'vdcmetricas', 'materiales', 'bim'];
-const KEYS_PLANEAMIENTO = ['flujo', 'planMaestro', 'apus', 'lps', 'vdcmetricas'];
+const KEYS_PRODUCCION  = ['flujo', 'dashboard', 'radarProd', 'registro', 'carta', 'warroom', 'planMaestro', 'apus', 'lps', 'vdcmetricas', 'cronogramaobra', 'normaltec', 'pullplanning', 'planvaciado', 'materiales', 'bim'];
+const KEYS_PLANEAMIENTO = ['flujo', 'cronogramaobra', 'normaltec', 'planMaestro', 'apus', 'pullplanning', 'lps', 'planvaciado', 'vdcmetricas'];
 // Devuelve la lista de keys permitidas para el rol, o null si ve todo (admin).
 const keysPermitidasPorRol = (rol) => {
   if (rol === 'admin') return null;            // acceso total
@@ -533,9 +537,13 @@ function AppInner() {
           const ITEMS_FULL = [
             // PLANEAMIENTO — flujo de proceso, WBS, costos unitarios, cronograma (va primero)
             { key: 'flujo',       label: 'Flujo de Planeamiento',   iconName: 'target',      color: '#e5a82f',    group: 'PLANEAMIENTO' },
+            { key: 'cronogramaobra', label: 'Cronograma de Obra',   iconName: 'clock',       color: '#34d399',    group: 'PLANEAMIENTO' },
+            { key: 'normaltec',   label: 'Normal Tecnológica',      iconName: 'layers',      color: '#fb923c',    group: 'PLANEAMIENTO' },
             { key: 'planMaestro', label: 'Plan Maestro (WBS)',      iconName: 'compass',     color: '#60a5fa',    group: 'PLANEAMIENTO' },
             { key: 'apus',        label: 'Análisis de Precios (APU)', iconName: 'coins',     color: '#a5b4fc',    group: 'PLANEAMIENTO' },
+            { key: 'pullplanning', label: 'Pull Planning',          iconName: 'target',      color: '#a78bfa',    group: 'PLANEAMIENTO' },
             { key: 'lps',         label: 'Last Planner System',     iconName: 'target',      color: '#34d399',    group: 'PLANEAMIENTO' },
+            { key: 'planvaciado', label: 'Plan de Vaciado',         iconName: 'target',      color: '#38bdf8',    group: 'PLANEAMIENTO' },
             { key: 'vdcmetricas', label: 'Métricas VDC',            iconName: 'target',      color: '#22d3ee',    group: 'PLANEAMIENTO' },
             // PRODUCCIÓN — control de avance, productividad y carta balance
             { key: 'dashboard',   label: 'Producción',              iconName: 'barChart3',   color: BASE.gold,    group: 'PRODUCCIÓN' },
@@ -827,6 +835,12 @@ function AppInner() {
 
             {/* Planeamiento — Métricas VDC (tablero ejecutivo de objetivos) */}
             {moduloIngeniero === 'vdcmetricas' && <MetricasVDC />}
+
+            {/* Planeamiento — secciones del cronograma importadas del Excel */}
+            {moduloIngeniero === 'cronogramaobra' && <CronogramaObra />}
+            {moduloIngeniero === 'normaltec' && <NormalTecnologica />}
+            {moduloIngeniero === 'pullplanning' && <PullPlanning />}
+            {moduloIngeniero === 'planvaciado' && <PlanVaciado />}
 
             {/* Planeamiento — Last Planner System (módulo lateral propio) */}
             {moduloIngeniero === 'lps' && (
