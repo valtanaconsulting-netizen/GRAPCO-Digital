@@ -163,7 +163,8 @@ export default function CartaBalanceAnalisis() {
   const partidaSel = useMemo(() => (selAct ? partidaDe(selAct, cartas.find((c) => c.actividad === selAct)?.tipoActividad) : null), [selAct, cartas]);
   const semanas = useMemo(() => {
     const g = {};
-    [...new Set(cartas.map((c) => c.fecha).filter(Boolean))].forEach((f) => {
+    const fuente = selAct ? cartas.filter((c) => c.actividad === selAct) : cartas;
+    [...new Set(fuente.map((c) => c.fecha).filter(Boolean))].forEach((f) => {
       const week = semanaProyecto(f);
       const key = `S${String(week).padStart(2, '0')}`;
       (g[key] = g[key] || { key, week, dates: [] }).dates.push(f);
@@ -172,10 +173,17 @@ export default function CartaBalanceAnalisis() {
       const ds = s.dates.slice().sort();
       return { ...s, min: ds[0], max: ds[ds.length - 1], label: `Sem ${s.week} · ${fmtCorta(ds[0])}–${fmtCorta(ds[ds.length - 1])}` };
     }).sort((a, b) => (a.min < b.min ? 1 : -1));
-  }, [cartas]);
+  }, [cartas, selAct]);
   const diasSemana = useMemo(() => {
     const s = semanas.find((x) => x.key === semanaSel);
     return s ? s.dates.slice().sort().map((f) => ({ fecha: f, label: `${diaNombre(f)} ${fmtCorta(f)}` })) : [];
+  }, [semanas, semanaSel]);
+  // Si la semana elegida ya no existe (p. ej. al filtrar por una actividad sin esa
+  // semana), la limpiamos para no mostrar un periodo vacío (0 observaciones).
+  useEffect(() => {
+    if (semanaSel && !semanas.some((s) => s.key === semanaSel)) {
+      setSemanaSel(''); setDiaSel(''); setDesde(''); setHasta('');
+    }
   }, [semanas, semanaSel]);
   const elegirSemana = (key) => {
     setSemanaSel(key); setDiaSel('');
@@ -360,26 +368,30 @@ export default function CartaBalanceAnalisis() {
       {/* GRID DE UNA PANTALLA */}
       <div id="print-area" style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '1.25fr 1fr 1fr', gridTemplateRows: 'auto 1fr 1.05fr', gap: 10 }}>
         {/* Hero — TP + medidores TP/TC/TNC */}
-        <div style={{ gridColumn: '1 / 3', gridRow: '1', background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', borderRadius: 14, padding: '14px 22px', boxShadow: BASE.shadowMd, display: 'flex', alignItems: 'center', gap: 22, minWidth: 0 }}>
-          <div style={{ flexShrink: 0, minWidth: 0, maxWidth: 300 }}>
-            <p style={{ fontSize: 9.5, fontWeight: 900, letterSpacing: 1.4, color: BASE.gold }}>ANÁLISIS DE PRODUCTIVIDAD {chips.length || selAct || desde || filtros.fecha ? '· FILTRADO' : '· GLOBAL'}</p>
-            <p title={selAct || 'Todas las actividades'} style={{ fontSize: 17, fontWeight: 900, lineHeight: 1.2, marginTop: 5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>🏗️ {selAct || 'Todas las actividades'}</p>
-            <p style={{ fontSize: 12.5, fontWeight: 700, opacity: 0.92, marginTop: 4 }}>📅 {fechaLabel}</p>
-            <p style={{ fontSize: 11, opacity: 0.75, marginTop: 6 }}>{k.n} observaciones · meta TP {tpMeta}%</p>
+        <div style={{ gridColumn: '1 / 3', gridRow: '1', background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', borderRadius: 14, padding: '12px 14px', boxShadow: BASE.shadowMd, display: 'flex', alignItems: 'stretch', gap: 12, minWidth: 0 }}>
+          {/* Cuadrito de contexto: actividad + fecha */}
+          <div style={{ flexShrink: 0, minWidth: 0, maxWidth: 280, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '11px 14px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <p style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1.2, color: BASE.gold }}>ANÁLISIS DE PRODUCTIVIDAD {chips.length || selAct || desde || filtros.fecha ? '· FILTRADO' : '· GLOBAL'}</p>
+            <p title={selAct || 'Todas las actividades'} style={{ fontSize: 16, fontWeight: 900, lineHeight: 1.2, marginTop: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>🏗️ {selAct || 'Todas las actividades'}</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 8, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 11, fontWeight: 800, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 999, padding: '3px 10px' }}>📅 {fechaLabel}</span>
+              <span style={{ fontSize: 11, fontWeight: 800, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 999, padding: '3px 10px' }}>👁️ {k.n} obs</span>
+            </div>
+            <p style={{ fontSize: 10, opacity: 0.6, marginTop: 8 }}>Meta TP {tpMeta}%</p>
           </div>
-          <div style={{ width: 1, alignSelf: 'stretch', background: 'rgba(255,255,255,0.14)', margin: '2px 0' }} />
-          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 18, minWidth: 0 }}>
+          {/* Cuadritos de métricas TP / TC / TNC en fila */}
+          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, minWidth: 0 }}>
             {[
-              { l: 'Productivo (TP)', v: k.pTP, c: CB_COL.TP, tx: '#4ade80' },
-              { l: 'Contributorio (TC)', v: k.pTC, c: CB_COL.TC, tx: '#fbbf24' },
-              { l: 'No contrib. (TNC)', v: k.pTNC, c: CB_COL.TNC, tx: '#f87171' },
+              { l: 'Productivo', sub: 'TP', v: k.pTP, c: CB_COL.TP, tx: '#4ade80' },
+              { l: 'Contributorio', sub: 'TC', v: k.pTC, c: CB_COL.TC, tx: '#fbbf24' },
+              { l: 'No contrib.', sub: 'TNC', v: k.pTNC, c: CB_COL.TNC, tx: '#f87171' },
             ].map((s) => (
-              <div key={s.l} style={{ minWidth: 0 }}>
+              <div key={s.sub} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderTop: `3px solid ${s.c}`, borderRadius: 12, padding: '10px 13px', display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 6 }}>
-                  <span style={{ fontSize: 10.5, fontWeight: 700, opacity: 0.85, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.l}</span>
-                  <span style={{ fontSize: 19, fontWeight: 900, color: s.tx, lineHeight: 1 }}>{Math.round(s.v)}%</span>
+                  <span style={{ fontSize: 11, fontWeight: 800, opacity: 0.9, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.l} <span style={{ opacity: 0.55, fontWeight: 700 }}>· {s.sub}</span></span>
+                  <span style={{ fontSize: 23, fontWeight: 900, color: s.tx, lineHeight: 1 }}>{Math.round(s.v)}%</span>
                 </div>
-                <div style={{ height: 7, borderRadius: 999, background: 'rgba(255,255,255,0.14)', marginTop: 6, overflow: 'hidden' }}>
+                <div style={{ height: 7, borderRadius: 999, background: 'rgba(255,255,255,0.14)', marginTop: 9, overflow: 'hidden' }}>
                   <div style={{ width: `${Math.round(s.v)}%`, height: '100%', background: s.c, borderRadius: 999 }} />
                 </div>
               </div>
@@ -410,7 +422,7 @@ export default function CartaBalanceAnalisis() {
           <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={donut} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius="72%" outerRadius="94%" paddingAngle={3} cornerRadius={6} stroke="none" onClick={(d) => setF('categoria', d?.cat)} cursor="pointer">
+                <Pie data={donut} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius="70%" outerRadius="96%" paddingAngle={2} cornerRadius={9} stroke="none" onClick={(d) => setF('categoria', d?.cat)} cursor="pointer">
                   {donut.map((d, i) => <Cell key={i} fill={d.color} opacity={filtros.categoria && filtros.categoria !== d.cat ? 0.3 : 1} />)}
                 </Pie>
                 <Tooltip formatter={(v) => `${v}%`} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
