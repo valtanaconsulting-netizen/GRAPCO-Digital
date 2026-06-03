@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, addDoc } from 'firebase/firestore';
 import { CATALOGO_MASTER } from '../utils/constants';
+import { CATALOGOS, TIPOS } from './ImportarCartaBalance';
 import {
   BASE, LOGO, inp, LETRAS, CB_COL, CARGOS_CORTO,
   DEFAULT_TP, DEFAULT_TC, DEFAULT_TNC
@@ -32,6 +33,7 @@ export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMob
   const [cbTP,              setCbTP]              = useState(DEFAULT_TP);
   const [cbTC,              setCbTC]              = useState(DEFAULT_TC);
   const [cbTNC,             setCbTNC]             = useState(DEFAULT_TNC);
+  const [cbTipo,            setCbTipo]            = useState('');
   const [cbNumMed,          setCbNumMed]          = useState(60);
   const [cbMediciones,      setCbMediciones]      = useState([]);
   const [cbActiveCell,      setCbActiveCell]      = useState(null);
@@ -66,6 +68,20 @@ export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMob
 
   useEffect(() => { setCbSubpartida(''); setCbActividad(''); }, [cbPartida]);
   useEffect(() => { setCbActividad(''); }, [cbSubpartida]);
+
+  // Carga los códigos TP/TC/TNC del catálogo REAL según el tipo de actividad.
+  // (Genérico = vuelve a los códigos por defecto.) El usuario puede editarlos luego.
+  const aplicarTipo = (tipo) => {
+    setCbTipo(tipo);
+    const cat = CATALOGOS[tipo];
+    if (cat) {
+      setCbTP(cat.TP ? [...cat.TP] : []);
+      setCbTC(cat.TC ? [...cat.TC] : []);
+      setCbTNC(cat.TNC ? [...cat.TNC] : []);
+    } else {
+      setCbTP(DEFAULT_TP); setCbTC(DEFAULT_TC); setCbTNC(DEFAULT_TNC);
+    }
+  };
 
   const getCellStyle = cod => {
     if (!cod) return {bg:'#f8fafc',text:'#d1d5db',bord:'#e2e8f0'};
@@ -277,6 +293,14 @@ export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMob
           <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,padding:'18px'}}>
             <h3 style={{fontSize:'14px',fontWeight:'800',color:BASE.navy,borderLeft:`4px solid ${BASE.orange}`,paddingLeft:'12px',marginBottom:'16px'}}>🏗️ ACTIVIDAD A MEDIR</h3>
             <div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
+              <div>
+                <label style={{fontSize:'10px',fontWeight:'700',color:BASE.muted,letterSpacing:'0.6px',display:'block',marginBottom:'5px'}}>📚 TIPO DE ACTIVIDAD · carga los códigos del catálogo real</label>
+                <select value={cbTipo} onChange={e => aplicarTipo(e.target.value)} style={inp()}>
+                  <option value="">— Genérico (códigos por defecto) —</option>
+                  {TIPOS.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+                </select>
+                {cbTipo && <p style={{fontSize:'10.5px',color:'#15803d',marginTop:'6px',fontWeight:'700'}}>✓ Códigos cargados del catálogo «{TIPOS.find(t=>t.id===cbTipo)?.label}». Puedes ajustarlos abajo.</p>}
+              </div>
               {[
                 {l:'PARTIDA',val:cbPartida,set:setCbPartida,opts:Object.keys(CATALOGO_MASTER)},
                 cbPartida && {l:'SUBPARTIDA',val:cbSubpartida,set:setCbSubpartida,opts:Object.keys(CATALOGO_MASTER[cbPartida])},

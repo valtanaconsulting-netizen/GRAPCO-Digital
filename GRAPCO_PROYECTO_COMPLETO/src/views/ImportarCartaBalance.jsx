@@ -16,7 +16,7 @@ import ConfirmModal from '../components/ConfirmModal';
 // Catálogos de códigos POR TIPO de actividad. Cada formato GP-GCR-FOR usa su
 // propia leyenda de códigos (acero ≠ encofrado: p.ej. AP=Aplomado en acero pero
 // AP=Apuntalamiento en encofrado). El importador cambia de catálogo según el tipo.
-const CATALOGOS = {
+export const CATALOGOS = {
   ACERO: {
     TP: [
       { cod: 'ACE', desc: 'Armado de acero' },
@@ -114,7 +114,7 @@ const CATALOGOS = {
     ],
   },
 };
-const TIPOS = [
+export const TIPOS = [
   { id: 'ACERO', label: '🔩 Acero' },
   { id: 'ENCOFRADO', label: '🪵 Encofrado de madera' },
   { id: 'EXCAVACION', label: '⛏️ Excavación localizada' },
