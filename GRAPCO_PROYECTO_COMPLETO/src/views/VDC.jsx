@@ -17,13 +17,12 @@ import { BASE, inp } from '../utils/styles';
 import {
   RNC_CATEGORIAS, RNC_LABELS, RNC_COLORS, RNC_ICONS,
   calcularPPCSemanal, calcularParetoRNC, diagnosticarPPC,
-  compromisoId, obtenerSemana as obtSem,
-  RESTRICCION_TIPOS, RESTRICCION_TIPOS_MAP, RESTRICCION_ESTADOS,
-  calcularEstadoRestriccion, calcularKPIRestricciones,
+  obtenerSemana as obtSem,
+  RESTRICCION_TIPOS, RESTRICCION_TIPOS_MAP,
+  calcularKPIRestricciones,
   sugerirLecciones, calcularKPILecciones,
-  restriccionId, leccionId, diasEntre, fmtFechaCorta,
-  DIAS_SEMANA, NIVELES_PROG, TIPOS_CUMPLIMIENTO,
-  fechasDeSemana, generarLookahead, calcularPPCDiario, construirJerarquiaLPS,
+  fmtFechaCorta,
+  fechasDeSemana, generarLookahead,
 } from '../utils/helpers';
 import { FECHA_INICIO_PROYECTO } from '../utils/constants';
 // Inicio real del proyecto como ISO 'YYYY-MM-DD' — base ÚNICA de semanas en todo el
@@ -56,12 +55,8 @@ export default function VDC({
   const [loading, setLoading] = useState(true);
   const [semanaActiva, setSemanaActiva] = useState(obtenerSemana(new Date().toISOString().split('T')[0]));
 
-  const [modalNuevo, setModalNuevo] = useState(null);
-  const [modalCierre, setModalCierre] = useState(null);
   const [modalRestriccion, setModalRestriccion] = useState(null);   // { editando } | null
   const [modalLeccion, setModalLeccion] = useState(null);           // { editando, fromSugerencia? } | null
-  const [formNuevo, setFormNuevo] = useState({ actividad: '', metradoComprometido: '', observacion: '' });
-  const [formCierre, setFormCierre] = useState({ metradoEjecutado: '', cumplido: true, rncCategoria: '', rncDescripcion: '' });
   const [formRestriccion, setFormRestriccion] = useState({
     actividad: '', tipoFlujo: 'materiales', descripcion: '',
     responsable: '', fechaCompromisoLiberacion: '', impacto: 'medio', estado: 'pendiente',
@@ -201,91 +196,6 @@ export default function VDC({
   const pareto = useMemo(() => calcularParetoRNC(compromisos), [compromisos]);
   const diag = useMemo(() => diagnosticarPPC(ppcSemanal, 4), [ppcSemanal]);
 
-  const compromisosSemanaActiva = useMemo(
-    () => compromisos.filter(c => c.semana === semanaActiva),
-    [compromisos, semanaActiva]
-  );
-
-  const semanasDisponibles = useMemo(() => {
-    const set = new Set();
-    compromisos.forEach(c => set.add(c.semana));
-    set.add(semanaActiva);
-    set.add(semanaActiva + 1);
-    return Array.from(set).sort((a, b) => b - a);
-  }, [compromisos, semanaActiva]);
-
-  // ── CRUD compromisos ──
-  const guardarNuevo = async () => {
-    if (!modalNuevo) return;
-    if (!formNuevo.actividad.trim()) return showToast('Ingresa la actividad', 'warning');
-    const met = parseFloat(formNuevo.metradoComprometido);
-    if (isNaN(met) || met <= 0) return showToast('Metrado inválido', 'warning');
-
-    try {
-      await addDoc(collection(db, 'PPC_Compromisos'), {
-        semana: modalNuevo.semana,
-        capataz: modalNuevo.capataz,
-        actividad: formNuevo.actividad.trim().toUpperCase(),
-        metradoComprometido: met,
-        metradoEjecutado: null,
-        cumplido: null,
-        rncCategoria: null,
-        rncDescripcion: null,
-        observacion: formNuevo.observacion || '',
-        creadoEn: new Date(),
-        cerradoEn: null,
-      });
-      setModalNuevo(null);
-      setFormNuevo({ actividad: '', metradoComprometido: '', observacion: '' });
-      showToast('✅ Compromiso registrado', 'success');
-    } catch (e) {
-      showToast(`Error: ${e.message}`, 'error');
-    }
-  };
-
-  const guardarCierre = async () => {
-    if (!modalCierre) return;
-    const ejec = parseFloat(formCierre.metradoEjecutado);
-    if (isNaN(ejec) || ejec < 0) return showToast('Metrado ejecutado inválido', 'warning');
-    if (!formCierre.cumplido && !formCierre.rncCategoria)
-      return showToast('Selecciona la razón de no cumplimiento', 'warning');
-
-    try {
-      await updateDoc(doc(db, 'PPC_Compromisos', modalCierre.id), {
-        metradoEjecutado: ejec,
-        cumplido: formCierre.cumplido,
-        rncCategoria: formCierre.cumplido ? null : formCierre.rncCategoria,
-        rncDescripcion: formCierre.cumplido ? null : formCierre.rncDescripcion,
-        cerradoEn: new Date(),
-      });
-      setModalCierre(null);
-      setFormCierre({ metradoEjecutado: '', cumplido: true, rncCategoria: '', rncDescripcion: '' });
-      showToast(formCierre.cumplido ? '✅ Cumplido registrado' : '⚠️ Incumplimiento registrado', 'success');
-    } catch (e) {
-      showToast(`Error: ${e.message}`, 'error');
-    }
-  };
-
-  const eliminarCompromiso = async (id) => {
-    if (!window.confirm('¿Eliminar este compromiso? No se puede deshacer.')) return;
-    try {
-      await deleteDoc(doc(db, 'PPC_Compromisos', id));
-      showToast('Compromiso eliminado', 'info');
-    } catch (e) {
-      showToast(`Error: ${e.message}`, 'error');
-    }
-  };
-
-  const abrirCierre = (c) => {
-    setFormCierre({
-      metradoEjecutado: c.metradoEjecutado != null ? String(c.metradoEjecutado) : String(c.metradoComprometido),
-      cumplido: c.cumplido != null ? c.cumplido : true,
-      rncCategoria: c.rncCategoria || '',
-      rncDescripcion: c.rncDescripcion || '',
-    });
-    setModalCierre(c);
-  };
-
   if (loading) {
     return (
       <div style={{ background: BASE.white, borderRadius: '14px', padding: '60px', textAlign: 'center' }}>
@@ -345,9 +255,7 @@ export default function VDC({
             { id: 'restricciones', l: '🚧 Análisis Restricciones', group: 'plan' },
             { id: 'progsem',       l: '📋 Programación Semanal',   group: 'plan' },
             { id: 'plandiario',    l: '📅 Plan Diario',            group: 'exec' },
-            { id: 'ejecdia',       l: '🏗️ Ejecución Diaria',       group: 'exec' },
             { id: 'dashboard',     l: '📊 PPC Dashboard',          group: 'ctrl' },
-            { id: 'rnc',           l: '🔍 RNC Pareto',             group: 'ctrl' },
             { id: 'lecciones',     l: '📚 Lecciones',              group: 'ctrl' },
           ].map(t => {
             const activo = tab === t.id;
@@ -426,39 +334,9 @@ export default function VDC({
         />
       )}
 
-      {/* === EJECUCIÓN DIARIA (replica imagen 1: SI/NO + PPC%) === */}
-      {tab === 'ejecdia' && (
-        <EjecucionDiariaLPS
-          semanaActiva={semanaActiva}
-          setSemanaActiva={setSemanaActiva}
-          semanasDisponibles={semanasDisponibles}
-          compromisos={compromisos}
-        />
-      )}
-
       {/* === DASHBOARD PPC (conectado al LAP) === */}
       {tab === 'dashboard' && (
-        <PPCLap semanaActiva={semanaActiva} setSemanaActiva={setSemanaActiva} semanasMeta={semanasMeta} total={totalSemanas} />
-      )}
-
-      {/* === PLAN SEMANAL === */}
-      {tab === 'plan' && (
-        <PlanSemanal
-          semanaActiva={semanaActiva}
-          setSemanaActiva={setSemanaActiva}
-          semanasDisponibles={semanasDisponibles}
-          compromisosSemana={compromisosSemanaActiva}
-          cuadrillasActivas={cuadrillasActivas}
-          onAgregar={(capataz) => setModalNuevo({ semana: semanaActiva, capataz })}
-          onCerrar={abrirCierre}
-          onEliminar={eliminarCompromiso}
-          isMobile={isMobile}
-        />
-      )}
-
-      {/* === RNC === */}
-      {tab === 'rnc' && (
-        <AnalisisRNC pareto={pareto} compromisos={compromisos} />
+        <PPCLap semanaActiva={semanaActiva} setSemanaActiva={setSemanaActiva} semanasMeta={semanasMeta} total={totalSemanas} restricciones={restricciones} />
       )}
 
       {/* === RESTRICCIONES === */}
@@ -745,153 +623,6 @@ export default function VDC({
         </Modal>
       )}
 
-      {/* MODAL: Nuevo compromiso */}
-      {modalNuevo && (
-        <Modal title={`➕ Nuevo compromiso · Semana ${modalNuevo.semana} · ${modalNuevo.capataz}`}
-          onClose={() => setModalNuevo(null)} maxW="500px">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div>
-              <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>ACTIVIDAD</label>
-              <input type="text" value={formNuevo.actividad}
-                onChange={e => setFormNuevo(p => ({ ...p, actividad: e.target.value }))}
-                placeholder="Ej: ENCOFRADO COLUMNAS EJE A"
-                style={inp({ marginTop: '4px' })} />
-            </div>
-            <div>
-              <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>METRADO COMPROMETIDO</label>
-              <input type="number" step="0.01" min="0" value={formNuevo.metradoComprometido}
-                onChange={e => setFormNuevo(p => ({ ...p, metradoComprometido: e.target.value }))}
-                placeholder="Ej: 25.5" inputMode="decimal"
-                style={inp({ marginTop: '4px', fontSize: '16px', fontWeight: '700' })} />
-            </div>
-            <div>
-              <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>OBSERVACIÓN (opcional)</label>
-              <textarea value={formNuevo.observacion}
-                onChange={e => setFormNuevo(p => ({ ...p, observacion: e.target.value }))}
-                placeholder="Restricciones identificadas, materiales requeridos..."
-                style={inp({ marginTop: '4px', height: '60px', resize: 'vertical' })} />
-            </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={() => setModalNuevo(null)} style={{
-                flex: 1, padding: '12px', background: BASE.bgSoft, border: `1px solid ${BASE.border}`,
-                color: BASE.muted, borderRadius: '10px', fontWeight: '700', cursor: 'pointer', fontSize: '13px',
-              }}>Cancelar</button>
-              <button onClick={guardarNuevo} style={{
-                flex: 2, padding: '12px',
-                background: `linear-gradient(135deg, ${BASE.green}, ${BASE.greenDark})`,
-                color: '#fff', border: 'none', borderRadius: '10px',
-                fontWeight: '800', cursor: 'pointer', fontSize: '13px',
-                boxShadow: `0 4px 12px ${BASE.green}55`,
-              }}>💾 Guardar compromiso</button>
-            </div>
-          </div>
-        </Modal>
-      )}
-
-      {/* MODAL: Cierre de compromiso */}
-      {modalCierre && (
-        <Modal title={`🏁 Cerrar compromiso · ${modalCierre.actividad}`}
-          onClose={() => setModalCierre(null)} maxW="520px">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div style={{ background: BASE.bgSoft, borderRadius: '8px', padding: '10px 14px' }}>
-              <p style={{ fontSize: '11px', color: BASE.muted }}>
-                <strong>Capataz:</strong> {modalCierre.capataz} · <strong>Comprometido:</strong> {modalCierre.metradoComprometido}
-              </p>
-            </div>
-
-            <div>
-              <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>
-                METRADO EJECUTADO REAL
-              </label>
-              <input type="number" step="0.01" min="0" value={formCierre.metradoEjecutado}
-                onChange={e => setFormCierre(p => ({ ...p, metradoEjecutado: e.target.value }))}
-                inputMode="decimal"
-                style={inp({ marginTop: '4px', fontSize: '16px', fontWeight: '700' })} />
-            </div>
-
-            <div>
-              <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', marginBottom: '6px', display: 'block' }}>
-                ¿SE CUMPLIÓ EL COMPROMISO?
-              </label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                <button onClick={() => setFormCierre(p => ({ ...p, cumplido: true }))}
-                  style={{
-                    padding: '14px',
-                    background: formCierre.cumplido ? BASE.green : '#fff',
-                    color: formCierre.cumplido ? '#fff' : BASE.muted,
-                    border: `2px solid ${formCierre.cumplido ? BASE.green : BASE.border}`,
-                    borderRadius: '10px', fontWeight: '800', cursor: 'pointer', fontSize: '13px',
-                  }}>
-                  ✅ Sí, cumplido
-                </button>
-                <button onClick={() => setFormCierre(p => ({ ...p, cumplido: false }))}
-                  style={{
-                    padding: '14px',
-                    background: !formCierre.cumplido ? BASE.red : '#fff',
-                    color: !formCierre.cumplido ? '#fff' : BASE.muted,
-                    border: `2px solid ${!formCierre.cumplido ? BASE.red : BASE.border}`,
-                    borderRadius: '10px', fontWeight: '800', cursor: 'pointer', fontSize: '13px',
-                  }}>
-                  ❌ No cumplido
-                </button>
-              </div>
-            </div>
-
-            {!formCierre.cumplido && (
-              <>
-                <div>
-                  <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', marginBottom: '6px', display: 'block' }}>
-                    RAZÓN DE NO CUMPLIMIENTO (RNC)
-                  </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '6px' }}>
-                    {RNC_CATEGORIAS.map(cat => {
-                      const sel = formCierre.rncCategoria === cat.id;
-                      return (
-                        <button key={cat.id} onClick={() => setFormCierre(p => ({ ...p, rncCategoria: cat.id }))}
-                          style={{
-                            padding: '10px 12px',
-                            background: sel ? cat.color + '22' : '#fff',
-                            color: sel ? cat.color : BASE.muted,
-                            border: `1.5px solid ${sel ? cat.color : BASE.border}`,
-                            borderRadius: '8px', fontWeight: sel ? '800' : '600', fontSize: '11px',
-                            cursor: 'pointer', textAlign: 'left',
-                          }}>
-                          <span style={{ fontSize: '14px', marginRight: '4px' }}>{cat.icon}</span>
-                          {cat.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                <div>
-                  <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>
-                    DESCRIPCIÓN DETALLADA (opcional)
-                  </label>
-                  <textarea value={formCierre.rncDescripcion}
-                    onChange={e => setFormCierre(p => ({ ...p, rncDescripcion: e.target.value }))}
-                    placeholder="Ej: El acero llegó el martes en lugar del lunes por demora del proveedor"
-                    style={inp({ marginTop: '4px', height: '60px', resize: 'vertical', fontSize: '12px' })} />
-                </div>
-              </>
-            )}
-
-            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-              <button onClick={() => setModalCierre(null)} style={{
-                flex: 1, padding: '12px', background: BASE.bgSoft, border: `1px solid ${BASE.border}`,
-                color: BASE.muted, borderRadius: '10px', fontWeight: '700', cursor: 'pointer', fontSize: '13px',
-              }}>Cancelar</button>
-              <button onClick={guardarCierre} style={{
-                flex: 2, padding: '12px',
-                background: formCierre.cumplido
-                  ? `linear-gradient(135deg, ${BASE.green}, ${BASE.greenDark})`
-                  : `linear-gradient(135deg, ${BASE.red}, #b91c1c)`,
-                color: '#fff', border: 'none', borderRadius: '10px',
-                fontWeight: '800', cursor: 'pointer', fontSize: '13px',
-              }}>🏁 Cerrar compromiso</button>
-            </div>
-          </div>
-        </Modal>
-      )}
     </div>
   );
 }
@@ -900,365 +631,6 @@ export default function VDC({
 // SUB-VISTAS
 // ════════════════════════════════════════════════
 
-function DashboardPPC({ ppcSemanal, pareto, diag, compromisos }) {
-  if (ppcSemanal.length === 0) {
-    return (
-      <div style={{
-        background: BASE.white, borderRadius: '14px',
-        border: `2px dashed ${BASE.border}`, padding: '60px 24px', textAlign: 'center',
-      }}>
-        <p style={{ fontSize: '36px', marginBottom: '12px' }}>📊</p>
-        <p style={{ fontSize: '14px', fontWeight: '700', color: BASE.navy }}>
-          Sin compromisos registrados aún
-        </p>
-        <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '6px' }}>
-          Empieza creando un Plan Semanal en la pestaña <strong>📅 Plan Semanal</strong>.
-        </p>
-      </div>
-    );
-  }
-
-  const ultimos8 = ppcSemanal.slice(-8);
-  const cumplidos = compromisos.filter(c => c.cumplido === true).length;
-  const incumplidos = compromisos.filter(c => c.cumplido === false).length;
-  const pendientes = compromisos.filter(c => c.cumplido === null).length;
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      {/* Diagnóstico */}
-      <div style={{
-        background: diag.color + '12',
-        border: `1px solid ${diag.color}55`,
-        borderLeft: `5px solid ${diag.color}`,
-        borderRadius: '12px',
-        padding: '14px 18px',
-      }}>
-        <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.8px', marginBottom: '4px' }}>
-          DIAGNÓSTICO LEAN
-        </p>
-        <p style={{ fontSize: '15px', fontWeight: '800', color: diag.color }}>
-          {diag.diagnostico}
-        </p>
-      </div>
-
-      {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
-        {[
-          { l: 'COMPROMISOS', v: compromisos.length, c: BASE.navy, sub: 'Total registrados' },
-          { l: 'CUMPLIDOS', v: cumplidos, c: BASE.greenDark, sub: `${compromisos.length > 0 ? Math.round((cumplidos / compromisos.length) * 100) : 0}% del total` },
-          { l: 'NO CUMPLIDOS', v: incumplidos, c: BASE.red, sub: 'Generaron RNC' },
-          { l: 'PENDIENTES', v: pendientes, c: BASE.gold, sub: 'Por cerrar' },
-        ].map(k => (
-          <div key={k.l} style={{
-            background: BASE.white, borderRadius: '12px',
-            border: `1px solid ${BASE.border}`, padding: '14px 16px',
-          }}>
-            <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>{k.l}</p>
-            <p style={{ fontSize: '24px', fontWeight: '900', color: k.c, marginTop: '4px' }}>{k.v}</p>
-            <p style={{ fontSize: '10px', color: BASE.muted, marginTop: '2px' }}>{k.sub}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Curva PPC */}
-      <div style={{ background: BASE.white, borderRadius: '14px', border: `1px solid ${BASE.border}`, padding: '18px 22px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-          <div style={{ width: '4px', height: '20px', background: BASE.gold, borderRadius: '2px' }} />
-          <h3 style={{ fontSize: '14px', fontWeight: '800', color: BASE.navy }}>
-            EVOLUCIÓN PPC POR SEMANA
-          </h3>
-        </div>
-        <p style={{ fontSize: '11px', color: BASE.muted, marginLeft: '14px', marginBottom: '14px' }}>
-          % Plan Cumplido. Meta benchmark Lean: ≥ 80%
-        </p>
-        <ResponsiveContainer width="100%" height={280}>
-          <LineChart data={ultimos8} margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-            <XAxis dataKey="semana" tick={{ fontSize: 11, fill: BASE.muted, fontWeight: 600 }}
-              tickFormatter={v => `S${v}`} />
-            <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: BASE.muted }}
-              tickFormatter={v => `${v}%`} />
-            <Tooltip
-              contentStyle={{ background: '#fff', border: `1px solid ${BASE.border}`, borderRadius: '8px', fontSize: '12px' }}
-              formatter={(v, name) => name === 'PPC' ? [`${v}%`, 'PPC'] : [v, name]}
-            />
-            <ReferenceLine y={80} stroke={BASE.green} strokeDasharray="5 3"
-              label={{ value: 'Meta 80%', fill: BASE.green, fontSize: 10, position: 'right' }} />
-            <Line type="monotone" dataKey="ppcPct" name="PPC"
-              stroke={BASE.gold} strokeWidth={3}
-              dot={{ r: 5, fill: BASE.gold, strokeWidth: 2, stroke: '#fff' }}
-              activeDot={{ r: 8, strokeWidth: 2, stroke: '#fff' }} />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Mini Pareto RNC */}
-      {pareto.items.length > 0 && (
-        <div style={{ background: BASE.white, borderRadius: '14px', border: `1px solid ${BASE.border}`, padding: '18px 22px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-            <div style={{ width: '4px', height: '20px', background: BASE.red, borderRadius: '2px' }} />
-            <h3 style={{ fontSize: '14px', fontWeight: '800', color: BASE.navy }}>
-              TOP CAUSAS DE NO CUMPLIMIENTO
-            </h3>
-          </div>
-          <p style={{ fontSize: '11px', color: BASE.muted, marginLeft: '14px', marginBottom: '14px' }}>
-            Top 3 causas representan el {Math.round(pareto.top3Pct)}% del total
-            {pareto.top3Pct > 60 && <span style={{ color: BASE.red, fontWeight: '700' }}> · ⚠️ Concentración alta, atacar estas causas primero</span>}
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {pareto.items.slice(0, 5).map((item, i) => (
-              <div key={item.categoria} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '20px' }}>{item.icon}</span>
-                <span style={{ fontSize: '13px', fontWeight: '700', color: BASE.text, minWidth: '120px' }}>
-                  {item.label}
-                </span>
-                <div style={{ flex: 1, height: '20px', background: BASE.bgSoft, borderRadius: '4px', position: 'relative', overflow: 'hidden' }}>
-                  <div style={{
-                    height: '100%', width: `${item.pct}%`,
-                    background: item.color, borderRadius: '4px',
-                    transition: 'width 0.4s',
-                  }} />
-                </div>
-                <span style={{ fontSize: '12px', fontWeight: '800', color: item.color, minWidth: '50px', textAlign: 'right' }}>
-                  {item.count} · {Math.round(item.pct)}%
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function PlanSemanal({ semanaActiva, setSemanaActiva, semanasDisponibles, compromisosSemana, cuadrillasActivas, onAgregar, onCerrar, onEliminar, isMobile }) {
-  const capataces = Object.keys(cuadrillasActivas || {});
-  const compromisosPorCapataz = useMemo(() => {
-    const m = {};
-    capataces.forEach(c => { m[c] = []; });
-    compromisosSemana.forEach(c => {
-      if (!m[c.capataz]) m[c.capataz] = [];
-      m[c.capataz].push(c);
-    });
-    return m;
-  }, [compromisosSemana, capataces]);
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      {/* Selector de semana */}
-      <div style={{
-        background: BASE.white, borderRadius: '12px',
-        border: `1px solid ${BASE.border}`, padding: '14px 18px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap',
-      }}>
-        <div>
-          <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>SEMANA ACTIVA</p>
-          <p style={{ fontSize: '20px', fontWeight: '900', color: BASE.navy, marginTop: '2px' }}>
-            Semana {semanaActiva}
-          </p>
-        </div>
-        <select value={semanaActiva} onChange={e => setSemanaActiva(parseInt(e.target.value))}
-          style={inp({ width: 'auto', fontSize: '13px', fontWeight: '700' })}>
-          {semanasDisponibles.map(s => <option key={s} value={s}>Semana {s}</option>)}
-        </select>
-      </div>
-
-      {capataces.length === 0 ? (
-        <div style={{ background: BASE.white, borderRadius: '14px', padding: '40px', textAlign: 'center', border: `2px dashed ${BASE.border}` }}>
-          <p style={{ fontSize: '13px', color: BASE.muted }}>No hay cuadrillas registradas. Crea cuadrillas en Personal.</p>
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(380px, 1fr))', gap: '12px' }}>
-          {capataces.map(capataz => {
-            const lista = compromisosPorCapataz[capataz] || [];
-            const cumplidos = lista.filter(c => c.cumplido === true).length;
-            const incumplidos = lista.filter(c => c.cumplido === false).length;
-            const pendientes = lista.filter(c => c.cumplido === null).length;
-            const ppc = (cumplidos + incumplidos) > 0 ? cumplidos / (cumplidos + incumplidos) : null;
-
-            return (
-              <div key={capataz} style={{
-                background: BASE.white, borderRadius: '12px',
-                border: `1px solid ${BASE.border}`, padding: '14px 16px',
-              }}>
-                {/* Header capataz */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', paddingBottom: '10px', borderBottom: `1px solid ${BASE.border}` }}>
-                  <div>
-                    <p style={{ fontSize: '13px', fontWeight: '800', color: BASE.navy }}>{capataz}</p>
-                    <p style={{ fontSize: '10px', color: BASE.muted, marginTop: '2px' }}>
-                      {lista.length} compromiso{lista.length !== 1 ? 's' : ''}
-                      {ppc !== null && <> · PPC <strong style={{ color: ppc >= 0.8 ? BASE.greenDark : BASE.red }}>{Math.round(ppc * 100)}%</strong></>}
-                    </p>
-                  </div>
-                  <button onClick={() => onAgregar(capataz)} style={{
-                    padding: '7px 12px', background: BASE.gold, color: '#fff',
-                    border: 'none', borderRadius: '8px', fontSize: '11px', fontWeight: '800',
-                    cursor: 'pointer', boxShadow: `0 2px 6px ${BASE.gold}55`,
-                  }}>+ Compromiso</button>
-                </div>
-
-                {/* Lista */}
-                {lista.length === 0 ? (
-                  <p style={{ textAlign: 'center', padding: '20px 10px', fontSize: '12px', color: BASE.muted, fontStyle: 'italic' }}>
-                    Sin compromisos para esta semana
-                  </p>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    {lista.map(c => {
-                      const estado = c.cumplido === true ? 'cumplido'
-                        : c.cumplido === false ? 'incumplido' : 'pendiente';
-                      const bgEstado = estado === 'cumplido' ? BASE.greenLight
-                        : estado === 'incumplido' ? BASE.redLight : BASE.bgSoft;
-                      const colorEstado = estado === 'cumplido' ? BASE.greenDark
-                        : estado === 'incumplido' ? BASE.red : BASE.muted;
-                      const iconEstado = estado === 'cumplido' ? '✅' : estado === 'incumplido' ? '❌' : '⏳';
-
-                      return (
-                        <div key={c.id} style={{
-                          background: bgEstado, borderRadius: '8px', padding: '10px 12px',
-                          border: `1px solid ${colorEstado}33`,
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '14px' }}>{iconEstado}</span>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <p style={{ fontSize: '12px', fontWeight: '700', color: BASE.text, lineHeight: 1.3 }}>
-                                {c.actividad}
-                              </p>
-                              <p style={{ fontSize: '10px', color: BASE.muted, marginTop: '2px' }}>
-                                Comp.: <strong>{c.metradoComprometido}</strong>
-                                {c.metradoEjecutado != null && <> · Ejec.: <strong>{c.metradoEjecutado}</strong></>}
-                                {c.rncCategoria && <> · {RNC_ICONS[c.rncCategoria]} {RNC_LABELS[c.rncCategoria]}</>}
-                              </p>
-                            </div>
-                            <div style={{ display: 'flex', gap: '4px' }}>
-                              <button onClick={() => onCerrar(c)} style={{
-                                padding: '5px 10px', background: '#fff', border: `1px solid ${BASE.border}`,
-                                borderRadius: '6px', fontSize: '11px', fontWeight: '700', cursor: 'pointer',
-                                color: BASE.navy,
-                              }}>{estado === 'pendiente' ? 'Cerrar' : 'Editar'}</button>
-                              <button onClick={() => onEliminar(c.id)} style={{
-                                padding: '5px 8px', background: BASE.redLight, border: 'none',
-                                borderRadius: '6px', fontSize: '11px', fontWeight: '700', cursor: 'pointer',
-                                color: BASE.red,
-                              }}>🗑️</button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function AnalisisRNC({ pareto, compromisos }) {
-  if (pareto.items.length === 0) {
-    return (
-      <div style={{
-        background: BASE.white, borderRadius: '14px',
-        border: `2px dashed ${BASE.border}`, padding: '60px 24px', textAlign: 'center',
-      }}>
-        <p style={{ fontSize: '36px', marginBottom: '12px' }}>🎉</p>
-        <p style={{ fontSize: '14px', fontWeight: '700', color: BASE.navy }}>
-          ¡Sin razones de no cumplimiento registradas!
-        </p>
-        <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '6px' }}>
-          Esto es excelente noticia o aún no se han cerrado compromisos no cumplidos.
-        </p>
-      </div>
-    );
-  }
-
-  // Datos para gráfico Pareto (combo)
-  const datosGrafico = pareto.items.map(i => ({
-    label: i.label,
-    count: i.count,
-    acum: Math.round(i.acumPct),
-    color: i.color,
-  }));
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      {/* Pareto chart */}
-      <div style={{ background: BASE.white, borderRadius: '14px', border: `1px solid ${BASE.border}`, padding: '18px 22px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-          <div style={{ width: '4px', height: '20px', background: BASE.red, borderRadius: '2px' }} />
-          <h3 style={{ fontSize: '14px', fontWeight: '800', color: BASE.navy }}>
-            DIAGRAMA DE PARETO · CAUSAS DE NO CUMPLIMIENTO
-          </h3>
-        </div>
-        <p style={{ fontSize: '11px', color: BASE.muted, marginLeft: '14px', marginBottom: '14px' }}>
-          Total {pareto.total} incumplimientos. Top 3 causas: {Math.round(pareto.top3Pct)}% del problema.
-        </p>
-        <ResponsiveContainer width="100%" height={320}>
-          <ComposedChart data={datosGrafico} margin={{ top: 10, right: 40, left: 10, bottom: 60 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-            <XAxis dataKey="label" tick={{ fontSize: 10, fill: BASE.muted, fontWeight: 600 }}
-              angle={-25} textAnchor="end" interval={0} height={80} />
-            <YAxis yAxisId="left" tick={{ fontSize: 11, fill: BASE.muted }}
-              label={{ value: 'Frecuencia', angle: -90, position: 'insideLeft', style: { fontSize: 10, fill: BASE.muted } }} />
-            <YAxis yAxisId="right" orientation="right" domain={[0, 100]}
-              tick={{ fontSize: 11, fill: BASE.muted }} tickFormatter={v => `${v}%`}
-              label={{ value: '% Acum.', angle: 90, position: 'insideRight', style: { fontSize: 10, fill: BASE.muted } }} />
-            <Tooltip contentStyle={{ background: '#fff', border: `1px solid ${BASE.border}`, borderRadius: '8px', fontSize: '12px' }} />
-            <Bar yAxisId="left" dataKey="count" radius={[6, 6, 0, 0]}>
-              {datosGrafico.map((d, i) => <Cell key={i} fill={d.color} />)}
-            </Bar>
-            <Line yAxisId="right" type="monotone" dataKey="acum" name="% Acumulado"
-              stroke={BASE.navy} strokeWidth={3}
-              dot={{ r: 5, fill: BASE.navy, strokeWidth: 2, stroke: '#fff' }} />
-            <ReferenceLine yAxisId="right" y={80} stroke={BASE.green} strokeDasharray="5 3"
-              label={{ value: '80%', fill: BASE.green, fontSize: 10 }} />
-          </ComposedChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Detalle textual de incumplimientos recientes */}
-      <div style={{ background: BASE.white, borderRadius: '14px', border: `1px solid ${BASE.border}`, padding: '18px 22px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-          <div style={{ width: '4px', height: '20px', background: BASE.gold, borderRadius: '2px' }} />
-          <h3 style={{ fontSize: '14px', fontWeight: '800', color: BASE.navy }}>
-            INCUMPLIMIENTOS RECIENTES
-          </h3>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {compromisos
-            .filter(c => c.cumplido === false)
-            .sort((a, b) => (b.cerradoEn?.seconds || 0) - (a.cerradoEn?.seconds || 0))
-            .slice(0, 8)
-            .map(c => (
-              <div key={c.id} style={{ background: BASE.bgSoft, borderRadius: '10px', padding: '10px 14px', borderLeft: `4px solid ${RNC_COLORS[c.rncCategoria] || BASE.muted}` }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '16px' }}>{RNC_ICONS[c.rncCategoria] || '📌'}</span>
-                  <span style={{ fontSize: '11px', fontWeight: '800', color: RNC_COLORS[c.rncCategoria] || BASE.muted, letterSpacing: '0.3px' }}>
-                    {RNC_LABELS[c.rncCategoria] || 'Sin categoría'}
-                  </span>
-                  <span style={{ fontSize: '10px', color: BASE.muted }}>·</span>
-                  <span style={{ fontSize: '11px', color: BASE.muted }}>S{c.semana} · {c.capataz}</span>
-                </div>
-                <p style={{ fontSize: '12px', fontWeight: '700', color: BASE.text }}>
-                  {c.actividad}
-                </p>
-                {c.rncDescripcion && (
-                  <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '3px', fontStyle: 'italic' }}>
-                    "{c.rncDescripcion}"
-                  </p>
-                )}
-              </div>
-            ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ════════════════════════════════════════════════════════════════
 // SUB-COMPONENTE: RESTRICCIONES (Lookahead Lean)
 // ════════════════════════════════════════════════════════════════
 
@@ -2545,8 +1917,11 @@ const CNC_CATS = [
 // Planificado = actividades pintadas en el LAP esa semana; el usuario marca lo
 // ejecutado (✓/✗+causa) y el PPC% se calcula solo. Tendencia + Pareto de CNC.
 // ════════════════════════════════════════════════════════════════
-function PPCLap({ semanaActiva, setSemanaActiva, semanasMeta = {}, total }) {
+function PPCLap({ semanaActiva, setSemanaActiva, semanasMeta = {}, total, restricciones = [] }) {
   const { proyectoActivoId } = useProyectoActivo();
+  // Shielding: restricciones por actividad (conversa con el AR). Una comprometida
+  // con restricción pendiente es "comprometida en riesgo" (no debió entrar a la semana).
+  const restrPorAct = useMemo(() => restriccionesPorActividad(restricciones), [restricciones]);
   const [plan, setPlan] = useState([]);
   useEffect(() => { let v = true; import('../data/lapCreditex').then(m => { if (v) setPlan(m.LAP_PLAN || []); }).catch(() => {}); return () => { v = false; }; }, []);
   const [docData, setDocData] = useState({ marcas: {}, cumpl: {} });
@@ -2579,6 +1954,8 @@ function PPCLap({ semanaActiva, setSemanaActiva, semanasMeta = {}, total }) {
   };
 
   const planif = useMemo(() => planificadasDe(sem), [plan, marcas, sem]);
+  const bloqDe = (a) => readyDe(restrPorAct[(a.actividad || '').toUpperCase().trim()]) === 'bloq';
+  const compBloq = planif.filter(bloqDe).length;   // comprometidas con restricción pendiente
   const estadoDe = (actKey) => cumpl[cumplKey(actKey, sem)];
   const ok = planif.filter(a => estadoDe(a.actKey) === 'ok').length;
   const no = planif.filter(a => { const c = estadoDe(a.actKey); return c && c !== 'ok'; }).length;
@@ -2642,7 +2019,7 @@ function PPCLap({ semanaActiva, setSemanaActiva, semanasMeta = {}, total }) {
           <p style={{ fontSize: '30px', fontWeight: 900, color: BASE.navy }}>{ppcOficial.global == null ? '—' : ppcOficial.global + '%'}</p>
           <p style={{ fontSize: '10px', color: BASE.muted }}>{ppcOficial.sem.length} sem · oficial</p>
         </div>
-        {[['Cumplidas', (ok + no > 0) ? ok : (ppcOf ? ppcOf.realizadas : 0), BASE.greenDark], ['No cumplidas', (ok + no > 0) ? no : (ppcOf ? ppcOf.noCumplidas : 0), BASE.red], ['Planificadas (LAP)', planif.length, BASE.navy]].map(([l, v, c]) => (
+        {[['Cumplidas', (ok + no > 0) ? ok : (ppcOf ? ppcOf.realizadas : 0), BASE.greenDark], ['No cumplidas', (ok + no > 0) ? no : (ppcOf ? ppcOf.noCumplidas : 0), BASE.red], ['Planificadas (LAP)', planif.length, BASE.navy], ['🔒 Comprometidas en riesgo', compBloq, compBloq > 0 ? BASE.red : BASE.greenDark]].map(([l, v, c]) => (
           <div key={l} style={{ ...card, flex: '1 1 110px', textAlign: 'center', borderTop: `4px solid ${c}` }}>
             <p style={{ fontSize: '10px', fontWeight: 800, color: BASE.muted, letterSpacing: '0.5px' }}>{l.toUpperCase()}</p>
             <p style={{ fontSize: '26px', fontWeight: 900, color: c }}>{v}</p>
@@ -2695,13 +2072,19 @@ function PPCLap({ semanaActiva, setSemanaActiva, semanasMeta = {}, total }) {
         ) : planif.map((a, i) => {
           const est = estadoDe(a.actKey);
           const esNo = est && est !== 'ok';
+          const bloq = bloqDe(a);   // comprometida con restricción pendiente (shielding)
+          const rr = restrPorAct[(a.actividad || '').toUpperCase().trim()];
           return (
-            <div key={a.actKey} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 14px', borderBottom: `1px solid #eef2f6`, background: i % 2 ? '#f8fbff' : '#fff' }}>
-              <span style={{ flex: 1, fontSize: '11px', color: BASE.text }}>{a.id ? <b style={{ color: BASE.navy }}>{a.id} </b> : ''}{a.actividad}</span>
+            <div key={a.actKey} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 14px', borderBottom: `1px solid #eef2f6`, background: bloq ? 'rgba(225,29,72,0.05)' : (i % 2 ? '#f8fbff' : '#fff'), borderLeft: `3px solid ${bloq ? BASE.red : 'transparent'}` }}>
+              <span style={{ flex: 1, fontSize: '11px', color: BASE.text }}>
+                {bloq ? <span title={`${rr.pend} restricción(es) pendiente(s) — no debió comprometerse`} style={{ color: BASE.red, fontWeight: 900 }}>🔒{rr.pend} </span> : ''}
+                {a.id ? <b style={{ color: BASE.navy }}>{a.id} </b> : ''}{a.actividad}
+              </span>
               {a.hh != null && <span style={{ fontSize: '9.5px', color: BASE.muted, flexShrink: 0 }}>{Math.round(a.hh)} HH</span>}
               <button onClick={() => setEstado(a.actKey, sem, est === 'ok' ? null : 'ok')}
                 style={{ padding: '4px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: '11px', background: est === 'ok' ? BASE.greenDark : '#e8f5ee', color: est === 'ok' ? '#fff' : BASE.greenDark }}>✓</button>
-              <button onClick={() => setEstado(a.actKey, sem, esNo ? null : 'otros')}
+              <button onClick={() => setEstado(a.actKey, sem, esNo ? null : (bloq ? 'prerequisito' : 'otros'))}
+                title={bloq ? 'Marcar no cumplida (causa sugerida: prerrequisito/restricción)' : 'Marcar no cumplida'}
                 style={{ padding: '4px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: '11px', background: esNo ? BASE.red : '#fdecec', color: esNo ? '#fff' : BASE.red }}>✗</button>
               {esNo && (
                 <select value={est} onChange={e => setEstado(a.actKey, sem, e.target.value)}
@@ -2715,253 +2098,8 @@ function PPCLap({ semanaActiva, setSemanaActiva, semanasMeta = {}, total }) {
       </div>
 
       <p style={{ fontSize: '10.5px', color: BASE.muted, textAlign: 'center', fontStyle: 'italic' }}>
-        PPC = cumplidas / planificadas. El programa viene del LAP (pestaña 🔭 / 📋); aquí solo cierras lo ejecutado. Todo conversa por proyecto.
+        PPC = cumplidas / planificadas. El programa viene del LAP (🔭 / 📋); aquí solo cierras lo ejecutado. Las <strong style={{ color: BASE.red }}>🔒 comprometidas en riesgo</strong> tenían restricciones pendientes (conversa con el AR); al marcarlas ✗ se sugiere la causa <em>prerrequisito</em>. Todo automático por proyecto.
       </p>
-    </div>
-  );
-}
-
-// ════════════════════════════════════════════════════════════════
-// SUB-COMPONENTE: EJECUCIÓN DIARIA (replica imagen 1)
-// Tabla con SI/NO/TIPO + columna PPC% por actividad
-// ════════════════════════════════════════════════════════════════
-function EjecucionDiariaLPS({ semanaActiva, setSemanaActiva, semanasDisponibles, compromisos }) {
-  const dias = useMemo(() => fechasDeSemana(semanaActiva, INICIO_PROYECTO), [semanaActiva]);
-  const compromisosSem = useMemo(
-    () => compromisos.filter(c => c.semana === semanaActiva),
-    [compromisos, semanaActiva]
-  );
-  const jerarquia = useMemo(() => construirJerarquiaLPS(compromisosSem), [compromisosSem]);
-
-  // PPC global de la semana
-  const cumplidos = compromisosSem.filter(c => c.cumplido === true).length;
-  const cerrados = compromisosSem.filter(c => c.cumplido !== null).length;
-  const ppcSemanal = cerrados > 0 ? cumplidos / cerrados : null;
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-        <div>
-          <h3 style={{ fontSize: '16px', fontWeight: '900', color: BASE.navy }}>
-            📅 EJECUCIÓN DIARIA · Semana {semanaActiva}
-          </h3>
-          <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
-            Análisis de cumplimiento día a día con % de avance ejecutado (PPC).
-            {ppcSemanal !== null && (
-              <span style={{ marginLeft: '8px', color: ppcSemanal >= 0.8 ? BASE.greenDark : BASE.red, fontWeight: '900' }}>
-                · PPC semana: {Math.round(ppcSemanal * 100)}%
-              </span>
-            )}
-          </p>
-        </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <select value={semanaActiva} onChange={e => setSemanaActiva(parseInt(e.target.value))}
-            style={inp({ width: 'auto', fontSize: '12px', fontWeight: '700', padding: '8px 12px' })}>
-            {semanasDisponibles.map(s => <option key={s} value={s}>Semana {s}</option>)}
-          </select>
-          <BotonImprimir titulo={`Ejecución Diaria Semana ${semanaActiva}`} />
-        </div>
-      </div>
-
-      <div style={{
-        background: BASE.white, borderRadius: '14px',
-        border: `1px solid ${BASE.border}`, overflow: 'hidden',
-        boxShadow: BASE.shadowSm,
-      }}>
-        {/* Header LPS dorado */}
-        <div style={{
-          background: BASE.lpsHeader, padding: '12px 18px',
-          borderBottom: `2px solid ${BASE.gold}`,
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px',
-        }}>
-          <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy, letterSpacing: '1px' }}>
-            PROGRAMACION DE PLAN CUMPLIDO — Semana {semanaActiva}
-          </p>
-          <p style={{ fontSize: '11px', fontWeight: '700', color: BASE.navy }}>
-            INICIO {dias[0]?.fecha}
-          </p>
-        </div>
-
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', minWidth: '1100px' }}>
-            <thead>
-              <tr style={{ background: BASE.navy }}>
-                <th style={{ padding: '10px 8px', color: '#fff', fontSize: '10px', fontWeight: '900', letterSpacing: '0.4px', textAlign: 'left', width: '60px' }}>COD</th>
-                <th style={{ padding: '10px 8px', color: '#fff', fontSize: '10px', fontWeight: '900', letterSpacing: '0.4px', textAlign: 'left', minWidth: '260px' }}>ACTIVIDAD</th>
-                {dias.map(d => (
-                  <th key={d.id} style={{
-                    padding: '8px 6px', background: BASE.gold, color: '#fff',
-                    fontSize: '10px', fontWeight: '900',
-                    textAlign: 'center', borderLeft: `1px solid ${BASE.goldDark}`,
-                    width: '50px',
-                  }}>
-                    <p>{d.mes}</p>
-                    <p style={{ fontSize: '13px', fontWeight: '900', marginTop: '2px' }}>{d.dia}</p>
-                    <p style={{ fontSize: '9px', opacity: 0.9 }}>{d.label}</p>
-                  </th>
-                ))}
-                {/* Análisis de cumplimiento */}
-                <th colSpan="3" style={{
-                  padding: '8px', background: BASE.lpsHeader, color: BASE.navy,
-                  fontSize: '10px', fontWeight: '900', textAlign: 'center',
-                  borderLeft: `2px solid ${BASE.navy}`,
-                }}>
-                  ANALISIS DE<br/>CUMPLIMIENTO
-                </th>
-                <th style={{
-                  padding: '8px', background: BASE.lpsHeader, color: BASE.navy,
-                  fontSize: '10px', fontWeight: '900', textAlign: 'center',
-                  borderLeft: `1px solid ${BASE.navy}`,
-                  minWidth: '90px',
-                }}>
-                  PORCENTAJE<br/>AVANCE (PPC%)
-                </th>
-              </tr>
-              <tr style={{ background: BASE.bgSoft }}>
-                <th colSpan={2 + dias.length}></th>
-                <th style={{ padding: '6px', fontSize: '9px', fontWeight: '900', color: BASE.greenDark, textAlign: 'center', borderLeft: `2px solid ${BASE.navy}` }}>SI</th>
-                <th style={{ padding: '6px', fontSize: '9px', fontWeight: '900', color: BASE.red, textAlign: 'center' }}>NO</th>
-                <th style={{ padding: '6px', fontSize: '9px', fontWeight: '900', color: BASE.muted, textAlign: 'center' }}>TIPO</th>
-                <th style={{ padding: '6px', borderLeft: `1px solid ${BASE.border}` }}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {jerarquia.length === 0 ? (
-                <tr>
-                  <td colSpan={2 + dias.length + 4} style={{ padding: '40px', textAlign: 'center', color: BASE.muted, fontSize: '12px' }}>
-                    Sin compromisos. Crea uno en <strong>✏️ Compromisos (CRUD)</strong>.
-                  </td>
-                </tr>
-              ) : (
-                jerarquia.map((fila, idx) => {
-                  const colTotal = 2 + dias.length + 4;
-                  if (fila.tipo === 'frente') {
-                    return (
-                      <tr key={`${idx}_${fila.nombre}`} style={{ background: BASE.lpsBand }}>
-                        <td colSpan={colTotal} style={{ padding: '8px 10px', color: BASE.gold, fontSize: '10px', fontWeight: '900', letterSpacing: '0.6px' }}>
-                          [{fila.nivel}] {fila.nombre}
-                        </td>
-                      </tr>
-                    );
-                  }
-                  if (fila.tipo === 'partida') {
-                    return (
-                      <tr key={`${idx}_${fila.nombre}`} style={{ background: BASE.lpsBandSoft }}>
-                        <td colSpan={colTotal} style={{ padding: '6px 14px', color: BASE.navy, fontSize: '10px', fontWeight: '800' }}>
-                          {fila.nivel} · {fila.nombre}
-                        </td>
-                      </tr>
-                    );
-                  }
-                  if (fila.tipo === 'subpartida') {
-                    return (
-                      <tr key={`${idx}_${fila.nombre}`} style={{ background: BASE.lpsBandSofter }}>
-                        <td colSpan={colTotal} style={{ padding: '5px 22px', color: BASE.muted, fontSize: '10px', fontWeight: '700' }}>
-                          {fila.nivel} · {fila.nombre}
-                        </td>
-                      </tr>
-                    );
-                  }
-                  // ACTIVIDAD
-                  const c = fila.actividad;
-                  // Compute PPC ratio: si cumplido, 100%; si no, 0%; si pendiente, --
-                  const ppcRatio = c.cumplido === true ? 1 : c.cumplido === false ? 0 : null;
-                  const ppcColor = ppcRatio === 1 ? BASE.lpsCompletado : ppcRatio === 0 ? BASE.lpsPendiente : BASE.lpsBloqueado;
-                  const ppcText = ppcRatio === 1 ? '100%' : ppcRatio === 0 ? '0%' : '—';
-                  // Si parcial (metradoEjecutado > 0 pero no cumplido), calcular
-                  let ppcShow = ppcText;
-                  if (c.metradoEjecutado != null && c.metradoComprometido > 0) {
-                    const ratio = Math.min(1, c.metradoEjecutado / c.metradoComprometido);
-                    ppcShow = `${Math.round(ratio * 100)}%`;
-                  }
-                  return (
-                    <tr key={c.id} style={{ background: BASE.white, borderBottom: `1px solid ${BASE.borderSoft}` }}>
-                      <td style={{ padding: '8px 8px', fontSize: '9px', fontWeight: '800', color: BASE.gold, fontFamily: 'monospace', textAlign: 'center' }}>
-                        {c.cumplido === true ? '✓' : c.cumplido === false ? '✗' : '○'}
-                      </td>
-                      <td style={{ padding: '8px 14px 8px 28px', fontSize: '11px', color: BASE.text }}>
-                        {c.actividad}
-                      </td>
-                      {dias.map((d, didx) => {
-                        // Marcar día con color según estado del compromiso
-                        const cfg = c.cumplido === true
-                          ? { color: BASE.lpsS0, text: BASE.lpsS0Text, label: 'S0' }
-                          : c.cumplido === false
-                          ? { color: BASE.lpsS2, text: BASE.lpsS2Text, label: 'S2' }
-                          : { color: 'transparent', text: 'transparent', label: '' };
-                        return (
-                          <td key={d.id} style={{
-                            padding: '8px 0', textAlign: 'center',
-                            borderLeft: `1px solid ${BASE.borderSoft}`,
-                            background: cfg.color,
-                            color: cfg.text,
-                            fontSize: '10px', fontWeight: '900',
-                          }}>
-                            {cfg.label}
-                          </td>
-                        );
-                      })}
-                      {/* SI / NO / TIPO */}
-                      <td style={{ padding: '8px 0', textAlign: 'center', borderLeft: `2px solid ${BASE.border}` }}>
-                        {c.cumplido === true && <span style={{ color: BASE.greenDark, fontWeight: '900' }}>X</span>}
-                      </td>
-                      <td style={{ padding: '8px 0', textAlign: 'center' }}>
-                        {c.cumplido === false && <span style={{ color: BASE.red, fontWeight: '900' }}>X</span>}
-                      </td>
-                      <td style={{ padding: '8px 4px', textAlign: 'center', fontSize: '9px', color: BASE.muted, fontWeight: '800' }}>
-                        {c.rncCategoria ? RNC_LABELS[c.rncCategoria]?.slice(0, 4) : ''}
-                      </td>
-                      {/* PPC% */}
-                      <td style={{
-                        padding: '10px 8px', textAlign: 'center',
-                        background: ppcColor,
-                        color: BASE.text,
-                        fontSize: '11px', fontWeight: '900',
-                        borderLeft: `1px solid ${BASE.border}`,
-                      }}>
-                        {ppcShow}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Resumen PPC */}
-      {ppcSemanal !== null && (
-        <div style={{
-          background: BASE.white, borderRadius: '14px',
-          border: `1px solid ${BASE.border}`, padding: '18px 22px',
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px',
-        }}>
-          <div>
-            <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>PPC SEMANA {semanaActiva}</p>
-            <p style={{ fontSize: '36px', fontWeight: '900', color: ppcSemanal >= 0.8 ? BASE.greenDark : ppcSemanal >= 0.65 ? BASE.gold : BASE.red, lineHeight: 1, marginTop: '4px' }}>
-              {Math.round(ppcSemanal * 100)}%
-            </p>
-            <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '6px' }}>
-              {cumplidos} de {cerrados} compromisos
-            </p>
-          </div>
-          <div style={{ borderLeft: `1px solid ${BASE.border}`, paddingLeft: '14px' }}>
-            <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>META BENCHMARK</p>
-            <p style={{ fontSize: '20px', fontWeight: '900', color: BASE.navy, marginTop: '8px' }}>≥ 80%</p>
-            <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '6px' }}>Lean Construction Institute</p>
-          </div>
-          <div style={{ borderLeft: `1px solid ${BASE.border}`, paddingLeft: '14px' }}>
-            <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>DIAGNÓSTICO</p>
-            <p style={{ fontSize: '13px', fontWeight: '800', color: BASE.navy, marginTop: '8px', lineHeight: 1.4 }}>
-              {ppcSemanal >= 0.85 ? '🌟 Excelente. Equipo Lean maduro.' :
-               ppcSemanal >= 0.80 ? '✅ Cumple benchmark LCI.' :
-               ppcSemanal >= 0.65 ? '⚠️ Margen de mejora.' :
-               '🚨 Crítico — variabilidad alta.'}
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
