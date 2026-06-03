@@ -27,7 +27,7 @@ const FASES = [
     etapas: [
       { cod: 'F02', n: 'Cronograma de Obra', d: 'Programa vigente por frente (PTAR + NAVE). Fin de obra 30/06/2026.', estado: 'doc', kpi: 'PTAR Rev.03 · NAVE Rvs4' },
       { cod: 'F08', n: 'Normal Tecnológica', d: 'Secuencia y precedencias constructivas (qué va antes de qué).', estado: 'doc' },
-      { cod: 'F09', n: 'Sectorización', d: 'Divide el frente en sectores balanceados (anillos/sectores/paños): base del tren de actividades.', estado: 'doc' },
+      { cod: 'F09', n: 'Sectorización', d: 'Divide el frente en sectores balanceados (anillos/sectores/paños): base del tren de actividades.', estado: 'app', kpi: '18 sectores · 3 anillos', modulo: 'lps' },
     ],
   },
   {

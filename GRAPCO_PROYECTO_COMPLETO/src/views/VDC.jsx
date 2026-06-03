@@ -36,6 +36,7 @@ import Modal from '../components/Modal';
 import PlanDiario from './PlanDiario';
 import TableroLPS from './TableroLPS';
 import Sectorizacion from './Sectorizacion';
+import SectorizacionTren from './planeamiento/SectorizacionTren';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 
 const obtenerSemana = (f) => obtSem(f, FECHA_INICIO_PROYECTO);
@@ -365,9 +366,9 @@ export default function VDC({
         />
       )}
 
-      {/* === SECTORIZACIÓN · TREN DE ACTIVIDADES === */}
+      {/* === SECTORIZACIÓN · TREN DE ACTIVIDADES (tal cual el Excel F09) === */}
       {tab === 'sectorizacion' && (
-        <Sectorizacion showToast={showToast} />
+        <SectorizacionTren />
       )}
 
       {/* === LAP · LOOKAHEAD 6 SEMANAS === */}
