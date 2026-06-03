@@ -87,6 +87,7 @@ const CalidadPanel        = lazy(() => import('./views/CalidadPanel'));
 const OficinaTecnicaPanel = lazy(() => import('./views/OficinaTecnicaPanel'));
 const PlanMaestroPanel    = lazy(() => import('./views/modulos/planMaestro/PlanMaestroPanel'));
 const APUsPanel           = lazy(() => import('./views/modulos/apus/APUsPanel'));
+const LookaheadLAP        = lazy(() => import('./views/planeamiento/LookaheadLAP'));
 const PanelGerencia       = lazy(() => import('./views/modulos/panelGerencia/PanelGerencia'));
 const ProyectosPanel      = lazy(() => import('./views/modulos/proyectos/ProyectosPanel'));
 const PortfolioPanel      = lazy(() => import('./views/modulos/portfolio/PortfolioPanel'));
@@ -102,8 +103,8 @@ const SeguridadPanel      = lazy(() => import('./views/seguridad/SeguridadPanel'
 //   - planeamiento → WBS, APU, Last Planner
 //   - admin      → null = TODOS los módulos (acceso completo)
 // Ingeniería de Producción ahora ABSORBE Planeamiento (Plan Maestro, APU, Last Planner).
-const KEYS_PRODUCCION  = ['dashboard', 'radarProd', 'registro', 'carta', 'warroom', 'planMaestro', 'apus', 'lps', 'materiales', 'bim'];
-const KEYS_PLANEAMIENTO = ['planMaestro', 'apus', 'lps'];
+const KEYS_PRODUCCION  = ['dashboard', 'radarProd', 'registro', 'carta', 'warroom', 'planMaestro', 'apus', 'lps', 'lookahead', 'materiales', 'bim'];
+const KEYS_PLANEAMIENTO = ['planMaestro', 'apus', 'lps', 'lookahead'];
 // Devuelve la lista de keys permitidas para el rol, o null si ve todo (admin).
 const keysPermitidasPorRol = (rol) => {
   if (rol === 'admin') return null;            // acceso total
@@ -533,6 +534,7 @@ function AppInner() {
             { key: 'planMaestro', label: 'Plan Maestro (WBS)',      iconName: 'compass',     color: '#60a5fa',    group: 'PLANEAMIENTO' },
             { key: 'apus',        label: 'Análisis de Precios (APU)', iconName: 'coins',     color: '#a5b4fc',    group: 'PLANEAMIENTO' },
             { key: 'lps',         label: 'Last Planner System',     iconName: 'target',      color: '#34d399',    group: 'PLANEAMIENTO' },
+            { key: 'lookahead',   label: 'Lookahead (LAP)',         iconName: 'clock',       color: '#2dd4bf',    group: 'PLANEAMIENTO' },
             // PRODUCCIÓN — control de avance, productividad y carta balance
             { key: 'dashboard',   label: 'Producción',              iconName: 'barChart3',   color: BASE.gold,    group: 'PRODUCCIÓN' },
             { key: 'radarProd',   label: 'Radar de Producción',     iconName: 'target',      color: '#f87171',    group: 'PRODUCCIÓN' },
@@ -832,6 +834,9 @@ function AppInner() {
                 soloPlaneamiento
               />
             )}
+
+            {/* Planeamiento — Lookahead Planning (LAP), las 28 semanas del LAP oficial */}
+            {moduloIngeniero === 'lookahead' && <LookaheadLAP />}
 
             {/* Registro de producción (vista capataz para ingeniero) */}
             {moduloIngeniero === 'registro' && (

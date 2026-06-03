@@ -12,7 +12,6 @@ import SustentoMetrados from './oficinatecnica/SustentoMetrados';
 import RegistroFotografico from './oficinatecnica/RegistroFotografico';
 import InformeSustento from './oficinatecnica/InformeSustento';
 import ROPanel from './modulos/resultadoOperativo/ROPanel';
-import LookaheadLAP from './oficinatecnica/LookaheadLAP';
 import BIM from './BIM';
 
 // Definición de grupos en orden de flujo natural
@@ -66,15 +65,6 @@ const GRUPOS = {
       { id: 'ro', l: 'Resultado Operativo', icono: '📈', desc: 'RO · CR · Adicionales · Deductivos' },
     ],
   },
-  programacion: {
-    label: 'PROGRAMACIÓN LPS',
-    icono: '📆',
-    color: '#0d9488',
-    tagline: 'Last Planner System · planificación de obra',
-    items: [
-      { id: 'lap', l: 'Lookahead (LAP)', icono: '📆', desc: 'Programación intermedia · 28 semanas' },
-    ],
-  },
 };
 
 // Mapa inverso: tab → grupo (para auto-seleccionar el grupo al venir por deep-link)
@@ -82,7 +72,6 @@ const TAB_TO_GRUPO = {
   dashboard:  'resumen',
   partidas:   'contrato',
   ro:         'ro',
-  lap:        'programacion',
   rdo:        'ejecucion',
   fotografico:'ejecucion',
   bim:        'ejecucion',
@@ -94,7 +83,6 @@ const TAB_TO_GRUPO = {
 const KEY_TO_TAB_OT = {
   'ot.dashboard':   'dashboard',
   'ot.ro':          'ro',
-  'ot.lap':         'lap',
   'ot.valoriz':     'valoriz',
   'ot.sustento':    'sustento',
   'ot.fotografico': 'fotografico',
@@ -243,7 +231,6 @@ export default function OficinaTecnicaPanel({ showToast, tabExterna, onChangeTab
         <div className="anim-fade-in" key={tab}>
           {tab === 'dashboard'   && <DashboardOT showToast={showToast} />}
           {tab === 'ro'          && <ROPanel showToast={showToast} />}
-          {tab === 'lap'         && <LookaheadLAP />}
           {tab === 'valoriz'     && <ValorizacionesView showToast={showToast} />}
           {tab === 'sustento'    && <SustentoMetrados showToast={showToast} />}
           {tab === 'fotografico' && <RegistroFotografico />}
