@@ -108,13 +108,39 @@ export default function VDC({
     } catch (e) { console.warn('[useEffect Lecc]', e); }
   }, [filtrarPorContexto]);
 
-  // Nombres de actividades del LAP (para enlazar restricciones a actividades reales).
-  const [lapNombres, setLapNombres] = useState([]);
+  // Plan LAP + marcas del usuario → para enlazar restricciones y alimentar el Power BI.
+  const [lapPlan, setLapPlan] = useState([]);
   useEffect(() => {
     let vivo = true;
-    import('../data/lapCreditex').then(m => { if (vivo) setLapNombres([...new Set((m.LAP_PLAN || []).map(a => a.actividad).filter(Boolean))]); }).catch(() => {});
+    import('../data/lapCreditex').then(m => { if (vivo) setLapPlan(m.LAP_PLAN || []); }).catch(() => {});
     return () => { vivo = false; };
   }, []);
+  const lapNombres = useMemo(() => [...new Set(lapPlan.map(a => a.actividad).filter(Boolean))], [lapPlan]);
+  const { proyectoActivoId: proyIdVDC } = useProyectoActivo();
+  const [marcasLap, setMarcasLap] = useState({});
+  useEffect(() => {
+    if (!proyIdVDC) return;
+    return onSnapshot(doc(db, 'Configuracion', `lapMarcas_${proyIdVDC}`),
+      snap => setMarcasLap((snap.exists() && snap.data().marcas) || {}), () => {});
+  }, [proyIdVDC]);
+  // "Compromisos" sintéticos derivados del LAP pintado (actividad × semana) → el
+  // Power BI y los paneles muestran el programa real del LAP, no quedan en 0.
+  const lapProgramado = useMemo(() => {
+    if (!lapPlan.length) return [];
+    const vistos = new Set(); const out = [];
+    for (const a of lapPlan) {
+      const actKey = `${a.seccion || 'OTROS'}|${a.actividad}`;
+      for (const f of (a.dias || [])) {
+        const ov = marcasLap[lapClave(actKey, f)];
+        if (ov === false) continue;                 // día borrado por el usuario
+        const sem = obtenerSemana(f);
+        const id = a.actividad + '|' + sem;
+        if (vistos.has(id)) continue; vistos.add(id);
+        out.push({ id: 'lp-' + id, actividad: a.actividad, partida: a.seccion || 'PROYECTO', semana: sem, cumplido: null, fuente: 'LAP', metradoComprometido: Math.round(a.hh || 0) });
+      }
+    }
+    return out;
+  }, [lapPlan, marcasLap]);
 
   // ── Datos calculados ──
   const ppcSemanal = useMemo(() => calcularPPCSemanal(compromisos), [compromisos]);
@@ -298,7 +324,7 @@ export default function VDC({
       {/* === TABLERO CONSOLIDADO (Power BI) === */}
       {tab === 'tablero' && (
         <TableroLPS
-          compromisos={compromisos}
+          compromisos={[...compromisos, ...lapProgramado]}
           restricciones={restricciones}
           ppcSemanal={ppcSemanal}
           pareto={pareto}
@@ -1646,6 +1672,11 @@ function BotonImprimir({ titulo }) {
 }
 
 // ════════════════════════════════════════════════════════════════
+// Clave estable de una marca (actividad+fecha) — compartida por el hook editor
+// y la lectura del Power BI, para que ambos hablen el mismo idioma.
+const lapHash = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; return h.toString(36); };
+const lapClave = (actKey, fecha) => `a${lapHash(actKey)}_${fecha.replace(/-/g, '')}`;
+
 // HOOK COMPARTIDO: marcas editables del LAP (pintar/borrar días)
 // Persiste overrides del usuario en Configuracion/lapMarcas_<proyecto>. Lo usan
 // TANTO el Lookahead como la Programación Semanal → comparten las mismas marcas
@@ -1673,8 +1704,7 @@ function useLapMarcas() {
     }, () => {});
   }, [proyectoActivoId]);
 
-  const hashStr = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; return h.toString(36); };
-  const claveMarca = (actKey, fecha) => `a${hashStr(actKey)}_${fecha.replace(/-/g, '')}`;
+  const claveMarca = lapClave;
   const guardar = () => {
     if (!proyectoActivoId) return;
     clearTimeout(saveTimer.current);
