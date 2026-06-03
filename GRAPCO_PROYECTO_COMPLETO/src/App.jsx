@@ -89,7 +89,6 @@ const OficinaTecnicaPanel = lazy(() => import('./views/OficinaTecnicaPanel'));
 const PlanMaestroPanel    = lazy(() => import('./views/modulos/planMaestro/PlanMaestroPanel'));
 const APUsPanel           = lazy(() => import('./views/modulos/apus/APUsPanel'));
 const FlujoPlaneamiento   = lazy(() => import('./views/planeamiento/FlujoPlaneamiento'));
-const MetricasVDC         = lazy(() => import('./views/planeamiento/MetricasVDC'));
 const PullPlanning        = lazy(() => import('./views/planeamiento/PullPlanning'));
 const PlanVaciado         = lazy(() => import('./views/planeamiento/PlanVaciado'));
 const CronogramaObra      = lazy(() => import('./views/planeamiento/CronogramaObra'));
@@ -109,8 +108,8 @@ const SeguridadPanel      = lazy(() => import('./views/seguridad/SeguridadPanel'
 //   - planeamiento → WBS, APU, Last Planner
 //   - admin      → null = TODOS los módulos (acceso completo)
 // Ingeniería de Producción ahora ABSORBE Planeamiento (Plan Maestro, APU, Last Planner).
-const KEYS_PRODUCCION  = ['flujo', 'dashboard', 'radarProd', 'registro', 'carta', 'warroom', 'planMaestro', 'apus', 'lps', 'vdcmetricas', 'cronogramaobra', 'normaltec', 'pullplanning', 'planvaciado', 'materiales', 'bim'];
-const KEYS_PLANEAMIENTO = ['flujo', 'cronogramaobra', 'normaltec', 'planMaestro', 'apus', 'pullplanning', 'lps', 'planvaciado', 'vdcmetricas'];
+const KEYS_PRODUCCION  = ['flujo', 'dashboard', 'radarProd', 'registro', 'carta', 'warroom', 'planMaestro', 'apus', 'lps', 'cronogramaobra', 'normaltec', 'pullplanning', 'planvaciado', 'materiales', 'bim'];
+const KEYS_PLANEAMIENTO = ['flujo', 'cronogramaobra', 'normaltec', 'planMaestro', 'apus', 'pullplanning', 'lps', 'planvaciado'];
 // Devuelve la lista de keys permitidas para el rol, o null si ve todo (admin).
 const keysPermitidasPorRol = (rol) => {
   if (rol === 'admin') return null;            // acceso total
@@ -568,7 +567,6 @@ function AppInner() {
             { key: 'pullplanning', label: 'Pull Planning',          iconName: 'target',      color: '#a78bfa',    group: 'PLANEAMIENTO' },
             { key: 'lps',         label: 'Last Planner System',     iconName: 'target',      color: '#34d399',    group: 'PLANEAMIENTO' },
             { key: 'planvaciado', label: 'Plan de Vaciado',         iconName: 'target',      color: '#38bdf8',    group: 'PLANEAMIENTO' },
-            { key: 'vdcmetricas', label: 'Métricas VDC',            iconName: 'target',      color: '#22d3ee',    group: 'PLANEAMIENTO' },
             // PRODUCCIÓN — control de avance, productividad y carta balance
             { key: 'dashboard',   label: 'Producción',              iconName: 'barChart3',   color: BASE.gold,    group: 'PRODUCCIÓN' },
             { key: 'radarProd',   label: 'Radar de Producción',     iconName: 'target',      color: '#f87171',    group: 'PRODUCCIÓN' },
@@ -858,7 +856,6 @@ function AppInner() {
             )}
 
             {/* Planeamiento — Métricas VDC (tablero ejecutivo de objetivos) */}
-            {moduloIngeniero === 'vdcmetricas' && <MetricasVDC />}
 
             {/* Planeamiento — secciones del cronograma importadas del Excel */}
             {moduloIngeniero === 'cronogramaobra' && <CronogramaObra />}
