@@ -176,6 +176,26 @@ export default function VDC({
     return out;
   }, [lapPlan, marcasLap]);
 
+  // Total de semanas del proyecto (rango del filtro de semana unificado).
+  const totalSemanas = useMemo(
+    () => Math.max(35, semanaActiva + 5, ...(ppcOficial.sem || []).map(s => s.semana || 0)),
+    [ppcOficial, semanaActiva]
+  );
+  // Metadata por semana → alimenta el filtro unificado SemanaNav (PPC oficial,
+  // restricciones pendientes y actividades programadas del LAP por semana).
+  const semanasMeta = useMemo(() => {
+    const m = {};
+    const get = (n) => (m[n] || (m[n] = { ppc: null, restr: 0, prog: 0 }));
+    (ppcOficial.sem || []).forEach(s => { if (s.semana) get(s.semana).ppc = s.ppc; });
+    (restricciones || []).forEach(r => {
+      if (r.estado === 'liberada' || !r.fechaCompromisoLiberacion) return;
+      const w = obtenerSemana(r.fechaCompromisoLiberacion);
+      if (w >= 1) get(w).restr += 1;
+    });
+    lapProgramado.forEach(c => { if (c.semana) get(c.semana).prog += 1; });
+    return m;
+  }, [ppcOficial, restricciones, lapProgramado]);
+
   // ── Datos calculados ──
   const ppcSemanal = useMemo(() => calcularPPCSemanal(compromisos), [compromisos]);
   const pareto = useMemo(() => calcularParetoRNC(compromisos), [compromisos]);
@@ -377,6 +397,9 @@ export default function VDC({
           compromisos={compromisos}
           restricciones={restricciones}
           semanaActiva={semanaActiva}
+          setSemanaActiva={setSemanaActiva}
+          semanasMeta={semanasMeta}
+          total={totalSemanas}
         />
       )}
 
@@ -385,8 +408,9 @@ export default function VDC({
         <ProgramacionSemanalLPS
           semanaActiva={semanaActiva}
           setSemanaActiva={setSemanaActiva}
-          semanasDisponibles={semanasDisponibles}
           restricciones={restricciones}
+          semanasMeta={semanasMeta}
+          total={totalSemanas}
         />
       )}
 
@@ -414,7 +438,7 @@ export default function VDC({
 
       {/* === DASHBOARD PPC (conectado al LAP) === */}
       {tab === 'dashboard' && (
-        <PPCLap semanaActiva={semanaActiva} setSemanaActiva={setSemanaActiva} />
+        <PPCLap semanaActiva={semanaActiva} setSemanaActiva={setSemanaActiva} semanasMeta={semanasMeta} total={totalSemanas} />
       )}
 
       {/* === PLAN SEMANAL === */}
@@ -442,6 +466,10 @@ export default function VDC({
         <Restricciones
           restricciones={restricciones}
           onEstado={cambiarEstadoAR}
+          semanaActiva={semanaActiva}
+          setSemanaActiva={setSemanaActiva}
+          semanasMeta={semanasMeta}
+          total={totalSemanas}
           onNueva={() => {
             setFormRestriccion({
               actividad: '', tipoFlujo: 'materiales', descripcion: '',
@@ -1245,10 +1273,12 @@ const arTd = { padding: '5px 8px', borderRight: '1px solid #eef2f6', verticalAli
 const arTdC = { ...arTd, textAlign: 'center', whiteSpace: 'nowrap' };
 const arMini = (bg, col) => ({ padding: '4px 7px', background: bg, color: col, border: 'none', borderRadius: '5px', fontSize: '10px', cursor: 'pointer', marginLeft: '3px' });
 
-function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar, onEstado }) {
+function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar, onEstado, semanaActiva, setSemanaActiva, semanasMeta = {}, total = 35 }) {
   const kpi = useMemo(() => calcularKPIRestricciones(restricciones), [restricciones]);
   const [filtroEstado, setFiltroEstado] = useState('todos');
-  const [semanaAR, setSemanaAR] = useState(() => obtenerSemana(new Date().toISOString().slice(0, 10)));
+  // Semana COMPARTIDA con LAP / PS / PPC (un único filtro para todo el LPS).
+  const semanaAR = semanaActiva;
+  const setSemanaAR = setSemanaActiva;
   const [verTodasSem, setVerTodasSem] = useState(false);
   const reqW = (r) => r.fechaCompromisoLiberacion ? obtenerSemana(r.fechaCompromisoLiberacion) : null;
   const cicloEstado = { pendiente: 'en_proceso', en_proceso: 'liberada', liberada: 'pendiente', vencida: 'liberada' };
@@ -1259,15 +1289,6 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
     if (!verTodasSem) lista = lista.filter(r => reqW(r) === semanaAR);
     return lista;
   }, [kpi.lista, filtroEstado, semanaAR, verTodasSem]);
-
-  // Al cargar, posiciónate en la semana con más restricciones (no en una vacía).
-  const [autoSem, setAutoSem] = useState(false);
-  useEffect(() => {
-    if (autoSem || !kpi.lista.length) return;
-    const c = {}; kpi.lista.forEach(r => { const w = reqW(r); if (w) c[w] = (c[w] || 0) + 1; });
-    const ent = Object.entries(c);
-    if (ent.length) { setSemanaAR(parseInt(ent.sort((a, b) => b[1] - a[1])[0][0], 10)); setAutoSem(true); }
-  }, [kpi.lista, autoSem]);
 
   const ordenadas = useMemo(
     () => [...filtradas].sort((a, b) => {
@@ -1303,6 +1324,15 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      {/* Cabecera + FILTRO DE SEMANA UNIFICADO (compartido con LAP, PS y PPC) */}
+      <div>
+        <h3 style={{ fontSize: '16px', fontWeight: 900, color: BASE.navy }}>🚧 ANÁLISIS DE RESTRICCIONES · {verTodasSem ? 'Todas las semanas' : `Semana ${semanaAR}`}</h3>
+        <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
+          Restricciones por <strong>semana de compromiso</strong> (Excel F04). Elige la semana abajo o «Todas»; el badge 🚧 de la tira marca dónde hay pendientes. Clic en ESTADO para cambiarlo.
+        </p>
+      </div>
+      <SemanaNav semana={semanaAR} setSemana={setSemanaAR} total={total} meta={semanasMeta} titulo="análisis de restricciones" allowTodas todas={verTodasSem} setTodas={setVerTodasSem} />
+
       {/* KPIs Restricciones */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
         {[
@@ -1398,16 +1428,7 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
       {/* TABLA AR — tal cual el Excel (Frente·Actividad·Restricción·Tipo·RESP·Fechas·Estado), premium */}
       <div style={{ background: BASE.white, borderRadius: '14px', border: `1px solid ${BASE.border}`, overflow: 'hidden', boxShadow: BASE.shadowSm }}>
         <div style={{ background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', padding: '11px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', borderBottom: `3px solid ${BASE.gold}` }}>
-          <span style={{ fontSize: '13px', fontWeight: 900, letterSpacing: '0.6px' }}>📋 ANÁLISIS DE RESTRICCIONES</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-            <button onClick={() => { setVerTodasSem(false); setSemanaAR(Math.max(1, semanaAR - 1)); }} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)', borderRadius: '7px', padding: '5px 9px', fontWeight: 800, cursor: 'pointer' }}>‹</button>
-            <select value={verTodasSem ? 'todas' : semanaAR} onChange={e => { if (e.target.value === 'todas') setVerTodasSem(true); else { setVerTodasSem(false); setSemanaAR(parseInt(e.target.value, 10)); } }}
-              style={{ background: '#fff', color: BASE.navy, border: 'none', borderRadius: '7px', padding: '6px 10px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}>
-              <option value="todas">Todas las semanas</option>
-              {Array.from({ length: Math.max(semGrid.length, 1) }, (_, i) => i + 1).map(s => <option key={s} value={s}>Semana {s}</option>)}
-            </select>
-            <button onClick={() => { setVerTodasSem(false); setSemanaAR(semanaAR + 1); }} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)', borderRadius: '7px', padding: '5px 9px', fontWeight: 800, cursor: 'pointer' }}>›</button>
-          </div>
+          <span style={{ fontSize: '13px', fontWeight: 900, letterSpacing: '0.6px' }}>📋 {verTodasSem ? 'TODAS LAS SEMANAS' : `SEMANA ${semanaAR}`}</span>
           <span style={{ fontSize: '11px', opacity: 0.85 }}>{ordenadas.length} de {kpi.total} · clic en ESTADO para cambiarlo</span>
         </div>
         {grupos.length === 0 ? (
@@ -1886,14 +1907,96 @@ function SelectorColor({ colorPaint, setColorPaint }) {
 }
 
 // ════════════════════════════════════════════════════════════════
+// FILTRO DE SEMANA UNIFICADO (premium, formato GRAPCO)
+// Una sola "semana activa" para TODO el Last Planner: LAP, Análisis de
+// Restricciones, Programación Semanal y PPC. Cambiarla aquí mueve todas las
+// vistas a la vez ("conversan"). La tira muestra, por semana, su PPC, las
+// restricciones pendientes 🚧 y las actividades programadas del LAP ●.
+// ════════════════════════════════════════════════════════════════
+const ppcTone = (p) => p == null ? BASE.mutedSoft : p >= 80 ? BASE.green : p >= 50 ? BASE.gold : BASE.red;
+
+function SemanaNav({ semana, setSemana, total = 35, meta = {}, titulo = '', rango = 1, allowTodas = false, todas = false, setTodas }) {
+  const activeRef = useRef(null);
+  useEffect(() => {
+    const el = activeRef.current;
+    if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }, [semana, todas]);
+
+  const hoySem = obtenerSemana(new Date().toISOString().slice(0, 10));
+  const semanas = useMemo(() => Array.from({ length: Math.max(total, 1) }, (_, i) => {
+    const n = i + 1; const d = fechasDeSemana(n, INICIO_PROYECTO);
+    return { n, ini: d[0], fin: d[6] };
+  }), [total]);
+  const ir = (n) => { if (isNaN(n)) return; if (setTodas) setTodas(false); setSemana(Math.max(1, Math.min(total, n))); };
+  const finVentana = Math.min(total, semana + rango - 1);
+  const navBtn = { width: 32, height: 32, borderRadius: '9px', border: '1px solid rgba(255,255,255,0.18)', background: 'rgba(255,255,255,0.08)', color: '#fff', fontSize: '15px', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 };
+
+  return (
+    <div style={{ background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, borderRadius: '14px', padding: '11px 14px', boxShadow: BASE.shadowMd, borderTop: `3px solid ${BASE.gold}` }}>
+      {/* Controles */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '9px' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '7px', marginRight: 'auto' }}>
+          <span style={{ fontSize: '10px', fontWeight: 900, color: BASE.gold, letterSpacing: '1px' }}>📅 SEMANA</span>
+          <span style={{ fontSize: '15px', fontWeight: 900, color: '#fff' }}>{todas ? 'Todas' : semana}{!todas && rango > 1 ? ` – ${finVentana}` : ''}</span>
+          {titulo && <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.55)', fontWeight: 700 }}>· {titulo}</span>}
+        </div>
+        {allowTodas && (
+          <button onClick={() => setTodas && setTodas(!todas)} style={{ padding: '6px 12px', borderRadius: '999px', border: `1px solid ${todas ? BASE.gold : 'rgba(255,255,255,0.2)'}`, background: todas ? BASE.gold : 'rgba(255,255,255,0.06)', color: todas ? BASE.navy : '#fff', fontSize: '10.5px', fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>{todas ? '✓ ' : ''}Todas</button>
+        )}
+        <button onClick={() => ir(semana - 1)} style={navBtn} title="Semana anterior">‹</button>
+        <select value={todas ? '' : semana} onChange={e => ir(parseInt(e.target.value, 10))}
+          style={{ background: '#fff', color: BASE.navy, border: 'none', borderRadius: '9px', padding: '7px 10px', fontSize: '12px', fontWeight: 900, cursor: 'pointer' }}>
+          {todas && <option value="">— Todas —</option>}
+          {semanas.map(s => <option key={s.n} value={s.n}>Semana {s.n}{rango > 1 ? `–${Math.min(total, s.n + rango - 1)}` : ''}</option>)}
+        </select>
+        <button onClick={() => ir(semana + 1)} style={navBtn} title="Semana siguiente">›</button>
+        {!todas && semana !== hoySem && (
+          <button onClick={() => ir(hoySem)} style={{ padding: '7px 12px', borderRadius: '9px', border: 'none', background: BASE.gold, color: BASE.navy, fontSize: '10.5px', fontWeight: 900, cursor: 'pointer', whiteSpace: 'nowrap' }}>⭐ Hoy</button>
+        )}
+      </div>
+
+      {/* Tira de semanas con indicadores (PPC / restricciones / programadas) */}
+      <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '3px', scrollbarWidth: 'thin' }}>
+        {semanas.map(s => {
+          const m = meta[s.n] || {};
+          const activa = !todas && s.n === semana;
+          const enVentana = !todas && rango > 1 && s.n > semana && s.n <= finVentana;
+          const esHoy = s.n === hoySem;
+          const tono = ppcTone(m.ppc);
+          return (
+            <button key={s.n} ref={activa ? activeRef : null} onClick={() => ir(s.n)}
+              title={`Semana ${s.n}${m.ppc != null ? ` · PPC ${m.ppc}%` : ''}${m.restr ? ` · ${m.restr} restricción(es)` : ''}${m.prog ? ` · ${m.prog} programadas` : ''}`}
+              style={{
+                flexShrink: 0, width: 74, borderRadius: '10px', cursor: 'pointer', padding: '6px 4px 5px', position: 'relative', transition: '0.15s',
+                border: activa ? `2px solid ${BASE.gold}` : enVentana ? `1px solid ${BASE.gold}66` : '1px solid rgba(255,255,255,0.1)',
+                background: activa ? `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})` : enVentana ? 'rgba(229,168,47,0.14)' : 'rgba(255,255,255,0.05)',
+                color: activa ? BASE.navy : '#fff',
+              }}>
+              {esHoy && <span style={{ position: 'absolute', top: 2, right: 4, fontSize: '8px' }}>⭐</span>}
+              <div style={{ fontSize: '13px', fontWeight: 900, lineHeight: 1 }}>S{s.n}</div>
+              <div style={{ fontSize: '7.5px', opacity: activa ? 0.8 : 0.6, marginTop: '2px', whiteSpace: 'nowrap' }}>{s.ini ? `${s.ini.dia}/${s.ini.mes}` : ''}</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px', marginTop: '3px', minHeight: 11 }}>
+                {m.ppc != null && <span title={`PPC ${m.ppc}%`} style={{ width: 16, height: 5, borderRadius: 3, background: tono, display: 'inline-block' }} />}
+                {m.restr > 0 && <span style={{ fontSize: '8px', fontWeight: 900, color: activa ? BASE.redDark : '#fda4af' }}>🚧{m.restr}</span>}
+                {m.prog > 0 && !m.restr && m.ppc == null && <span style={{ fontSize: '8px', fontWeight: 900, opacity: 0.8 }}>●{m.prog}</span>}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
 // SUB-COMPONENTE: LAP · LOOKAHEAD A 6 SEMANAS
 // Muestra ventana móvil de 6 semanas con actividades planificadas
 // ════════════════════════════════════════════════════════════════
-function LookaheadView({ compromisos, restricciones, semanaActiva }) {
+function LookaheadView({ compromisos, restricciones, semanaActiva, setSemanaActiva, semanasMeta = {}, total = 35 }) {
   const INICIO = INICIO_PROYECTO;
-  // Ventana móvil NAVEGABLE de 6 semanas: arranca en la semana actual pero se puede
-  // mover atrás/adelante para revisar (o construir) cualquier tramo del lookahead.
-  const [winStart, setWinStart] = useState(semanaActiva);
+  // Ventana de 6 semanas anclada en la SEMANA ACTIVA compartida: el filtro de
+  // semana unificado la mueve y, con ella, la Prog. Semanal, el AR y el PPC.
+  const winStart = semanaActiva;
   const semanas = useMemo(() => generarLookahead(winStart, 6, INICIO), [winStart, INICIO]);
 
   // Plan LAP consolidado CON días marcados (carga bajo demanda).
@@ -1969,9 +2072,7 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
   const actMarcadaEnVentana = (a) => dias.some(d => estado(a.actKey, d.fecha, a.set.has(d.fecha)).on);
   const nAct = todasActs.filter(actMarcadaEnVentana).length;
   const totalHH = todasActs.filter(actMarcadaEnVentana).reduce((s, a) => s + (a.hh || 0), 0);
-  const irA = (n) => setWinStart(Math.max(1, Math.min(60, n)));
   const fmtN = (n) => n == null ? '' : Number(n).toLocaleString('es-PE', { maximumFractionDigits: n < 100 ? 1 : 0 });
-  const navBtn = { padding: '8px 12px', background: BASE.white, color: BASE.navy, border: `1px solid ${BASE.border}`, borderRadius: '8px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' };
   const leftColsStyle = { width: LEFT_W, minWidth: LEFT_W, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px', padding: '0 8px', background: BASE.white, borderRight: `2px solid ${BASE.border}` };
   const cellWrap = { flex: 1, minWidth: 0, display: 'flex' };
   const colNum = { width: '36px', minWidth: '36px', textAlign: 'right', fontSize: '9.5px', color: BASE.text, flexShrink: 0, borderLeft: `1px solid #e5ebf1`, padding: '0 4px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' };
@@ -1983,29 +2084,15 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
         <div>
           <h3 style={{ fontSize: '16px', fontWeight: '900', color: BASE.navy }}>🔭 LOOKAHEAD · 6 semanas</h3>
           <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
-            Programación intermedia tal cual el <strong style={{ color: BASE.gold }}>LAP oficial</strong>. Se ven TODAS las partidas;
-            <strong> clic/arrastra</strong> para pintar, <strong>Ctrl+Z</strong> deshace y puedes elegir el color.
+            Ventana de 6 semanas desde la <strong style={{ color: BASE.gold }}>semana activa</strong> (la misma que mueve Prog. Semanal, AR y PPC).
+            <strong> Clic/arrastra</strong> para pintar, <strong>Ctrl+Z</strong> deshace y eliges el color.
           </p>
         </div>
         <BotonImprimir titulo="Lookahead 6 semanas" />
       </div>
 
-      {/* Barra de navegación */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', flexWrap: 'wrap', background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', padding: '10px 14px', boxShadow: BASE.shadowSm }}>
-        <button onClick={() => irA(winStart - 6)} style={navBtn} title="6 semanas atrás">«</button>
-        <button onClick={() => irA(winStart - 1)} style={navBtn}>‹ Anterior</button>
-        <div style={{ textAlign: 'center', minWidth: '230px' }}>
-          <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>SEMANAS {winStart} – {winStart + 5}</p>
-          <p style={{ fontSize: '10.5px', color: BASE.muted }}>
-            {dias[0] && `${dias[0].dia}/${dias[0].mes}`} – {dias[41] && `${dias[41].dia}/${dias[41].mes}`}
-            {winStart !== semanaActiva && (
-              <button onClick={() => setWinStart(semanaActiva)} style={{ marginLeft: '8px', padding: '2px 8px', background: BASE.gold, color: BASE.navy, border: 'none', borderRadius: '999px', fontSize: '10px', fontWeight: 800, cursor: 'pointer' }}>⭐ Ir a hoy</button>
-            )}
-          </p>
-        </div>
-        <button onClick={() => irA(winStart + 1)} style={navBtn}>Siguiente ›</button>
-        <button onClick={() => irA(winStart + 6)} style={navBtn} title="6 semanas adelante">»</button>
-      </div>
+      {/* FILTRO DE SEMANA UNIFICADO — mueve también PS, AR y PPC */}
+      <SemanaNav semana={semanaActiva} setSemana={setSemanaActiva} total={total} meta={semanasMeta} titulo="ventana de 6 semanas" rango={6} />
 
       {/* Herramientas: ocultar no programadas + color de pintado + conteo */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
@@ -2041,8 +2128,9 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
                     const ok = cmp.filter(c => c.cumplido === true).length;
                     const no = cmp.filter(c => c.cumplido === false).length;
                     return (
-                      <div key={wi} style={{
-                        flex: 1, minWidth: 0, overflow: 'hidden',
+                      <div key={wi} onClick={() => setSemanaActiva && setSemanaActiva(s.numero)}
+                        title={`Fijar Semana ${s.numero} como activa (afecta PS, AR y PPC)`} style={{
+                        flex: 1, minWidth: 0, overflow: 'hidden', cursor: 'pointer',
                         background: esActual ? `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})` : `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
                         color: '#fff', textAlign: 'center', padding: '5px 2px', borderRight: `1px solid rgba(255,255,255,0.25)`,
                       }}>
@@ -2163,7 +2251,7 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
 // SUB-COMPONENTE: PROGRAMACIÓN SEMANAL (formato Excel S0/S1/S2)
 // Replica imagen 2: tabla con días lun-dom + colores S0/S1/S2 por celda
 // ════════════════════════════════════════════════════════════════
-function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, semanasDisponibles, restricciones = [] }) {
+function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, restricciones = [], semanasMeta = {}, total = 35 }) {
   const dias = useMemo(() => fechasDeSemana(semanaActiva, INICIO_PROYECTO), [semanaActiva]);
   const semIni = dias[0]?.fecha, semFin = dias[6]?.fecha;
   const restrPorAct = useMemo(() => restriccionesPorActividad(restricciones), [restricciones]);
@@ -2198,7 +2286,6 @@ function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, semanasDisponib
   const totalHH = todasActs.filter(actMarcadaSemana).reduce((s, a) => s + (a.hh || 0), 0);
   const hoy = new Date();
   const hoyISO = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
-  const navBtn = { padding: '7px 11px', background: BASE.white, color: BASE.navy, border: `1px solid ${BASE.border}`, borderRadius: '8px', fontSize: '13px', fontWeight: 800, cursor: 'pointer' };
 
   // Columnas izquierdas (fijas; ACTIVIDAD flexible para llenar el ancho).
   const sep = { borderLeft: `1px solid #e5ebf1` };
@@ -2214,24 +2301,19 @@ function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, semanasDisponib
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      {/* Cabecera + navegación */}
+      {/* Cabecera */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
         <div>
           <h3 style={{ fontSize: '16px', fontWeight: 900, color: BASE.navy }}>📋 PROGRAMACIÓN SEMANAL · Semana {semanaActiva}</h3>
           <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
-            Plan semanal (Lun–Dom) tal cual el Excel F05, alimentado por el LAP. <strong>Clic/arrastra</strong> para pintar o borrar días; se sincroniza con el Lookahead.
+            Plan semanal (Lun–Dom) tal cual el Excel F05, alimentado por el LAP. <strong>Clic/arrastra</strong> para pintar o borrar días; comparte semana y marcas con el Lookahead.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-          <button onClick={() => setSemanaActiva(Math.max(1, semanaActiva - 1))} style={navBtn} title="Semana anterior">‹</button>
-          <select value={semanaActiva} onChange={e => setSemanaActiva(parseInt(e.target.value))}
-            style={inp({ width: 'auto', fontSize: '12px', fontWeight: 700, padding: '8px 12px' })}>
-            {Array.from(new Set([...(semanasDisponibles || []), semanaActiva])).sort((a, b) => a - b).map(s => <option key={s} value={s}>Semana {s}</option>)}
-          </select>
-          <button onClick={() => setSemanaActiva(semanaActiva + 1)} style={navBtn} title="Semana siguiente">›</button>
-          <BotonImprimir titulo={`Programación Semana ${semanaActiva}`} />
-        </div>
+        <BotonImprimir titulo={`Programación Semana ${semanaActiva}`} />
       </div>
+
+      {/* FILTRO DE SEMANA UNIFICADO */}
+      <SemanaNav semana={semanaActiva} setSemana={setSemanaActiva} total={total} meta={semanasMeta} titulo="plan semanal F05" />
 
       {/* Herramientas: ocultar no programadas + color + conteo */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
@@ -2352,7 +2434,7 @@ const CNC_CATS = [
 // Planificado = actividades pintadas en el LAP esa semana; el usuario marca lo
 // ejecutado (✓/✗+causa) y el PPC% se calcula solo. Tendencia + Pareto de CNC.
 // ════════════════════════════════════════════════════════════════
-function PPCLap({ semanaActiva, setSemanaActiva }) {
+function PPCLap({ semanaActiva, setSemanaActiva, semanasMeta = {}, total }) {
   const { proyectoActivoId } = useProyectoActivo();
   const [plan, setPlan] = useState([]);
   useEffect(() => { let v = true; import('../data/lapCreditex').then(m => { if (v) setPlan(m.LAP_PLAN || []); }).catch(() => {}); return () => { v = false; }; }, []);
@@ -2366,7 +2448,7 @@ function PPCLap({ semanaActiva, setSemanaActiva }) {
   const [ppcOficial, setPpcOficial] = useState({ sem: [], cnc: [], global: null });
   useEffect(() => { let v = true; import('../data/ppcCreditex').then(m => { if (v) setPpcOficial({ sem: m.PPC_SEMANAL || [], cnc: m.PPC_CNC || [], global: m.PPC_GLOBAL ?? null }); }).catch(() => {}); return () => { v = false; }; }, []);
   const sem = semanaActiva;
-  const totalSemanas = Math.max(36, ...(ppcOficial.sem || []).map(s => s.semana || 0));
+  const totalSemanas = total || Math.max(36, ...(ppcOficial.sem || []).map(s => s.semana || 0));
   const cumplKey = (actKey, semana) => `c${lapHash(actKey)}_${semana}`;
   const setEstado = (actKey, semana, val) => {
     const k = cumplKey(actKey, semana);
@@ -2431,16 +2513,11 @@ function PPCLap({ semanaActiva, setSemanaActiva }) {
             Lo <strong>planificado</strong> sale del LAP que pintaste esa semana. Marca lo <strong>ejecutado</strong> (✓/✗) y el PPC% se calcula solo.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-          <button onClick={() => setSemanaActiva(Math.max(1, sem - 1))} style={{ padding: '7px 11px', background: BASE.white, color: BASE.navy, border: `1px solid ${BASE.border}`, borderRadius: '8px', fontWeight: 800, cursor: 'pointer' }}>‹</button>
-          <select value={sem} onChange={e => setSemanaActiva(parseInt(e.target.value, 10))}
-            style={inp({ width: 'auto', fontSize: '12px', fontWeight: 800, padding: '8px 12px' })}>
-            {Array.from({ length: totalSemanas }, (_, i) => i + 1).map(s => <option key={s} value={s}>Semana {s}</option>)}
-          </select>
-          <button onClick={() => setSemanaActiva(sem + 1)} style={{ padding: '7px 11px', background: BASE.white, color: BASE.navy, border: `1px solid ${BASE.border}`, borderRadius: '8px', fontWeight: 800, cursor: 'pointer' }}>›</button>
-          <BotonImprimir titulo={`PPC Semana ${sem}`} />
-        </div>
+        <BotonImprimir titulo={`PPC Semana ${sem}`} />
       </div>
+
+      {/* FILTRO DE SEMANA UNIFICADO */}
+      <SemanaNav semana={sem} setSemana={setSemanaActiva} total={totalSemanas} meta={semanasMeta} titulo="percent plan complete" />
 
       {/* KPIs */}
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
