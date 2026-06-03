@@ -131,6 +131,13 @@ export default function CartaBalanceAnalisis() {
   const [cartas, setCartas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('resumen');
+  const [fullscreen, setFullscreen] = useState(false);
+  useEffect(() => {
+    if (!fullscreen) return undefined;
+    const onKey = (e) => { if (e.key === 'Escape') setFullscreen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [fullscreen]);
   const [metas, setMetas] = useState(METAS_CB_DEFAULT);
   const [desde, setDesde] = useState('');
   const [hasta, setHasta] = useState('');
@@ -305,8 +312,10 @@ export default function CartaBalanceAnalisis() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, height: 'calc(100dvh - 150px)', minHeight: 460 }}>
-      <Tabs tab={tab} setTab={setTab} />
+    <div style={fullscreen
+      ? { position: 'fixed', inset: 0, zIndex: 4000, background: BASE.bg, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10, height: '100dvh' }
+      : { display: 'flex', flexDirection: 'column', gap: 10, height: 'calc(100dvh - 150px)', minHeight: 460 }}>
+      {!fullscreen && <Tabs tab={tab} setTab={setTab} />}
 
       {/* BARRA DE CONTROL */}
       <div className="no-print" style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 12, boxShadow: BASE.shadowSm, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -343,6 +352,7 @@ export default function CartaBalanceAnalisis() {
         <button onClick={() => setPanelAbierto('conclu')} style={btn({ background: BASE.bg, color: BASE.navy, border: `1px solid ${BASE.border}` })}>📝 Conclusiones</button>
         <button onClick={exportarExcel} style={btn({ background: `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`, color: '#fff', border: 'none' })}>⬇</button>
         <button onClick={imprimirTablero} style={btn({ background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', border: 'none' })}>🖨️</button>
+        <button onClick={() => setFullscreen((v) => !v)} title="Solo filtros y gráficos, a pantalla completa (Esc para salir)" style={btn({ background: fullscreen ? BASE.red : `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`, color: '#fff', border: 'none' })}>{fullscreen ? '✕ Salir' : '⛶ Pantalla completa'}</button>
         {chips.map(([key, label]) => <button key={key} onClick={() => clearF(key)} style={{ fontSize: 11, fontWeight: 800, color: BASE.navy, background: BASE.goldSoft, border: `1px solid ${BASE.gold}77`, borderRadius: 999, padding: '4px 9px', cursor: 'pointer' }}>{label} ✕</button>)}
         {(chips.length || desde || hasta || selAct) ? <button onClick={clearAll} style={{ fontSize: 11, fontWeight: 800, color: BASE.red, background: 'transparent', border: 'none', cursor: 'pointer' }}>Limpiar</button> : null}
       </div>
@@ -400,15 +410,15 @@ export default function CartaBalanceAnalisis() {
           <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={donut} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius="64%" outerRadius="90%" paddingAngle={2} cornerRadius={5} stroke={BASE.white} strokeWidth={2} onClick={(d) => setF('categoria', d?.cat)} cursor="pointer">
+                <Pie data={donut} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius="72%" outerRadius="94%" paddingAngle={3} cornerRadius={6} stroke="none" onClick={(d) => setF('categoria', d?.cat)} cursor="pointer">
                   {donut.map((d, i) => <Cell key={i} fill={d.color} opacity={filtros.categoria && filtros.categoria !== d.cat ? 0.3 : 1} />)}
                 </Pie>
                 <Tooltip formatter={(v) => `${v}%`} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
               </PieChart>
             </ResponsiveContainer>
             <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
-              <p style={{ fontSize: 30, fontWeight: 900, color: CB_COL.TP, lineHeight: 1 }}>{Math.round(k.pTP)}%</p>
-              <p style={{ fontSize: 8.5, fontWeight: 800, color: BASE.muted, letterSpacing: 1.2, marginTop: 3 }}>PRODUCTIVO</p>
+              <p style={{ fontSize: 23, fontWeight: 900, color: CB_COL.TP, lineHeight: 1 }}>{Math.round(k.pTP)}%</p>
+              <p style={{ fontSize: 7.5, fontWeight: 800, color: BASE.muted, letterSpacing: 0.5, marginTop: 2 }}>PRODUCTIVO</p>
             </div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: 8, flexWrap: 'wrap' }}>
