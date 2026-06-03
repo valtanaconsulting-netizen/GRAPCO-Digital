@@ -117,6 +117,7 @@ export default function VDC({
     return () => { vivo = false; };
   }, []);
   const lapNombres = useMemo(() => [...new Set(lapPlan.map(a => a.actividad).filter(Boolean))], [lapPlan]);
+  const { proyectoActivoId: proyIdVDC } = useProyectoActivo();
   // Restricciones del Excel AR (base, 101) fusionadas con las de Firestore → así la
   // vista AR, los badges del LAP y el Power BI muestran valores reales sin tipear.
   const [arBase, setArBase] = useState([]);
@@ -150,7 +151,6 @@ export default function VDC({
     const PAL = ['#dc2626', '#ea580c', '#d97706', '#7c3aed', '#2563eb', '#0891b2', '#16a34a', '#64748b'];
     return { items: ppcOficial.cnc.map((c, i) => ({ label: c.cat, count: c.n, color: PAL[i % PAL.length] })) };
   }, [ppcOficial]);
-  const { proyectoActivoId: proyIdVDC } = useProyectoActivo();
   const [marcasLap, setMarcasLap] = useState({});
   useEffect(() => {
     if (!proyIdVDC) return;
