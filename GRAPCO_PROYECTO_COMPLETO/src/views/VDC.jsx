@@ -1841,6 +1841,27 @@ function restriccionesPorActividad(restricciones) {
   return m;
 }
 
+// Production shielding (Last Planner): una actividad sólo está LISTA para
+// comprometer cuando TODAS sus restricciones están liberadas. 'bloq' = tiene
+// pendientes (NO comprometer), 'lista' = todas liberadas, 'sin' = sin restricción
+// registrada. Conversa solo con el AR (al liberar en AR, LAP/PS se actualizan).
+const readyDe = (rr) => (!rr || rr.total === 0) ? 'sin' : (rr.pend > 0 ? 'bloq' : 'lista');
+
+// Mini-resumen de shielding (listas vs bloqueadas) — compartido por LAP y PS.
+function BarraShielding({ listas, bloq }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', fontSize: '10.5px', fontWeight: 800 }}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: BASE.greenDark }}>
+        <span style={{ width: 9, height: 9, borderRadius: '2px', background: BASE.green }} />✅ {listas} listas
+      </span>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: BASE.red }}>
+        <span style={{ width: 9, height: 9, borderRadius: '2px', background: BASE.red }} />🔒 {bloq} bloqueadas
+      </span>
+      {bloq > 0 && <span style={{ color: BASE.muted, fontWeight: 600, fontStyle: 'italic' }}>· las 🔒 tienen restricciones pendientes — no comprometer aún</span>}
+    </div>
+  );
+}
+
 // HOOK COMPARTIDO: marcas editables del LAP (pintar/borrar días)
 // Persiste overrides del usuario en Configuracion/lapMarcas_<proyecto>. Lo usan
 // TANTO el Lookahead como la Programación Semanal → comparten las mismas marcas
@@ -2146,6 +2167,10 @@ function LookaheadView({ compromisos, restricciones, semanaActiva, setSemanaActi
   const actMarcadaEnVentana = (a) => dias.some(d => estado(a.actKey, d.fecha, a.set.has(d.fecha)).on);
   const nAct = todasActs.filter(actMarcadaEnVentana).length;
   const totalHH = todasActs.filter(actMarcadaEnVentana).reduce((s, a) => s + (a.hh || 0), 0);
+  // Shielding: de las programadas en la ventana, cuántas están bloqueadas (con
+  // restricción pendiente) vs listas para comprometer. Conversa solo con el AR.
+  const progBloq = todasActs.filter(a => actMarcadaEnVentana(a) && readyDe(restrPorAct[(a.actividad || '').toUpperCase().trim()]) === 'bloq').length;
+  const progListas = nAct - progBloq;
   const fmtN = (n) => n == null ? '' : Number(n).toLocaleString('es-PE', { maximumFractionDigits: n < 100 ? 1 : 0 });
   const leftColsStyle = { width: LEFT_W, minWidth: LEFT_W, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px', padding: '0 8px', background: BASE.white, borderRight: `2px solid ${BASE.border}` };
   const cellWrap = { flex: 1, minWidth: 0, display: 'flex' };
@@ -2176,6 +2201,7 @@ function LookaheadView({ compromisos, restricciones, semanaActiva, setSemanaActi
         </label>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
           <SelectorColor colorPaint={colorPaint} setColorPaint={setColorPaint} />
+          <BarraShielding listas={progListas} bloq={progBloq} />
           <span style={{ fontSize: '10.5px', color: BASE.muted }}>
             <strong style={{ color: BASE.navy }}>{nAct}</strong> programadas · <strong style={{ color: BASE.navy }}>{Math.round(totalHH).toLocaleString('es-PE')}</strong> HH
           </span>
@@ -2263,11 +2289,14 @@ function LookaheadView({ compromisos, restricciones, semanaActiva, setSemanaActi
                     const pad = esSub ? (a.nivel === 'N2' ? 6 : 16) : 26;
                     const bgRow = esSub ? `${sec.color}1a` : (ai % 2 ? '#f8fbff' : '#ffffff');
                     const rr = restrPorAct[(a.actividad || '').toUpperCase().trim()];
+                    const ready = esSub ? 'sub' : readyDe(rr);   // shielding: bloq | lista | sin
+                    const bloq = ready === 'bloq';
+                    const stripe = esSub ? sec.color : bloq ? BASE.red : ready === 'lista' ? BASE.green : 'transparent';
                     return (
-                      <div key={a.actKey} style={{ display: 'flex', borderBottom: `1px solid #eef2f6`, minHeight: ROW_H, background: bgRow }}>
-                        <div style={{ ...leftColsStyle, background: bgRow, borderLeft: esSub ? `3px solid ${sec.color}` : `3px solid transparent` }}>
-                          <span style={{ flex: 1, minWidth: 0, fontSize: esSub ? '9px' : '9.5px', paddingLeft: pad, color: esSub ? BASE.navy : BASE.text, fontWeight: esSub ? 900 : 600, textTransform: esSub ? 'uppercase' : 'none', letterSpacing: esSub ? '0.3px' : 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={a.actividad}>
-                            {rr && rr.pend > 0 ? <span title={`${rr.pend} restricción(es) pendiente(s)`}>🚧 </span> : (rr && rr.total > 0 ? <span title="Restricciones liberadas">✅ </span> : '')}
+                      <div key={a.actKey} style={{ display: 'flex', borderBottom: `1px solid #eef2f6`, minHeight: ROW_H, background: bloq ? 'rgba(225,29,72,0.05)' : bgRow }}>
+                        <div style={{ ...leftColsStyle, background: bloq ? 'rgba(225,29,72,0.05)' : bgRow, borderLeft: `3px solid ${stripe}` }}>
+                          <span style={{ flex: 1, minWidth: 0, fontSize: esSub ? '9px' : '9.5px', paddingLeft: pad, color: esSub ? BASE.navy : BASE.text, fontWeight: esSub ? 900 : 600, textTransform: esSub ? 'uppercase' : 'none', letterSpacing: esSub ? '0.3px' : 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={bloq ? `${rr.pend} restricción(es) pendiente(s) — NO comprometer hasta liberar` : a.actividad}>
+                            {bloq ? <span style={{ color: BASE.red, fontWeight: 900 }}>🔒{rr.pend} </span> : ready === 'lista' ? <span title="Lista para comprometer" style={{ color: BASE.greenDark }}>✅ </span> : ''}
                             {a.id ? <b style={{ color: sec.color }}>{a.id} </b> : ''}{a.actividad}
                           </span>
                           <span style={colNum}>{fmtN(a.metrado)}</span>
@@ -2291,7 +2320,7 @@ function LookaheadView({ compromisos, restricciones, semanaActiva, setSemanaActi
                                   background: d.fecha === hoyISO && !on ? 'rgba(225,29,72,0.06)' : (d.finde && !on ? 'rgba(15,23,42,0.045)' : 'transparent'),
                                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 }}>
-                                {on && <span style={{ width: '86%', height: 14, background: color || sec.color, borderRadius: '2px', boxShadow: `0 1px 2px ${(color || sec.color)}66`, pointerEvents: 'none' }} />}
+                                {on && <span style={{ width: '86%', height: 14, background: color || sec.color, borderRadius: '2px', boxShadow: bloq ? `0 0 0 1.6px ${BASE.red}` : `0 1px 2px ${(color || sec.color)}66`, opacity: bloq ? 0.78 : 1, pointerEvents: 'none' }} />}
                               </div>
                             );
                           })}
@@ -2315,6 +2344,7 @@ function LookaheadView({ compromisos, restricciones, semanaActiva, setSemanaActi
           pintar/borrar un día programado; <strong>arrastra</strong> para pintar varios o moverlos. Los cambios se <strong>guardan solos</strong> por
           proyecto (no tocan el LAP oficial). El color identifica el <strong>frente/sección</strong>; la <strong style={{ color: BASE.gold }}>semana actual</strong> va
           en dorado y la columna <strong style={{ color: BASE.red }}>roja</strong> es hoy. Usa <strong>‹ Anterior / Siguiente ›</strong> para recorrer las 28 semanas.
+          <br /><strong style={{ color: BASE.red }}>🔒 Shielding:</strong> las actividades con restricciones pendientes salen con franja <strong style={{ color: BASE.red }}>roja</strong> y celdas con borde rojo — están <strong>programadas pero NO listas para comprometer</strong>. Libéralas en <strong>🚧 Análisis Restricciones</strong> y aquí pasan a verde ✅ <strong>automáticamente</strong>.
         </span>
       </div>
     </div>
@@ -2358,6 +2388,9 @@ function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, restricciones =
   const actMarcadaSemana = (a) => dias.some(d => estado(a.actKey, d.fecha, a.set.has(d.fecha)).on);
   const nAct = todasActs.filter(actMarcadaSemana).length;
   const totalHH = todasActs.filter(actMarcadaSemana).reduce((s, a) => s + (a.hh || 0), 0);
+  // Shielding de la semana: programadas bloqueadas (restricción pendiente) vs listas.
+  const progBloq = todasActs.filter(a => actMarcadaSemana(a) && readyDe(restrPorAct[(a.actividad || '').toUpperCase().trim()]) === 'bloq').length;
+  const progListas = nAct - progBloq;
   const hoy = new Date();
   const hoyISO = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
 
@@ -2397,6 +2430,7 @@ function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, restricciones =
         </label>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
           <SelectorColor colorPaint={colorPaint} setColorPaint={setColorPaint} />
+          <BarraShielding listas={progListas} bloq={progBloq} />
           <span style={{ fontSize: '10.5px', color: BASE.muted }}>
             <strong style={{ color: BASE.navy }}>{nAct}</strong> programadas · <strong style={{ color: BASE.navy }}>{Math.round(totalHH).toLocaleString('es-PE')}</strong> HH · INICIO {semIni}
           </span>
@@ -2444,12 +2478,15 @@ function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, restricciones =
                     const pad = esSub ? (a.nivel === 'N2' ? 4 : 14) : 0;
                     const bgRow = esSub ? `${sec.color}1a` : (ai % 2 ? '#f8fbff' : '#ffffff');
                     const rr = restrPorAct[(a.actividad || '').toUpperCase().trim()];
+                    const ready = esSub ? 'sub' : readyDe(rr);   // shielding
+                    const bloq = ready === 'bloq';
+                    const stripe = esSub ? sec.color : bloq ? BASE.red : ready === 'lista' ? BASE.green : 'transparent';
                     return (
-                      <div key={a.actKey} style={{ display: 'flex', borderBottom: `1px solid #eef2f6`, minHeight: 26, alignItems: 'stretch', background: bgRow }}>
-                        <div style={{ ...cCod, ...pc, justifyContent: 'center', fontWeight: 800, color: sec.color, fontSize: '9px', borderLeft: esSub ? `3px solid ${sec.color}` : '3px solid transparent' }}>{a.id || ''}</div>
+                      <div key={a.actKey} style={{ display: 'flex', borderBottom: `1px solid #eef2f6`, minHeight: 26, alignItems: 'stretch', background: bloq ? 'rgba(225,29,72,0.05)' : bgRow }}>
+                        <div style={{ ...cCod, ...pc, justifyContent: 'center', fontWeight: 800, color: sec.color, fontSize: '9px', borderLeft: `3px solid ${stripe}` }}>{a.id || ''}</div>
                         <div style={{ ...cAct, ...pc, paddingLeft: 6 + pad }}>
-                          <span style={{ flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: esSub ? 900 : 600, color: esSub ? BASE.navy : BASE.text, textTransform: esSub ? 'uppercase' : 'none', fontSize: esSub ? '9.5px' : '10px' }} title={a.actividad}>
-                            {rr && rr.pend > 0 ? <span title={`${rr.pend} restricción(es) pendiente(s)`}>🚧 </span> : (rr && rr.total > 0 ? '✅ ' : '')}{a.actividad}
+                          <span style={{ flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: esSub ? 900 : 600, color: esSub ? BASE.navy : BASE.text, textTransform: esSub ? 'uppercase' : 'none', fontSize: esSub ? '9.5px' : '10px' }} title={bloq ? `${rr.pend} restricción(es) pendiente(s) — NO comprometer hasta liberar` : a.actividad}>
+                            {bloq ? <span style={{ color: BASE.red, fontWeight: 900 }}>🔒{rr.pend} </span> : ready === 'lista' ? <span title="Lista para comprometer" style={{ color: BASE.greenDark }}>✅ </span> : ''}{a.actividad}
                           </span>
                         </div>
                         <div style={{ ...cSm, ...pr, color: BASE.muted }} />
@@ -2468,7 +2505,7 @@ function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, restricciones =
                               onMouseEnter={() => onCeldaEnter(a.actKey, d.fecha, base)}
                               title={`${a.actividad} · ${d.dia}/${d.mes} — clic para ${on ? 'borrar' : 'pintar'}`}
                               style={{ ...celdaDia, alignSelf: 'stretch', cursor: 'pointer', borderLeft: `1px solid ${d.fecha === hoyISO ? BASE.red : '#eef2f6'}`, background: d.fecha === hoyISO && !on ? 'rgba(225,29,72,0.06)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              {on && <span style={{ width: '78%', height: 14, background: color || sec.color, borderRadius: '2px', boxShadow: `0 1px 2px ${(color || sec.color)}66`, pointerEvents: 'none' }} />}
+                              {on && <span style={{ width: '78%', height: 14, background: color || sec.color, borderRadius: '2px', boxShadow: bloq ? `0 0 0 1.6px ${BASE.red}` : `0 1px 2px ${(color || sec.color)}66`, opacity: bloq ? 0.78 : 1, pointerEvents: 'none' }} />}
                             </div>
                           );
                         })}
@@ -2484,7 +2521,7 @@ function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, restricciones =
       </div>
 
       <div style={{ background: BASE.bgSoft, borderRadius: '10px', padding: '12px 16px', fontSize: '11px', color: BASE.muted, lineHeight: 1.6 }}>
-        <strong style={{ color: BASE.navy }}>📖 Programación Semanal (F05):</strong> una semana (Lun–Dom) con las actividades del LAP. Cada celda de color = día programado; <strong>clic/arrastra</strong> para editar. Comparte marcas con el Lookahead; la columna roja es hoy.
+        <strong style={{ color: BASE.navy }}>📖 Programación Semanal (F05):</strong> una semana (Lun–Dom) con las actividades del LAP. Cada celda de color = día programado; <strong>clic/arrastra</strong> para editar. Comparte marcas y semana con el Lookahead; la columna roja es hoy. <strong style={{ color: BASE.red }}>🔒 Shielding:</strong> las filas con franja roja tienen restricciones pendientes — <strong>no comprometer</strong> hasta liberarlas en 🚧 Análisis Restricciones (se actualiza solo).
       </div>
     </div>
   );
