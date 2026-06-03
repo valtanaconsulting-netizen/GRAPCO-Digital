@@ -246,6 +246,7 @@ export default function VDC({
       }}>
         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
           {[
+            { id: 'huddle',        l: '🔔 Huddle del día',         group: 'exec' },
             { id: 'tablero',       l: '🟦 Tablero (Power BI)',     group: 'ctrl' },
             { id: 'sectorizacion', l: '🧱 Sectorización · Tren',    group: 'plan' },
             { id: 'lap',           l: '🔭 LAP · Lookahead 6 sem',  group: 'plan' },
@@ -278,6 +279,20 @@ export default function VDC({
           🟡 PROGRAMACIÓN  ·  🟢 EJECUCIÓN  ·  🔵 CONTROL — Flujo LPS oficial Ballard 2020
         </p>
       </div>
+
+      {/* === HUDDLE DEL DÍA + CENTRO DE ALERTAS (mobile-first, para reunión en obra) === */}
+      {tab === 'huddle' && (
+        <HuddleDiario
+          semanaActiva={semanaActiva}
+          setSemanaActiva={setSemanaActiva}
+          saludLPS={saludLPS}
+          restricciones={restricciones}
+          lapProgramado={lapProgramado}
+          semanasMeta={semanasMeta}
+          total={totalSemanas}
+          setTab={setTab}
+        />
+      )}
 
       {/* === TABLERO CONSOLIDADO (Power BI) === */}
       {tab === 'tablero' && (
@@ -1456,6 +1471,111 @@ function BarraShielding({ listas, bloq }) {
         <span style={{ width: 9, height: 9, borderRadius: '2px', background: BASE.red }} />🔒 {bloq} bloqueadas
       </span>
       {bloq > 0 && <span style={{ color: BASE.muted, fontWeight: 600, fontStyle: 'italic' }}>· las 🔒 tienen restricciones pendientes — no comprometer aún</span>}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+// HUDDLE DEL DÍA + CENTRO DE ALERTAS (mobile-first)
+// Pantalla para la reunión diaria a pie de obra: salud rápida, alertas
+// priorizadas (vencidas, en riesgo, PPR/PPC bajo) y el foco de la semana.
+// Todo derivado de lo ya calculado — conversa con AR/LAP/PPC.
+// ════════════════════════════════════════════════════════════════
+function HuddleDiario({ semanaActiva, setSemanaActiva, saludLPS = {}, restricciones = [], lapProgramado = [], semanasMeta = {}, total = 35, setTab }) {
+  const hoyISO = new Date().toISOString().slice(0, 10);
+  const fechaLarga = (() => { try { return new Date().toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' }); } catch { return hoyISO; } })();
+  const reqW = (r) => r.fechaCompromisoLiberacion ? obtenerSemana(r.fechaCompromisoLiberacion) : null;
+  const noLib = restricciones.filter(r => r.estado !== 'liberada');
+  const vencidas = noLib.filter(r => r.fechaCompromisoLiberacion && r.fechaCompromisoLiberacion < hoyISO);
+  const venceSem = noLib.filter(r => reqW(r) === semanaActiva && r.fechaCompromisoLiberacion >= hoyISO);
+  const rpa = restriccionesPorActividad(restricciones);
+  const foco = lapProgramado
+    .filter(c => c.semana === semanaActiva)
+    .map(c => ({ ...c, bloq: readyDe(rpa[normActividad(c.actividad)]) === 'bloq' }))
+    .sort((a, b) => (b.bloq ? 1 : 0) - (a.bloq ? 1 : 0));
+  const focoBloq = foco.filter(f => f.bloq).length;
+
+  const alertas = [];
+  if (vencidas.length) alertas.push({ sev: 'alta', icon: '⏰', t: `${vencidas.length} restricción(es) vencida(s)`, d: 'Su fecha-límite ya pasó y no están liberadas — riesgo inmediato.', tab: 'restricciones', cta: 'Liberar en AR' });
+  if (saludLPS.bloqProg > 0) alertas.push({ sev: 'alta', icon: '🔒', t: `${saludLPS.bloqProg} actividad(es) comprometida(s) en riesgo`, d: 'Programadas con restricciones pendientes — no comprometer aún.', tab: 'lap', cta: 'Ver Lookahead' });
+  if (venceSem.length) alertas.push({ sev: 'media', icon: '🚧', t: `${venceSem.length} restricción(es) vencen esta semana`, d: 'Libéralas para no frenar la programación (Make-Ready).', tab: 'restricciones', cta: 'Ver AR' });
+  if (saludLPS.ppr != null && saludLPS.ppr < 70) alertas.push({ sev: 'media', icon: '🛡️', t: `PPR ${saludLPS.ppr}% — plan poco confiable`, d: 'Pocas actividades libres de restricción; refuerza el Make-Ready.', tab: 'restricciones', cta: 'Ver AR' });
+  if (saludLPS.ppc != null && saludLPS.ppc < 65) alertas.push({ sev: 'media', icon: '📉', t: `PPC global ${saludLPS.ppc}%`, d: 'Bajo el objetivo — revisa las causas CNC.', tab: 'dashboard', cta: 'Ver PPC' });
+
+  const kpi = [
+    { l: 'PPC', v: saludLPS.ppc == null ? '—' : saludLPS.ppc + '%', c: ppcTone(saludLPS.ppc) },
+    { l: 'TMR', v: saludLPS.tmr == null ? '—' : saludLPS.tmr + '%', c: ppcTone(saludLPS.tmr) },
+    { l: 'VENCIDAS', v: vencidas.length, c: vencidas.length ? BASE.red : BASE.greenDark },
+    { l: 'EN RIESGO', v: saludLPS.bloqProg || 0, c: saludLPS.bloqProg ? BASE.red : BASE.greenDark },
+  ];
+  const sevC = { alta: BASE.red, media: BASE.gold };
+
+  return (
+    <div style={{ maxWidth: 760, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* Header */}
+      <div style={{ background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, borderRadius: 16, padding: '16px 18px', borderTop: `3px solid ${BASE.gold}`, boxShadow: BASE.shadowMd }}>
+        <p style={{ fontSize: 10, fontWeight: 900, color: BASE.gold, letterSpacing: 1.4 }}>🔔 HUDDLE DEL DÍA</p>
+        <h2 style={{ fontSize: 19, fontWeight: 900, color: '#fff', marginTop: 2, textTransform: 'capitalize' }}>{fechaLarga}</h2>
+        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>Reunión diaria de obra · Semana activa {semanaActiva} · {foco.length} actividades programadas</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 14 }}>
+          {kpi.map(k => (
+            <div key={k.l} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '9px 6px', textAlign: 'center', borderTop: `3px solid ${k.c}` }}>
+              <p style={{ fontSize: 8.5, fontWeight: 800, color: BASE.gold, letterSpacing: 0.4 }}>{k.l}</p>
+              <p style={{ fontSize: 22, fontWeight: 900, color: '#fff', lineHeight: 1.1 }}>{k.v}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Filtro de semana compartido */}
+      <SemanaNav semana={semanaActiva} setSemana={setSemanaActiva} total={total} meta={semanasMeta} titulo="huddle del día" />
+
+      {/* Alertas priorizadas */}
+      <div style={{ background: BASE.white, borderRadius: 14, border: `1px solid ${BASE.border}`, boxShadow: BASE.shadowSm, overflow: 'hidden' }}>
+        <div style={{ padding: '11px 16px', background: BASE.navy, color: '#fff', fontSize: 12, fontWeight: 900, letterSpacing: 0.4, display: 'flex', justifyContent: 'space-between' }}>
+          <span>🔔 ALERTAS</span><span style={{ color: BASE.gold }}>{alertas.length}</span>
+        </div>
+        {alertas.length === 0 ? (
+          <p style={{ padding: 22, textAlign: 'center', color: BASE.greenDark, fontSize: 13, fontWeight: 700 }}>✅ Sin alertas críticas — el sistema está bajo control.</p>
+        ) : alertas.map((a, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '12px 16px', borderBottom: `1px solid #eef2f6`, borderLeft: `4px solid ${sevC[a.sev]}` }}>
+            <span style={{ fontSize: 20, flexShrink: 0 }}>{a.icon}</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: 13, fontWeight: 800, color: BASE.navy, lineHeight: 1.25 }}>{a.t}</p>
+              <p style={{ fontSize: 11, color: BASE.muted, marginTop: 2 }}>{a.d}</p>
+            </div>
+            {setTab && <button onClick={() => setTab(a.tab)} style={{ flexShrink: 0, padding: '7px 12px', borderRadius: 8, border: 'none', background: `${sevC[a.sev]}18`, color: sevC[a.sev], fontSize: 11, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>{a.cta} →</button>}
+          </div>
+        ))}
+      </div>
+
+      {/* Foco de la semana */}
+      <div style={{ background: BASE.white, borderRadius: 14, border: `1px solid ${BASE.border}`, boxShadow: BASE.shadowSm, overflow: 'hidden' }}>
+        <div style={{ padding: '11px 16px', background: `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`, color: '#fff', fontSize: 12, fontWeight: 900, letterSpacing: 0.4, display: 'flex', justifyContent: 'space-between' }}>
+          <span>🎯 FOCO DE LA SEMANA {semanaActiva}</span>
+          <span>{foco.length} act · {focoBloq > 0 ? `🔒 ${focoBloq} en riesgo` : '✅ todas listas'}</span>
+        </div>
+        {foco.length === 0 ? (
+          <p style={{ padding: 22, textAlign: 'center', color: BASE.muted, fontSize: 12 }}>Nada programado esta semana. Pinta el LAP o cambia de semana arriba.</p>
+        ) : (
+          <div style={{ maxHeight: 420, overflowY: 'auto' }}>
+            {foco.map((f, i) => (
+              <div key={f.id || i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderBottom: `1px solid #eef2f6`, background: f.bloq ? 'rgba(225,29,72,0.05)' : (i % 2 ? '#f8fbff' : '#fff'), borderLeft: `3px solid ${f.bloq ? BASE.red : BASE.green}` }}>
+                <span style={{ fontSize: 14, flexShrink: 0 }}>{f.bloq ? '🔒' : '✅'}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 12.5, fontWeight: 700, color: BASE.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.actividad}</p>
+                  <p style={{ fontSize: 10, color: BASE.muted }}>{f.partida || ''}{f.bloq ? ' · restricción pendiente' : ' · lista para ejecutar'}</p>
+                </div>
+                {f.metradoComprometido != null && <span style={{ fontSize: 11, fontWeight: 800, color: BASE.navy, flexShrink: 0 }}>{f.metradoComprometido} HH</span>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <p style={{ fontSize: 10.5, color: BASE.muted, textAlign: 'center', fontStyle: 'italic' }}>
+        Pantalla para la reunión diaria a pie de obra (móvil). Las alertas y el foco se actualizan solos desde el AR, el LAP y el PPC — funciona offline.
+      </p>
     </div>
   );
 }
