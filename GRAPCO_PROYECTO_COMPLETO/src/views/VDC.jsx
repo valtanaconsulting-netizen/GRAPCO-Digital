@@ -1213,6 +1213,17 @@ function AnalisisRNC({ pareto, compromisos }) {
 // SUB-COMPONENTE: RESTRICCIONES (Lookahead Lean)
 // ════════════════════════════════════════════════════════════════
 
+// Estado AR estilo Excel (REALIZADO/EN PROCESO/PENDIENTE/VENCIDA) + estilos de tabla.
+const EST_EXCEL = {
+  liberada:   { label: 'REALIZADO',  bg: '#dcfce7', color: '#15803d' },
+  en_proceso: { label: 'EN PROCESO', bg: '#fef9c3', color: '#a16207' },
+  pendiente:  { label: 'PENDIENTE',  bg: '#fee2e2', color: '#dc2626' },
+  vencida:    { label: 'VENCIDA',    bg: '#fecaca', color: '#7f1d1d' },
+};
+const arTd = { padding: '5px 8px', borderRight: '1px solid #eef2f6', verticalAlign: 'middle' };
+const arTdC = { ...arTd, textAlign: 'center', whiteSpace: 'nowrap' };
+const arMini = (bg, col) => ({ padding: '4px 7px', background: bg, color: col, border: 'none', borderRadius: '5px', fontSize: '10px', cursor: 'pointer', marginLeft: '3px' });
+
 function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar }) {
   const kpi = useMemo(() => calcularKPIRestricciones(restricciones), [restricciones]);
   const [filtroEstado, setFiltroEstado] = useState('todos');
@@ -1233,6 +1244,15 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
     }),
     [filtradas]
   );
+
+  // Agrupadas por actividad (tal cual el Excel AR).
+  const grupos = useMemo(() => {
+    const m = {};
+    filtradas.forEach(r => { const k = r.actividad || '(sin actividad)'; (m[k] || (m[k] = [])).push(r); });
+    return Object.entries(m)
+      .map(([act, items]) => ({ act, items: items.sort((a, b) => (a.fechaCompromisoLiberacion || '').localeCompare(b.fechaCompromisoLiberacion || '')) }))
+      .sort((a, b) => (a.items[0].fechaCompromisoLiberacion || 'zzz').localeCompare(b.items[0].fechaCompromisoLiberacion || 'zzz'));
+  }, [filtradas]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -1328,101 +1348,65 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
         </span>
       </div>
 
-      {/* Lista de restricciones */}
-      {ordenadas.length === 0 ? (
-        <div style={{
-          background: BASE.white, borderRadius: '14px',
-          border: `2px dashed ${BASE.border}`, padding: '40px 24px', textAlign: 'center',
-        }}>
-          <p style={{ fontSize: '32px', marginBottom: '10px' }}>🚧</p>
-          <p style={{ fontSize: '13px', color: BASE.muted }}>
-            {kpi.total === 0
-              ? 'No hay restricciones aún. Comienza registrando las que identifiques en el lookahead.'
-              : 'No hay restricciones que coincidan con este filtro.'}
-          </p>
+      {/* TABLA AR — tal cual el Excel (Frente·Actividad·Restricción·Tipo·RESP·Fechas·Estado), premium */}
+      <div style={{ background: BASE.white, borderRadius: '14px', border: `1px solid ${BASE.border}`, overflow: 'hidden', boxShadow: BASE.shadowSm }}>
+        <div style={{ background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', padding: '11px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', borderBottom: `3px solid ${BASE.gold}` }}>
+          <span style={{ fontSize: '13px', fontWeight: 900, letterSpacing: '0.6px' }}>📋 ANÁLISIS DE RESTRICCIONES</span>
+          <span style={{ fontSize: '11px', opacity: 0.85 }}>{ordenadas.length} de {kpi.total} · PTAR PLANTA 5 · CREDITEX</span>
         </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {ordenadas.map(r => {
-            const tipo = RESTRICCION_TIPOS_MAP[r.tipoFlujo] || { icon: '📌', label: 'Otro', color: BASE.muted };
-            const estadoCfg = RESTRICCION_ESTADOS[r._estado] || RESTRICCION_ESTADOS.pendiente;
-            const dias = r.fechaCompromisoLiberacion
-              ? diasEntre(new Date().toISOString().split('T')[0], r.fechaCompromisoLiberacion)
-              : null;
-
-            return (
-              <div key={r.id} style={{
-                background: BASE.white, borderRadius: '12px',
-                border: `1px solid ${BASE.border}`,
-                borderLeft: `5px solid ${tipo.color}`,
-                padding: '14px 16px',
-                display: 'grid',
-                gridTemplateColumns: '1fr auto',
-                gap: '12px',
-                alignItems: 'center',
-              }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
-                    <span style={{ fontSize: '16px' }}>{tipo.icon}</span>
-                    <span style={{
-                      fontSize: '9px', fontWeight: '800', letterSpacing: '0.6px',
-                      color: tipo.color, textTransform: 'uppercase',
-                    }}>{tipo.label}</span>
-                    <span style={{
-                      background: estadoCfg.bg, color: estadoCfg.color,
-                      padding: '2px 8px', borderRadius: '12px',
-                      fontSize: '9px', fontWeight: '900', letterSpacing: '0.4px',
-                    }}>{estadoCfg.label}</span>
-                    {r.impacto === 'alto' && (
-                      <span style={{ background: '#fee2e2', color: '#dc2626', padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: '800' }}>
-                        🔴 ALTO
-                      </span>
-                    )}
-                  </div>
-                  <p style={{ fontSize: '13px', fontWeight: '800', color: BASE.text }}>
-                    {r.actividad}
-                  </p>
-                  {r.descripcion && (
-                    <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '3px', lineHeight: 1.4 }}>
-                      {r.descripcion}
-                    </p>
-                  )}
-                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '6px', fontSize: '10px', color: BASE.muted }}>
-                    {r.responsable && <span>👤 <strong>{r.responsable}</strong></span>}
-                    {r.fechaCompromisoLiberacion && (
-                      <span style={{ color: dias !== null && dias < 0 && r._estado !== 'liberada' ? BASE.red : BASE.muted, fontWeight: dias !== null && dias < 0 ? '700' : '600' }}>
-                        📅 {fmtFechaCorta(r.fechaCompromisoLiberacion)}
-                        {dias !== null && r._estado !== 'liberada' && (
-                          <span style={{ marginLeft: '4px' }}>
-                            ({dias < 0 ? `vencida hace ${Math.abs(dias)}d` : dias === 0 ? 'hoy' : `en ${dias}d`})
-                          </span>
-                        )}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-                  {r._estado !== 'liberada' && (
-                    <button onClick={() => onLiberar(r)} title="Liberar" style={{
-                      padding: '7px 10px', background: BASE.green, color: '#fff',
-                      border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: '800', cursor: 'pointer',
-                    }}>✅</button>
-                  )}
-                  <button onClick={() => onEditar(r)} title="Editar" style={{
-                    padding: '7px 10px', background: BASE.bgSoft, color: BASE.navy,
-                    border: `1px solid ${BASE.border}`, borderRadius: '6px',
-                    fontSize: '11px', fontWeight: '800', cursor: 'pointer',
-                  }}>✏️</button>
-                  <button onClick={() => onEliminar(r)} title="Eliminar" style={{
-                    padding: '7px 10px', background: '#fee2e2', color: BASE.red,
-                    border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: '800', cursor: 'pointer',
-                  }}>🗑️</button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+        {grupos.length === 0 ? (
+          <div style={{ padding: '44px', textAlign: 'center', color: BASE.muted, fontSize: '13px' }}>
+            🚧 {kpi.total === 0 ? 'No hay restricciones aún. Regístralas desde el lookahead.' : 'Ninguna coincide con el filtro.'}
+          </div>
+        ) : (
+          <div style={{ overflow: 'auto', maxHeight: '72vh' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', minWidth: 1000 }}>
+              <thead>
+                <tr style={{ background: BASE.navy, color: '#fff' }}>
+                  {[['FRENTE', 'left'], ['ACTIVIDAD', 'left'], ['RESTRICCIÓN', 'left'], ['TIPO', 'left'], ['RESP', 'center'], ['F. REQ.', 'center'], ['F. CONCIL.', 'center'], ['LEVANTA', 'center'], ['ESTADO', 'center'], ['', 'right']].map(([h, al], i) => (
+                    <th key={i} style={{ position: 'sticky', top: 0, background: BASE.navy, padding: '9px 8px', textAlign: al, fontSize: '9px', fontWeight: 900, letterSpacing: '0.4px', borderRight: `1px solid rgba(255,255,255,0.14)`, whiteSpace: 'nowrap', zIndex: 1 }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {grupos.map(g => (
+                  <React.Fragment key={g.act}>
+                    <tr>
+                      <td colSpan={10} style={{ background: '#fff7e6', borderLeft: `4px solid ${BASE.gold}`, borderTop: `1px solid ${BASE.border}`, borderBottom: `1px solid ${BASE.border}`, padding: '6px 12px', fontWeight: 900, fontSize: '10.5px', color: BASE.navy, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                        {g.act} <span style={{ color: BASE.muted, fontWeight: 700 }}>· {g.items.length} restric.</span>
+                      </td>
+                    </tr>
+                    {g.items.map((r, ri) => {
+                      const tipo = RESTRICCION_TIPOS_MAP[r.tipoFlujo] || { icon: '📌', label: 'Otro', color: BASE.muted };
+                      const est = EST_EXCEL[r._estado] || EST_EXCEL.pendiente;
+                      return (
+                        <tr key={r.id} style={{ background: ri % 2 ? '#f8fbff' : '#fff', borderBottom: `1px solid #eef2f6` }}>
+                          <td style={{ ...arTdC, fontWeight: 800, color: BASE.navy }}>{r.frente || ''}</td>
+                          <td style={{ ...arTd, color: BASE.muted, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.actividad}>{r.actividad}</td>
+                          <td style={{ ...arTd, fontWeight: 700, color: BASE.text }}>{r.descripcion}</td>
+                          <td style={arTd}><span style={{ color: tipo.color, fontWeight: 800, fontSize: '10px', whiteSpace: 'nowrap' }}>{tipo.icon} {tipo.label}</span></td>
+                          <td style={{ ...arTdC, fontWeight: 700 }}>{r.responsable || ''}</td>
+                          <td style={{ ...arTdC, fontFamily: 'monospace', color: BASE.text }}>{r.fechaCompromisoLiberacion ? fmtFechaCorta(r.fechaCompromisoLiberacion) : ''}</td>
+                          <td style={{ ...arTdC, fontFamily: 'monospace', color: r.fechaConciliada ? BASE.greenDark : BASE.muted }}>{r.fechaConciliada ? fmtFechaCorta(r.fechaConciliada) : '—'}</td>
+                          <td style={{ ...arTdC, color: BASE.muted }}>{r.responsableLevanta || ''}</td>
+                          <td style={{ padding: '4px', textAlign: 'center', borderRight: `1px solid #eef2f6` }}>
+                            <span style={{ display: 'inline-block', minWidth: 78, background: est.bg, color: est.color, padding: '4px 6px', borderRadius: '5px', fontSize: '9px', fontWeight: 900, letterSpacing: '0.3px' }}>{est.label}</span>
+                          </td>
+                          <td style={{ padding: '3px 6px', whiteSpace: 'nowrap', textAlign: 'right' }}>
+                            {r._estado !== 'liberada' && <button onClick={() => onLiberar(r)} title="Liberar" style={arMini(BASE.green, '#fff')}>✅</button>}
+                            <button onClick={() => onEditar(r)} title="Editar" style={arMini(BASE.bgSoft, BASE.navy)}>✏️</button>
+                            <button onClick={() => onEliminar(r)} title="Eliminar" style={arMini('#fee2e2', BASE.red)}>🗑️</button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
