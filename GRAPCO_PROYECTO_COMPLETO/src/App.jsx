@@ -87,6 +87,7 @@ const CalidadPanel        = lazy(() => import('./views/CalidadPanel'));
 const OficinaTecnicaPanel = lazy(() => import('./views/OficinaTecnicaPanel'));
 const PlanMaestroPanel    = lazy(() => import('./views/modulos/planMaestro/PlanMaestroPanel'));
 const APUsPanel           = lazy(() => import('./views/modulos/apus/APUsPanel'));
+const FlujoPlaneamiento   = lazy(() => import('./views/planeamiento/FlujoPlaneamiento'));
 const PanelGerencia       = lazy(() => import('./views/modulos/panelGerencia/PanelGerencia'));
 const ProyectosPanel      = lazy(() => import('./views/modulos/proyectos/ProyectosPanel'));
 const PortfolioPanel      = lazy(() => import('./views/modulos/portfolio/PortfolioPanel'));
@@ -102,8 +103,8 @@ const SeguridadPanel      = lazy(() => import('./views/seguridad/SeguridadPanel'
 //   - planeamiento → WBS, APU, Last Planner
 //   - admin      → null = TODOS los módulos (acceso completo)
 // Ingeniería de Producción ahora ABSORBE Planeamiento (Plan Maestro, APU, Last Planner).
-const KEYS_PRODUCCION  = ['dashboard', 'radarProd', 'registro', 'carta', 'warroom', 'planMaestro', 'apus', 'lps', 'materiales', 'bim'];
-const KEYS_PLANEAMIENTO = ['planMaestro', 'apus', 'lps'];
+const KEYS_PRODUCCION  = ['flujo', 'dashboard', 'radarProd', 'registro', 'carta', 'warroom', 'planMaestro', 'apus', 'lps', 'materiales', 'bim'];
+const KEYS_PLANEAMIENTO = ['flujo', 'planMaestro', 'apus', 'lps'];
 // Devuelve la lista de keys permitidas para el rol, o null si ve todo (admin).
 const keysPermitidasPorRol = (rol) => {
   if (rol === 'admin') return null;            // acceso total
@@ -529,7 +530,8 @@ function AppInner() {
           // luminancia suficiente para contrastar contra el fondo del sidebar y se ven en
           // estado activo (background del botón) y como icono (sin tornarse invisibles).
           const ITEMS_FULL = [
-            // PLANEAMIENTO — WBS, costos unitarios, cronograma (va primero)
+            // PLANEAMIENTO — flujo de proceso, WBS, costos unitarios, cronograma (va primero)
+            { key: 'flujo',       label: 'Flujo de Planeamiento',   iconName: 'target',      color: '#e5a82f',    group: 'PLANEAMIENTO' },
             { key: 'planMaestro', label: 'Plan Maestro (WBS)',      iconName: 'compass',     color: '#60a5fa',    group: 'PLANEAMIENTO' },
             { key: 'apus',        label: 'Análisis de Precios (APU)', iconName: 'coins',     color: '#a5b4fc',    group: 'PLANEAMIENTO' },
             { key: 'lps',         label: 'Last Planner System',     iconName: 'target',      color: '#34d399',    group: 'PLANEAMIENTO' },
@@ -814,6 +816,11 @@ function AppInner() {
             {/* Radar de Producción — alertas predictivas */}
             {moduloIngeniero === 'radarProd' && (
               <RadarProduccion isMobile={isMobile} />
+            )}
+
+            {/* Planeamiento — Flujo de Planeamiento (hub del proceso Last Planner/VDC) */}
+            {moduloIngeniero === 'flujo' && (
+              <FlujoPlaneamiento setModuloIngeniero={setModuloIngeniero} />
             )}
 
             {/* Planeamiento — Last Planner System (módulo lateral propio) */}
