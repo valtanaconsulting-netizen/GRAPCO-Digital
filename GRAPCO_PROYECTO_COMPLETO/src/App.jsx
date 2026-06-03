@@ -318,14 +318,26 @@ function AppInner() {
         background: 'radial-gradient(120% 90% at 50% 28%, #143256 0%, #0B1F39 46%, #061226 100%)',
         fontFamily: BASE.font, color: '#fff', position: 'relative', overflow: 'hidden',
       }}>
+        {/* Aurora: blobs dorados/navy que derivan lento → profundidad viva */}
+        <div style={{ position: 'absolute', width: 520, height: 520, top: '-12%', left: '-8%', borderRadius: '50%', pointerEvents: 'none',
+          background: `radial-gradient(circle, ${BASE.gold}1f 0%, transparent 62%)`, filter: 'blur(20px)', animation: 'gp-aur1 14s ease-in-out infinite' }} />
+        <div style={{ position: 'absolute', width: 460, height: 460, bottom: '-14%', right: '-6%', borderRadius: '50%', pointerEvents: 'none',
+          background: 'radial-gradient(circle, #1E467433 0%, transparent 60%)', filter: 'blur(22px)', animation: 'gp-aur2 18s ease-in-out infinite' }} />
         {/* Viñeta para profundidad */}
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: 'radial-gradient(130% 110% at 50% 40%, transparent 52%, rgba(3,9,18,0.72) 100%)' }} />
+          background: 'radial-gradient(130% 110% at 50% 40%, transparent 50%, rgba(3,9,18,0.78) 100%)' }} />
 
-        {/* Logo con anillos dorados + halo */}
-        <div style={{ position: 'relative', width: 108, height: 108, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
-          <span style={{ position: 'absolute', width: 150, height: 150, borderRadius: '50%',
-            background: `radial-gradient(circle, ${BASE.gold}26 0%, transparent 68%)` }} />
+        {/* Skyline de construcción (identidad GRAPCO) al pie */}
+        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 120, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 3, pointerEvents: 'none', opacity: 0.5, maskImage: 'linear-gradient(to top, #000 30%, transparent)', WebkitMaskImage: 'linear-gradient(to top, #000 30%, transparent)' }}>
+          {[34, 58, 26, 78, 46, 96, 38, 64, 30, 84, 50, 72, 28, 60, 40].map((h, i) => (
+            <span key={i} style={{ width: 22, height: h, background: i % 5 === 2 ? `linear-gradient(180deg, ${BASE.gold}cc, #16335a 70%)` : 'linear-gradient(180deg, #1b3a63, #0c2138)', borderRadius: '2px 2px 0 0', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.04)' }} />
+          ))}
+        </div>
+
+        {/* Logo con anillos dorados + halo pulsante + flotación */}
+        <div style={{ position: 'relative', width: 108, height: 108, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', zIndex: 1, animation: 'gp-float 4.5s ease-in-out infinite' }}>
+          <span style={{ position: 'absolute', width: 160, height: 160, borderRadius: '50%',
+            background: `radial-gradient(circle, ${BASE.gold}33 0%, transparent 66%)`, animation: 'gp-halo 2.8s ease-in-out infinite' }} />
           <span style={{
             position: 'absolute', inset: 0, borderRadius: '50%',
             border: '3px solid transparent', borderTopColor: BASE.gold, borderRightColor: BASE.gold,
@@ -340,30 +352,38 @@ function AppInner() {
           <img src={LOGO} alt="GRAPCO" style={{ width: 66, height: 66, borderRadius: 16, background: '#fff', padding: 5, boxShadow: '0 12px 30px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.6)', objectFit: 'contain' }} />
         </div>
 
-        <div style={{ textAlign: 'center', zIndex: 1 }}>
-          <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: 3 }}>
-            GRAPCO <span style={{ color: BASE.gold }}>S.A.C.</span>
+        <div style={{ textAlign: 'center', zIndex: 1, animation: 'gp-rise 0.6s ease-out both' }}>
+          <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: 3,
+            background: `linear-gradient(180deg, #fff 40%, ${BASE.gold})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            GRAPCO S.A.C.
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 8 }}>
-            <span style={{ height: 1, width: 26, background: `linear-gradient(90deg, transparent, ${BASE.gold}aa)` }} />
-            <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: 2.6, color: BASE.gold, textTransform: 'uppercase' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 9 }}>
+            <span style={{ height: 1, width: 30, background: `linear-gradient(90deg, transparent, ${BASE.gold}aa)` }} />
+            <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: 2.8, color: BASE.gold, textTransform: 'uppercase' }}>
               Plataforma Integral de Gestión de Obra
             </span>
-            <span style={{ height: 1, width: 26, background: `linear-gradient(90deg, ${BASE.gold}aa, transparent)` }} />
+            <span style={{ height: 1, width: 30, background: `linear-gradient(90deg, ${BASE.gold}aa, transparent)` }} />
           </div>
         </div>
 
-        {/* Barra de progreso indeterminada */}
-        <div style={{ width: 210, height: 3, borderRadius: 999, background: 'rgba(255,255,255,0.10)', overflow: 'hidden', zIndex: 1 }}>
-          <div style={{ height: '100%', width: '40%', borderRadius: 999,
-            background: `linear-gradient(90deg, transparent, ${BASE.gold}, transparent)`,
+        {/* Barra de progreso con cometa dorado */}
+        <div style={{ width: 230, height: 3, borderRadius: 999, background: 'rgba(255,255,255,0.10)', overflow: 'hidden', zIndex: 1, boxShadow: `0 0 18px ${BASE.gold}22` }}>
+          <div style={{ height: '100%', width: '42%', borderRadius: 999,
+            background: `linear-gradient(90deg, transparent, ${BASE.gold}, #fff6e0, ${BASE.gold}, transparent)`,
             animation: 'gp-load 1.3s ease-in-out infinite' }} />
         </div>
         <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: 2.5, color: '#8198b3', textTransform: 'uppercase', zIndex: 1 }}>
           Cargando plataforma…
         </div>
 
-        <style>{'@keyframes gp-load { 0% { transform: translateX(-160%); } 100% { transform: translateX(420%); } }'}</style>
+        <style>{`
+          @keyframes gp-load { 0% { transform: translateX(-160%); } 100% { transform: translateX(440%); } }
+          @keyframes gp-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+          @keyframes gp-halo { 0%,100% { opacity: 0.55; transform: scale(0.96); } 50% { opacity: 1; transform: scale(1.06); } }
+          @keyframes gp-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+          @keyframes gp-aur1 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(40px,30px); } }
+          @keyframes gp-aur2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-36px,-26px); } }
+        `}</style>
       </div>
     );
   }

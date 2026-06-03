@@ -9,6 +9,10 @@ import { db } from '../firebaseConfig';
 import {
   collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, setDoc,
 } from 'firebase/firestore';
+import {
+  ResponsiveContainer, PieChart, Pie, Cell, ComposedChart, Bar, Line,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine, LabelList,
+} from 'recharts';
 import { BASE, inp } from '../utils/styles';
 import {
   RNC_CATEGORIAS, RNC_LABELS, RNC_COLORS, RNC_ICONS,
@@ -200,38 +204,6 @@ export default function VDC({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      {/* Header VDC compacto */}
-      <div style={{
-        background: BASE.white,
-        borderRadius: '10px',
-        border: `1px solid ${BASE.border}`,
-        borderLeft: `4px solid ${BASE.gold}`,
-        padding: '10px 16px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '13px', fontWeight: '800', color: BASE.navy, letterSpacing: '0.2px' }}>
-            VDC · Last Planner System
-          </span>
-          <span style={{ fontSize: '11px', color: BASE.muted, fontWeight: '600' }}>
-            {saludLPS.tot} restricciones · {saludLPS.progTotal} actividades programadas
-          </span>
-        </div>
-        {saludLPS.ppc != null && (
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: '8px',
-            background: `${ppcTone(saludLPS.ppc)}15`, color: ppcTone(saludLPS.ppc),
-            padding: '4px 12px', borderRadius: '999px',
-            border: `1px solid ${ppcTone(saludLPS.ppc)}55`,
-          }}>
-            <span style={{ fontSize: '9px', fontWeight: '800', letterSpacing: '0.6px', opacity: 0.85 }}>PPC GLOBAL</span>
-            <span style={{ fontSize: '14px', fontWeight: '900', fontFamily: 'var(--grapco-font-mono, monospace)' }}>
-              {saludLPS.ppc}%
-            </span>
-          </div>
-        )}
-      </div>
-
       {/* Tabs · Flujo Last Planner System
           1) LAP (lookahead 6 sem) → 2) Análisis Restricciones → 3) Prog Semanal →
           4) Ejecución Diaria → 5) PPC global → 6) RNC → 7) Lecciones */}
@@ -2128,7 +2100,12 @@ function PPCLap({ semanaActiva, setSemanaActiva, semanasMeta = {}, total, restri
     Object.values(cumpl).forEach(v => { if (v && v !== 'ok') { const l = (CNC_CATS.find(c => c.k === v) || {}).l || v; cont[l] = (cont[l] || 0) + 1; } });
     return Object.entries(cont).map(([l, n]) => ({ l, n })).sort((a, b) => b.n - a.n);
   }, [ppcOficial, cumpl]);
-  const maxCnc = Math.max(1, ...cncPareto.map(c => c.n));
+  // Pareto CNC con % ACUMULADO (tal cual el Excel F07): barras desc + curva acumulada.
+  const cncChart = useMemo(() => {
+    const tot = cncPareto.reduce((s, c) => s + c.n, 0) || 1;
+    let acc = 0;
+    return cncPareto.map(c => { acc += c.n; return { causa: c.l, n: c.n, acum: Math.round(acc / tot * 100) }; });
+  }, [cncPareto]);
   const ppcColor = ppc == null ? BASE.muted : ppc >= 80 ? BASE.greenDark : ppc >= 50 ? '#d97706' : BASE.red;
   const card = { background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', padding: '14px 16px', boxShadow: '0 1px 4px rgba(15,23,42,0.04)' };
   const fechas = fechasDeSemana(sem, INICIO_PROYECTO);
@@ -2169,38 +2146,84 @@ function PPCLap({ semanaActiva, setSemanaActiva, semanasMeta = {}, total, restri
         ))}
       </div>
 
-      {/* Tendencia + CNC */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '12px' }}>
-        <div style={card}>
-          <p style={{ fontSize: '11px', fontWeight: 900, color: BASE.navy, marginBottom: '8px' }}>TENDENCIA PPC POR SEMANA</p>
-          {tendencia.length === 0 ? (
-            <p style={{ fontSize: '11px', color: BASE.muted, fontStyle: 'italic' }}>Aún no hay semanas evaluadas. Marca cumplimiento abajo.</p>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '90px' }}>
-              {tendencia.map(t => (
-                <div key={t.s} title={`SEM ${t.s}: ${t.ppc}%`} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', cursor: 'pointer' }} onClick={() => setSemanaActiva(t.s)}>
-                  <div style={{ width: '100%', height: `${Math.max(3, t.ppc * 0.8)}px`, background: t.ppc >= 80 ? BASE.greenDark : t.ppc >= 50 ? '#d97706' : BASE.red, borderRadius: '3px 3px 0 0' }} />
-                  <span style={{ fontSize: '7.5px', color: BASE.muted }}>{t.s}</span>
+      {/* GRÁFICOS POWER BI: Donut cumplimiento + Pareto CNC (% acumulado) + Tendencia */}
+      {(() => {
+        const cmpl = (ok + no > 0) ? ok : (ppcOf ? ppcOf.realizadas || 0 : 0);
+        const ncmpl = (ok + no > 0) ? no : (ppcOf ? ppcOf.noCumplidas || 0 : 0);
+        const donut = (cmpl + ncmpl > 0) ? [{ name: 'Cumplidas', value: cmpl, color: BASE.greenDark }, { name: 'No cumplidas', value: ncmpl, color: BASE.red }] : [];
+        const trend = tendencia.map(t => ({ s: 'S' + t.s, sem: t.s, ppc: t.ppc }));
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '12px' }}>
+            {/* 1 · Donut de cumplimiento de la semana */}
+            <div style={card}>
+              <p style={{ fontSize: '11px', fontWeight: 900, color: BASE.navy, marginBottom: '4px' }}>CUMPLIMIENTO · SEMANA {sem}</p>
+              {donut.length === 0 ? (
+                <p style={{ fontSize: '11px', color: BASE.muted, fontStyle: 'italic', padding: '30px 0', textAlign: 'center' }}>Sin cierre de ejecución esta semana.</p>
+              ) : (
+                <div style={{ position: 'relative', height: 190 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={donut} cx="50%" cy="50%" innerRadius={52} outerRadius={78} paddingAngle={2} dataKey="value" stroke="none">
+                        {donut.map((d, i) => <Cell key={i} fill={d.color} />)}
+                      </Pie>
+                      <Tooltip formatter={(v, n) => [`${v}`, n]} contentStyle={{ fontSize: '11px', borderRadius: '8px' }} />
+                      <Legend wrapperStyle={{ fontSize: '11px' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div style={{ position: 'absolute', top: '42%', left: 0, right: 0, textAlign: 'center', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                    <div style={{ fontSize: 26, fontWeight: 900, color: ppcColor, lineHeight: 1 }}>{ppc == null ? '—' : ppc + '%'}</div>
+                    <div style={{ fontSize: 8.5, fontWeight: 800, color: BASE.muted, letterSpacing: 0.5 }}>PPC</div>
+                  </div>
                 </div>
-              ))}
+              )}
             </div>
-          )}
-        </div>
-        <div style={card}>
-          <p style={{ fontSize: '11px', fontWeight: 900, color: BASE.navy, marginBottom: '8px' }}>CAUSAS DE NO CUMPLIMIENTO (CNC)</p>
-          {cncPareto.length === 0 ? (
-            <p style={{ fontSize: '11px', color: BASE.muted, fontStyle: 'italic' }}>Sin incumplimientos registrados. 👏</p>
-          ) : cncPareto.map(c => (
-            <div key={c.l} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
-              <span style={{ fontSize: '10px', color: BASE.text, width: 130, flexShrink: 0 }}>{c.l}</span>
-              <div style={{ flex: 1, background: '#f1f5f9', borderRadius: '4px', height: '14px' }}>
-                <div style={{ width: `${c.n / maxCnc * 100}%`, height: '100%', background: BASE.red, borderRadius: '4px' }} />
-              </div>
-              <b style={{ fontSize: '11px', color: BASE.red, width: 18, textAlign: 'right' }}>{c.n}</b>
+
+            {/* 2 · Pareto CNC con % acumulado (tal cual el Excel F07) */}
+            <div style={card}>
+              <p style={{ fontSize: '11px', fontWeight: 900, color: BASE.navy, marginBottom: '4px' }}>CAUSAS DE NO CUMPLIMIENTO · PARETO</p>
+              {cncChart.length === 0 ? (
+                <p style={{ fontSize: '11px', color: BASE.muted, fontStyle: 'italic', padding: '30px 0', textAlign: 'center' }}>Sin incumplimientos registrados. 👏</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={190}>
+                  <ComposedChart data={cncChart} margin={{ top: 8, right: 6, bottom: 4, left: -18 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={BASE.border} vertical={false} />
+                    <XAxis dataKey="causa" tick={{ fontSize: 8, fill: BASE.muted }} interval={0} tickFormatter={(v) => (v || '').slice(0, 9)} />
+                    <YAxis yAxisId="l" tick={{ fontSize: 9, fill: BASE.muted }} allowDecimals={false} />
+                    <YAxis yAxisId="r" orientation="right" domain={[0, 100]} tick={{ fontSize: 9, fill: BASE.muted }} unit="%" />
+                    <Tooltip contentStyle={{ fontSize: '11px', borderRadius: '8px' }} formatter={(v, n) => n === 'acum' ? [`${v}%`, '% acumulado'] : [v, 'Casos']} />
+                    <Bar yAxisId="l" dataKey="n" fill={BASE.red} radius={[3, 3, 0, 0]} maxBarSize={42}>
+                      <LabelList dataKey="n" position="top" style={{ fontSize: 9, fontWeight: 800, fill: BASE.red }} />
+                    </Bar>
+                    <Line yAxisId="r" type="monotone" dataKey="acum" stroke={BASE.gold} strokeWidth={2.5} dot={{ r: 3, fill: BASE.gold }} />
+                    <ReferenceLine yAxisId="r" y={80} stroke={BASE.navy} strokeDasharray="4 4" />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              )}
             </div>
-          ))}
-        </div>
-      </div>
+
+            {/* 3 · Tendencia PPC por semana + meta 80% */}
+            <div style={card}>
+              <p style={{ fontSize: '11px', fontWeight: 900, color: BASE.navy, marginBottom: '4px' }}>TENDENCIA PPC POR SEMANA</p>
+              {trend.length === 0 ? (
+                <p style={{ fontSize: '11px', color: BASE.muted, fontStyle: 'italic', padding: '30px 0', textAlign: 'center' }}>Aún no hay semanas evaluadas.</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={190}>
+                  <ComposedChart data={trend} margin={{ top: 8, right: 6, bottom: 4, left: -18 }} onClick={(e) => { const p = e && e.activePayload && e.activePayload[0]; if (p) setSemanaActiva(p.payload.sem); }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={BASE.border} vertical={false} />
+                    <XAxis dataKey="s" tick={{ fontSize: 8, fill: BASE.muted }} interval={Math.ceil(trend.length / 14)} />
+                    <YAxis domain={[0, 100]} tick={{ fontSize: 9, fill: BASE.muted }} unit="%" />
+                    <Tooltip contentStyle={{ fontSize: '11px', borderRadius: '8px' }} formatter={(v) => [`${v}%`, 'PPC']} />
+                    <Bar dataKey="ppc" radius={[3, 3, 0, 0]} maxBarSize={26}>
+                      {trend.map((t, i) => <Cell key={i} fill={t.ppc >= 80 ? BASE.greenDark : t.ppc >= 50 ? '#d97706' : BASE.red} />)}
+                    </Bar>
+                    <ReferenceLine y={80} stroke={BASE.navy} strokeDasharray="4 4" label={{ value: 'meta 80%', fontSize: 8, fill: BASE.navy, position: 'insideTopRight' }} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Lista de actividades planificadas + cierre de cumplimiento */}
       <div style={{ ...card, padding: 0, overflow: 'hidden' }}>

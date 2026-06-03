@@ -860,12 +860,14 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
       </div>
       )}
 
-      {/* === SUBTABS DEL GRUPO ACTIVO (Nivel 2) — chips refinados === */}
+      {/* === SUBTABS DEL GRUPO ACTIVO (Nivel 2) — solo si el grupo tiene >1 módulo
+          (en Planeamiento hay un único módulo → la barra sobra y se oculta) === */}
+      {grupoCfg.items.length > 1 && (
       <div style={{
         background: BASE.white,
-        borderRadius: '0 0 12px 12px',
+        borderRadius: !soloPlaneamiento ? '0 0 12px 12px' : '12px',
         border: `1px solid ${BASE.border}`,
-        borderTop: 'none',
+        borderTop: !soloPlaneamiento ? 'none' : `1px solid ${BASE.border}`,
         padding: '12px 16px',
         marginBottom: '14px',
       }}>
@@ -900,6 +902,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
           })}
         </div>
       </div>
+      )}
 
       {/* === VISTAS === */}
       {view==='cockpit'    && <CockpitEjecutivo historial={historialEnriquecido} wbs={wbs} filtrados={filtrados} costosCustomMap={costosCustomMap} isMobile={isMobile}/>}
