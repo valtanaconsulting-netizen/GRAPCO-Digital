@@ -266,6 +266,7 @@ export default function VDC({
         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
           {[
             { id: 'huddle',        l: '🔔 Huddle del día',         group: 'exec' },
+            { id: 'cierre',        l: '🏁 Cierre · Retrospectiva', group: 'ctrl' },
             { id: 'tablero',       l: '🟦 Tablero (Power BI)',     group: 'ctrl' },
             { id: 'pronostico',    l: '📈 Plan vs Real · Pronóstico', group: 'ctrl' },
             { id: 'sectorizacion', l: '🧱 Sectorización · Tren',    group: 'plan' },
@@ -335,6 +336,17 @@ export default function VDC({
           lapProgramado={lapProgramado}
           ppcOficial={ppcOficial}
           saludLPS={saludLPS}
+        />
+      )}
+
+      {/* === CIERRE DE PROYECTO · RETROSPECTIVA (Learn a escala de proyecto) === */}
+      {tab === 'cierre' && (
+        <RetrospectivaProyecto
+          saludLPS={saludLPS}
+          ppcOficial={ppcOficial}
+          restricciones={restricciones}
+          retro={retro}
+          lapPlan={lapPlan}
         />
       )}
 
@@ -1739,6 +1751,150 @@ function PlanVsReal({ lapPlan = [], lapProgramado = [], ppcOficial = {}, saludLP
 
       <p style={{ fontSize: 10.5, color: BASE.muted, textAlign: 'center', fontStyle: 'italic' }}>
         Pronóstico = hoy + (semanas restantes del plan ÷ confiabilidad PPC). Es el indicador que mira un gerente de proyecto: une el plan (planeamiento) con el cumplimiento real (producción).
+      </p>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+// CIERRE DE PROYECTO · RETROSPECTIVA (Learn a escala de proyecto)
+// El proyecto terminó: consolida resultados finales, causas raíz y un plan de
+// arranque para el PRÓXIMO proyecto (benchmark + lecciones + qué reutilizar).
+// ════════════════════════════════════════════════════════════════
+function RetrospectivaProyecto({ saludLPS = {}, ppcOficial = {}, restricciones = [], retro = [], lapPlan = [] }) {
+  const ppc = saludLPS.ppc != null ? saludLPS.ppc : (ppcOficial.global ?? null);
+  const banda = ppc == null ? { l: '—', c: BASE.muted } : ppc >= 85 ? { l: 'Clase mundial', c: BASE.greenDark } : ppc >= 70 ? { l: 'Maduro', c: BASE.green } : ppc >= 50 ? { l: 'En desarrollo', c: BASE.gold } : { l: 'Inmaduro', c: BASE.red };
+
+  const tot = restricciones.length;
+  const liberadas = restricciones.filter(r => r.estado === 'liberada').length;
+  const hoyISO = new Date().toISOString().slice(0, 10);
+  const vencidas = restricciones.filter(r => r.estado !== 'liberada' && r.fechaCompromisoLiberacion && r.fechaCompromisoLiberacion < hoyISO).length;
+
+  const flujos = useMemo(() => {
+    const m = {};
+    restricciones.forEach(r => { if (r.tipoFlujo) m[r.tipoFlujo] = (m[r.tipoFlujo] || 0) + 1; });
+    return Object.entries(m).map(([k, n]) => ({ lab: (RESTRICCION_TIPOS_MAP[k] || {}).label || k, n })).sort((a, b) => b.n - a.n);
+  }, [restricciones]);
+  const maxFlujo = Math.max(1, ...flujos.map(f => f.n));
+  const cnc = useMemo(() => [...(ppcOficial.cnc || [])].sort((a, b) => (b.n || 0) - (a.n || 0)), [ppcOficial]);
+  const maxCnc = Math.max(1, ...cnc.map(c => c.n));
+
+  // Deriva real de plazo (proyecto cerrado): semana actual vs fin del plan base.
+  const planFin = useMemo(() => {
+    const w = {}; lapPlan.forEach(a => (a.dias || []).forEach(f => { w[obtenerSemana(f)] = 1; }));
+    return Math.max(1, ...Object.keys(w).map(Number));
+  }, [lapPlan]);
+  const curWeek = obtenerSemana(hoyISO);
+  const deriva = Math.max(0, curWeek - planFin);
+  const finPlan = (fechasDeSemana(planFin, INICIO_PROYECTO)[6] || {}).fecha;
+
+  const reutilizar = [
+    { ic: '💰', t: 'APUs y rendimientos (HH/und)', d: 'Arranca el próximo proyecto con ratios REALES del catálogo, no estimados.' },
+    { ic: '🧱', t: 'Sectorización / tren de actividades', d: 'Plantilla de secuencia y dimensionamiento de cuadrillas ya probada.' },
+    { ic: '🏗️', t: 'Normal Tecnológica', d: 'Secuencia constructiva validada en obra.' },
+    { ic: '🚧', t: 'Catálogo de restricciones por flujo', d: 'Conviértelo en el checklist Make-Ready del próximo Lookahead.' },
+    { ic: '🎯', t: `PPC benchmark de este proyecto (${ppc ?? '—'}%)`, d: 'Úsalo como meta de confiabilidad del próximo (objetivo ≥80%).' },
+  ];
+
+  const kpis = [
+    { l: 'PPC FINAL', v: ppc == null ? '—' : ppc + '%', c: banda.c, sub: banda.l + ' (LCI)' },
+    { l: 'PCR · RESTRIC. REMOVIDAS', v: saludLPS.pcr == null ? '—' : saludLPS.pcr + '%', c: ppcTone(saludLPS.pcr), sub: `${liberadas}/${tot} liberadas` },
+    { l: 'DERIVA DE PLAZO', v: deriva > 0 ? `+${deriva} sem` : 'en plazo', c: deriva > 2 ? BASE.red : deriva > 0 ? BASE.gold : BASE.greenDark, sub: finPlan ? `fin plan ${new Date(finPlan + 'T00:00:00').toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })}` : '' },
+    { l: 'TMR · TAREAS LISTAS', v: saludLPS.tmr == null ? '—' : saludLPS.tmr + '%', c: ppcTone(saludLPS.tmr), sub: 'confiabilidad del Make-Ready' },
+    { l: 'RESTRIC. VENCIDAS', v: vencidas, c: vencidas ? BASE.red : BASE.greenDark, sub: vencidas ? 'no liberadas a tiempo' : 'todas a tiempo' },
+  ];
+  const card = { background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 12, padding: '14px 16px', boxShadow: BASE.shadowSm };
+  const sevC = { alta: BASE.red, media: BASE.gold, info: BASE.navy };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* Header */}
+      <div style={{ background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, borderRadius: 16, padding: '16px 18px', borderTop: `3px solid ${BASE.gold}`, boxShadow: BASE.shadowMd, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+        <div>
+          <p style={{ fontSize: 10, fontWeight: 900, color: BASE.gold, letterSpacing: 1.4 }}>🏁 CIERRE DE PROYECTO · RETROSPECTIVA</p>
+          <h2 style={{ fontSize: 19, fontWeight: 900, color: '#fff', marginTop: 2 }}>Análisis del proyecto y arranque del próximo</h2>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>Qué pasó, por qué, y qué nos llevamos al siguiente proyecto (Learn · Ballard).</p>
+        </div>
+        <div style={{ textAlign: 'center', background: `${banda.c}22`, border: `1px solid ${banda.c}`, borderRadius: 12, padding: '8px 16px' }}>
+          <p style={{ fontSize: 9, fontWeight: 800, color: BASE.gold, letterSpacing: 0.5 }}>MADUREZ LPS</p>
+          <p style={{ fontSize: 15, fontWeight: 900, color: '#fff' }}>{banda.l}</p>
+        </div>
+      </div>
+
+      {/* Resultados finales */}
+      <div>
+        <p style={{ fontSize: 11, fontWeight: 900, color: BASE.navy, letterSpacing: 0.4, marginBottom: 8 }}>① RESULTADOS FINALES</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
+          {kpis.map(k => (
+            <div key={k.l} style={{ ...card, borderTop: `4px solid ${k.c}` }}>
+              <p style={{ fontSize: 9, fontWeight: 800, color: BASE.muted, letterSpacing: 0.4 }}>{k.l}</p>
+              <p style={{ fontSize: 24, fontWeight: 900, color: k.c, lineHeight: 1.1, marginTop: 2 }}>{k.v}</p>
+              <p style={{ fontSize: 9, color: BASE.muted, marginTop: 2 }}>{k.sub}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Lo que más nos frenó */}
+      <div>
+        <p style={{ fontSize: 11, fontWeight: 900, color: BASE.navy, letterSpacing: 0.4, marginBottom: 8 }}>② LO QUE MÁS NOS FRENÓ</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: 12 }}>
+          <div style={card}>
+            <p style={{ fontSize: 11, fontWeight: 900, color: BASE.navy, marginBottom: 8 }}>📉 CAUSAS DE INCUMPLIMIENTO (CNC)</p>
+            {cnc.length === 0 ? <p style={{ fontSize: 11, color: BASE.muted, fontStyle: 'italic' }}>Sin datos de CNC.</p> : cnc.map(c => (
+              <div key={c.cat} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                <span style={{ fontSize: 10, color: BASE.text, width: 140, flexShrink: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.cat}</span>
+                <div style={{ flex: 1, background: '#f1f5f9', borderRadius: 4, height: 14 }}><div style={{ width: `${c.n / maxCnc * 100}%`, height: '100%', background: BASE.red, borderRadius: 4 }} /></div>
+                <b style={{ fontSize: 11, color: BASE.red, width: 20, textAlign: 'right' }}>{c.n}</b>
+              </div>
+            ))}
+          </div>
+          <div style={card}>
+            <p style={{ fontSize: 11, fontWeight: 900, color: BASE.navy, marginBottom: 8 }}>🚧 FLUJOS QUE MÁS RESTRINGIERON</p>
+            {flujos.length === 0 ? <p style={{ fontSize: 11, color: BASE.muted, fontStyle: 'italic' }}>Sin restricciones.</p> : flujos.map(f => (
+              <div key={f.lab} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                <span style={{ fontSize: 10, color: BASE.text, width: 140, flexShrink: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.lab}</span>
+                <div style={{ flex: 1, background: '#f1f5f9', borderRadius: 4, height: 14 }}><div style={{ width: `${f.n / maxFlujo * 100}%`, height: '100%', background: BASE.gold, borderRadius: 4 }} /></div>
+                <b style={{ fontSize: 11, color: BASE.goldDark, width: 20, textAlign: 'right' }}>{f.n}</b>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Lecciones / contramedidas para el próximo proyecto */}
+      <div>
+        <p style={{ fontSize: 11, fontWeight: 900, color: BASE.navy, letterSpacing: 0.4, marginBottom: 8 }}>③ LECCIONES PARA EL PRÓXIMO PROYECTO</p>
+        {retro.length === 0 ? (
+          <div style={{ ...card }}><p style={{ fontSize: 12, color: BASE.greenDark, fontWeight: 700 }}>✅ Sin hallazgos críticos — el proyecto cerró con el sistema bajo control.</p></div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 10 }}>
+            {retro.map((r, i) => (
+              <div key={i} style={{ ...card, borderLeft: `4px solid ${sevC[r.sev] || BASE.gold}`, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}><span style={{ fontSize: 15 }}>{r.icon}</span><span style={{ fontSize: 12, fontWeight: 900, color: BASE.navy, lineHeight: 1.2 }}>{r.titulo}</span></div>
+                <p style={{ fontSize: 10.5, color: BASE.muted, lineHeight: 1.4 }}>{r.detalle}</p>
+                <p style={{ fontSize: 10.5, color: BASE.text, background: BASE.goldSoft, border: `1px solid ${BASE.gold}55`, borderRadius: 7, padding: '6px 9px', lineHeight: 1.4 }}><strong style={{ color: BASE.goldDark }}>Para el próximo → </strong>{r.accion}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Qué reutilizar */}
+      <div>
+        <p style={{ fontSize: 11, fontWeight: 900, color: BASE.navy, letterSpacing: 0.4, marginBottom: 8 }}>④ QUÉ REUTILIZAR · PLANTILLA DEL PRÓXIMO PROYECTO</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10 }}>
+          {reutilizar.map((r, i) => (
+            <div key={i} style={{ ...card, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+              <span style={{ fontSize: 20, flexShrink: 0 }}>{r.ic}</span>
+              <div><p style={{ fontSize: 12, fontWeight: 800, color: BASE.navy, lineHeight: 1.25 }}>{r.t}</p><p style={{ fontSize: 10.5, color: BASE.muted, marginTop: 2, lineHeight: 1.4 }}>{r.d}</p></div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <p style={{ fontSize: 10.5, color: BASE.muted, textAlign: 'center', fontStyle: 'italic' }}>
+        Cierra el ciclo Ballard a escala de proyecto: analiza lo ejecutado y lo convierte en el punto de partida del siguiente. Guarda las lecciones desde 📚 Lecciones.
       </p>
     </div>
   );
