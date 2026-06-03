@@ -36,7 +36,6 @@ const PALETA_LAP = ['#E5A82F', '#0E7490', '#047857', '#1D4ED8', '#BE123C', '#7E2
 import Modal from '../components/Modal';
 import PlanDiario from './PlanDiario';
 import TableroLPS from './TableroLPS';
-import Sectorizacion from './Sectorizacion';
 import SectorizacionTren from './planeamiento/SectorizacionTren';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 

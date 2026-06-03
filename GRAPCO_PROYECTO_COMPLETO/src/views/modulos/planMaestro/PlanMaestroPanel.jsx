@@ -6,20 +6,18 @@ import RoleGuard from '../../../components/RoleGuard';
 import WBSExplorer from './WBSExplorer';
 import ActividadEditor from './ActividadEditor';
 import DashboardPlanMaestro from './DashboardPlanMaestro';
-import GanttPlanMaestro from './GanttPlanMaestro';
 import WizardPlanMaestro from './WizardPlanMaestro';
 import EditorMasivoActividades from './EditorMasivoActividades';
 const ImportadorPlanMaestro = lazy(() => import('./ImportadorPlanMaestro'));
-import PullPlanningView from '../pullPlanning/PullPlanningView';
 
+// Plan Maestro = gestor del WBS. El Gantt vive en «Cronograma de Obra» y el Pull
+// Planning en su propio módulo (se quitaron de aquí para no duplicar — paleta GRAPCO).
 const TABS = [
-  { id: 'dashboard', l: 'Dashboard',     icono: '📊', desc: 'KPIs del plan',           color: '#1e3a5f' },
-  { id: 'wbs',       l: 'Estructura WBS', icono: '🌳', desc: 'Árbol jerárquico',        color: '#7c3aed' },
-  { id: 'masivo',    l: 'Editor Masivo',  icono: '📝', desc: 'CRUD tipo Excel',         color: '#16a34a' },
-  { id: 'gantt',     l: 'Gantt',          icono: '📊', desc: 'Línea de tiempo',         color: '#0d9488' },
-  { id: 'pull',      l: 'Pull Planning',  icono: '🎯', desc: 'LCI fase 2',              color: '#5b21b6' },
-  { id: 'wizard',    l: 'Wizard',         icono: '🚀', desc: 'Plantillas predefinidas', color: '#f59e0b' },
-  { id: 'importar',  l: 'Importar Excel', icono: '📥', desc: 'CSV/Excel/S10',           color: '#15803d' },
+  { id: 'dashboard', l: 'Dashboard',     icono: '📊', desc: 'KPIs del plan',           color: '#0F2A47' },
+  { id: 'wbs',       l: 'Estructura WBS', icono: '🌳', desc: 'Árbol jerárquico',        color: '#7E22CE' },
+  { id: 'masivo',    l: 'Editor Masivo',  icono: '📝', desc: 'CRUD tipo Excel',         color: '#047857' },
+  { id: 'wizard',    l: 'Wizard',         icono: '🚀', desc: 'Plantillas predefinidas', color: '#E5A82F' },
+  { id: 'importar',  l: 'Importar Excel', icono: '📥', desc: 'CSV/Excel/S10',           color: '#0E7490' },
 ];
 
 export default function PlanMaestroPanel({ showToast }) {
@@ -95,9 +93,7 @@ export default function PlanMaestroPanel({ showToast }) {
               onClose={() => setActividadEdit(null)}
             />
           )}
-          {tab === 'gantt' && <GanttPlanMaestro showToast={showToast} />}
           {tab === 'masivo' && <EditorMasivoActividades showToast={showToast} />}
-          {tab === 'pull' && <PullPlanningView showToast={showToast} />}
           {tab === 'wizard' && <WizardPlanMaestro showToast={showToast} onClose={() => setTab('wbs')} />}
           {tab === 'importar' && (
             <Suspense fallback={<div style={{ padding: 30, textAlign: 'center', color: BASE.muted, fontSize: '13px', fontWeight: '700' }}>⏳ Cargando importador…</div>}>
