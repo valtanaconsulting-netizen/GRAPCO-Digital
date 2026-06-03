@@ -1280,15 +1280,43 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
   const semanaAR = semanaActiva;
   const setSemanaAR = setSemanaActiva;
   const [verTodasSem, setVerTodasSem] = useState(false);
+  // Ventana Make-Ready (igual que el Lookahead): el AR se revisa sobre 4–6 semanas,
+  // no una sola. rangoAR = nº de semanas hacia adelante desde la semana activa.
+  const [rangoAR, setRangoAR] = useState(6);
+  const winEnd = semanaAR + rangoAR - 1;
   const reqW = (r) => r.fechaCompromisoLiberacion ? obtenerSemana(r.fechaCompromisoLiberacion) : null;
   const cicloEstado = { pendiente: 'en_proceso', en_proceso: 'liberada', liberada: 'pendiente', vencida: 'liberada' };
+  const curWeek = obtenerSemana(new Date().toISOString().slice(0, 10));
 
   const filtradas = useMemo(() => {
     let lista = kpi.lista;
     if (filtroEstado !== 'todos') lista = lista.filter(r => r._estado === filtroEstado);
-    if (!verTodasSem) lista = lista.filter(r => reqW(r) === semanaAR);
+    if (!verTodasSem) lista = lista.filter(r => { const w = reqW(r); return w != null && w >= semanaAR && w <= winEnd; });
     return lista;
-  }, [kpi.lista, filtroEstado, semanaAR, verTodasSem]);
+  }, [kpi.lista, filtroEstado, semanaAR, winEnd, verTodasSem]);
+
+  // KPIs Make-Ready de la VENTANA (superan al Excel): PCR = % restricciones removidas;
+  // PPR = % actividades "listas" (sin restricción pendiente) → lo que SÍ se puede
+  // comprometer (production shielding); En riesgo = pendientes cuya fecha-límite ya
+  // venció o vence dentro de la ventana (last responsible moment).
+  const makeReady = useMemo(() => {
+    const lista = filtradas;
+    const total = lista.length;
+    const liberadas = lista.filter(r => r._estado === 'liberada').length;
+    const acts = {};
+    lista.forEach(r => { const k = (r.actividad || '?'); (acts[k] || (acts[k] = { pend: 0 })); if (r._estado !== 'liberada') acts[k].pend += 1; });
+    const nAct = Object.keys(acts).length;
+    const listas = Object.values(acts).filter(a => a.pend === 0).length;
+    const enRiesgo = lista.filter(r => r._estado !== 'liberada' && reqW(r) != null && reqW(r) <= curWeek).length;
+    return { total, liberadas, pcr: total ? Math.round(liberadas / total * 100) : null, nAct, listas, ppr: nAct ? Math.round(listas / nAct * 100) : null, enRiesgo };
+  }, [filtradas]);
+
+  // Semana con más restricciones (para el atajo cuando la ventana actual está vacía).
+  const semanaTop = useMemo(() => {
+    const c = {}; kpi.lista.forEach(r => { const w = reqW(r); if (w) c[w] = (c[w] || 0) + 1; });
+    const ent = Object.entries(c).sort((a, b) => b[1] - a[1]);
+    return ent.length ? { sem: parseInt(ent[0][0], 10), n: ent[0][1] } : null;
+  }, [kpi.lista]);
 
   const ordenadas = useMemo(
     () => [...filtradas].sort((a, b) => {
@@ -1310,28 +1338,49 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
       .sort((a, b) => (a.items[0].fechaCompromisoLiberacion || 'zzz').localeCompare(b.items[0].fechaCompromisoLiberacion || 'zzz'));
   }, [filtradas]);
 
-  // Rango de semanas para la grilla (como el Excel AR): cada restricción se ve a lo
-  // largo de las SEMANAS desde su fecha requerida hasta que se libera.
-  const curWeek = obtenerSemana(new Date().toISOString().slice(0, 10));
+  // Rango de semanas para la grilla. En modo ventana (Make-Ready) la grilla cubre
+  // EXACTAMENTE las semanas de la ventana [semanaAR .. winEnd] (tal cual el Lookahead
+  // del Excel a 4–6 sem). En "Todas" cubre desde la semana 1 hasta la última con datos.
   const semGrid = useMemo(() => {
-    let maxW = curWeek;
-    filtradas.forEach(r => { [r.fechaCompromisoLiberacion, r.fechaConciliada].forEach(f => { if (f) maxW = Math.max(maxW, obtenerSemana(f)); }); });
-    maxW = Math.min(Math.max(maxW, 6), 34);
+    let lo = 1, hi;
+    if (verTodasSem) {
+      let maxW = curWeek;
+      filtradas.forEach(r => { [r.fechaCompromisoLiberacion, r.fechaConciliada].forEach(f => { if (f) maxW = Math.max(maxW, obtenerSemana(f)); }); });
+      hi = Math.min(Math.max(maxW, 6), 34);
+    } else { lo = semanaAR; hi = winEnd; }
     const arr = [];
-    for (let n = 1; n <= maxW; n++) { const d = fechasDeSemana(n, INICIO_PROYECTO)[0]; arr.push({ n, dia: d ? d.dia : '', mes: d ? d.mes : '' }); }
+    for (let n = lo; n <= hi; n++) { const d = fechasDeSemana(n, INICIO_PROYECTO)[0]; arr.push({ n, dia: d ? d.dia : '', mes: d ? d.mes : '' }); }
     return arr;
-  }, [filtradas, curWeek]);
+  }, [filtradas, curWeek, verTodasSem, semanaAR, winEnd]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {/* Cabecera + FILTRO DE SEMANA UNIFICADO (compartido con LAP, PS y PPC) */}
       <div>
-        <h3 style={{ fontSize: '16px', fontWeight: 900, color: BASE.navy }}>🚧 ANÁLISIS DE RESTRICCIONES · {verTodasSem ? 'Todas las semanas' : `Semana ${semanaAR}`}</h3>
+        <h3 style={{ fontSize: '16px', fontWeight: 900, color: BASE.navy }}>🚧 ANÁLISIS DE RESTRICCIONES · {verTodasSem ? 'Todas las semanas' : `Ventana S${semanaAR}–S${winEnd} (${rangoAR} sem)`}</h3>
         <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
-          Restricciones por <strong>semana de compromiso</strong> (Excel F04). Elige la semana abajo o «Todas»; el badge 🚧 de la tira marca dónde hay pendientes. Clic en ESTADO para cambiarlo.
+          Proceso <strong>Make-Ready</strong> sobre la ventana del Lookahead (4–6 sem, tal cual el Excel F04): revisa qué actividades estarán <strong>listas</strong> y qué falta liberar y <strong>para cuándo</strong>. Elige la ventana abajo. Clic en ESTADO para cambiarlo.
         </p>
       </div>
-      <SemanaNav semana={semanaAR} setSemana={setSemanaAR} total={total} meta={semanasMeta} titulo="análisis de restricciones" allowTodas todas={verTodasSem} setTodas={setVerTodasSem} />
+      <SemanaNav semana={semanaAR} setSemana={setSemanaAR} total={total} meta={semanasMeta} titulo="ventana Make-Ready" rango={rangoAR} setRango={setRangoAR} rangoOpts={[1, 4, 6]} allowTodas todas={verTodasSem} setTodas={setVerTodasSem} />
+
+      {/* PANEL MAKE-READY de la ventana (KPIs superiores al Excel: PCR, PPR, en riesgo) */}
+      {!verTodasSem && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
+          {[
+            { l: 'PCR · RESTRICCIONES REMOVIDAS', v: makeReady.pcr == null ? '—' : makeReady.pcr + '%', c: BASE.greenDark, sub: `${makeReady.liberadas} de ${makeReady.total} liberadas` },
+            { l: 'PPR · ACTIVIDADES LISTAS', v: makeReady.ppr == null ? '—' : makeReady.ppr + '%', c: BASE.navy, sub: `${makeReady.listas} de ${makeReady.nAct} sin pendientes` },
+            { l: 'EN RIESGO (FECHA-LÍMITE)', v: makeReady.enRiesgo, c: makeReady.enRiesgo > 0 ? BASE.red : BASE.greenDark, sub: makeReady.enRiesgo > 0 ? '⚠️ Vencen o vencieron' : 'Bajo control' },
+            { l: 'RESTRICCIONES EN VENTANA', v: makeReady.total, c: BASE.gold, sub: `S${semanaAR}–S${winEnd}` },
+          ].map(k => (
+            <div key={k.l} style={{ background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, borderRadius: '12px', padding: '12px 15px', borderLeft: `4px solid ${k.c}`, boxShadow: BASE.shadowSm }}>
+              <p style={{ fontSize: '9px', fontWeight: 800, color: BASE.gold, letterSpacing: '0.6px' }}>{k.l}</p>
+              <p style={{ fontSize: '26px', fontWeight: 900, color: '#fff', marginTop: '2px', lineHeight: 1.05 }}>{k.v}</p>
+              <p style={{ fontSize: '9.5px', color: 'rgba(255,255,255,0.7)', marginTop: '2px' }}>{k.sub}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* KPIs Restricciones */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
@@ -1428,12 +1477,24 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
       {/* TABLA AR — tal cual el Excel (Frente·Actividad·Restricción·Tipo·RESP·Fechas·Estado), premium */}
       <div style={{ background: BASE.white, borderRadius: '14px', border: `1px solid ${BASE.border}`, overflow: 'hidden', boxShadow: BASE.shadowSm }}>
         <div style={{ background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', padding: '11px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', borderBottom: `3px solid ${BASE.gold}` }}>
-          <span style={{ fontSize: '13px', fontWeight: 900, letterSpacing: '0.6px' }}>📋 {verTodasSem ? 'TODAS LAS SEMANAS' : `SEMANA ${semanaAR}`}</span>
+          <span style={{ fontSize: '13px', fontWeight: 900, letterSpacing: '0.6px' }}>📋 {verTodasSem ? 'TODAS LAS SEMANAS' : `VENTANA S${semanaAR}–S${winEnd}`}</span>
           <span style={{ fontSize: '11px', opacity: 0.85 }}>{ordenadas.length} de {kpi.total} · clic en ESTADO para cambiarlo</span>
         </div>
         {grupos.length === 0 ? (
-          <div style={{ padding: '44px', textAlign: 'center', color: BASE.muted, fontSize: '13px' }}>
-            🚧 {kpi.total === 0 ? 'No hay restricciones aún. Regístralas desde el lookahead.' : 'Ninguna coincide con el filtro.'}
+          <div style={{ padding: '40px', textAlign: 'center', color: BASE.muted, fontSize: '13px' }}>
+            🚧 {kpi.total === 0 ? 'No hay restricciones aún. Regístralas desde el lookahead.' : `Sin restricciones en esta ventana (S${semanaAR}–S${winEnd}).`}
+            {kpi.total > 0 && semanaTop && (
+              <div style={{ marginTop: '12px', display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <button onClick={() => { setVerTodasSem(false); setSemanaAR(Math.max(1, semanaTop.sem)); }}
+                  style={{ padding: '8px 14px', background: `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`, color: '#fff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 800, cursor: 'pointer', boxShadow: `0 3px 10px ${BASE.gold}55` }}>
+                  ⭐ Ir a la Semana {semanaTop.sem} ({semanaTop.n} restric.)
+                </button>
+                <button onClick={() => setVerTodasSem(true)}
+                  style={{ padding: '8px 14px', background: BASE.white, color: BASE.navy, border: `1px solid ${BASE.border}`, borderRadius: '8px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}>
+                  Ver todas las semanas
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <div style={{ overflow: 'auto', maxHeight: '72vh' }}>
@@ -1915,7 +1976,7 @@ function SelectorColor({ colorPaint, setColorPaint }) {
 // ════════════════════════════════════════════════════════════════
 const ppcTone = (p) => p == null ? BASE.mutedSoft : p >= 80 ? BASE.green : p >= 50 ? BASE.gold : BASE.red;
 
-function SemanaNav({ semana, setSemana, total = 35, meta = {}, titulo = '', rango = 1, allowTodas = false, todas = false, setTodas }) {
+function SemanaNav({ semana, setSemana, total = 35, meta = {}, titulo = '', rango = 1, setRango, rangoOpts, allowTodas = false, todas = false, setTodas }) {
   const activeRef = useRef(null);
   useEffect(() => {
     const el = activeRef.current;
@@ -1940,6 +2001,19 @@ function SemanaNav({ semana, setSemana, total = 35, meta = {}, titulo = '', rang
           <span style={{ fontSize: '15px', fontWeight: 900, color: '#fff' }}>{todas ? 'Todas' : semana}{!todas && rango > 1 ? ` – ${finVentana}` : ''}</span>
           {titulo && <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.55)', fontWeight: 700 }}>· {titulo}</span>}
         </div>
+        {rangoOpts && setRango && (
+          <div style={{ display: 'flex', gap: '2px', background: 'rgba(255,255,255,0.08)', borderRadius: '8px', padding: '2px' }} title="Tamaño de la ventana Make-Ready">
+            {rangoOpts.map(n => {
+              const act = !todas && rango === n;
+              return (
+                <button key={n} onClick={() => { if (setTodas) setTodas(false); setRango(n); }}
+                  style={{ padding: '5px 9px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontSize: '10.5px', fontWeight: 800, background: act ? BASE.gold : 'transparent', color: act ? BASE.navy : 'rgba(255,255,255,0.85)' }}>
+                  {n} sem
+                </button>
+              );
+            })}
+          </div>
+        )}
         {allowTodas && (
           <button onClick={() => setTodas && setTodas(!todas)} style={{ padding: '6px 12px', borderRadius: '999px', border: `1px solid ${todas ? BASE.gold : 'rgba(255,255,255,0.2)'}`, background: todas ? BASE.gold : 'rgba(255,255,255,0.06)', color: todas ? BASE.navy : '#fff', fontSize: '10.5px', fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>{todas ? '✓ ' : ''}Todas</button>
         )}
