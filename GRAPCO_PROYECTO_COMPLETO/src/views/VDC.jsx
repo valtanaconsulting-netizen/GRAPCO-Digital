@@ -112,6 +112,10 @@ export default function VDC({
     ...arBase.map(r => (arEdits[r.id] ? { ...r, ...arEdits[r.id] } : r)),
     ...restriccionesFS,
   ], [arBase, arEdits, restriccionesFS]);
+  // Secciones/frentes del LAP + LOOKUP fase-aware (enlaza AR↔LAP por actividad o
+  // por fase/sección). Fuente única (todo el LAP) → se pasa a LAP/PS/PPC/Huddle.
+  const lapSecciones = useMemo(() => [...new Set(lapPlan.map(a => a.seccion).filter(Boolean))], [lapPlan]);
+  const lookupRestr = useMemo(() => crearLookupRestr(restricciones, lapNombres), [restricciones, lapNombres]);
   // Cambiar el estado de una restricción (modificable). AR-excel → override; Firestore → doc real.
   const cambiarEstadoAR = (r, estado) => {
     const extra = (estado === 'liberada' && !r.fechaConciliada) ? { fechaConciliada: new Date().toISOString().slice(0, 10) } : {};
@@ -213,19 +217,21 @@ export default function VDC({
     const tot = restricciones.length;
     const lib = restricciones.filter(r => r.estado === 'liberada').length;
     const pcr = tot ? Math.round(lib / tot * 100) : null;
-    const rpa = restriccionesPorActividad(restricciones);
-    const actsR = Object.values(rpa);
-    const nAct = actsR.length;
-    const listas = actsR.filter(a => a.pend === 0).length;
-    const ppr = nAct ? Math.round(listas / nAct * 100) : null;
-    const progActs = [...new Set(lapProgramado.map(c => c.actividad).filter(Boolean))];
-    const bloqProg = progActs.filter(act => readyDe(rpa[normActividad(act)]) === 'bloq').length;
-    // TMR (Tasks Made Ready): de TODO lo programado en el LAP, % que llegó LISTO
-    // (sin restricción pendiente). Mejor predictor de plazo que el PPC.
-    const tmr = progActs.length ? Math.round((progActs.length - bloqProg) / progActs.length * 100) : null;
+    // Readiness sobre las actividades PROGRAMADAS del LAP (con su sección), usando
+    // el lookup fase-aware → cuenta restricciones directas Y de fase.
+    const prog = []; const vist = new Set();
+    lapProgramado.forEach(c => { const k = c.actividad + '|' + (c.partida || ''); if (!c.actividad || vist.has(k)) return; vist.add(k); prog.push(c); });
+    const info = prog.map(c => lookupRestr(c.actividad, c.partida));
+    const progTotal = prog.length;
+    const bloqProg = info.filter(rr => readyDe(rr) === 'bloq').length;
+    const conRestr = info.filter(Boolean);                       // tienen restricción (directa o de fase)
+    const listas = conRestr.filter(rr => rr.pend === 0).length;
+    const ppr = conRestr.length ? Math.round(listas / conRestr.length * 100) : null;
+    // TMR (Tasks Made Ready): de TODO lo programado, % que llegó LISTO (sin pendientes).
+    const tmr = progTotal ? Math.round((progTotal - bloqProg) / progTotal * 100) : null;
     const ppc = ppcOficial.global ?? null;
-    return { ppc, pcr, ppr, tmr, bloqProg, progTotal: progActs.length, lib, tot, pend: tot - lib, listas, nAct };
-  }, [restricciones, lapProgramado, ppcOficial]);
+    return { ppc, pcr, ppr, tmr, bloqProg, progTotal, lib, tot, pend: tot - lib, listas, nAct: conRestr.length };
+  }, [restricciones, lapProgramado, ppcOficial, lookupRestr]);
 
   // Lazo Learn: retroalimentación automática (CNC + restricciones + shielding).
   const retro = useMemo(
@@ -288,6 +294,7 @@ export default function VDC({
           saludLPS={saludLPS}
           restricciones={restricciones}
           lapProgramado={lapProgramado}
+          lookupRestr={lookupRestr}
           semanasMeta={semanasMeta}
           total={totalSemanas}
           setTab={setTab}
@@ -316,6 +323,7 @@ export default function VDC({
       {tab === 'lap' && (
         <LookaheadView
           restricciones={restricciones}
+          lookupRestr={lookupRestr}
           semanaActiva={semanaActiva}
           setSemanaActiva={setSemanaActiva}
           semanasMeta={semanasMeta}
@@ -328,7 +336,7 @@ export default function VDC({
         <ProgramacionSemanalLPS
           semanaActiva={semanaActiva}
           setSemanaActiva={setSemanaActiva}
-          restricciones={restricciones}
+          lookupRestr={lookupRestr}
           semanasMeta={semanasMeta}
           total={totalSemanas}
         />
@@ -348,7 +356,7 @@ export default function VDC({
 
       {/* === DASHBOARD PPC (conectado al LAP) === */}
       {tab === 'dashboard' && (
-        <PPCLap semanaActiva={semanaActiva} setSemanaActiva={setSemanaActiva} semanasMeta={semanasMeta} total={totalSemanas} restricciones={restricciones} />
+        <PPCLap semanaActiva={semanaActiva} setSemanaActiva={setSemanaActiva} semanasMeta={semanasMeta} total={totalSemanas} lookupRestr={lookupRestr} />
       )}
 
       {/* === RESTRICCIONES === */}
@@ -361,6 +369,7 @@ export default function VDC({
           semanasMeta={semanasMeta}
           total={totalSemanas}
           lapNombres={lapNombres}
+          lapSecciones={lapSecciones}
           evidenciasPorRestr={evidenciasPorRestr}
           onAddEvidencia={agregarEvidencia}
           onDelEvidencia={eliminarEvidencia}
@@ -662,12 +671,12 @@ const arTd = { padding: '5px 8px', borderRight: '1px solid #eef2f6', verticalAli
 const arTdC = { ...arTd, textAlign: 'center', whiteSpace: 'nowrap' };
 const arMini = (bg, col) => ({ padding: '4px 7px', background: bg, color: col, border: 'none', borderRadius: '5px', fontSize: '10px', cursor: 'pointer', marginLeft: '3px' });
 
-function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar, onEstado, semanaActiva, setSemanaActiva, semanasMeta = {}, total = 35, lapNombres = [], evidenciasPorRestr = {}, onAddEvidencia, onDelEvidencia }) {
+function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar, onEstado, semanaActiva, setSemanaActiva, semanasMeta = {}, total = 35, lapNombres = [], lapSecciones = [], evidenciasPorRestr = {}, onAddEvidencia, onDelEvidencia }) {
   const kpi = useMemo(() => calcularKPIRestricciones(restricciones), [restricciones]);
   const [modalEvid, setModalEvid] = useState(null);   // restricción cuya evidencia se gestiona
-  // Diagnóstico de vínculo AR↔LAP: restricciones cuya actividad no existe en el LAP
-  // (no aplicarían shielding/badges). Riesgo silencioso → lo hacemos visible.
-  const huerfanas = useMemo(() => restriccionesHuerfanas(restricciones, lapNombres), [restricciones, lapNombres]);
+  // Diagnóstico de vínculo AR↔LAP: restricciones que no enlazan con ninguna actividad
+  // NI sección/fase del LAP (no aplicarían shielding). Riesgo silencioso → visible.
+  const huerfanas = useMemo(() => restriccionesHuerfanas(restricciones, lapNombres, lapSecciones), [restricciones, lapNombres, lapSecciones]);
   const [verHuerfanas, setVerHuerfanas] = useState(false);
   const [filtroEstado, setFiltroEstado] = useState('todos');
   // Semana COMPARTIDA con LAP / PS / PPC (un único filtro para todo el LPS).
@@ -1393,28 +1402,58 @@ const normActividad = (s) => (s == null ? '' : String(s))
   .replace(/\s+/g, ' ')
   .trim();
 
-// Indexa restricciones por nombre de actividad NORMALIZADO (AR ↔ LAP).
-function restriccionesPorActividad(restricciones) {
-  const m = {};
-  (restricciones || []).forEach(r => {
-    const k = normActividad(r.actividad);
-    if (!k) return;
-    if (!m[k]) m[k] = { pend: 0, total: 0 };
-    m[k].total++;
-    if (r.estado !== 'liberada') m[k].pend++;
-  });
-  return m;
+// ¿Dos nombres son la MISMA FASE? (enlace AR↔LAP a nivel de frente/sección).
+// Cubre abreviaturas/plurales/prefijos: "MOV TIERRAS"~"MOVIMIENTO DE TIERRAS",
+// "ESTRUCTURA"~"ESTRUCTURAS", "NAVE"~"NAVE DE RECUPERACION DE AGUAS".
+const STOP_FASE = new Set(['DE', 'DEL', 'LA', 'EL', 'LOS', 'LAS', 'Y', 'EN', 'CON', 'POR', 'A', 'PARA']);
+const tokensFase = (s) => normActividad(s).split(' ').filter(t => t.length >= 4 && !STOP_FASE.has(t));
+function fasesCoinciden(a, b) {
+  const na = normActividad(a), nb = normActividad(b);
+  if (!na || !nb) return false;
+  if (na === nb || na.includes(nb) || nb.includes(na)) return true;
+  const ta = tokensFase(a), tb = tokensFase(b);
+  if (!ta.length || !tb.length) return false;
+  return ta.some(x => tb.some(y => x === y || x.slice(0, 5) === y.slice(0, 5)));   // comparten raíz
 }
 
-// Diagnóstico de vínculo: nombres de actividad del AR que NO enlazan con ninguna
-// actividad del LAP (riesgo silencioso — el shielding/badges no aplicarían).
-function restriccionesHuerfanas(restricciones, actividadesLap) {
-  const setLap = new Set((actividadesLap || []).map(normActividad).filter(Boolean));
+// Crea un LOOKUP de restricciones fase-aware. Una restricción cuyo nombre coincide
+// con una ACTIVIDAD del LAP afecta sólo a esa actividad; si NO coincide con ninguna
+// actividad pero sí con una SECCIÓN/frente, es de FASE y afecta a TODA esa sección.
+// lookup(actividad, seccion) → { pend, total } | null. (Sube la cobertura del
+// shielding cuando el AR está a nivel de fase y el LAP a nivel de actividad.)
+function crearLookupRestr(restricciones, lapNombres) {
+  const setActs = new Set((lapNombres || []).map(normActividad).filter(Boolean));
+  const byAct = {};   // restricción específica (su actividad ES actividad del LAP)
+  const fase = [];    // restricción de fase (aplica por sección)
+  (restricciones || []).forEach(r => {
+    const ka = normActividad(r.actividad);
+    if (!ka) return;
+    if (setActs.has(ka)) (byAct[ka] || (byAct[ka] = [])).push(r);
+    else fase.push(r);
+  });
+  return (actividad, seccion) => {
+    const ka = normActividad(actividad);
+    const dedup = new Map();
+    (byAct[ka] || []).forEach(r => dedup.set(r.id ?? r, r));
+    if (seccion) fase.forEach(r => { if (fasesCoinciden(r.actividad, seccion)) dedup.set(r.id ?? r, r); });
+    let pend = 0, total = 0;
+    dedup.forEach(r => { total++; if (r.estado !== 'liberada') pend++; });
+    return total ? { pend, total } : null;
+  };
+}
+
+// Diagnóstico de vínculo: restricciones que NO enlazan con ninguna actividad del LAP
+// NI con ninguna sección/fase (riesgo silencioso — no aplicarían shielding).
+function restriccionesHuerfanas(restricciones, actividadesLap, seccionesLap) {
+  const setAct = new Set((actividadesLap || []).map(normActividad).filter(Boolean));
+  const secs = (seccionesLap || []).map(normActividad).filter(Boolean);
   const out = []; const visto = new Set();
   (restricciones || []).forEach(r => {
     const k = normActividad(r.actividad);
-    if (!k || setLap.has(k) || visto.has(k)) return;
-    visto.add(k); out.push(r.actividad);
+    if (!k || visto.has(k)) return; visto.add(k);
+    if (setAct.has(k)) return;                                   // enlaza por actividad
+    if (secs.some(s => fasesCoinciden(r.actividad, s))) return;  // enlaza por fase/sección
+    out.push(r.actividad);
   });
   return out;
 }
@@ -1481,17 +1520,16 @@ function BarraShielding({ listas, bloq }) {
 // priorizadas (vencidas, en riesgo, PPR/PPC bajo) y el foco de la semana.
 // Todo derivado de lo ya calculado — conversa con AR/LAP/PPC.
 // ════════════════════════════════════════════════════════════════
-function HuddleDiario({ semanaActiva, setSemanaActiva, saludLPS = {}, restricciones = [], lapProgramado = [], semanasMeta = {}, total = 35, setTab }) {
+function HuddleDiario({ semanaActiva, setSemanaActiva, saludLPS = {}, restricciones = [], lapProgramado = [], lookupRestr, semanasMeta = {}, total = 35, setTab }) {
   const hoyISO = new Date().toISOString().slice(0, 10);
   const fechaLarga = (() => { try { return new Date().toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' }); } catch { return hoyISO; } })();
   const reqW = (r) => r.fechaCompromisoLiberacion ? obtenerSemana(r.fechaCompromisoLiberacion) : null;
   const noLib = restricciones.filter(r => r.estado !== 'liberada');
   const vencidas = noLib.filter(r => r.fechaCompromisoLiberacion && r.fechaCompromisoLiberacion < hoyISO);
   const venceSem = noLib.filter(r => reqW(r) === semanaActiva && r.fechaCompromisoLiberacion >= hoyISO);
-  const rpa = restriccionesPorActividad(restricciones);
   const foco = lapProgramado
     .filter(c => c.semana === semanaActiva)
-    .map(c => ({ ...c, bloq: readyDe(rpa[normActividad(c.actividad)]) === 'bloq' }))
+    .map(c => ({ ...c, bloq: lookupRestr ? readyDe(lookupRestr(c.actividad, c.partida)) === 'bloq' : false }))
     .sort((a, b) => (b.bloq ? 1 : 0) - (a.bloq ? 1 : 0));
   const focoBloq = foco.filter(f => f.bloq).length;
 
@@ -1827,7 +1865,7 @@ function SemanaNav({ semana, setSemana, total = 35, meta = {}, titulo = '', rang
 // SUB-COMPONENTE: LAP · LOOKAHEAD A 6 SEMANAS
 // Muestra ventana móvil de 6 semanas con actividades planificadas
 // ════════════════════════════════════════════════════════════════
-function LookaheadView({ restricciones, semanaActiva, setSemanaActiva, semanasMeta = {}, total = 35 }) {
+function LookaheadView({ restricciones, lookupRestr = () => null, semanaActiva, setSemanaActiva, semanasMeta = {}, total = 35 }) {
   const INICIO = INICIO_PROYECTO;
   // Ventana de 6 semanas anclada en la SEMANA ACTIVA compartida: el filtro de
   // semana unificado la mueve y, con ella, la Prog. Semanal, el AR y el PPC.
@@ -1870,7 +1908,6 @@ function LookaheadView({ restricciones, semanaActiva, setSemanaActiva, semanasMe
   const [hideUnmarked, setHideUnmarked] = useState(false);
 
   // Restricciones por actividad (AR ↔ LAP): badge 🚧 si tiene pendientes.
-  const restrPorAct = useMemo(() => restriccionesPorActividad(restricciones), [restricciones]);
 
   // Cuenta restricciones que afectan cada semana
   const restriccionesPorSemana = useMemo(() => {
@@ -1900,7 +1937,7 @@ function LookaheadView({ restricciones, semanaActiva, setSemanaActiva, semanasMe
   const totalHH = todasActs.filter(actMarcadaEnVentana).reduce((s, a) => s + (a.hh || 0), 0);
   // Shielding: de las programadas en la ventana, cuántas están bloqueadas (con
   // restricción pendiente) vs listas para comprometer. Conversa solo con el AR.
-  const progBloq = todasActs.filter(a => actMarcadaEnVentana(a) && readyDe(restrPorAct[normActividad(a.actividad)]) === 'bloq').length;
+  const progBloq = todasActs.filter(a => actMarcadaEnVentana(a) && readyDe(lookupRestr(a.actividad, a.seccion)) === 'bloq').length;
   const progListas = nAct - progBloq;
   const fmtN = (n) => n == null ? '' : Number(n).toLocaleString('es-PE', { maximumFractionDigits: n < 100 ? 1 : 0 });
   const leftColsStyle = { width: LEFT_W, minWidth: LEFT_W, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px', padding: '0 8px', background: BASE.white, borderRight: `2px solid ${BASE.border}` };
@@ -2016,7 +2053,7 @@ function LookaheadView({ restricciones, semanaActiva, setSemanaActiva, semanasMe
                     const esSub = a.nivel && !a.id && a.metrado == null;
                     const pad = esSub ? (a.nivel === 'N2' ? 6 : 16) : 26;
                     const bgRow = esSub ? `${sec.color}1a` : (ai % 2 ? '#f8fbff' : '#ffffff');
-                    const rr = restrPorAct[normActividad(a.actividad)];
+                    const rr = lookupRestr(a.actividad, a.seccion);
                     const ready = esSub ? 'sub' : readyDe(rr);   // shielding: bloq | lista | sin
                     const bloq = ready === 'bloq';
                     const stripe = esSub ? sec.color : bloq ? BASE.red : ready === 'lista' ? BASE.green : 'transparent';
@@ -2094,10 +2131,9 @@ function LookaheadView({ restricciones, semanaActiva, setSemanaActiva, semanasMe
 // SUB-COMPONENTE: PROGRAMACIÓN SEMANAL (formato Excel S0/S1/S2)
 // Replica imagen 2: tabla con días lun-dom + colores S0/S1/S2 por celda
 // ════════════════════════════════════════════════════════════════
-function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, restricciones = [], semanasMeta = {}, total = 35 }) {
+function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, lookupRestr = () => null, semanasMeta = {}, total = 35 }) {
   const dias = useMemo(() => fechasDeSemana(semanaActiva, INICIO_PROYECTO), [semanaActiva]);
   const semIni = dias[0]?.fecha;
-  const restrPorAct = useMemo(() => restriccionesPorActividad(restricciones), [restricciones]);
 
   // Plan LAP consolidado (carga bajo demanda) + edición compartida con el Lookahead.
   const [plan, setPlan] = useState([]);
@@ -2128,7 +2164,7 @@ function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, restricciones =
   const nAct = todasActs.filter(actMarcadaSemana).length;
   const totalHH = todasActs.filter(actMarcadaSemana).reduce((s, a) => s + (a.hh || 0), 0);
   // Shielding de la semana: programadas bloqueadas (restricción pendiente) vs listas.
-  const progBloq = todasActs.filter(a => actMarcadaSemana(a) && readyDe(restrPorAct[normActividad(a.actividad)]) === 'bloq').length;
+  const progBloq = todasActs.filter(a => actMarcadaSemana(a) && readyDe(lookupRestr(a.actividad, a.seccion)) === 'bloq').length;
   const progListas = nAct - progBloq;
   const hoy = new Date();
   const hoyISO = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
@@ -2216,7 +2252,7 @@ function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, restricciones =
                     const esSub = a.nivel && !a.id && a.metrado == null;   // sub-partida (encabezado de nivel)
                     const pad = esSub ? (a.nivel === 'N2' ? 4 : 14) : 0;
                     const bgRow = esSub ? `${sec.color}1a` : (ai % 2 ? '#f8fbff' : '#ffffff');
-                    const rr = restrPorAct[normActividad(a.actividad)];
+                    const rr = lookupRestr(a.actividad, a.seccion);
                     const ready = esSub ? 'sub' : readyDe(rr);   // shielding
                     const bloq = ready === 'bloq';
                     const stripe = esSub ? sec.color : bloq ? BASE.red : ready === 'lista' ? BASE.green : 'transparent';
@@ -2285,11 +2321,10 @@ const CNC_CATS = [
 // Planificado = actividades pintadas en el LAP esa semana; el usuario marca lo
 // ejecutado (✓/✗+causa) y el PPC% se calcula solo. Tendencia + Pareto de CNC.
 // ════════════════════════════════════════════════════════════════
-function PPCLap({ semanaActiva, setSemanaActiva, semanasMeta = {}, total, restricciones = [] }) {
+function PPCLap({ semanaActiva, setSemanaActiva, semanasMeta = {}, total, lookupRestr = () => null }) {
   const { proyectoActivoId } = useProyectoActivo();
   // Shielding: restricciones por actividad (conversa con el AR). Una comprometida
   // con restricción pendiente es "comprometida en riesgo" (no debió entrar a la semana).
-  const restrPorAct = useMemo(() => restriccionesPorActividad(restricciones), [restricciones]);
   const [plan, setPlan] = useState([]);
   useEffect(() => { let v = true; import('../data/lapCreditex').then(m => { if (v) setPlan(m.LAP_PLAN || []); }).catch(() => {}); return () => { v = false; }; }, []);
   const [docData, setDocData] = useState({ marcas: {}, cumpl: {} });
@@ -2322,7 +2357,7 @@ function PPCLap({ semanaActiva, setSemanaActiva, semanasMeta = {}, total, restri
   };
 
   const planif = useMemo(() => planificadasDe(sem), [plan, marcas, sem]);
-  const bloqDe = (a) => readyDe(restrPorAct[normActividad(a.actividad)]) === 'bloq';
+  const bloqDe = (a) => readyDe(lookupRestr(a.actividad, a.seccion)) === 'bloq';
   const compBloq = planif.filter(bloqDe).length;   // comprometidas con restricción pendiente
   const estadoDe = (actKey) => cumpl[cumplKey(actKey, sem)];
   const ok = planif.filter(a => estadoDe(a.actKey) === 'ok').length;
@@ -2492,7 +2527,7 @@ function PPCLap({ semanaActiva, setSemanaActiva, semanasMeta = {}, total, restri
           const est = estadoDe(a.actKey);
           const esNo = est && est !== 'ok';
           const bloq = bloqDe(a);   // comprometida con restricción pendiente (shielding)
-          const rr = restrPorAct[normActividad(a.actividad)];
+          const rr = lookupRestr(a.actividad, a.seccion);
           return (
             <div key={a.actKey} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 14px', borderBottom: `1px solid #eef2f6`, background: bloq ? 'rgba(225,29,72,0.05)' : (i % 2 ? '#f8fbff' : '#fff'), borderLeft: `3px solid ${bloq ? BASE.red : 'transparent'}` }}>
               <span style={{ flex: 1, fontSize: '11px', color: BASE.text }}>
