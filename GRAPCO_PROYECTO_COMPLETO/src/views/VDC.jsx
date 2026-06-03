@@ -305,7 +305,6 @@ export default function VDC({
             { id: 'progsem',       l: '📋 Programación Semanal',   group: 'plan' },
             { id: 'plandiario',    l: '📅 Plan Diario',            group: 'exec' },
             { id: 'ejecdia',       l: '🏗️ Ejecución Diaria',       group: 'exec' },
-            { id: 'plan',          l: '✏️ Compromisos (CRUD)',     group: 'exec' },
             { id: 'dashboard',     l: '📊 PPC Dashboard',          group: 'ctrl' },
             { id: 'rnc',           l: '🔍 RNC Pareto',             group: 'ctrl' },
             { id: 'lecciones',     l: '📚 Lecciones',              group: 'ctrl' },
@@ -1916,8 +1915,8 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
     return mapa;
   }, [restricciones, semanas]);
 
-  // ── Geometría y navegación (ancho completo; nombres completos que envuelven) ──
-  const LEFT_W = 360, ROW_H = 22, MIN_DAY = 15;
+  // ── Geometría y navegación (ancho completo; nombres en UNA línea, columna ancha) ──
+  const LEFT_W = 480, ROW_H = 22, MIN_DAY = 15;
   const hoy = new Date();
   const hoyISO = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
   const todasActs = secciones.flatMap(s => s.acts);
@@ -2059,7 +2058,7 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
                     return (
                       <div key={a.actKey} style={{ display: 'flex', borderBottom: `1px solid #eef2f6`, minHeight: ROW_H, background: bgRow }}>
                         <div style={{ ...leftColsStyle, background: bgRow, borderLeft: esSub ? `3px solid ${sec.color}` : `3px solid transparent` }}>
-                          <span style={{ flex: 1, fontSize: esSub ? '9px' : '9.5px', paddingLeft: pad, color: esSub ? BASE.navy : BASE.text, fontWeight: esSub ? 900 : 600, textTransform: esSub ? 'uppercase' : 'none', letterSpacing: esSub ? '0.3px' : 0, whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.18 }} title={a.actividad}>
+                          <span style={{ flex: 1, minWidth: 0, fontSize: esSub ? '9px' : '9.5px', paddingLeft: pad, color: esSub ? BASE.navy : BASE.text, fontWeight: esSub ? 900 : 600, textTransform: esSub ? 'uppercase' : 'none', letterSpacing: esSub ? '0.3px' : 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={a.actividad}>
                             {rr && rr.pend > 0 ? <span title={`${rr.pend} restricción(es) pendiente(s)`}>🚧 </span> : (rr && rr.total > 0 ? <span title="Restricciones liberadas">✅ </span> : '')}
                             {a.id ? <b style={{ color: sec.color }}>{a.id} </b> : ''}{a.actividad}
                           </span>
@@ -2247,7 +2246,7 @@ function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, semanasDisponib
                       <div key={a.actKey} style={{ display: 'flex', borderBottom: `1px solid #eef2f6`, minHeight: 26, alignItems: 'stretch', background: bgRow }}>
                         <div style={{ ...cCod, ...pc, justifyContent: 'center', fontWeight: 800, color: sec.color, fontSize: '9px', borderLeft: esSub ? `3px solid ${sec.color}` : '3px solid transparent' }}>{a.id || ''}</div>
                         <div style={{ ...cAct, ...pc, paddingLeft: 6 + pad }}>
-                          <span style={{ whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.18, fontWeight: esSub ? 900 : 600, color: esSub ? BASE.navy : BASE.text, textTransform: esSub ? 'uppercase' : 'none', fontSize: esSub ? '9.5px' : '10px' }} title={a.actividad}>
+                          <span style={{ flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: esSub ? 900 : 600, color: esSub ? BASE.navy : BASE.text, textTransform: esSub ? 'uppercase' : 'none', fontSize: esSub ? '9.5px' : '10px' }} title={a.actividad}>
                             {rr && rr.pend > 0 ? <span title={`${rr.pend} restricción(es) pendiente(s)`}>🚧 </span> : (rr && rr.total > 0 ? '✅ ' : '')}{a.actividad}
                           </span>
                         </div>
@@ -2321,6 +2320,7 @@ function PPCLap({ semanaActiva, setSemanaActiva }) {
   const [ppcOficial, setPpcOficial] = useState({ sem: [], cnc: [], global: null });
   useEffect(() => { let v = true; import('../data/ppcCreditex').then(m => { if (v) setPpcOficial({ sem: m.PPC_SEMANAL || [], cnc: m.PPC_CNC || [], global: m.PPC_GLOBAL ?? null }); }).catch(() => {}); return () => { v = false; }; }, []);
   const sem = semanaActiva;
+  const totalSemanas = Math.max(36, ...(ppcOficial.sem || []).map(s => s.semana || 0));
   const cumplKey = (actKey, semana) => `c${lapHash(actKey)}_${semana}`;
   const setEstado = (actKey, semana, val) => {
     const k = cumplKey(actKey, semana);
@@ -2387,7 +2387,10 @@ function PPCLap({ semanaActiva, setSemanaActiva }) {
         </div>
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
           <button onClick={() => setSemanaActiva(Math.max(1, sem - 1))} style={{ padding: '7px 11px', background: BASE.white, color: BASE.navy, border: `1px solid ${BASE.border}`, borderRadius: '8px', fontWeight: 800, cursor: 'pointer' }}>‹</button>
-          <span style={{ fontSize: '13px', fontWeight: 900, color: BASE.navy, minWidth: 90, textAlign: 'center' }}>SEMANA {sem}</span>
+          <select value={sem} onChange={e => setSemanaActiva(parseInt(e.target.value, 10))}
+            style={inp({ width: 'auto', fontSize: '12px', fontWeight: 800, padding: '8px 12px' })}>
+            {Array.from({ length: totalSemanas }, (_, i) => i + 1).map(s => <option key={s} value={s}>Semana {s}</option>)}
+          </select>
           <button onClick={() => setSemanaActiva(sem + 1)} style={{ padding: '7px 11px', background: BASE.white, color: BASE.navy, border: `1px solid ${BASE.border}`, borderRadius: '8px', fontWeight: 800, cursor: 'pointer' }}>›</button>
           <BotonImprimir titulo={`PPC Semana ${sem}`} />
         </div>
