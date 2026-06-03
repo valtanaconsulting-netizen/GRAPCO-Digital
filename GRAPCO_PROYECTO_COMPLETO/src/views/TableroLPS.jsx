@@ -36,6 +36,19 @@ const EST_RESTRICCION = {
   vencida:    '#dc2626',
 };
 
+// Anillo conic (gauge) compacto para la banda de salud LPS.
+const Anillo = ({ pct, color, size = 62 }) => (
+  <div style={{ width: size, height: size, borderRadius: '50%', flexShrink: 0,
+    background: `conic-gradient(${color} ${(pct || 0) * 3.6}deg, rgba(255,255,255,0.14) 0deg)`,
+    display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ width: size - 16, height: size - 16, borderRadius: '50%', background: BASE.navy,
+      display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <span style={{ fontSize: '15px', fontWeight: 900, color: '#fff' }}>{pct == null ? '—' : pct}<span style={{ fontSize: '8px' }}>%</span></span>
+    </div>
+  </div>
+);
+const toneLPS = (p) => p == null ? '#94a3b8' : p >= 80 ? '#22c55e' : p >= 50 ? '#E5A82F' : '#ef4444';
+
 export default function TableroLPS({
   compromisos = [],
   restricciones = [],
@@ -43,6 +56,7 @@ export default function TableroLPS({
   pareto = { items: [] },
   diag = {},
   semanaActiva,
+  saludLPS = null,
 }) {
   // ── 1. Lookahead 6 semanas (actividad × semana) ───────────────
   const lookahead = useMemo(() => {
@@ -100,8 +114,54 @@ export default function TableroLPS({
   const incumplidos = compromisos.filter(c => c.cumplido === false).length;
   const pendientes = compromisos.filter(c => c.cumplido == null).length;
 
+  // ── Banda de salud LPS (consolidado de las 4 métricas maestras) ──
+  const salud = saludLPS || {};
+  const saludDiag = saludLPS
+    ? (salud.bloqProg > 0
+        ? `⚠️ ${salud.bloqProg} actividad(es) comprometida(s) con restricciones pendientes — libéralas en el Análisis de Restricciones.`
+        : (salud.ppc != null && salud.ppc < 65)
+          ? '🔶 PPC bajo el objetivo (65%) — revisa las causas CNC y refuerza el Make-Ready.'
+          : '✅ Sistema sano: programa confiable, restricciones bajo control y sin compromisos en riesgo.')
+    : null;
+  const saludTiles = saludLPS ? [
+    { l: 'PPC · PLAN CUMPLIDO', tipo: 'pct', v: salud.ppc, sub: 'Did — lo ejecutado vs comprometido' },
+    { l: 'PCR · RESTRIC. REMOVIDAS', tipo: 'pct', v: salud.pcr, sub: `${salud.lib}/${salud.tot} liberadas (Make-Ready)` },
+    { l: 'PPR · ACTIVIDADES LISTAS', tipo: 'pct', v: salud.ppr, sub: `${salud.listas}/${salud.nAct} sin restricción (Can)` },
+    { l: 'SHIELDING · EN RIESGO', tipo: 'num', v: salud.bloqProg, sub: `de ${salud.progTotal} programadas (Will)` },
+  ] : [];
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+      {/* SALUD DEL SISTEMA LAST PLANNER (consolidado: PPC · PCR · PPR · Shielding) */}
+      {saludLPS && (
+        <div style={{ background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, borderRadius: '14px', padding: '14px 18px', borderTop: `3px solid ${BASE.gold}`, boxShadow: BASE.shadowMd }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '12px', fontWeight: 900, color: '#fff', letterSpacing: '0.5px' }}>🩺 SALUD DEL SISTEMA LAST PLANNER</span>
+            <span style={{ fontSize: '10px', fontWeight: 800, color: BASE.gold }}>Should · Can · Will · Did</span>
+            <span style={{ marginLeft: 'auto', fontSize: '10px', color: 'rgba(255,255,255,0.6)', fontWeight: 700 }}>Semana activa S{semanaActiva}</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+            {saludTiles.map(t => {
+              const color = t.tipo === 'pct' ? toneLPS(t.v) : (t.v > 0 ? '#ef4444' : '#22c55e');
+              return (
+                <div key={t.l} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.05)', border: `1px solid rgba(255,255,255,0.1)`, borderRadius: '12px', padding: '10px 12px', borderLeft: `4px solid ${color}` }}>
+                  {t.tipo === 'pct'
+                    ? <Anillo pct={t.v} color={color} />
+                    : <div style={{ width: 62, height: 62, borderRadius: '50%', flexShrink: 0, background: 'rgba(255,255,255,0.08)', border: `3px solid ${color}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: '22px', fontWeight: 900, color: '#fff' }}>{t.v}</span></div>}
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontSize: '9.5px', fontWeight: 900, color: BASE.gold, letterSpacing: '0.4px' }}>{t.l}</p>
+                    <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.72)', marginTop: '3px', lineHeight: 1.3 }}>{t.sub}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {saludDiag && (
+            <p style={{ fontSize: '11px', color: '#fff', marginTop: '11px', background: 'rgba(255,255,255,0.06)', borderRadius: '8px', padding: '8px 12px', fontWeight: 600 }}>{saludDiag}</p>
+          )}
+        </div>
+      )}
 
       {/* KPIs superiores */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>

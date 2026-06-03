@@ -196,6 +196,24 @@ export default function VDC({
   const pareto = useMemo(() => calcularParetoRNC(compromisos), [compromisos]);
   const diag = useMemo(() => diagnosticarPPC(ppcSemanal, 4), [ppcSemanal]);
 
+  // Salud del Sistema LPS (consolidado para el Tablero): las 4 métricas maestras
+  // del Last Planner conversando — PPC (Did), PCR (Make-Ready), PPR (Can/listo) y
+  // Shielding (Will: comprometido en riesgo). Todo derivado, automático.
+  const saludLPS = useMemo(() => {
+    const tot = restricciones.length;
+    const lib = restricciones.filter(r => r.estado === 'liberada').length;
+    const pcr = tot ? Math.round(lib / tot * 100) : null;
+    const rpa = restriccionesPorActividad(restricciones);
+    const actsR = Object.values(rpa);
+    const nAct = actsR.length;
+    const listas = actsR.filter(a => a.pend === 0).length;
+    const ppr = nAct ? Math.round(listas / nAct * 100) : null;
+    const progActs = [...new Set(lapProgramado.map(c => c.actividad).filter(Boolean))];
+    const bloqProg = progActs.filter(act => readyDe(rpa[(act || '').toUpperCase().trim()]) === 'bloq').length;
+    const ppc = ppcOficial.global ?? diag.promedioPct ?? null;
+    return { ppc, pcr, ppr, bloqProg, progTotal: progActs.length, lib, tot, pend: tot - lib, listas, nAct };
+  }, [restricciones, lapProgramado, ppcOficial, diag]);
+
   if (loading) {
     return (
       <div style={{ background: BASE.white, borderRadius: '14px', padding: '60px', textAlign: 'center' }}>
@@ -291,6 +309,7 @@ export default function VDC({
           pareto={paretoReal.items.length ? paretoReal : pareto}
           diag={{ ...diag, promedioPct: ppcOficial.global ?? diag.promedioPct }}
           semanaActiva={semanaActiva}
+          saludLPS={saludLPS}
         />
       )}
 
