@@ -108,6 +108,14 @@ export default function VDC({
     } catch (e) { console.warn('[useEffect Lecc]', e); }
   }, [filtrarPorContexto]);
 
+  // Nombres de actividades del LAP (para enlazar restricciones a actividades reales).
+  const [lapNombres, setLapNombres] = useState([]);
+  useEffect(() => {
+    let vivo = true;
+    import('../data/lapCreditex').then(m => { if (vivo) setLapNombres([...new Set((m.LAP_PLAN || []).map(a => a.actividad).filter(Boolean))]); }).catch(() => {});
+    return () => { vivo = false; };
+  }, []);
+
   // ── Datos calculados ──
   const ppcSemanal = useMemo(() => calcularPPCSemanal(compromisos), [compromisos]);
   const pareto = useMemo(() => calcularParetoRNC(compromisos), [compromisos]);
@@ -454,10 +462,13 @@ export default function VDC({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div>
               <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>ACTIVIDAD AFECTADA</label>
-              <input type="text" value={formRestriccion.actividad}
+              <input type="text" value={formRestriccion.actividad} list="lapActsList"
                 onChange={e => setFormRestriccion(p => ({ ...p, actividad: e.target.value }))}
-                placeholder="Ej: VACIADO LOSA EJE B"
+                placeholder="Elige una actividad del LAP o escríbela"
                 style={inp({ marginTop: '4px' })} />
+              <datalist id="lapActsList">
+                {lapNombres.map((n, i) => <option key={i} value={n} />)}
+              </datalist>
             </div>
             <div>
               <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', marginBottom: '6px', display: 'block' }}>
@@ -1848,7 +1859,7 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
   const navBtn = { padding: '8px 12px', background: BASE.white, color: BASE.navy, border: `1px solid ${BASE.border}`, borderRadius: '8px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' };
   const leftColsStyle = { width: LEFT_W, minWidth: LEFT_W, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px', padding: '0 8px', background: BASE.white, borderRight: `2px solid ${BASE.border}` };
   const cellWrap = { flex: 1, minWidth: 0, display: 'flex' };
-  const colNum = { width: '32px', minWidth: '32px', textAlign: 'right', fontSize: '9.5px', color: BASE.text, flexShrink: 0 };
+  const colNum = { width: '36px', minWidth: '36px', textAlign: 'right', fontSize: '9.5px', color: BASE.text, flexShrink: 0, borderLeft: `1px solid #e5ebf1`, padding: '0 4px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -1969,40 +1980,46 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
                     </div>
                     <div style={{ flex: 1, minWidth: 0, background: '#f1f5f9' }} />
                   </div>
-                  {acts.map(a => (
-                    <div key={a.actKey} style={{ display: 'flex', borderBottom: `1px solid #eef2f6`, minHeight: ROW_H }}>
-                      <div style={leftColsStyle}>
-                        <span style={{ flex: 1, fontSize: '9.5px', color: BASE.text, whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.18 }} title={a.actividad}>
-                          {a.id ? <b style={{ color: sec.color }}>{a.id} </b> : ''}{a.actividad}
-                        </span>
-                        <span style={colNum}>{fmtN(a.metrado)}</span>
-                        <span style={{ ...colNum, color: BASE.muted }}>{a.und || ''}</span>
-                        <span style={colNum}>{a.ip != null ? Number(a.ip).toFixed(2) : ''}</span>
-                        <span style={{ ...colNum, fontWeight: 800, color: BASE.navy }}>{a.hh != null ? Math.round(a.hh) : ''}</span>
-                        <span style={{ ...colNum, width: '24px', minWidth: '24px' }}>{a.mo != null ? a.mo : ''}</span>
+                  {acts.map((a, ai) => {
+                    // 3 niveles visuales: sub-partida (encabezado de nivel sin COD/metrado) vs actividad.
+                    const esSub = a.nivel && !a.id && a.metrado == null;
+                    const pad = esSub ? (a.nivel === 'N2' ? 6 : 16) : 26;
+                    const bgRow = esSub ? `${sec.color}1a` : (ai % 2 ? '#f8fbff' : '#ffffff');
+                    return (
+                      <div key={a.actKey} style={{ display: 'flex', borderBottom: `1px solid #eef2f6`, minHeight: ROW_H, background: bgRow }}>
+                        <div style={{ ...leftColsStyle, background: bgRow, borderLeft: esSub ? `3px solid ${sec.color}` : `3px solid transparent` }}>
+                          <span style={{ flex: 1, fontSize: esSub ? '9px' : '9.5px', paddingLeft: pad, color: esSub ? BASE.navy : BASE.text, fontWeight: esSub ? 900 : 600, textTransform: esSub ? 'uppercase' : 'none', letterSpacing: esSub ? '0.3px' : 0, whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.18 }} title={a.actividad}>
+                            {a.id ? <b style={{ color: sec.color }}>{a.id} </b> : ''}{a.actividad}
+                          </span>
+                          <span style={colNum}>{fmtN(a.metrado)}</span>
+                          <span style={{ ...colNum, color: BASE.muted }}>{a.und || ''}</span>
+                          <span style={colNum}>{a.ip != null ? Number(a.ip).toFixed(2) : ''}</span>
+                          <span style={{ ...colNum, fontWeight: 800, color: BASE.navy }}>{a.hh != null ? Math.round(a.hh) : ''}</span>
+                          <span style={{ ...colNum, width: '26px', minWidth: '26px' }}>{a.mo != null ? a.mo : ''}</span>
+                        </div>
+                        <div style={cellWrap}>
+                          {dias.map((d, i) => {
+                            const base = a.set.has(d.fecha);
+                            const { on, color } = estado(a.actKey, d.fecha, base);
+                            return (
+                              <div key={i}
+                                onMouseDown={(e) => { e.preventDefault(); onCeldaDown(a.actKey, d.fecha, base, on); }}
+                                onMouseEnter={() => onCeldaEnter(a.actKey, d.fecha, base)}
+                                title={`${a.actividad} · ${d.dia}/${d.mes} — clic para ${on ? 'borrar' : 'pintar'}`}
+                                style={{
+                                  flex: 1, minWidth: 0, cursor: 'pointer', alignSelf: 'stretch',
+                                  borderRight: `1px solid ${d.fecha === hoyISO ? BASE.red : '#eef2f6'}`,
+                                  background: d.fecha === hoyISO && !on ? 'rgba(225,29,72,0.06)' : (d.finde && !on ? 'rgba(15,23,42,0.045)' : 'transparent'),
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                }}>
+                                {on && <span style={{ width: '86%', height: 14, background: color || sec.color, borderRadius: '2px', boxShadow: `0 1px 2px ${(color || sec.color)}66`, pointerEvents: 'none' }} />}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                      <div style={cellWrap}>
-                        {dias.map((d, i) => {
-                          const base = a.set.has(d.fecha);
-                          const { on, color } = estado(a.actKey, d.fecha, base);
-                          return (
-                            <div key={i}
-                              onMouseDown={(e) => { e.preventDefault(); onCeldaDown(a.actKey, d.fecha, base, on); }}
-                              onMouseEnter={() => onCeldaEnter(a.actKey, d.fecha, base)}
-                              title={`${a.actividad} · ${d.dia}/${d.mes} — clic para ${on ? 'borrar' : 'pintar'}`}
-                              style={{
-                                flex: 1, minWidth: 0, cursor: 'pointer', alignSelf: 'stretch',
-                                borderRight: `1px solid ${d.fecha === hoyISO ? BASE.red : '#eef2f6'}`,
-                                background: d.finde && !on ? '#f6f8fa' : '#fff',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              }}>
-                              {on && <span style={{ width: '86%', height: 14, background: color || sec.color, borderRadius: '2px', boxShadow: `0 1px 2px ${(color || sec.color)}66`, pointerEvents: 'none' }} />}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </React.Fragment>
               );
             })}
@@ -2066,11 +2083,12 @@ function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, semanasDisponib
   const navBtn = { padding: '7px 11px', background: BASE.white, color: BASE.navy, border: `1px solid ${BASE.border}`, borderRadius: '8px', fontSize: '13px', fontWeight: 800, cursor: 'pointer' };
 
   // Columnas izquierdas (fijas; ACTIVIDAD flexible para llenar el ancho).
+  const sep = { borderLeft: `1px solid #e5ebf1` };
   const cCod = { width: 46, minWidth: 46, flexShrink: 0 };
-  const cAct = { flex: 1, minWidth: 150 };
-  const cSm  = { width: 42, minWidth: 42, flexShrink: 0 };
-  const cMet = { width: 58, minWidth: 58, flexShrink: 0 };
-  const cMo  = { width: 36, minWidth: 36, flexShrink: 0 };
+  const cAct = { flex: 1, minWidth: 150, borderRight: `1px solid #e5ebf1` };
+  const cSm  = { width: 42, minWidth: 42, flexShrink: 0, ...sep };
+  const cMet = { width: 58, minWidth: 58, flexShrink: 0, ...sep };
+  const cMo  = { width: 36, minWidth: 36, flexShrink: 0, ...sep };
   const DAY = 74;
   const celdaDia = { width: DAY, minWidth: DAY, flexShrink: 0 };
   const pc = { padding: '0 6px', fontSize: '10px', color: BASE.text, display: 'flex', alignItems: 'center' };
@@ -2147,32 +2165,39 @@ function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, semanasDisponib
                   <div style={{ display: 'flex', background: '#f1f5f9', borderBottom: `1px solid ${BASE.border}`, borderLeft: `4px solid ${sec.color}` }}>
                     <div style={{ ...pc, height: 26, fontSize: '10.5px', fontWeight: 900, color: BASE.navy, textTransform: 'uppercase' }}>{sec.seccion} <span style={{ color: BASE.muted, fontWeight: 700 }}>({acts.length})</span></div>
                   </div>
-                  {acts.map(a => (
-                    <div key={a.actKey} style={{ display: 'flex', borderBottom: `1px solid #eef2f6`, minHeight: 26, alignItems: 'stretch' }}>
-                      <div style={{ ...cCod, ...pc, justifyContent: 'center', fontWeight: 800, color: sec.color, fontSize: '9px' }}>{a.id || ''}</div>
-                      <div style={{ ...cAct, ...pc }}><span style={{ whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.18 }} title={a.actividad}>{a.actividad}</span></div>
-                      <div style={{ ...cSm, ...pr, color: BASE.muted }} />
-                      <div style={{ ...cSm, ...pr, color: BASE.muted }}>{a.und || ''}</div>
-                      <div style={{ ...cSm, ...pr, color: BASE.muted }}>{a.sectores != null ? a.sectores : ''}</div>
-                      <div style={{ ...cMet, ...pr }}>{fmtN(a.metrado)}</div>
-                      <div style={{ ...cSm, ...pr }}>{a.ip != null ? Number(a.ip).toFixed(2) : ''}</div>
-                      <div style={{ ...cSm, ...pr, fontWeight: 800, color: BASE.navy }}>{a.hh != null ? Math.round(a.hh) : ''}</div>
-                      <div style={{ ...cMo, ...pr }}>{a.mo != null ? a.mo : ''}</div>
-                      {dias.map((d, i) => {
-                        const base = a.set.has(d.fecha);
-                        const { on, color } = estado(a.actKey, d.fecha, base);
-                        return (
-                          <div key={i}
-                            onMouseDown={(e) => { e.preventDefault(); onCeldaDown(a.actKey, d.fecha, base, on); }}
-                            onMouseEnter={() => onCeldaEnter(a.actKey, d.fecha, base)}
-                            title={`${a.actividad} · ${d.dia}/${d.mes} — clic para ${on ? 'borrar' : 'pintar'}`}
-                            style={{ ...celdaDia, alignSelf: 'stretch', cursor: 'pointer', borderLeft: `1px solid ${d.fecha === hoyISO ? BASE.red : '#eef2f6'}`, background: d.fecha === hoyISO && !on ? '#fff5f5' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            {on && <span style={{ width: '78%', height: 14, background: color || sec.color, borderRadius: '2px', boxShadow: `0 1px 2px ${(color || sec.color)}66`, pointerEvents: 'none' }} />}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ))}
+                  {acts.map((a, ai) => {
+                    const esSub = a.nivel && !a.id && a.metrado == null;   // sub-partida (encabezado de nivel)
+                    const pad = esSub ? (a.nivel === 'N2' ? 4 : 14) : 0;
+                    const bgRow = esSub ? `${sec.color}1a` : (ai % 2 ? '#f8fbff' : '#ffffff');
+                    return (
+                      <div key={a.actKey} style={{ display: 'flex', borderBottom: `1px solid #eef2f6`, minHeight: 26, alignItems: 'stretch', background: bgRow }}>
+                        <div style={{ ...cCod, ...pc, justifyContent: 'center', fontWeight: 800, color: sec.color, fontSize: '9px', borderLeft: esSub ? `3px solid ${sec.color}` : '3px solid transparent' }}>{a.id || ''}</div>
+                        <div style={{ ...cAct, ...pc, paddingLeft: 6 + pad }}>
+                          <span style={{ whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.18, fontWeight: esSub ? 900 : 600, color: esSub ? BASE.navy : BASE.text, textTransform: esSub ? 'uppercase' : 'none', fontSize: esSub ? '9.5px' : '10px' }} title={a.actividad}>{a.actividad}</span>
+                        </div>
+                        <div style={{ ...cSm, ...pr, color: BASE.muted }} />
+                        <div style={{ ...cSm, ...pr, color: BASE.muted }}>{a.und || ''}</div>
+                        <div style={{ ...cSm, ...pr, color: BASE.muted }}>{a.sectores != null ? a.sectores : ''}</div>
+                        <div style={{ ...cMet, ...pr }}>{fmtN(a.metrado)}</div>
+                        <div style={{ ...cSm, ...pr }}>{a.ip != null ? Number(a.ip).toFixed(2) : ''}</div>
+                        <div style={{ ...cSm, ...pr, fontWeight: 800, color: BASE.navy }}>{a.hh != null ? Math.round(a.hh) : ''}</div>
+                        <div style={{ ...cMo, ...pr }}>{a.mo != null ? a.mo : ''}</div>
+                        {dias.map((d, i) => {
+                          const base = a.set.has(d.fecha);
+                          const { on, color } = estado(a.actKey, d.fecha, base);
+                          return (
+                            <div key={i}
+                              onMouseDown={(e) => { e.preventDefault(); onCeldaDown(a.actKey, d.fecha, base, on); }}
+                              onMouseEnter={() => onCeldaEnter(a.actKey, d.fecha, base)}
+                              title={`${a.actividad} · ${d.dia}/${d.mes} — clic para ${on ? 'borrar' : 'pintar'}`}
+                              style={{ ...celdaDia, alignSelf: 'stretch', cursor: 'pointer', borderLeft: `1px solid ${d.fecha === hoyISO ? BASE.red : '#eef2f6'}`, background: d.fecha === hoyISO && !on ? 'rgba(225,29,72,0.06)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              {on && <span style={{ width: '78%', height: 14, background: color || sec.color, borderRadius: '2px', boxShadow: `0 1px 2px ${(color || sec.color)}66`, pointerEvents: 'none' }} />}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
                 </React.Fragment>
               );
             })}
