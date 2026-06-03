@@ -120,7 +120,27 @@ export default function VDC({
   // vista AR, los badges del LAP y el Power BI muestran valores reales sin tipear.
   const [arBase, setArBase] = useState([]);
   useEffect(() => { let v = true; import('../data/arCreditex').then(m => { if (v) setArBase(m.AR_CREDITEX || []); }).catch(() => {}); return () => { v = false; }; }, []);
-  const restricciones = useMemo(() => [...arBase, ...restriccionesFS], [arBase, restriccionesFS]);
+  // Ediciones del usuario sobre las restricciones del Excel (estado, etc.) — persistentes.
+  const [arEdits, setArEdits] = useState({});
+  useEffect(() => {
+    if (!proyIdVDC) return;
+    return onSnapshot(doc(db, 'Configuracion', `arEdits_${proyIdVDC}`), s => setArEdits((s.exists() && s.data().edits) || {}), () => {});
+  }, [proyIdVDC]);
+  const restricciones = useMemo(() => [
+    ...arBase.map(r => (arEdits[r.id] ? { ...r, ...arEdits[r.id] } : r)),
+    ...restriccionesFS,
+  ], [arBase, arEdits, restriccionesFS]);
+  // Cambiar el estado de una restricción (modificable). AR-excel → override; Firestore → doc real.
+  const cambiarEstadoAR = (r, estado) => {
+    const extra = (estado === 'liberada' && !r.fechaConciliada) ? { fechaConciliada: new Date().toISOString().slice(0, 10) } : {};
+    if (String(r.id).startsWith('ar-')) {
+      const nuevo = { ...arEdits, [r.id]: { ...(arEdits[r.id] || {}), estado, ...extra } };
+      setArEdits(nuevo);
+      if (proyIdVDC) setDoc(doc(db, 'Configuracion', `arEdits_${proyIdVDC}`), { edits: nuevo }, { merge: true }).catch(() => {});
+    } else {
+      updateDoc(doc(db, 'VDC_Restricciones', r.id), { estado, ...extra }).catch(() => {});
+    }
+  };
   // PPC oficial del Excel (26 semanas + CNC) → alimenta el Power BI con valores reales.
   const [ppcOficial, setPpcOficial] = useState({ sem: [], cnc: [], global: null });
   useEffect(() => { let v = true; import('../data/ppcCreditex').then(m => { if (v) setPpcOficial({ sem: m.PPC_SEMANAL || [], cnc: m.PPC_CNC || [], global: m.PPC_GLOBAL ?? null }); }).catch(() => {}); return () => { v = false; }; }, []);
@@ -420,6 +440,7 @@ export default function VDC({
       {tab === 'restricciones' && (
         <Restricciones
           restricciones={restricciones}
+          onEstado={cambiarEstadoAR}
           onNueva={() => {
             setFormRestriccion({
               actividad: '', tipoFlujo: 'materiales', descripcion: '',
@@ -1223,15 +1244,29 @@ const arTd = { padding: '5px 8px', borderRight: '1px solid #eef2f6', verticalAli
 const arTdC = { ...arTd, textAlign: 'center', whiteSpace: 'nowrap' };
 const arMini = (bg, col) => ({ padding: '4px 7px', background: bg, color: col, border: 'none', borderRadius: '5px', fontSize: '10px', cursor: 'pointer', marginLeft: '3px' });
 
-function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar }) {
+function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar, onEstado }) {
   const kpi = useMemo(() => calcularKPIRestricciones(restricciones), [restricciones]);
   const [filtroEstado, setFiltroEstado] = useState('todos');
+  const [semanaAR, setSemanaAR] = useState(() => obtenerSemana(new Date().toISOString().slice(0, 10)));
+  const [verTodasSem, setVerTodasSem] = useState(false);
+  const reqW = (r) => r.fechaCompromisoLiberacion ? obtenerSemana(r.fechaCompromisoLiberacion) : null;
+  const cicloEstado = { pendiente: 'en_proceso', en_proceso: 'liberada', liberada: 'pendiente', vencida: 'liberada' };
 
   const filtradas = useMemo(() => {
-    const lista = kpi.lista;
-    if (filtroEstado === 'todos') return lista;
-    return lista.filter(r => r._estado === filtroEstado);
-  }, [kpi.lista, filtroEstado]);
+    let lista = kpi.lista;
+    if (filtroEstado !== 'todos') lista = lista.filter(r => r._estado === filtroEstado);
+    if (!verTodasSem) lista = lista.filter(r => reqW(r) === semanaAR);
+    return lista;
+  }, [kpi.lista, filtroEstado, semanaAR, verTodasSem]);
+
+  // Al cargar, posiciónate en la semana con más restricciones (no en una vacía).
+  const [autoSem, setAutoSem] = useState(false);
+  useEffect(() => {
+    if (autoSem || !kpi.lista.length) return;
+    const c = {}; kpi.lista.forEach(r => { const w = reqW(r); if (w) c[w] = (c[w] || 0) + 1; });
+    const ent = Object.entries(c);
+    if (ent.length) { setSemanaAR(parseInt(ent.sort((a, b) => b[1] - a[1])[0][0], 10)); setAutoSem(true); }
+  }, [kpi.lista, autoSem]);
 
   const ordenadas = useMemo(
     () => [...filtradas].sort((a, b) => {
@@ -1361,9 +1396,18 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
 
       {/* TABLA AR — tal cual el Excel (Frente·Actividad·Restricción·Tipo·RESP·Fechas·Estado), premium */}
       <div style={{ background: BASE.white, borderRadius: '14px', border: `1px solid ${BASE.border}`, overflow: 'hidden', boxShadow: BASE.shadowSm }}>
-        <div style={{ background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', padding: '11px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', borderBottom: `3px solid ${BASE.gold}` }}>
+        <div style={{ background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', padding: '11px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', borderBottom: `3px solid ${BASE.gold}` }}>
           <span style={{ fontSize: '13px', fontWeight: 900, letterSpacing: '0.6px' }}>📋 ANÁLISIS DE RESTRICCIONES</span>
-          <span style={{ fontSize: '11px', opacity: 0.85 }}>{ordenadas.length} de {kpi.total} · PTAR PLANTA 5 · CREDITEX</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+            <button onClick={() => { setVerTodasSem(false); setSemanaAR(Math.max(1, semanaAR - 1)); }} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)', borderRadius: '7px', padding: '5px 9px', fontWeight: 800, cursor: 'pointer' }}>‹</button>
+            <select value={verTodasSem ? 'todas' : semanaAR} onChange={e => { if (e.target.value === 'todas') setVerTodasSem(true); else { setVerTodasSem(false); setSemanaAR(parseInt(e.target.value, 10)); } }}
+              style={{ background: '#fff', color: BASE.navy, border: 'none', borderRadius: '7px', padding: '6px 10px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}>
+              <option value="todas">Todas las semanas</option>
+              {Array.from({ length: Math.max(semGrid.length, 1) }, (_, i) => i + 1).map(s => <option key={s} value={s}>Semana {s}</option>)}
+            </select>
+            <button onClick={() => { setVerTodasSem(false); setSemanaAR(semanaAR + 1); }} style={{ background: 'rgba(255,255,255,0.12)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)', borderRadius: '7px', padding: '5px 9px', fontWeight: 800, cursor: 'pointer' }}>›</button>
+          </div>
+          <span style={{ fontSize: '11px', opacity: 0.85 }}>{ordenadas.length} de {kpi.total} · clic en ESTADO para cambiarlo</span>
         </div>
         {grupos.length === 0 ? (
           <div style={{ padding: '44px', textAlign: 'center', color: BASE.muted, fontSize: '13px' }}>
@@ -1403,7 +1447,8 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
                           <td style={{ ...arTdC, fontFamily: 'monospace', color: BASE.text }}>{r.fechaCompromisoLiberacion ? fmtFechaCorta(r.fechaCompromisoLiberacion) : ''}</td>
                           <td style={{ ...arTdC, fontFamily: 'monospace', color: r.fechaConciliada ? BASE.greenDark : BASE.muted }}>{r.fechaConciliada ? fmtFechaCorta(r.fechaConciliada) : '—'}</td>
                           <td style={{ ...arTdC, color: BASE.muted }}>{r.responsableLevanta || ''}</td>
-                          <td style={{ padding: '4px', textAlign: 'center', borderRight: `1px solid #eef2f6` }}>
+                          <td onClick={() => onEstado && onEstado(r, cicloEstado[r._estado] || 'liberada')} title="Clic para cambiar estado (pendiente → en proceso → realizado)"
+                            style={{ padding: '4px', textAlign: 'center', borderRight: `1px solid #eef2f6`, cursor: onEstado ? 'pointer' : 'default' }}>
                             <span style={{ display: 'inline-block', minWidth: 78, background: est.bg, color: est.color, padding: '4px 6px', borderRadius: '5px', fontSize: '9px', fontWeight: 900, letterSpacing: '0.3px' }}>{est.label}</span>
                           </td>
                           <td style={{ padding: '3px 6px', whiteSpace: 'nowrap', textAlign: 'right' }}>
