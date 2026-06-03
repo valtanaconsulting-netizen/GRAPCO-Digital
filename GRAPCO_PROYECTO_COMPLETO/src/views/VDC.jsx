@@ -58,7 +58,8 @@ export default function VDC({
   const [modalLeccion, setModalLeccion] = useState(null);           // { editando, fromSugerencia? } | null
   const [formRestriccion, setFormRestriccion] = useState({
     actividad: '', tipoFlujo: 'materiales', descripcion: '',
-    responsable: '', fechaCompromisoLiberacion: '', impacto: 'medio', estado: 'pendiente',
+    responsable: '', responsableLevanta: '', fechaIdentificacion: '', fechaCompromisoLiberacion: '',
+    fechaConciliada: '', impacto: 'medio', estado: 'pendiente',
   });
   const [formLeccion, setFormLeccion] = useState({
     titulo: '', categoria: 'materiales', descripcion: '', accionRecomendada: '',
@@ -117,6 +118,11 @@ export default function VDC({
   // por fase/sección). Fuente única (todo el LAP) → se pasa a LAP/PS/PPC/Huddle.
   const lapSecciones = useMemo(() => [...new Set(lapPlan.map(a => a.seccion).filter(Boolean))], [lapPlan]);
   const lookupRestr = useMemo(() => crearLookupRestr(restricciones, lapNombres), [restricciones, lapNombres]);
+  // Personas conocidas (responsables) → selector de persona en el modal de restricción.
+  const responsablesLista = useMemo(
+    () => [...new Set([...restricciones.map(r => r.responsable), ...restricciones.map(r => r.responsableLevanta)].map(s => (s || '').trim()).filter(Boolean))].sort(),
+    [restricciones]
+  );
   // ── Edición de restricciones AR-excel vs Firestore ──
   // Las del Excel (id 'ar-N') NO son documentos en VDC_Restricciones: se editan en
   // el override Configuracion/arEdits_<proyecto>. Las creadas por el usuario sí son
@@ -412,7 +418,8 @@ export default function VDC({
           onNueva={() => {
             setFormRestriccion({
               actividad: '', tipoFlujo: 'materiales', descripcion: '',
-              responsable: '', fechaCompromisoLiberacion: '', impacto: 'medio', estado: 'pendiente',
+              responsable: '', responsableLevanta: '', fechaIdentificacion: new Date().toISOString().slice(0, 10),
+              fechaCompromisoLiberacion: '', fechaConciliada: '', impacto: 'medio', estado: 'pendiente',
             });
             setModalRestriccion({ editando: null });
           }}
@@ -422,7 +429,10 @@ export default function VDC({
               tipoFlujo: r.tipoFlujo || 'materiales',
               descripcion: r.descripcion || '',
               responsable: r.responsable || '',
+              responsableLevanta: r.responsableLevanta || '',
+              fechaIdentificacion: r.fechaIdentificacion || (r.creadoEn?.toDate ? r.creadoEn.toDate().toISOString().slice(0, 10) : ''),
               fechaCompromisoLiberacion: r.fechaCompromisoLiberacion || '',
+              fechaConciliada: r.fechaConciliada || r.fechaLiberacionReal || '',
               impacto: r.impacto || 'medio',
               estado: r.estado || 'pendiente',
             });
@@ -531,14 +541,30 @@ export default function VDC({
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <div>
-                <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>RESPONSABLE</label>
-                <input type="text" value={formRestriccion.responsable}
+                <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>👤 RESPONSABLE (asignado)</label>
+                <input type="text" value={formRestriccion.responsable} list="respList"
                   onChange={e => setFormRestriccion(p => ({ ...p, responsable: e.target.value }))}
-                  placeholder="Quien lo levantará"
+                  placeholder="Elige o escribe la persona"
                   style={inp({ marginTop: '4px' })} />
               </div>
               <div>
-                <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>COMPROMISO LIBERACIÓN</label>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>🛠️ QUIÉN LO LEVANTA</label>
+                <input type="text" value={formRestriccion.responsableLevanta} list="respList"
+                  onChange={e => setFormRestriccion(p => ({ ...p, responsableLevanta: e.target.value }))}
+                  placeholder="Persona que resuelve"
+                  style={inp({ marginTop: '4px' })} />
+              </div>
+              <datalist id="respList">{responsablesLista.map((n, i) => <option key={i} value={n} />)}</datalist>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>📌 FECHA DE IDENTIFICACIÓN</label>
+                <input type="date" value={formRestriccion.fechaIdentificacion}
+                  onChange={e => setFormRestriccion(p => ({ ...p, fechaIdentificacion: e.target.value }))}
+                  style={inp({ marginTop: '4px' })} />
+              </div>
+              <div>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>🎯 COMPROMISO DE LIBERACIÓN</label>
                 <input type="date" value={formRestriccion.fechaCompromisoLiberacion}
                   onChange={e => setFormRestriccion(p => ({ ...p, fechaCompromisoLiberacion: e.target.value }))}
                   style={inp({ marginTop: '4px' })} />
@@ -566,6 +592,29 @@ export default function VDC({
                 </select>
               </div>
             </div>
+
+            {/* Cuando se libera: fecha real + lead time (días que tomó resolverla) */}
+            {formRestriccion.estado === 'liberada' && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', alignItems: 'end' }}>
+                <div>
+                  <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.greenDark, letterSpacing: '0.6px' }}>✅ FECHA REAL DE LIBERACIÓN</label>
+                  <input type="date" value={formRestriccion.fechaConciliada}
+                    onChange={e => setFormRestriccion(p => ({ ...p, fechaConciliada: e.target.value }))}
+                    style={inp({ marginTop: '4px' })} />
+                </div>
+                {(() => {
+                  const d0 = formRestriccion.fechaIdentificacion, d1 = formRestriccion.fechaConciliada, dc = formRestriccion.fechaCompromisoLiberacion;
+                  const dias = (a, b) => (a && b) ? Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000) : null;
+                  const lead = dias(d0, d1); const vsComp = dias(dc, d1);
+                  return (
+                    <div style={{ background: BASE.bgSoft, border: `1px solid ${BASE.border}`, borderRadius: 9, padding: '8px 12px', fontSize: 11, color: BASE.muted }}>
+                      {lead != null ? <p style={{ margin: 0 }}>⏱️ Tardó <strong style={{ color: BASE.navy }}>{lead} día(s)</strong> en resolverse.</p> : <p style={{ margin: 0 }}>Pon la fecha real para medir el tiempo.</p>}
+                      {vsComp != null && <p style={{ margin: '3px 0 0', color: vsComp > 0 ? BASE.red : BASE.greenDark, fontWeight: 700 }}>{vsComp > 0 ? `+${vsComp} d después del compromiso` : vsComp < 0 ? `${vsComp} d antes ✓` : 'justo a tiempo ✓'}</p>}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
             <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
               <button onClick={() => setModalRestriccion(null)} style={{
                 flex: 1, padding: '12px', background: BASE.bgSoft, border: `1px solid ${BASE.border}`,
@@ -725,7 +774,26 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
   const winEnd = semanaAR + rangoAR - 1;
   const reqW = (r) => r.fechaCompromisoLiberacion ? obtenerSemana(r.fechaCompromisoLiberacion) : null;
   const cicloEstado = { pendiente: 'en_proceso', en_proceso: 'liberada', liberada: 'pendiente', vencida: 'liberada' };
-  const curWeek = obtenerSemana(new Date().toISOString().slice(0, 10));
+  const hoyAR = new Date().toISOString().slice(0, 10);
+  const curWeek = obtenerSemana(hoyAR);
+  // Tiempo de resolución (lead time) por restricción: liberada → días que tomó
+  // (identificación → liberación real); pendiente → días vencida / restantes.
+  const diasF = (a, b) => (a && b) ? Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000) : null;
+  const diasDe = (r) => {
+    if (r._estado === 'liberada') {
+      const d = diasF(r.fechaIdentificacion || r.fechaCompromisoLiberacion, r.fechaConciliada || r.fechaLiberacionReal);
+      return d != null ? { txt: `${d}d`, c: BASE.greenDark, t: `${d} día(s) en resolverse` } : null;
+    }
+    const d = diasF(r.fechaCompromisoLiberacion, hoyAR);
+    if (d == null) return null;
+    return d > 0 ? { txt: `+${d}d`, c: BASE.red, t: `${d} día(s) vencida` } : { txt: `${-d}d`, c: BASE.muted, t: `${-d} día(s) para el compromiso` };
+  };
+  // KPI: promedio de días que toma liberar una restricción.
+  const tiempoLib = useMemo(() => {
+    const ds = (kpi.lista || []).filter(r => r._estado === 'liberada')
+      .map(r => diasF(r.fechaIdentificacion || r.fechaCompromisoLiberacion, r.fechaConciliada || r.fechaLiberacionReal)).filter(d => d != null && d >= 0);
+    return ds.length ? Math.round(ds.reduce((s, d) => s + d, 0) / ds.length) : null;
+  }, [kpi.lista]);
 
   const filtradas = useMemo(() => {
     let lista = kpi.lista;
@@ -890,6 +958,7 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
           { l: 'LIBERADAS', v: kpi.liberadas, c: BASE.greenDark, sub: kpi.pctLiberadasATiempo !== null ? `${Math.round(kpi.pctLiberadasATiempo)}% a tiempo` : '' },
           { l: 'VENCIDAS', v: kpi.vencidas, c: BASE.red, sub: kpi.vencidas > 0 ? '⚠️ Atención inmediata' : 'Sin vencidas' },
           { l: 'PRÓXIMAS A VENCER', v: kpi.proximasAVencer.length, c: BASE.gold, sub: 'En 7 días' },
+          { l: '⏱️ TIEMPO DE LIBERACIÓN', v: tiempoLib == null ? '—' : tiempoLib + 'd', c: BASE.navy, sub: `promedio en resolverse · ${kpi.pctLiberadasATiempo !== null ? Math.round(kpi.pctLiberadasATiempo) + '% a tiempo' : '—'}` },
         ].map(k => (
           <div key={k.l} style={{
             background: BASE.white, borderRadius: '12px',
@@ -1001,7 +1070,7 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', minWidth: 1000 }}>
               <thead>
                 <tr style={{ background: BASE.navy, color: '#fff' }}>
-                  {[['FRENTE', 'left'], ['ACTIVIDAD', 'left'], ['RESTRICCIÓN', 'left'], ['TIPO', 'left'], ['RESP', 'center'], ['F. REQ.', 'center'], ['F. CONCIL.', 'center'], ['LEVANTA', 'center'], ['ESTADO', 'center'], ['', 'right']].map(([h, al], i) => (
+                  {[['FRENTE', 'left'], ['ACTIVIDAD', 'left'], ['RESTRICCIÓN', 'left'], ['TIPO', 'left'], ['RESP', 'center'], ['F. REQ.', 'center'], ['F. CONCIL.', 'center'], ['LEVANTA', 'center'], ['ESTADO', 'center'], ['⏱️ DÍAS', 'center'], ['', 'right']].map(([h, al], i) => (
                     <th key={i} style={{ position: 'sticky', top: 0, background: BASE.navy, padding: '9px 8px', textAlign: al, fontSize: '9px', fontWeight: 900, letterSpacing: '0.4px', borderRight: `1px solid rgba(255,255,255,0.14)`, whiteSpace: 'nowrap', zIndex: 1 }}>{h}</th>
                   ))}
                   {semGrid.map(s => (
@@ -1013,7 +1082,7 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
                 {grupos.map(g => (
                   <React.Fragment key={g.act}>
                     <tr>
-                      <td colSpan={10 + semGrid.length} style={{ background: '#fff7e6', borderLeft: `4px solid ${BASE.gold}`, borderTop: `1px solid ${BASE.border}`, borderBottom: `1px solid ${BASE.border}`, padding: '6px 12px', fontWeight: 900, fontSize: '10.5px', color: BASE.navy, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                      <td colSpan={11 + semGrid.length} style={{ background: '#fff7e6', borderLeft: `4px solid ${BASE.gold}`, borderTop: `1px solid ${BASE.border}`, borderBottom: `1px solid ${BASE.border}`, padding: '6px 12px', fontWeight: 900, fontSize: '10.5px', color: BASE.navy, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
                         {g.act} <span style={{ color: BASE.muted, fontWeight: 700 }}>· {g.items.length} restric.</span>
                       </td>
                     </tr>
@@ -1034,6 +1103,7 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
                             style={{ padding: '4px', textAlign: 'center', borderRight: `1px solid #eef2f6`, cursor: onEstado ? 'pointer' : 'default' }}>
                             <span style={{ display: 'inline-block', minWidth: 78, background: est.bg, color: est.color, padding: '4px 6px', borderRadius: '5px', fontSize: '9px', fontWeight: 900, letterSpacing: '0.3px' }}>{est.label}</span>
                           </td>
+                          <td style={{ ...arTdC }}>{(() => { const x = diasDe(r); return x ? <span title={x.t} style={{ color: x.c, fontWeight: 800, fontSize: '10px' }}>{x.txt}</span> : <span style={{ color: BASE.mutedSoft }}>—</span>; })()}</td>
                           <td style={{ padding: '3px 6px', whiteSpace: 'nowrap', textAlign: 'right' }}>
                             {onAddEvidencia && (() => { const ne = (evidenciasPorRestr[r.id] || []).length;
                               return <button onClick={() => setModalEvid(r)} title="Evidencia fotográfica" style={{ ...arMini(ne ? '#e8f5ee' : BASE.bgSoft, ne ? BASE.greenDark : BASE.navy), fontWeight: 800 }}>📷{ne ? ` ${ne}` : ''}</button>; })()}
