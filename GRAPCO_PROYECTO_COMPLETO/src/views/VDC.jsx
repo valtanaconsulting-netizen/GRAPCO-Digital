@@ -26,6 +26,10 @@ import {
   fechasDeSemana, generarLookahead, calcularPPCDiario, construirJerarquiaLPS,
 } from '../utils/helpers';
 import { FECHA_INICIO_PROYECTO } from '../utils/constants';
+// Inicio real del proyecto como ISO 'YYYY-MM-DD' — base ÚNICA de semanas en todo el
+// LPS (Lookahead, Prog. Semanal, Ejecución). Debe coincidir con obtenerSemana para
+// que la "semana actual" y las fechas conversen entre sí y con el LAP oficial.
+const INICIO_PROYECTO = FECHA_INICIO_PROYECTO.toISOString().slice(0, 10);
 import Modal from '../components/Modal';
 import PlanDiario from './PlanDiario';
 import TableroLPS from './TableroLPS';
@@ -1633,12 +1637,41 @@ function BotonImprimir({ titulo }) {
 // Muestra ventana móvil de 6 semanas con actividades planificadas
 // ════════════════════════════════════════════════════════════════
 function LookaheadView({ compromisos, restricciones, semanaActiva }) {
+  // Mismo inicio de proyecto que TODA la app (obtenerSemana, tareos, etc.) para que
+  // la "SEMANA ACTUAL" y las fechas conversen con el resto y con el LAP real.
+  const INICIO = INICIO_PROYECTO;
   const semanas = useMemo(
-    () => generarLookahead(semanaActiva, 6, '2025-12-01'),
-    [semanaActiva]
+    () => generarLookahead(semanaActiva, 6, INICIO),
+    [semanaActiva, INICIO]
   );
 
-  // Agrupa compromisos en las 6 semanas del lookahead
+  // ── Plan LAP oficial (28 semanas) cargado bajo demanda ──
+  // Consolidamos las 28 semanas en UN plan por actividad: conservamos la última
+  // programación conocida de cada una (la del LAP más reciente que la incluye).
+  // Así el lookahead muestra el plan vigente y "vivo", no un snapshot viejo.
+  const [planLAP, setPlanLAP] = useState([]);
+  useEffect(() => {
+    let vivo = true;
+    import('../data/lapCreditex').then(m => {
+      if (!vivo) return;
+      const porNombre = new Map();
+      [...m.LAP_CREDITEX].sort((a, b) => (a.semana || 0) - (b.semana || 0)).forEach(snap => {
+        (snap.actividades || []).forEach(a => {
+          if (a.tipo !== 'tarea' || !a.fechaIni) return;
+          const key = (a.actividad || '').toUpperCase().trim();
+          if (!key) return;
+          porNombre.set(key, {
+            id: 'lap-' + key, actividad: a.actividad, metrado: a.metrado, und: a.und,
+            hh: a.hh, mo: a.mo, ini: a.fechaIni, fin: a.fechaFin, semanaLAP: snap.semana, fuente: 'LAP',
+          });
+        });
+      });
+      setPlanLAP([...porNombre.values()]);
+    }).catch(() => {});
+    return () => { vivo = false; };
+  }, []);
+
+  // Compromisos reales (Firestore PPC) por semana — se respetan tal cual.
   const compromisosPorSemana = useMemo(() => {
     const mapa = {};
     semanas.forEach(s => { mapa[s.numero] = []; });
@@ -1648,14 +1681,24 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
     return mapa;
   }, [compromisos, semanas]);
 
+  // Actividades del LAP que caen en cada semana, por solapamiento de fechas reales.
+  const lapPorSemana = useMemo(() => {
+    const mapa = {};
+    semanas.forEach(s => {
+      const ini = s.dias[0]?.fecha, fin = s.dias[6]?.fecha;
+      mapa[s.numero] = (planLAP || []).filter(a => ini && fin && a.ini <= fin && a.fin >= ini);
+    });
+    return mapa;
+  }, [planLAP, semanas]);
+
   // Cuenta restricciones que afectan cada semana
   const restriccionesPorSemana = useMemo(() => {
     const mapa = {};
     semanas.forEach(s => { mapa[s.numero] = 0; });
     (restricciones || []).forEach(r => {
       if (!r.fechaCompromisoLiberacion) return;
-      // Calcular semana aproximada de la fecha de compromiso
-      const fechaInicio = new Date('2025-12-01T00:00:00');
+      // Calcular semana aproximada de la fecha de compromiso (mismo inicio real)
+      const fechaInicio = new Date(INICIO + 'T00:00:00');
       const fechaCompromiso = new Date(r.fechaCompromisoLiberacion + 'T00:00:00');
       if (isNaN(fechaCompromiso)) return;
       const semanaCompromiso = Math.ceil((fechaCompromiso - fechaInicio) / (1000 * 60 * 60 * 24 * 7)) + 1;
@@ -1674,7 +1717,8 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
             🔭 LOOKAHEAD · 6 semanas hacia adelante
           </h3>
           <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
-            Ventana móvil de planificación. Cada actividad debe tener restricciones liberadas
+            Ventana móvil de planificación alimentada por el <strong style={{ color: BASE.gold }}>LAP oficial</strong> (28 semanas
+            importadas) más los compromisos registrados. Cada actividad debe tener restricciones liberadas
             antes de bajar al Plan Semanal.
           </p>
         </div>
@@ -1731,9 +1775,15 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
             <tbody>
               <tr>
                 {semanas.map(s => {
-                  const lista = compromisosPorSemana[s.numero] || [];
+                  // Mezcla: compromisos reales (PPC) + actividades planificadas del LAP.
+                  // Así la información "conversa": lo registrado en obra y lo programado
+                  // en el Lookahead oficial conviven en la misma ventana.
+                  const reales = compromisosPorSemana[s.numero] || [];
+                  const lap = lapPorSemana[s.numero] || [];
+                  const lista = [...reales, ...lap];
                   const cumplidos = lista.filter(c => c.cumplido === true).length;
                   const incumplidos = lista.filter(c => c.cumplido === false).length;
+                  const nLAP = lap.length;
                   return (
                     <td key={s.numero} style={{
                       padding: '12px',
@@ -1744,16 +1794,18 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
                     }}>
                       {lista.length === 0 ? (
                         <p style={{ fontSize: '11px', color: BASE.mutedSoft, fontStyle: 'italic', textAlign: 'center', padding: '20px 0' }}>
-                          Sin compromisos planificados
+                          Sin actividades en la ventana
                         </p>
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                           <p style={{ fontSize: '9px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.5px', marginBottom: '4px' }}>
-                            {lista.length} {lista.length === 1 ? 'compromiso' : 'compromisos'}
+                            {lista.length} {lista.length === 1 ? 'actividad' : 'actividades'}
                             {cumplidos > 0 && <span style={{ color: BASE.greenDark }}> · ✅ {cumplidos}</span>}
                             {incumplidos > 0 && <span style={{ color: BASE.red }}> · ❌ {incumplidos}</span>}
+                            {nLAP > 0 && <span style={{ color: BASE.gold }}> · 🔭 {nLAP} LAP</span>}
                           </p>
-                          {lista.slice(0, 5).map(c => {
+                          {lista.slice(0, 7).map(c => {
+                            const esLAP = c.fuente === 'LAP';
                             const colorBorde = c.cumplido === true ? BASE.green : c.cumplido === false ? BASE.red : BASE.gold;
                             return (
                               <div key={c.id} style={{
@@ -1766,14 +1818,16 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
                                   {c.actividad}
                                 </p>
                                 <p style={{ fontSize: '9px', color: BASE.muted, marginTop: '2px' }}>
-                                  👷 {c.capataz} · {c.metradoComprometido} und
+                                  {esLAP
+                                    ? `📐 ${c.metrado != null ? Number(c.metrado).toLocaleString('es-PE') : '—'}${c.und ? ' ' + c.und : ''}${c.hh != null ? ` · ⏱️ ${Math.round(c.hh)} HH` : ''}`
+                                    : `👷 ${c.capataz} · ${c.metradoComprometido} und`}
                                 </p>
                               </div>
                             );
                           })}
-                          {lista.length > 5 && (
+                          {lista.length > 7 && (
                             <p style={{ fontSize: '9px', color: BASE.muted, fontStyle: 'italic', textAlign: 'center' }}>
-                              + {lista.length - 5} más...
+                              + {lista.length - 7} más...
                             </p>
                           )}
                         </div>
@@ -1795,8 +1849,8 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
         <strong style={{ color: BASE.navy }}>📖 Cómo leer el Lookahead:</strong>
         <span style={{ marginLeft: '6px' }}>
           Ventana de 6 semanas con actividades comprometidas. La <strong style={{ color: BASE.gold }}>semana actual</strong> es
-          la que se está ejecutando. Cada barra es un compromiso. <strong style={{ color: BASE.greenDark }}>Verde</strong> = cumplido,
-          <strong style={{ color: BASE.red }}> rojo</strong> = no cumplido, <strong style={{ color: BASE.gold }}> amarillo</strong> = pendiente.
+          la que se está ejecutando. Cada barra es una actividad. <strong style={{ color: BASE.greenDark }}>Verde</strong> = cumplido,
+          <strong style={{ color: BASE.red }}> rojo</strong> = no cumplido, <strong style={{ color: BASE.gold }}> amarillo</strong> = programado en el LAP / pendiente (🔭 = del Lookahead oficial).
           Las restricciones pendientes deben liberarse <strong>antes</strong> de que la actividad llegue a la semana actual.
         </span>
       </div>
@@ -1809,7 +1863,7 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
 // Replica imagen 2: tabla con días lun-dom + colores S0/S1/S2 por celda
 // ════════════════════════════════════════════════════════════════
 function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, semanasDisponibles, compromisos }) {
-  const dias = useMemo(() => fechasDeSemana(semanaActiva, '2025-12-01'), [semanaActiva]);
+  const dias = useMemo(() => fechasDeSemana(semanaActiva, INICIO_PROYECTO), [semanaActiva]);
   const compromisosSem = useMemo(
     () => compromisos.filter(c => c.semana === semanaActiva),
     [compromisos, semanaActiva]
@@ -1996,7 +2050,7 @@ function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, semanasDisponib
 // Tabla con SI/NO/TIPO + columna PPC% por actividad
 // ════════════════════════════════════════════════════════════════
 function EjecucionDiariaLPS({ semanaActiva, setSemanaActiva, semanasDisponibles, compromisos }) {
-  const dias = useMemo(() => fechasDeSemana(semanaActiva, '2025-12-01'), [semanaActiva]);
+  const dias = useMemo(() => fechasDeSemana(semanaActiva, INICIO_PROYECTO), [semanaActiva]);
   const compromisosSem = useMemo(
     () => compromisos.filter(c => c.semana === semanaActiva),
     [compromisos, semanaActiva]
