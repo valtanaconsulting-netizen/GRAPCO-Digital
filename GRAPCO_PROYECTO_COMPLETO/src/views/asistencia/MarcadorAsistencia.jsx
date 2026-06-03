@@ -294,10 +294,11 @@ export default function MarcadorAsistencia({ showToast }) {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '14px' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'stretch' }}>
 
-        {/* CÁMARA */}
+        {/* CÁMARA — área grande (≈2.2× el panel); se apila debajo del panel en pantallas angostas */}
         <div style={{
+          flex: '2.2 1 460px', minWidth: 0,
           background: 'linear-gradient(160deg, #0F2A47 0%, #081A2E 100%)',
           borderRadius: '18px', padding: '12px', position: 'relative',
           border: '1px solid rgba(255,255,255,0.08)',
@@ -430,6 +431,7 @@ export default function MarcadorAsistencia({ showToast }) {
 
         {/* PANEL — asistencia en vivo */}
         <div style={{
+          flex: '1 1 300px', minWidth: 0,
           background: 'linear-gradient(180deg, #ffffff 0%, #f5f8fc 100%)',
           border: `1px solid rgba(15,42,71,0.07)`, borderRadius: '18px', padding: '16px',
           display: 'flex', flexDirection: 'column',
@@ -438,7 +440,7 @@ export default function MarcadorAsistencia({ showToast }) {
           <p style={{ fontSize: '11px', fontWeight: 900, color: BASE.muted, letterSpacing: '1px', marginBottom: '10px' }}>
             ASISTENCIA DE HOY · {hoyStr()}
           </p>
-          <div style={{ flex: 1, overflowY: 'auto', maxHeight: '52vh', display: 'flex', flexDirection: 'column', gap: '7px' }}>
+          <div style={{ flex: 1, overflowY: 'auto', maxHeight: '62vh', display: 'flex', flexDirection: 'column', gap: '7px' }}>
             {personalEnrolado.length === 0 && (
               <p style={{ color: BASE.muted, fontSize: '12px', textAlign: 'center', padding: '24px' }}>Sin personal enrolado.</p>
             )}

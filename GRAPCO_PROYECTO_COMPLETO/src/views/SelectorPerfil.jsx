@@ -153,7 +153,7 @@ export default function SelectorPerfil() {
       }}>
         {/* Cabecera kiosko */}
         <div style={{
-          width: '100%', maxWidth: '760px',
+          width: '100%', maxWidth: '1280px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           gap: '12px', flexWrap: 'wrap', marginBottom: '16px',
         }}>
@@ -184,7 +184,7 @@ export default function SelectorPerfil() {
 
         {/* Selector de Proyecto / Frente */}
         <div style={{
-          width: '100%', maxWidth: '760px',
+          width: '100%', maxWidth: '1280px',
           background: 'rgba(255,255,255,0.05)', border: `1px solid rgba(255,255,255,0.12)`,
           borderRadius: '14px', padding: '14px 16px', marginBottom: '14px',
           display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '12px',
@@ -207,7 +207,7 @@ export default function SelectorPerfil() {
 
         {/* Marcador facial */}
         <div style={{
-          width: '100%', maxWidth: '760px',
+          width: '100%', maxWidth: '1280px',
           background: BASE.white, borderRadius: '16px', padding: '14px',
           boxShadow: '0 16px 48px rgba(0,0,0,0.4)',
         }}>

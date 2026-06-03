@@ -74,8 +74,10 @@ export default function EnrolamientoFacial({ showToast }) {
     try {
       const v = videoRef.current;
       // Tomamos varias lecturas rápidas de la MISMA pose y promediamos el descriptor.
-      // Solo aceptamos lecturas nítidas (buena confianza de detección y rostro grande),
-      // así la huella biométrica guardada queda limpia y representativa.
+      // El filtro es permisivo a propósito: en cámaras de obra un rostro nítido a la
+      // vista puntúa bajo, y rechazarlo ("Rostro poco claro") frustraba el enrolado.
+      // Aceptamos toda lectura con rostro razonablemente visible y promediamos las
+      // que haya (1–5) para limpiar el ruido; solo fallamos si NO hay rostro alguno.
       const muestras = [];
       let ultimaDataUrl = null;
       for (let i = 0; i < 5; i++) {
@@ -87,14 +89,14 @@ export default function EnrolamientoFacial({ showToast }) {
         if (det) {
           const score = det.detection?.score ?? 0;
           const boxW = det.detection?.box?.width ?? 0;
-          if (score >= 0.6 && boxW >= canvas.width * 0.18) {
+          if (score >= 0.4 && boxW >= canvas.width * 0.12) {
             muestras.push(det.descriptor);
             ultimaDataUrl = canvas.toDataURL('image/jpeg', 0.85);
           }
         }
       }
-      if (muestras.length < 2) {
-        showToast?.('Rostro poco claro. Acércate al centro, mira de frente y mejora la luz.', 'warning');
+      if (muestras.length === 0) {
+        showToast?.('No detecté un rostro. Acércate un poco y mira a la cámara.', 'warning');
         return;
       }
       const descriptorLimpio = promediarDescriptores(muestras);

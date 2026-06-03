@@ -37,7 +37,11 @@ export async function cargarModelos() {
 
 // Detección a mayor resolución (inputSize 512, múltiplo de 32) → el recorte y los
 // 68 landmarks quedan mejor alineados, y el descriptor de 128 floats es más estable.
-const DETECT_OPTS = new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.5 });
+// scoreThreshold 0.4: en cámaras de obra (luz pobre, grano) un rostro perfectamente
+// visible suele puntuar 0.45–0.6; con 0.5 se rechazaban caras válidas ("más luz").
+// La SEGURIDAD del reconocimiento NO depende de este umbral, sino del piso de
+// similitud (≥75%) que aplica el marcador; bajarlo solo mejora la detección.
+const DETECT_OPTS = new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.4 });
 
 /** Detecta una sola cara y retorna { detection, landmarks, descriptor } o null. */
 export async function obtenerDescriptor(input) {
