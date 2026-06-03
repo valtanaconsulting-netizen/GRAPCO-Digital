@@ -7,7 +7,8 @@ import React from 'react';
 import { BASE } from '../../utils/styles';
 import { SECTORIZACION } from '../../data/sectorizacionCreditex';
 
-const ANILLO_COLOR = { '1': '#2563eb', '2': '#0d9488', '3': '#d97706', '4': '#7c3aed' };
+// Anillos con la paleta premium GRAPCO armonizada (azul real · teal · dorado · violeta).
+const ANILLO_COLOR = { '1': '#1D4ED8', '2': '#0E7490', '3': '#E5A82F', '4': '#7E22CE' };
 const colorDe = (cod) => ANILLO_COLOR[(cod && cod.match(/^A(\d+)/) || [])[1]] || BASE.muted;
 const nf = (n, d = 0) => (n == null ? '' : Number(n).toLocaleString('es-PE', { minimumFractionDigits: d, maximumFractionDigits: d }));
 

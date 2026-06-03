@@ -29,8 +29,10 @@ import { FECHA_INICIO_PROYECTO } from '../utils/constants';
 // LPS (Lookahead, Prog. Semanal, Ejecución). Debe coincidir con obtenerSemana para
 // que la "semana actual" y las fechas conversen entre sí y con el LAP oficial.
 const INICIO_PROYECTO = FECHA_INICIO_PROYECTO.toISOString().slice(0, 10);
-// Paleta para colorear secciones/frentes del LAP en la matriz Lookahead.
-const PALETA_LAP = ['#0ea5e9', '#7c3aed', '#0d9488', '#f59e0b', '#e11d48', '#2563eb', '#65a30d', '#c026d3'];
+// Paleta PREMIUM GRAPCO para frentes/secciones del LAP — tonos profundos armonizados
+// (dorado de marca, teal, esmeralda, azul real, carmín, violeta, bronce, navy), NO
+// arcoíris saturado. Alineada a CHART_PALETTE de la plataforma.
+const PALETA_LAP = ['#E5A82F', '#0E7490', '#047857', '#1D4ED8', '#BE123C', '#7E22CE', '#B45309', '#0F766E', '#0891B2', '#0F2A47'];
 import Modal from '../components/Modal';
 import PlanDiario from './PlanDiario';
 import TableroLPS from './TableroLPS';
@@ -162,7 +164,7 @@ export default function VDC({
   useEffect(() => { let v = true; import('../data/ppcCreditex').then(m => { if (v) setPpcOficial({ sem: m.PPC_SEMANAL || [], cnc: m.PPC_CNC || [], global: m.PPC_GLOBAL ?? null }); }).catch(() => {}); return () => { v = false; }; }, []);
   const ppcSemanalReal = useMemo(() => ppcOficial.sem.map(s => ({ semana: s.semana, ppcPct: s.ppc })), [ppcOficial]);
   const paretoReal = useMemo(() => {
-    const PAL = ['#dc2626', '#ea580c', '#d97706', '#7c3aed', '#2563eb', '#0891b2', '#16a34a', '#64748b'];
+    const PAL = ['#BE123C', '#B45309', '#E5A82F', '#7E22CE', '#1D4ED8', '#0E7490', '#047857', '#475569'];
     return { items: ppcOficial.cnc.map((c, i) => ({ label: c.cat, count: c.n, color: PAL[i % PAL.length] })) };
   }, [ppcOficial]);
   const [marcasLap, setMarcasLap] = useState({});
@@ -1010,11 +1012,11 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
                             const concW = r.fechaConciliada ? obtenerSemana(r.fechaConciliada) : null;
                             const startW = reqW || concW;
                             const endW = r._estado === 'liberada' ? (concW || reqW || 0) : Math.max(reqW || 0, concW || 0, curWeek);
-                            const col = r._estado === 'liberada' ? '#22c55e' : r._estado === 'en_proceso' ? '#f59e0b' : '#ef4444';
+                            const col = r._estado === 'liberada' ? BASE.green : r._estado === 'en_proceso' ? BASE.gold : BASE.red;
                             return semGrid.map(s => {
                               const on = startW && s.n >= Math.min(startW, endW) && s.n <= Math.max(startW, endW);
                               const rel = concW && s.n === concW && r._estado === 'liberada';
-                              return <td key={'w' + s.n} style={{ padding: 0, width: 16, minWidth: 16, borderRight: '1px solid #eef2f6', background: on ? (rel ? '#15803d' : col) : (s.n === curWeek ? 'rgba(225,29,72,0.06)' : 'transparent') }} />;
+                              return <td key={'w' + s.n} style={{ padding: 0, width: 16, minWidth: 16, borderRight: '1px solid #eef2f6', background: on ? (rel ? BASE.greenDark : col) : (s.n === curWeek ? 'rgba(225,29,72,0.06)' : 'transparent') }} />;
                             });
                           })()}
                         </tr>
@@ -1721,15 +1723,15 @@ function useLapMarcas() {
   return { estado, onCeldaDown, onCeldaEnter, colorPaint, setColorPaint, textoPaint, setTextoPaint };
 }
 
-// Paleta para que el usuario elija el color de los cuadritos al pintar.
+// Paleta PREMIUM GRAPCO para pintar cuadritos (tonos de marca armonizados).
 const COLORES_PINTA = [
   { c: null, label: 'Sección' },
-  { c: '#2563eb', label: 'Azul' },
-  { c: '#0d9488', label: 'Verde' },
-  { c: '#f59e0b', label: 'Ámbar' },
-  { c: '#e11d48', label: 'Rojo' },
-  { c: '#7c3aed', label: 'Morado' },
-  { c: '#0f172a', label: 'Negro' },
+  { c: '#0F2A47', label: 'Navy' },
+  { c: '#E5A82F', label: 'Dorado' },
+  { c: '#0E7490', label: 'Teal' },
+  { c: '#047857', label: 'Esmeralda' },
+  { c: '#BE123C', label: 'Carmín' },
+  { c: '#7E22CE', label: 'Violeta' },
 ];
 
 // Selector de color + ETIQUETA de pintado (compartido por Lookahead y Prog. Semanal).
@@ -1746,7 +1748,7 @@ function SelectorColor({ colorPaint, setColorPaint, textoPaint, setTextoPaint })
               style={{
                 width: 19, height: 19, borderRadius: '50%', cursor: 'pointer', padding: 0,
                 border: activo ? `2px solid ${BASE.navy}` : `1px solid rgba(15,23,42,0.12)`,
-                background: o.c ? `linear-gradient(135deg, ${o.c}, ${o.c}cc)` : `linear-gradient(135deg,#0ea5e9,#7c3aed)`,
+                background: o.c ? `linear-gradient(135deg, ${o.c}, ${o.c}cc)` : `linear-gradient(135deg, ${BASE.navy}, ${BASE.gold})`,
                 boxShadow: activo ? `0 0 0 2px ${BASE.gold}` : '0 1px 2px rgba(15,23,42,0.18)',
                 transition: '0.12s',
               }} />
@@ -2395,7 +2397,7 @@ function PPCLap({ semanaActiva, setSemanaActiva, semanasMeta = {}, total, lookup
     let acc = 0;
     return cncPareto.map(c => { acc += c.n; return { causa: c.l, n: c.n, acum: Math.round(acc / tot * 100) }; });
   }, [cncPareto]);
-  const ppcColor = ppc == null ? BASE.muted : ppc >= 80 ? BASE.greenDark : ppc >= 50 ? '#d97706' : BASE.red;
+  const ppcColor = ppc == null ? BASE.muted : ppc >= 80 ? BASE.greenDark : ppc >= 50 ? BASE.goldDark : BASE.red;
   const card = { background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', padding: '14px 16px', boxShadow: '0 1px 4px rgba(15,23,42,0.04)' };
   const fechas = fechasDeSemana(sem, INICIO_PROYECTO);
 
@@ -2503,7 +2505,7 @@ function PPCLap({ semanaActiva, setSemanaActiva, semanasMeta = {}, total, lookup
                     <YAxis domain={[0, 100]} tick={{ fontSize: 9, fill: BASE.muted }} unit="%" />
                     <Tooltip contentStyle={{ fontSize: '11px', borderRadius: '8px' }} formatter={(v) => [`${v}%`, 'PPC']} />
                     <Bar dataKey="ppc" radius={[3, 3, 0, 0]} maxBarSize={26}>
-                      {trend.map((t, i) => <Cell key={i} fill={t.ppc >= 80 ? BASE.greenDark : t.ppc >= 50 ? '#d97706' : BASE.red} />)}
+                      {trend.map((t, i) => <Cell key={i} fill={t.ppc >= 80 ? BASE.greenDark : t.ppc >= 50 ? BASE.gold : BASE.red} />)}
                     </Bar>
                     <ReferenceLine y={80} stroke={BASE.navy} strokeDasharray="4 4" label={{ value: 'meta 80%', fontSize: 8, fill: BASE.navy, position: 'insideTopRight' }} />
                   </ComposedChart>

@@ -25,15 +25,15 @@ const titulo = {
 };
 
 const EST_COMPROMISO = {
-  cumplido:    { bg: '#16a34a', label: 'Completado' },
-  incumplido:  { bg: '#dc2626', label: 'Incumplido' },
-  pendiente:   { bg: '#d97706', label: 'En proceso' },
+  cumplido:    { bg: BASE.greenDark, label: 'Completado' },
+  incumplido:  { bg: BASE.red,       label: 'Incumplido' },
+  pendiente:   { bg: BASE.goldDark,  label: 'En proceso' },
 };
 const EST_RESTRICCION = {
-  liberada:   '#16a34a',
-  en_proceso: '#d97706',
-  pendiente:  '#64748b',
-  vencida:    '#dc2626',
+  liberada:   BASE.greenDark,
+  en_proceso: BASE.goldDark,
+  pendiente:  BASE.mutedSoft,
+  vencida:    BASE.red,
 };
 
 // Anillo conic (gauge) compacto para la banda de salud LPS.
@@ -47,7 +47,7 @@ const Anillo = ({ pct, color, size = 62 }) => (
     </div>
   </div>
 );
-const toneLPS = (p) => p == null ? '#94a3b8' : p >= 80 ? '#22c55e' : p >= 50 ? '#E5A82F' : '#ef4444';
+const toneLPS = (p) => p == null ? BASE.mutedSoft : p >= 80 ? BASE.green : p >= 50 ? BASE.gold : BASE.red;
 
 export default function TableroLPS({
   compromisos = [],
@@ -101,7 +101,7 @@ export default function TableroLPS({
     (ppcSemanal || []).slice(-6).map(s => ({ semana: `S${s.semana}`, ppc: s.ppcPct ?? 0 })),
   [ppcSemanal]);
   const ppcActual = ppcTrend.length ? ppcTrend[ppcTrend.length - 1].ppc : (diag.promedioPct ?? 0);
-  const ppcColor = ppcActual >= 80 ? '#16a34a' : ppcActual >= 65 ? '#d97706' : '#dc2626';
+  const ppcColor = ppcActual >= 80 ? BASE.greenDark : ppcActual >= 65 ? BASE.goldDark : BASE.red;
 
   // ── 5. CNC Pareto ──────────────────────────────────────────────
   const cnc = useMemo(() =>
@@ -138,7 +138,7 @@ export default function TableroLPS({
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
             {saludTiles.map(t => {
-              const color = t.tipo === 'pct' ? toneLPS(t.v) : (t.v > 0 ? '#ef4444' : '#22c55e');
+              const color = t.tipo === 'pct' ? toneLPS(t.v) : (t.v > 0 ? BASE.red : BASE.greenDark);
               return (
                 <div key={t.l} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.05)', border: `1px solid rgba(255,255,255,0.1)`, borderRadius: '12px', padding: '10px 12px', borderLeft: `4px solid ${color}` }}>
                   {t.tipo === 'pct'
@@ -163,8 +163,8 @@ export default function TableroLPS({
         {[
           { l: 'PPC GLOBAL', v: salud.ppc == null ? '—' : `${salud.ppc}%`, c: ppcColor, sub: 'Plan cumplido (oficial)' },
           { l: 'PROGRAMADO (LAP)', v: salud.progTotal ?? 0, c: BASE.navy, sub: `${salud.bloqProg ?? 0} 🔒 en riesgo` },
-          { l: 'RESTRICCIONES', v: kpiRestr.total, c: '#7c3aed', sub: `${kpiRestr.liberadas} liberadas · ${kpiRestr.vencidas} vencidas` },
-          { l: 'SEMANA ACTIVA', v: `S${semanaActiva}`, c: '#0891b2', sub: 'Lookahead 6 sem' },
+          { l: 'RESTRICCIONES', v: kpiRestr.total, c: '#7E22CE', sub: `${kpiRestr.liberadas} liberadas · ${kpiRestr.vencidas} vencidas` },
+          { l: 'SEMANA ACTIVA', v: `S${semanaActiva}`, c: '#0E7490', sub: 'Lookahead 6 sem' },
         ].map(k => (
           <div key={k.l} style={{ ...panel, padding: '10px 14px', gap: '2px' }}>
             <p style={{ fontSize: '9.5px', fontWeight: '900', color: BASE.muted, letterSpacing: '0.5px' }}>{k.l}</p>
@@ -334,11 +334,11 @@ export default function TableroLPS({
           <p style={titulo}>6 · Indicadores de Gestión</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
             {[
-              { l: 'TMR · tareas listas', v: salud.tmr == null ? '—' : `${salud.tmr}%`, c: '#16a34a' },
+              { l: 'TMR · tareas listas', v: salud.tmr == null ? '—' : `${salud.tmr}%`, c: BASE.greenDark },
               { l: 'PPR · act. sin restricción', v: salud.ppr == null ? '—' : `${salud.ppr}%`, c: BASE.navy },
-              { l: 'Restricciones pendientes', v: kpiRestr.pendientes, c: '#d97706' },
-              { l: 'Restricciones vencidas', v: kpiRestr.vencidas, c: '#dc2626' },
-              { l: 'Restricciones liberadas (PCR)', v: `${kpiRestr.liberadas} · ${salud.pcr ?? '—'}%`, c: '#16a34a' },
+              { l: 'Restricciones pendientes', v: kpiRestr.pendientes, c: BASE.goldDark },
+              { l: 'Restricciones vencidas', v: kpiRestr.vencidas, c: BASE.red },
+              { l: 'Restricciones liberadas (PCR)', v: `${kpiRestr.liberadas} · ${salud.pcr ?? '—'}%`, c: BASE.greenDark },
               { l: 'PPC global', v: `${salud.ppc ?? '—'}%`, c: ppcColor },
             ].map(k => (
               <div key={k.l} style={{ background: BASE.bgSoft, border: `1px solid ${BASE.border}`, borderRadius: '8px', padding: '10px 12px' }}>
