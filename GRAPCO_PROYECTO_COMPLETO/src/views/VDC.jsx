@@ -14,6 +14,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine, LabelList,
 } from 'recharts';
 import { BASE, inp } from '../utils/styles';
+import { comprimirImagen, pesoKB } from '../utils/imagen';
 import {
   RNC_CATEGORIAS, RNC_LABELS, RNC_COLORS, RNC_ICONS,
   obtenerSemana as obtSem,
@@ -121,6 +122,36 @@ export default function VDC({
     } else {
       updateDoc(doc(db, 'VDC_Restricciones', r.id), { estado, ...extra }).catch(() => {});
     }
+  };
+  // ── Evidencia fotográfica de restricciones (offline-first) ──
+  // Cada foto = un doc en VDC_Evidencias con la imagen comprimida en base64; ride
+  // la cola offline de Firestore (se guarda sin señal y sincroniza al volver).
+  const [evidencias, setEvidencias] = useState([]);
+  useEffect(() => {
+    if (!proyIdVDC) return;
+    try {
+      return onSnapshot(collection(db, 'VDC_Evidencias'),
+        snap => setEvidencias(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(e => e.proyecto === proyIdVDC)),
+        () => {});
+    } catch { /* noop */ }
+  }, [proyIdVDC]);
+  const evidenciasPorRestr = useMemo(() => {
+    const m = {};
+    evidencias.forEach(e => { (m[e.refId] || (m[e.refId] = [])).push(e); });
+    return m;
+  }, [evidencias]);
+  const agregarEvidencia = async ({ refId, actividad, fotoB64, nota }) => {
+    try {
+      await addDoc(collection(db, 'VDC_Evidencias'), {
+        proyecto: proyIdVDC, refTipo: 'restriccion', refId, actividad: actividad || '',
+        fotoB64, nota: nota || '', creadoEn: new Date().toISOString(),
+      });
+      showToast('📷 Evidencia guardada' + (navigator.onLine ? '' : ' (offline · se sincronizará)'), 'success');
+    } catch (e) { showToast(`Error: ${e.message}`, 'error'); }
+  };
+  const eliminarEvidencia = async (id) => {
+    try { await deleteDoc(doc(db, 'VDC_Evidencias', id)); showToast('Evidencia eliminada', 'info'); }
+    catch (e) { showToast(`Error: ${e.message}`, 'error'); }
   };
   // PPC oficial del Excel (26 semanas + CNC) → alimenta el Power BI con valores reales.
   const [ppcOficial, setPpcOficial] = useState({ sem: [], cnc: [], global: null });
@@ -315,6 +346,9 @@ export default function VDC({
           semanasMeta={semanasMeta}
           total={totalSemanas}
           lapNombres={lapNombres}
+          evidenciasPorRestr={evidenciasPorRestr}
+          onAddEvidencia={agregarEvidencia}
+          onDelEvidencia={eliminarEvidencia}
           onNueva={() => {
             setFormRestriccion({
               actividad: '', tipoFlujo: 'materiales', descripcion: '',
@@ -613,8 +647,9 @@ const arTd = { padding: '5px 8px', borderRight: '1px solid #eef2f6', verticalAli
 const arTdC = { ...arTd, textAlign: 'center', whiteSpace: 'nowrap' };
 const arMini = (bg, col) => ({ padding: '4px 7px', background: bg, color: col, border: 'none', borderRadius: '5px', fontSize: '10px', cursor: 'pointer', marginLeft: '3px' });
 
-function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar, onEstado, semanaActiva, setSemanaActiva, semanasMeta = {}, total = 35, lapNombres = [] }) {
+function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar, onEstado, semanaActiva, setSemanaActiva, semanasMeta = {}, total = 35, lapNombres = [], evidenciasPorRestr = {}, onAddEvidencia, onDelEvidencia }) {
   const kpi = useMemo(() => calcularKPIRestricciones(restricciones), [restricciones]);
+  const [modalEvid, setModalEvid] = useState(null);   // restricción cuya evidencia se gestiona
   // Diagnóstico de vínculo AR↔LAP: restricciones cuya actividad no existe en el LAP
   // (no aplicarían shielding/badges). Riesgo silencioso → lo hacemos visible.
   const huerfanas = useMemo(() => restriccionesHuerfanas(restricciones, lapNombres), [restricciones, lapNombres]);
@@ -940,6 +975,8 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
                             <span style={{ display: 'inline-block', minWidth: 78, background: est.bg, color: est.color, padding: '4px 6px', borderRadius: '5px', fontSize: '9px', fontWeight: 900, letterSpacing: '0.3px' }}>{est.label}</span>
                           </td>
                           <td style={{ padding: '3px 6px', whiteSpace: 'nowrap', textAlign: 'right' }}>
+                            {onAddEvidencia && (() => { const ne = (evidenciasPorRestr[r.id] || []).length;
+                              return <button onClick={() => setModalEvid(r)} title="Evidencia fotográfica" style={{ ...arMini(ne ? '#e8f5ee' : BASE.bgSoft, ne ? BASE.greenDark : BASE.navy), fontWeight: 800 }}>📷{ne ? ` ${ne}` : ''}</button>; })()}
                             {r._estado !== 'liberada' && <button onClick={() => onLiberar(r)} title="Liberar" style={arMini(BASE.green, '#fff')}>✅</button>}
                             <button onClick={() => onEditar(r)} title="Editar" style={arMini(BASE.bgSoft, BASE.navy)}>✏️</button>
                             <button onClick={() => onEliminar(r)} title="Eliminar" style={arMini('#fee2e2', BASE.red)}>🗑️</button>
@@ -966,7 +1003,68 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
           </div>
         )}
       </div>
+
+      {modalEvid && (
+        <ModalEvidencia restriccion={modalEvid} evidencias={evidenciasPorRestr[modalEvid.id] || []}
+          onAdd={onAddEvidencia} onDel={onDelEvidencia} onClose={() => setModalEvid(null)} />
+      )}
     </div>
+  );
+}
+
+// Modal de evidencia fotográfica de una restricción (offline-first). La foto se
+// comprime en el equipo y se guarda en Firestore (cola offline → sube sola).
+function ModalEvidencia({ restriccion, evidencias, onAdd, onDel, onClose }) {
+  const [foto, setFoto] = useState(null);
+  const [nota, setNota] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const elegir = async (e) => {
+    const f = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    setBusy(true); setErr('');
+    try { setFoto(await comprimirImagen(f)); } catch (x) { setErr(x.message || 'No se pudo procesar'); } finally { setBusy(false); }
+  };
+  const guardar = async () => { if (!foto) return; await onAdd({ refId: restriccion.id, actividad: restriccion.actividad, fotoB64: foto, nota }); setFoto(null); setNota(''); };
+  return (
+    <Modal title={`📷 Evidencia · ${restriccion.actividad || restriccion.descripcion || 'Restricción'}`} onClose={onClose} maxW="580px">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <p style={{ fontSize: 11, color: BASE.muted, margin: 0 }}>
+          Las fotos se <strong>comprimen en el equipo</strong> y funcionan <strong style={{ color: BASE.gold }}>sin señal</strong>: se suben solas al volver la conexión.
+        </p>
+        <label style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px', borderRadius: 10, cursor: busy ? 'wait' : 'pointer', border: `1.5px dashed ${BASE.gold}`, background: BASE.goldSoft, color: BASE.navy, fontWeight: 800, fontSize: 13 }}>
+          {busy ? '⏳ Procesando…' : '📷 Tomar o elegir foto'}
+          <input type="file" accept="image/*" capture="environment" onChange={elegir} disabled={busy} style={{ display: 'none' }} />
+        </label>
+        {err && <p style={{ fontSize: 11, color: BASE.red, margin: 0 }}>{err}</p>}
+        {foto && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, background: BASE.bgSoft, border: `1px solid ${BASE.border}`, borderRadius: 10, padding: 10 }}>
+            <img src={foto} alt="evidencia" style={{ maxWidth: '100%', maxHeight: 240, borderRadius: 8, objectFit: 'contain', alignSelf: 'center' }} />
+            <span style={{ fontSize: 10, color: BASE.muted, textAlign: 'center' }}>≈ {pesoKB(foto)} KB comprimida</span>
+            <textarea value={nota} onChange={e => setNota(e.target.value)} placeholder="Nota (opcional): qué muestra la foto…" style={inp({ height: 52, resize: 'vertical', fontSize: 12 })} />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setFoto(null)} style={{ flex: 1, padding: 10, borderRadius: 8, border: `1px solid ${BASE.border}`, background: BASE.white, color: BASE.muted, fontWeight: 700, cursor: 'pointer' }}>Descartar</button>
+              <button onClick={guardar} style={{ flex: 2, padding: 10, borderRadius: 8, border: 'none', background: `linear-gradient(135deg, ${BASE.green}, ${BASE.greenDark})`, color: '#fff', fontWeight: 800, cursor: 'pointer' }}>💾 Guardar evidencia</button>
+            </div>
+          </div>
+        )}
+        {evidencias.length > 0 && (
+          <div>
+            <p style={{ fontSize: 11, fontWeight: 800, color: BASE.navy, margin: '4px 0 8px' }}>EVIDENCIAS GUARDADAS ({evidencias.length})</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 8 }}>
+              {evidencias.map(ev => (
+                <div key={ev.id} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', border: `1px solid ${BASE.border}` }}>
+                  <img src={ev.fotoB64} alt="" style={{ width: '100%', height: 90, objectFit: 'cover', display: 'block' }} />
+                  {ev.nota && <span style={{ display: 'block', fontSize: 9, color: BASE.muted, padding: '3px 5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ev.nota}</span>}
+                  <button onClick={() => onDel(ev.id)} title="Eliminar" style={{ position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: 6, border: 'none', background: 'rgba(225,29,72,0.92)', color: '#fff', fontSize: 11, cursor: 'pointer' }}>🗑️</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </Modal>
   );
 }
 
