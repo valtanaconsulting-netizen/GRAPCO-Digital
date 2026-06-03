@@ -108,13 +108,7 @@ export default function TableroLPS({
     (pareto.items || []).map(i => ({ causa: i.label, cantidad: i.count, color: i.color || '#64748b' })),
   [pareto]);
 
-  // ── 6. Indicadores ─────────────────────────────────────────────
-  const totalComp = compromisos.length;
-  const cumplidos = compromisos.filter(c => c.cumplido === true).length;
-  const incumplidos = compromisos.filter(c => c.cumplido === false).length;
-  const pendientes = compromisos.filter(c => c.cumplido == null).length;
-
-  // ── Banda de salud LPS (consolidado de las 4 métricas maestras) ──
+  // ── Banda de salud LPS (consolidado de las 5 métricas maestras) ──
   const salud = saludLPS || {};
   const saludDiag = saludLPS
     ? (salud.bloqProg > 0

@@ -1637,7 +1637,6 @@ function LookaheadView({ restricciones, semanaActiva, setSemanaActiva, semanasMe
     }))),
     [semanas]
   );
-  const winIni = dias[0]?.fecha, winFin = dias[dias.length - 1]?.fecha;
 
   // Secciones con TODAS las actividades (partidas) del LAP. NO se filtran por la
   // ventana: se ven todas para poder programarlas; un toggle oculta las no pintadas.
@@ -1872,7 +1871,7 @@ function LookaheadView({ restricciones, semanaActiva, setSemanaActiva, semanasMe
 // ════════════════════════════════════════════════════════════════
 function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, restricciones = [], semanasMeta = {}, total = 35 }) {
   const dias = useMemo(() => fechasDeSemana(semanaActiva, INICIO_PROYECTO), [semanaActiva]);
-  const semIni = dias[0]?.fecha, semFin = dias[6]?.fecha;
+  const semIni = dias[0]?.fecha;
   const restrPorAct = useMemo(() => restriccionesPorActividad(restricciones), [restricciones]);
 
   // Plan LAP consolidado (carga bajo demanda) + edición compartida con el Lookahead.
