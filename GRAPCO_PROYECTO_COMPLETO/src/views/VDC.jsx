@@ -1635,6 +1635,59 @@ function BotonImprimir({ titulo }) {
 }
 
 // ════════════════════════════════════════════════════════════════
+// HOOK COMPARTIDO: marcas editables del LAP (pintar/borrar días)
+// Persiste overrides del usuario en Configuracion/lapMarcas_<proyecto>. Lo usan
+// TANTO el Lookahead como la Programación Semanal → comparten las mismas marcas
+// (editar un día en una vista se refleja en la otra: "conversan").
+// ════════════════════════════════════════════════════════════════
+function useLapMarcas() {
+  const { proyectoActivoId } = useProyectoActivo();
+  const [edits, setEdits] = useState({});
+  const editsRef = useRef({});
+  const saveTimer = useRef(null);
+  const pintando = useRef(null);   // { valor } mientras se arrastra
+  useEffect(() => {
+    if (!proyectoActivoId) return;
+    const ref = doc(db, 'Configuracion', `lapMarcas_${proyectoActivoId}`);
+    return onSnapshot(ref, snap => {
+      const server = (snap.exists() && snap.data().marcas) || {};
+      editsRef.current = { ...server, ...editsRef.current };
+      setEdits({ ...editsRef.current });
+    }, () => {});
+  }, [proyectoActivoId]);
+  useEffect(() => {
+    const up = () => { pintando.current = null; };
+    window.addEventListener('mouseup', up);
+    window.addEventListener('touchend', up);
+    return () => { window.removeEventListener('mouseup', up); window.removeEventListener('touchend', up); };
+  }, []);
+  const hashStr = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; return h.toString(36); };
+  const claveMarca = (actKey, fecha) => `a${hashStr(actKey)}_${fecha.replace(/-/g, '')}`;
+  const guardar = () => {
+    if (!proyectoActivoId) return;
+    clearTimeout(saveTimer.current);
+    const mapa = { ...editsRef.current };
+    saveTimer.current = setTimeout(() => {
+      setDoc(doc(db, 'Configuracion', `lapMarcas_${proyectoActivoId}`),
+        { marcas: mapa, actualizadoEn: new Date() }).catch(() => {});
+    }, 450);
+  };
+  const aplicarMarca = (actKey, fecha, base, valor) => {
+    const k = claveMarca(actKey, fecha);
+    const nuevo = { ...editsRef.current };
+    if (valor === base) delete nuevo[k]; else nuevo[k] = valor;
+    editsRef.current = nuevo;
+    setEdits(nuevo);
+    guardar();
+  };
+  const estaMarcado = (actKey, fecha, base) => {
+    const k = claveMarca(actKey, fecha);
+    return k in edits ? edits[k] : base;
+  };
+  return { estaMarcado, aplicarMarca, pintando };
+}
+
+// ════════════════════════════════════════════════════════════════
 // SUB-COMPONENTE: LAP · LOOKAHEAD A 6 SEMANAS
 // Muestra ventana móvil de 6 semanas con actividades planificadas
 // ════════════════════════════════════════════════════════════════
@@ -1692,53 +1745,8 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
     return rows;
   }, [plan, winIni, winFin]);
 
-  // ── EDICIÓN: pintar / borrar / mover días (persistente por proyecto) ──
-  // Se guardan SOLO los cambios del usuario (overrides) sobre el LAP base, en un
-  // único doc Configuracion/lapMarcas_<proyecto> (mapa clave→bool). El LAP oficial
-  // queda intacto; pintar/borrar una celda añade o quita un día programado.
-  const { proyectoActivoId } = useProyectoActivo();
-  const [edits, setEdits] = useState({});
-  const editsRef = useRef({});
-  const saveTimer = useRef(null);
-  const pintando = useRef(null);   // { valor } mientras se arrastra para pintar/borrar
-  useEffect(() => {
-    if (!proyectoActivoId) return;
-    const ref = doc(db, 'Configuracion', `lapMarcas_${proyectoActivoId}`);
-    return onSnapshot(ref, snap => {
-      const server = (snap.exists() && snap.data().marcas) || {};
-      editsRef.current = { ...server, ...editsRef.current };
-      setEdits({ ...editsRef.current });
-    }, () => {});
-  }, [proyectoActivoId]);
-  useEffect(() => {
-    const up = () => { pintando.current = null; };
-    window.addEventListener('mouseup', up);
-    window.addEventListener('touchend', up);
-    return () => { window.removeEventListener('mouseup', up); window.removeEventListener('touchend', up); };
-  }, []);
-  const hashStr = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; return h.toString(36); };
-  const claveMarca = (actKey, fecha) => `a${hashStr(actKey)}_${fecha.replace(/-/g, '')}`;
-  const guardar = () => {
-    if (!proyectoActivoId) return;
-    clearTimeout(saveTimer.current);
-    const mapa = { ...editsRef.current };
-    saveTimer.current = setTimeout(() => {
-      setDoc(doc(db, 'Configuracion', `lapMarcas_${proyectoActivoId}`),
-        { marcas: mapa, actualizadoEn: new Date() }).catch(() => {});
-    }, 450);
-  };
-  const aplicarMarca = (actKey, fecha, base, valor) => {
-    const k = claveMarca(actKey, fecha);
-    const nuevo = { ...editsRef.current };
-    if (valor === base) delete nuevo[k]; else nuevo[k] = valor;   // si vuelve al base, no guardamos override
-    editsRef.current = nuevo;
-    setEdits(nuevo);
-    guardar();
-  };
-  const estaMarcado = (actKey, fecha, base) => {
-    const k = claveMarca(actKey, fecha);
-    return k in edits ? edits[k] : base;
-  };
+  // Edición de marcas (pintar/borrar/mover días) — compartida con Prog. Semanal.
+  const { estaMarcado, aplicarMarca, pintando } = useLapMarcas();
 
   // Cuenta restricciones que afectan cada semana
   const restriccionesPorSemana = useMemo(() => {
@@ -1934,184 +1942,149 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
 // SUB-COMPONENTE: PROGRAMACIÓN SEMANAL (formato Excel S0/S1/S2)
 // Replica imagen 2: tabla con días lun-dom + colores S0/S1/S2 por celda
 // ════════════════════════════════════════════════════════════════
-function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, semanasDisponibles, compromisos }) {
+function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, semanasDisponibles }) {
   const dias = useMemo(() => fechasDeSemana(semanaActiva, INICIO_PROYECTO), [semanaActiva]);
-  const compromisosSem = useMemo(
-    () => compromisos.filter(c => c.semana === semanaActiva),
-    [compromisos, semanaActiva]
-  );
-  const jerarquia = useMemo(() => construirJerarquiaLPS(compromisosSem), [compromisosSem]);
+  const semIni = dias[0]?.fecha, semFin = dias[6]?.fecha;
 
-  // Función para determinar el "nivel de programación" S0/S1/S2 de una celda día
-  const nivelCelda = (compromiso, diaIdx) => {
-    if (!compromiso) return null;
-    // Lógica simple: si el compromiso está cumplido, marcar todos los días con S0
-    // Si no cumplido, S2 (urgente / atrasado)
-    // Si pendiente, S1
-    // En implementación real: usar c.diasProgramados[fecha]
-    if (compromiso.diasProgramados && compromiso.diasProgramados[dias[diaIdx]?.fecha]) {
-      return compromiso.diasProgramados[dias[diaIdx].fecha];
-    }
-    if (compromiso.cumplido === true) return 'S0';
-    if (compromiso.cumplido === false) return 'S2';
-    return 'S1';
-  };
+  // Plan LAP consolidado (carga bajo demanda) + edición compartida con el Lookahead.
+  const [plan, setPlan] = useState([]);
+  useEffect(() => {
+    let vivo = true;
+    import('../data/lapCreditex').then(m => { if (vivo) setPlan(m.LAP_PLAN || []); }).catch(() => {});
+    return () => { vivo = false; };
+  }, []);
+  const { estaMarcado, aplicarMarca, pintando } = useLapMarcas();
+
+  // Filas: actividades del LAP con marca esta semana, agrupadas por sección/frente.
+  const filas = useMemo(() => {
+    if (!semIni) return [];
+    const acts = (plan || [])
+      .filter(a => a.ini <= semFin && a.fin >= semIni && (a.dias || []).some(f => f >= semIni && f <= semFin))
+      .map(a => ({ ...a, set: new Set(a.dias) }));
+    const grupos = {};
+    acts.forEach(a => { const k = a.seccion || 'OTROS'; (grupos[k] || (grupos[k] = [])).push(a); });
+    const rows = [];
+    Object.keys(grupos)
+      .sort((A, B) => Math.min(...grupos[A].map(x => Date.parse(x.ini || '2100-01-01'))) - Math.min(...grupos[B].map(x => Date.parse(x.ini || '2100-01-01'))))
+      .forEach((sec, si) => {
+        const color = PALETA_LAP[si % PALETA_LAP.length];
+        rows.push({ tipo: 'sec', seccion: sec, color, key: 'sec-' + sec });
+        grupos[sec].sort((x, y) => (x.ini || '').localeCompare(y.ini || '')).forEach((a, ai) => rows.push({ tipo: 'act', color, key: sec + '-' + ai, ...a }));
+      });
+    return rows;
+  }, [plan, semIni, semFin]);
+
+  const fmtN = (n) => n == null ? '' : Number(n).toLocaleString('es-PE', { maximumFractionDigits: n < 100 ? 1 : 0 });
+  const nAct = filas.filter(f => f.tipo === 'act').length;
+  const totalHH = filas.reduce((s, f) => s + (f.tipo === 'act' ? (f.hh || 0) : 0), 0);
+  const hoy = new Date();
+  const hoyISO = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+  const navBtn = { padding: '7px 11px', background: BASE.white, color: BASE.navy, border: `1px solid ${BASE.border}`, borderRadius: '8px', fontSize: '13px', fontWeight: 800, cursor: 'pointer' };
+
+  // Columnas izquierdas (fijas; ACTIVIDAD flexible para llenar el ancho).
+  const cCod = { width: 46, minWidth: 46, flexShrink: 0 };
+  const cAct = { flex: 1, minWidth: 150 };
+  const cSm  = { width: 42, minWidth: 42, flexShrink: 0 };
+  const cMet = { width: 58, minWidth: 58, flexShrink: 0 };
+  const cMo  = { width: 36, minWidth: 36, flexShrink: 0 };
+  const DAY = 74;
+  const celdaDia = { width: DAY, minWidth: DAY, flexShrink: 0 };
+  const pc = { padding: '0 6px', fontSize: '10px', color: BASE.text, display: 'flex', alignItems: 'center' };
+  const pr = { ...pc, justifyContent: 'flex-end' };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      {/* Cabecera */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      {/* Cabecera + navegación */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
         <div>
-          <h3 style={{ fontSize: '16px', fontWeight: '900', color: BASE.navy }}>
-            📋 PROGRAMACIÓN SEMANAL · Semana {semanaActiva}
-          </h3>
+          <h3 style={{ fontSize: '16px', fontWeight: 900, color: BASE.navy }}>📋 PROGRAMACIÓN SEMANAL · Semana {semanaActiva}</h3>
           <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
-            Distribución día a día de compromisos. Replica del formato Excel maestro.
+            Plan semanal (Lun–Dom) tal cual el Excel F05, alimentado por el LAP. <strong>Clic/arrastra</strong> para pintar o borrar días; se sincroniza con el Lookahead.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <button onClick={() => setSemanaActiva(Math.max(1, semanaActiva - 1))} style={navBtn} title="Semana anterior">‹</button>
           <select value={semanaActiva} onChange={e => setSemanaActiva(parseInt(e.target.value))}
-            style={inp({ width: 'auto', fontSize: '12px', fontWeight: '700', padding: '8px 12px' })}>
-            {semanasDisponibles.map(s => <option key={s} value={s}>Semana {s}</option>)}
+            style={inp({ width: 'auto', fontSize: '12px', fontWeight: 700, padding: '8px 12px' })}>
+            {Array.from(new Set([...(semanasDisponibles || []), semanaActiva])).sort((a, b) => a - b).map(s => <option key={s} value={s}>Semana {s}</option>)}
           </select>
+          <button onClick={() => setSemanaActiva(semanaActiva + 1)} style={navBtn} title="Semana siguiente">›</button>
           <BotonImprimir titulo={`Programación Semana ${semanaActiva}`} />
         </div>
       </div>
 
-      {/* Tabla replica Excel */}
-      <div style={{
-        background: BASE.white, borderRadius: '14px',
-        border: `1px solid ${BASE.border}`, overflow: 'hidden',
-        boxShadow: BASE.shadowSm,
-      }}>
-        {/* Header dorado del Excel */}
-        <div style={{
-          background: BASE.lpsHeader, padding: '12px 18px',
-          borderBottom: `2px solid ${BASE.gold}`,
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px',
-        }}>
-          <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy, letterSpacing: '1px' }}>
-            PROGRAMACION SEMANAL — GRAPCO PROYECTO
-          </p>
-          <p style={{ fontSize: '11px', fontWeight: '700', color: BASE.navy }}>
-            SEMANA {semanaActiva} · INICIO {dias[0]?.fecha}
-          </p>
-        </div>
+      <p style={{ fontSize: '11px', color: BASE.muted, textAlign: 'center' }}>
+        <strong style={{ color: BASE.navy }}>{nAct}</strong> actividades · <strong style={{ color: BASE.navy }}>{Math.round(totalHH).toLocaleString('es-PE')}</strong> HH · INICIO {semIni}
+      </p>
 
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', minWidth: '900px' }}>
-            <thead>
-              <tr style={{ background: BASE.navy }}>
-                <th style={{ padding: '10px 8px', color: '#fff', fontSize: '10px', fontWeight: '900', letterSpacing: '0.4px', textAlign: 'left', width: '60px' }}>COD</th>
-                <th style={{ padding: '10px 8px', color: '#fff', fontSize: '10px', fontWeight: '900', letterSpacing: '0.4px', textAlign: 'left', minWidth: '280px' }}>ACTIVIDAD</th>
-                <th style={{ padding: '10px 8px', color: '#fff', fontSize: '10px', fontWeight: '900', letterSpacing: '0.4px', textAlign: 'center', width: '60px' }}>RESP.</th>
-                <th style={{ padding: '10px 8px', color: '#fff', fontSize: '10px', fontWeight: '900', letterSpacing: '0.4px', textAlign: 'center', width: '50px' }}>UND</th>
-                {dias.map(d => (
-                  <th key={d.id} style={{
-                    padding: '10px 6px', background: BASE.gold, color: '#fff',
-                    fontSize: '10px', fontWeight: '900', letterSpacing: '0.4px',
-                    textAlign: 'center', borderLeft: `1px solid ${BASE.goldDark}`,
-                    width: '52px',
-                  }}>
-                    <p>{d.mes}</p>
-                    <p style={{ fontSize: '14px', fontWeight: '900', marginTop: '2px' }}>{d.dia}</p>
-                    <p style={{ fontSize: '9px', opacity: 0.9, marginTop: '2px' }}>{d.label}</p>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {jerarquia.length === 0 ? (
-                <tr>
-                  <td colSpan={4 + dias.length} style={{ padding: '40px', textAlign: 'center', color: BASE.muted, fontSize: '12px' }}>
-                    Sin compromisos para esta semana. Crea compromisos en la pestaña <strong>✏️ Compromisos (CRUD)</strong>.
-                  </td>
-                </tr>
-              ) : (
-                jerarquia.map((fila, idx) => {
-                  if (fila.tipo === 'frente') {
+      <div style={{ background: BASE.white, borderRadius: '14px', border: `1px solid ${BASE.border}`, overflow: 'hidden', boxShadow: BASE.shadowSm }}>
+        <div style={{ overflow: 'auto', maxHeight: '72vh', userSelect: 'none' }}>
+          <div style={{ width: '100%', minWidth: 860 }}>
+
+            {/* CABECERA */}
+            <div style={{ position: 'sticky', top: 0, zIndex: 3, display: 'flex', background: BASE.navy, color: '#fff', fontSize: '9px', fontWeight: 900, letterSpacing: '0.3px', borderBottom: `2px solid ${BASE.gold}` }}>
+              <div style={{ ...cCod, ...pc, color: '#fff', height: 36, justifyContent: 'center' }}>COD</div>
+              <div style={{ ...cAct, ...pc, color: '#fff', height: 36 }}>ACTIVIDAD</div>
+              <div style={{ ...cSm, ...pr, color: '#fff', height: 36 }}>RESP</div>
+              <div style={{ ...cSm, ...pr, color: '#fff', height: 36 }}>UND</div>
+              <div style={{ ...cSm, ...pr, color: '#fff', height: 36 }}>SEC</div>
+              <div style={{ ...cMet, ...pr, color: '#fff', height: 36 }}>MET.</div>
+              <div style={{ ...cSm, ...pr, color: '#fff', height: 36 }}>IP</div>
+              <div style={{ ...cSm, ...pr, color: '#fff', height: 36 }}>HH</div>
+              <div style={{ ...cMo, ...pr, color: '#fff', height: 36 }}>MO</div>
+              {dias.map((d, i) => (
+                <div key={i} style={{ ...celdaDia, height: 36, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: d.fecha === hoyISO ? BASE.red : BASE.gold, borderLeft: `1px solid ${BASE.goldDark}` }}>
+                  <span style={{ fontSize: '8px' }}>{d.label || d.mes}</span>
+                  <span style={{ fontSize: '12px', fontWeight: 900 }}>{d.dia}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* FILAS */}
+            {filas.length === 0 ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: BASE.muted, fontSize: '12px' }}>
+                {plan.length === 0 ? 'Cargando…' : 'Sin actividades del LAP esta semana. Cambia de semana (‹ ›) o píntalas en el Lookahead.'}
+              </div>
+            ) : filas.map(f => f.tipo === 'sec' ? (
+              <div key={f.key} style={{ display: 'flex', background: '#f1f5f9', borderBottom: `1px solid ${BASE.border}`, borderLeft: `4px solid ${f.color}` }}>
+                <div style={{ ...pc, height: 26, fontSize: '10.5px', fontWeight: 900, color: BASE.navy, textTransform: 'uppercase' }}>{f.seccion}</div>
+              </div>
+            ) : (() => {
+              const actKey = `${f.seccion || 'OTROS'}|${f.actividad}`;
+              return (
+                <div key={f.key} style={{ display: 'flex', borderBottom: `1px solid #eef2f6`, height: 26 }}>
+                  <div style={{ ...cCod, ...pc, justifyContent: 'center', fontWeight: 800, color: f.color, fontSize: '9px' }}>{f.id || ''}</div>
+                  <div style={{ ...cAct, ...pc, whiteSpace: 'nowrap', overflow: 'hidden' }}><span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }} title={f.actividad}>{f.actividad}</span></div>
+                  <div style={{ ...cSm, ...pr, color: BASE.muted }} />
+                  <div style={{ ...cSm, ...pr, color: BASE.muted }}>{f.und || ''}</div>
+                  <div style={{ ...cSm, ...pr, color: BASE.muted }}>{f.sectores != null ? f.sectores : ''}</div>
+                  <div style={{ ...cMet, ...pr }}>{fmtN(f.metrado)}</div>
+                  <div style={{ ...cSm, ...pr }}>{f.ip != null ? Number(f.ip).toFixed(2) : ''}</div>
+                  <div style={{ ...cSm, ...pr, fontWeight: 800, color: BASE.navy }}>{f.hh != null ? Math.round(f.hh) : ''}</div>
+                  <div style={{ ...cMo, ...pr }}>{f.mo != null ? f.mo : ''}</div>
+                  {dias.map((d, i) => {
+                    const base = f.set.has(d.fecha);
+                    const on = estaMarcado(actKey, d.fecha, base);
                     return (
-                      <tr key={`${idx}_${fila.nombre}`} style={{ background: BASE.lpsBand }}>
-                        <td colSpan={4 + dias.length} style={{ padding: '8px 10px', color: BASE.gold, fontSize: '10px', fontWeight: '900', letterSpacing: '0.6px' }}>
-                          [{fila.nivel}] {fila.nombre}
-                        </td>
-                      </tr>
+                      <div key={i}
+                        onMouseDown={(e) => { e.preventDefault(); const val = !on; pintando.current = { valor: val }; aplicarMarca(actKey, d.fecha, base, val); }}
+                        onMouseEnter={() => { if (pintando.current) aplicarMarca(actKey, d.fecha, base, pintando.current.valor); }}
+                        title={`${f.actividad} · ${d.dia}/${d.mes} — clic para ${on ? 'borrar' : 'pintar'}`}
+                        style={{ ...celdaDia, height: 26, cursor: 'pointer', borderLeft: `1px solid ${d.fecha === hoyISO ? BASE.red : '#eef2f6'}`, background: d.fecha === hoyISO && !on ? '#fff5f5' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {on && <span style={{ width: '78%', height: '64%', background: f.color, borderRadius: '2px', boxShadow: `0 1px 2px ${f.color}66`, pointerEvents: 'none' }} />}
+                      </div>
                     );
-                  }
-                  if (fila.tipo === 'partida') {
-                    return (
-                      <tr key={`${idx}_${fila.nombre}`} style={{ background: BASE.lpsBandSoft }}>
-                        <td colSpan={4 + dias.length} style={{ padding: '6px 14px', color: BASE.navy, fontSize: '10px', fontWeight: '800', letterSpacing: '0.5px' }}>
-                          {fila.nivel} · {fila.nombre}
-                        </td>
-                      </tr>
-                    );
-                  }
-                  if (fila.tipo === 'subpartida') {
-                    return (
-                      <tr key={`${idx}_${fila.nombre}`} style={{ background: BASE.lpsBandSofter }}>
-                        <td colSpan={4 + dias.length} style={{ padding: '5px 22px', color: BASE.muted, fontSize: '10px', fontWeight: '700', letterSpacing: '0.4px' }}>
-                          {fila.nivel} · {fila.nombre}
-                        </td>
-                      </tr>
-                    );
-                  }
-                  // Fila ACTIVIDAD
-                  const c = fila.actividad;
-                  return (
-                    <tr key={c.id} style={{ background: BASE.white, borderBottom: `1px solid ${BASE.borderSoft}` }}>
-                      <td style={{ padding: '8px 8px', fontSize: '9px', fontWeight: '800', color: BASE.gold, fontFamily: 'monospace', textAlign: 'center' }}>
-                        ACT
-                      </td>
-                      <td style={{ padding: '8px 14px 8px 28px', fontSize: '11px', color: BASE.text }}>
-                        {c.actividad}
-                      </td>
-                      <td style={{ padding: '8px', textAlign: 'center', fontSize: '10px', fontWeight: '700', color: BASE.muted }}>
-                        {(c.capataz || '').slice(0, 2).toUpperCase()}
-                      </td>
-                      <td style={{ padding: '8px', textAlign: 'center', fontSize: '10px', color: BASE.muted }}>
-                        UND
-                      </td>
-                      {dias.map((d, didx) => {
-                        const nivel = nivelCelda(c, didx);
-                        const cfg = nivel ? NIVELES_PROG[nivel] : null;
-                        return (
-                          <td key={d.id} style={{
-                            padding: '8px 0', textAlign: 'center',
-                            borderLeft: `1px solid ${BASE.borderSoft}`,
-                            background: cfg ? cfg.color : 'transparent',
-                            color: cfg ? cfg.text : 'transparent',
-                            fontSize: '10px', fontWeight: '900',
-                          }}>
-                            {cfg ? cfg.label : ''}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                  })}
+                </div>
+              );
+            })())}
+
+          </div>
         </div>
       </div>
 
-      {/* Leyenda */}
-      <div style={{
-        background: BASE.bgSoft, borderRadius: '10px', padding: '12px 16px',
-        display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'center',
-        fontSize: '11px',
-      }}>
-        <strong style={{ color: BASE.navy }}>📖 Leyenda:</strong>
-        {Object.entries(NIVELES_PROG).map(([k, v]) => (
-          <span key={k} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{
-              padding: '2px 8px', background: v.color, color: v.text,
-              borderRadius: '4px', fontWeight: '900', fontSize: '10px',
-            }}>{v.label}</span>
-            <span style={{ color: BASE.muted, fontSize: '10px' }}>{v.desc}</span>
-          </span>
-        ))}
+      <div style={{ background: BASE.bgSoft, borderRadius: '10px', padding: '12px 16px', fontSize: '11px', color: BASE.muted, lineHeight: 1.6 }}>
+        <strong style={{ color: BASE.navy }}>📖 Programación Semanal (F05):</strong> una semana (Lun–Dom) con las actividades del LAP. Cada celda de color = día programado; <strong>clic/arrastra</strong> para editar. Comparte marcas con el Lookahead; la columna roja es hoy.
       </div>
     </div>
   );
