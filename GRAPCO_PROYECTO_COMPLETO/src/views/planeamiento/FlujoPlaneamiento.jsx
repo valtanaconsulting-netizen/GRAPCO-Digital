@@ -71,7 +71,7 @@ const FASES = [
     n: '7', fase: 'MÉTRICAS VDC', color: '#0f172a', icon: '🎯',
     desc: 'El cuadro de mando: tendencia vs metas. Cierra el aprendizaje del proyecto.',
     etapas: [
-      { cod: 'GCA-F13', n: 'Métricas VDC Cronograma', d: 'KPIs PPC, PLC (liberaciones), GPT y restricciones vs metas (≥90%). Familias OP/ICE/PPM/FC.', estado: 'doc', kpi: 'PPC 100% · PLC 92%' },
+      { cod: 'GCA-F13', n: 'Métricas VDC Cronograma', d: 'KPIs PPC, PLC (liberaciones), GPT y restricciones vs metas (≥90%). Familias OP/ICE/PPM/FC.', estado: 'app', kpi: '8/10 metas ✓', modulo: 'vdcmetricas' },
     ],
   },
 ];
