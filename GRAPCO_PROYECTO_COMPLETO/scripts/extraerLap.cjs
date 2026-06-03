@@ -175,19 +175,24 @@ semanas.sort((a,b)=>(a.semana||0)-(b.semana||0));
 const porNombre = new Map();
 for (const snap of semanas) {
   for (const a of (snap.actividades || [])) {
-    if (a.tipo !== 'tarea' || !(a.dias && a.dias.length)) continue;
+    if (a.tipo !== 'tarea') continue;     // incluimos TODAS las tareas (estén o no programadas)
     const key = (a.actividad || '').toUpperCase().trim();
     if (!key) continue;
+    const prev = porNombre.get(key);
+    // dias: conservamos la última programación NO vacía conocida.
+    const dias = (a.dias && a.dias.length) ? a.dias : (prev ? prev.dias : []);
     porNombre.set(key, {
-      actividad: a.actividad, nivel: a.nivel || null, id: a.id || null, seccion: a.seccion || null,
+      actividad: a.actividad, nivel: a.nivel || null, id: a.id || null, seccion: a.seccion || (prev && prev.seccion) || null,
       metrado: a.metrado, und: a.und, sectores: a.sectores,
       ip: a.ip, hh: a.hh, mo: a.mo,
-      ini: a.fechaIni, fin: a.fechaFin, nDias: a.nDias, dias: a.dias,
+      ini: dias[0] || null, fin: dias[dias.length - 1] || null, nDias: dias.length, dias,
       semanaLAP: snap.semana,
     });
   }
 }
-const plan = [...porNombre.values()].sort((x, y) => (x.ini || '').localeCompare(y.ini || ''));
+// Orden: por sección y luego por fecha de inicio (sin fecha → al final de su grupo).
+const plan = [...porNombre.values()].sort((x, y) =>
+  (x.seccion || 'zzz').localeCompare(y.seccion || 'zzz') || (x.ini || '9999').localeCompare(y.ini || '9999'));
 
 // Para LAP_CREDITEX (snapshots) quitamos 'dias' (pesado); el detalle vive en LAP_PLAN.
 const semanasLite = semanas.map(s => ({

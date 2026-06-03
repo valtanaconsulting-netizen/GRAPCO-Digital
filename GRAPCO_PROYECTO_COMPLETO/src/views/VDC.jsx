@@ -1642,10 +1642,16 @@ function BotonImprimir({ titulo }) {
 // ════════════════════════════════════════════════════════════════
 function useLapMarcas() {
   const { proyectoActivoId } = useProyectoActivo();
-  const [edits, setEdits] = useState({});
+  const [edits, setEdits] = useState({});   // clave → false | true | '#hex'
   const editsRef = useRef({});
   const saveTimer = useRef(null);
-  const pintando = useRef(null);   // { valor } mientras se arrastra
+  const pintando = useRef(null);            // { valor } durante un arrastre
+  const trazo = useRef(null);               // [{ k, prev }] del trazo en curso (1 paso de undo)
+  const undoStack = useRef([]);
+  const [colorPaint, setColorPaint] = useState(null);   // null = color de la sección
+  const colorRef = useRef(null);
+  useEffect(() => { colorRef.current = colorPaint; }, [colorPaint]);
+
   useEffect(() => {
     if (!proyectoActivoId) return;
     const ref = doc(db, 'Configuracion', `lapMarcas_${proyectoActivoId}`);
@@ -1655,12 +1661,7 @@ function useLapMarcas() {
       setEdits({ ...editsRef.current });
     }, () => {});
   }, [proyectoActivoId]);
-  useEffect(() => {
-    const up = () => { pintando.current = null; };
-    window.addEventListener('mouseup', up);
-    window.addEventListener('touchend', up);
-    return () => { window.removeEventListener('mouseup', up); window.removeEventListener('touchend', up); };
-  }, []);
+
   const hashStr = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; return h.toString(36); };
   const claveMarca = (actKey, fecha) => `a${hashStr(actKey)}_${fecha.replace(/-/g, '')}`;
   const guardar = () => {
@@ -1672,19 +1673,93 @@ function useLapMarcas() {
         { marcas: mapa, actualizadoEn: new Date() }).catch(() => {});
     }, 450);
   };
-  const aplicarMarca = (actKey, fecha, base, valor) => {
+  const aplicar = (mut) => { editsRef.current = mut; setEdits(mut); guardar(); };
+  const setMarca = (actKey, fecha, base, valor) => {
     const k = claveMarca(actKey, fecha);
+    if (trazo.current && !trazo.current.some(x => x.k === k)) trazo.current.push({ k, prev: editsRef.current[k] });
     const nuevo = { ...editsRef.current };
-    if (valor === base) delete nuevo[k]; else nuevo[k] = valor;
-    editsRef.current = nuevo;
-    setEdits(nuevo);
-    guardar();
+    const sinColor = (valor === true || valor === false);
+    if (sinColor && valor === base) delete nuevo[k];   // vuelve al base sin color → sin override
+    else nuevo[k] = valor;
+    aplicar(nuevo);
   };
-  const estaMarcado = (actKey, fecha, base) => {
+  const onCeldaDown = (actKey, fecha, base, on) => {
+    const valor = on ? false : (colorRef.current || true);   // toggle; pinta con el color elegido
+    pintando.current = { valor };
+    trazo.current = [];
+    setMarca(actKey, fecha, base, valor);
+  };
+  const onCeldaEnter = (actKey, fecha, base) => {
+    if (pintando.current) setMarca(actKey, fecha, base, pintando.current.valor);
+  };
+  // fin de arrastre → consolidar el trazo como UN paso de undo
+  useEffect(() => {
+    const up = () => {
+      pintando.current = null;
+      if (trazo.current && trazo.current.length) undoStack.current.push(trazo.current);
+      trazo.current = null;
+    };
+    window.addEventListener('mouseup', up);
+    window.addEventListener('touchend', up);
+    return () => { window.removeEventListener('mouseup', up); window.removeEventListener('touchend', up); };
+  }, []);
+  // Ctrl+Z → deshacer el último trazo
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
+        const tag = document.activeElement && document.activeElement.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+        const paso = undoStack.current.pop();
+        if (!paso) return;
+        e.preventDefault();
+        const nuevo = { ...editsRef.current };
+        for (const { k, prev } of paso) { if (prev === undefined) delete nuevo[k]; else nuevo[k] = prev; }
+        aplicar(nuevo);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+  const estado = (actKey, fecha, base) => {
     const k = claveMarca(actKey, fecha);
-    return k in edits ? edits[k] : base;
+    const ov = (k in edits) ? edits[k] : undefined;
+    const on = ov === undefined ? base : (ov !== false);
+    const color = (typeof ov === 'string') ? ov : null;   // color custom o null (usa el de la sección)
+    return { on, color };
   };
-  return { estaMarcado, aplicarMarca, pintando };
+  return { estado, onCeldaDown, onCeldaEnter, colorPaint, setColorPaint };
+}
+
+// Paleta para que el usuario elija el color de los cuadritos al pintar.
+const COLORES_PINTA = [
+  { c: null, label: 'Sección' },
+  { c: '#2563eb', label: 'Azul' },
+  { c: '#0d9488', label: 'Verde' },
+  { c: '#f59e0b', label: 'Ámbar' },
+  { c: '#e11d48', label: 'Rojo' },
+  { c: '#7c3aed', label: 'Morado' },
+  { c: '#0f172a', label: 'Negro' },
+];
+
+// Selector de color de pintado (compartido por Lookahead y Prog. Semanal).
+function SelectorColor({ colorPaint, setColorPaint }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
+      <span style={{ fontSize: '10px', fontWeight: 800, color: BASE.muted }}>Color:</span>
+      {COLORES_PINTA.map((o, i) => {
+        const activo = colorPaint === o.c;
+        return (
+          <button key={i} onClick={() => setColorPaint(o.c)} title={o.label}
+            style={{
+              width: 20, height: 20, borderRadius: '5px', cursor: 'pointer',
+              border: activo ? `2px solid ${BASE.navy}` : `1px solid ${BASE.border}`,
+              background: o.c || `linear-gradient(135deg,#0ea5e9,#7c3aed)`,
+              boxShadow: activo ? `0 0 0 2px ${BASE.gold}` : 'none',
+            }} />
+        );
+      })}
+    </div>
+  );
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1723,30 +1798,24 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
     return mapa;
   }, [compromisos, semanas]);
 
-  // Filas de la MATRIZ (tal cual el Excel): actividades del LAP con marcas dentro de
-  // la ventana, agrupadas por sección/frente. Cada actividad lleva su set de días.
-  const filas = useMemo(() => {
-    if (!winIni) return [];
-    const acts = (plan || [])
-      .filter(a => a.ini <= winFin && a.fin >= winIni && (a.dias || []).some(f => f >= winIni && f <= winFin))
-      .map(a => ({ ...a, set: new Set(a.dias) }));
+  // Secciones con TODAS las actividades (partidas) del LAP. NO se filtran por la
+  // ventana: se ven todas para poder programarlas; un toggle oculta las no pintadas.
+  const secciones = useMemo(() => {
     const grupos = {};
-    acts.forEach(a => { const k = a.seccion || 'OTROS'; (grupos[k] || (grupos[k] = [])).push(a); });
-    const rows = [];
-    Object.keys(grupos)
+    (plan || []).forEach(a => { const k = a.seccion || 'OTROS'; (grupos[k] || (grupos[k] = [])).push(a); });
+    return Object.keys(grupos)
       .sort((A, B) => Math.min(...grupos[A].map(x => Date.parse(x.ini || '2100-01-01')))
                     - Math.min(...grupos[B].map(x => Date.parse(x.ini || '2100-01-01'))))
-      .forEach((sec, si) => {
-        const color = PALETA_LAP[si % PALETA_LAP.length];
-        rows.push({ tipo: 'sec', seccion: sec, color, key: 'sec-' + sec });
-        grupos[sec].sort((x, y) => (x.ini || '').localeCompare(y.ini || ''))
-          .forEach((a, ai) => rows.push({ tipo: 'act', color, key: sec + '-' + ai, ...a }));
-      });
-    return rows;
-  }, [plan, winIni, winFin]);
+      .map((sec, si) => ({
+        seccion: sec, color: PALETA_LAP[si % PALETA_LAP.length],
+        acts: grupos[sec].map(a => ({ ...a, set: new Set(a.dias), actKey: `${a.seccion || 'OTROS'}|${a.actividad}` }))
+          .sort((x, y) => (x.ini || '9999').localeCompare(y.ini || '9999')),
+      }));
+  }, [plan]);
 
   // Edición de marcas (pintar/borrar/mover días) — compartida con Prog. Semanal.
-  const { estaMarcado, aplicarMarca, pintando } = useLapMarcas();
+  const { estado, onCeldaDown, onCeldaEnter, colorPaint, setColorPaint } = useLapMarcas();
+  const [hideUnmarked, setHideUnmarked] = useState(false);
 
   // Cuenta restricciones que afectan cada semana
   const restriccionesPorSemana = useMemo(() => {
@@ -1766,12 +1835,14 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
     return mapa;
   }, [restricciones, semanas]);
 
-  // ── Geometría y navegación (ancho completo: días en flex) ──
-  const LEFT_W = 300, ROW_H = 24, MIN_DAY = 15;
+  // ── Geometría y navegación (ancho completo; nombres completos que envuelven) ──
+  const LEFT_W = 360, ROW_H = 22, MIN_DAY = 15;
   const hoy = new Date();
   const hoyISO = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
-  const nAct = filas.filter(f => f.tipo === 'act').length;
-  const totalHH = filas.reduce((s, f) => s + (f.tipo === 'act' ? (f.hh || 0) : 0), 0);
+  const todasActs = secciones.flatMap(s => s.acts);
+  const actMarcadaEnVentana = (a) => dias.some(d => estado(a.actKey, d.fecha, a.set.has(d.fecha)).on);
+  const nAct = todasActs.filter(actMarcadaEnVentana).length;
+  const totalHH = todasActs.filter(actMarcadaEnVentana).reduce((s, a) => s + (a.hh || 0), 0);
   const irA = (n) => setWinStart(Math.max(1, Math.min(60, n)));
   const fmtN = (n) => n == null ? '' : Number(n).toLocaleString('es-PE', { maximumFractionDigits: n < 100 ? 1 : 0 });
   const navBtn = { padding: '8px 12px', background: BASE.white, color: BASE.navy, border: `1px solid ${BASE.border}`, borderRadius: '8px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' };
@@ -1786,8 +1857,8 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
         <div>
           <h3 style={{ fontSize: '16px', fontWeight: '900', color: BASE.navy }}>🔭 LOOKAHEAD · 6 semanas</h3>
           <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
-            Programación intermedia tal cual el <strong style={{ color: BASE.gold }}>LAP oficial</strong> (28 semanas).
-            Cada celda marcada = día programado de la actividad. Navega para ver cualquier tramo.
+            Programación intermedia tal cual el <strong style={{ color: BASE.gold }}>LAP oficial</strong>. Se ven TODAS las partidas;
+            <strong> clic/arrastra</strong> para pintar, <strong>Ctrl+Z</strong> deshace y puedes elegir el color.
           </p>
         </div>
         <BotonImprimir titulo="Lookahead 6 semanas" />
@@ -1810,9 +1881,19 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
         <button onClick={() => irA(winStart + 6)} style={navBtn} title="6 semanas adelante">»</button>
       </div>
 
-      <p style={{ fontSize: '11px', color: BASE.muted, textAlign: 'center' }}>
-        <strong style={{ color: BASE.navy }}>{nAct}</strong> actividades programadas · <strong style={{ color: BASE.navy }}>{Math.round(totalHH).toLocaleString('es-PE')}</strong> HH en la ventana
-      </p>
+      {/* Herramientas: ocultar no programadas + color de pintado + conteo */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 700, color: BASE.navy, cursor: 'pointer' }}>
+          <input type="checkbox" checked={hideUnmarked} onChange={e => setHideUnmarked(e.target.checked)} />
+          Ocultar actividades sin programar en la ventana
+        </label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+          <SelectorColor colorPaint={colorPaint} setColorPaint={setColorPaint} />
+          <span style={{ fontSize: '10.5px', color: BASE.muted }}>
+            <strong style={{ color: BASE.navy }}>{nAct}</strong> programadas · <strong style={{ color: BASE.navy }}>{Math.round(totalHH).toLocaleString('es-PE')}</strong> HH
+          </span>
+        </div>
+      </div>
 
       {/* MATRIZ tipo Excel: actividades × días — ancho completo y EDITABLE */}
       <div style={{ background: BASE.white, borderRadius: '14px', border: `1px solid ${BASE.border}`, overflow: 'hidden', boxShadow: BASE.shadowSm }}>
@@ -1870,55 +1951,61 @@ function LookaheadView({ compromisos, restricciones, semanaActiva }) {
               </div>
             </div>
 
-            {/* FILAS */}
-            {filas.length === 0 ? (
+            {/* FILAS: por sección, TODAS las actividades (toggle oculta las no pintadas) */}
+            {todasActs.length === 0 ? (
               <div style={{ padding: '40px', textAlign: 'center', color: BASE.muted, fontSize: '12px' }}>
-                {plan.length === 0 ? 'Cargando programación LAP…' : 'Sin actividades del LAP en esta ventana. Usa ‹ Anterior / Siguiente › para moverte a otro tramo.'}
+                {plan.length === 0 ? 'Cargando programación LAP…' : 'Sin actividades.'}
               </div>
-            ) : filas.map(f => f.tipo === 'sec' ? (
-              <div key={f.key} style={{ display: 'flex', borderBottom: `1px solid ${BASE.border}` }}>
-                <div style={{ ...leftColsStyle, background: '#f1f5f9', borderLeft: `4px solid ${f.color}` }}>
-                  <span style={{ fontSize: '10.5px', fontWeight: 900, color: BASE.navy, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.seccion}</span>
-                </div>
-                <div style={{ flex: 1, minWidth: 0, background: '#f1f5f9' }} />
-              </div>
-            ) : (() => {
-              const actKey = `${f.seccion || 'OTROS'}|${f.actividad}`;
+            ) : secciones.map(sec => {
+              const acts = hideUnmarked ? sec.acts.filter(actMarcadaEnVentana) : sec.acts;
+              if (!acts.length) return null;
               return (
-                <div key={f.key} style={{ display: 'flex', borderBottom: `1px solid #eef2f6`, height: ROW_H }}>
-                  <div style={leftColsStyle}>
-                    <span style={{ flex: 1, fontSize: '9.5px', color: BASE.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={f.actividad}>
-                      {f.id ? <b style={{ color: f.color }}>{f.id} </b> : ''}{f.actividad}
-                    </span>
-                    <span style={colNum}>{fmtN(f.metrado)}</span>
-                    <span style={{ ...colNum, color: BASE.muted }}>{f.und || ''}</span>
-                    <span style={colNum}>{f.ip != null ? Number(f.ip).toFixed(2) : ''}</span>
-                    <span style={{ ...colNum, fontWeight: 800, color: BASE.navy }}>{f.hh != null ? Math.round(f.hh) : ''}</span>
-                    <span style={{ ...colNum, width: '24px', minWidth: '24px' }}>{f.mo != null ? f.mo : ''}</span>
+                <React.Fragment key={sec.seccion}>
+                  <div style={{ display: 'flex', borderBottom: `1px solid ${BASE.border}` }}>
+                    <div style={{ ...leftColsStyle, background: '#f1f5f9', borderLeft: `4px solid ${sec.color}` }}>
+                      <span style={{ fontSize: '10.5px', fontWeight: 900, color: BASE.navy, textTransform: 'uppercase' }}>
+                        {sec.seccion} <span style={{ color: BASE.muted, fontWeight: 700 }}>({acts.length})</span>
+                      </span>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0, background: '#f1f5f9' }} />
                   </div>
-                  <div style={cellWrap}>
-                    {dias.map((d, i) => {
-                      const base = f.set.has(d.fecha);
-                      const on = estaMarcado(actKey, d.fecha, base);
-                      return (
-                        <div key={i}
-                          onMouseDown={(e) => { e.preventDefault(); const val = !on; pintando.current = { valor: val }; aplicarMarca(actKey, d.fecha, base, val); }}
-                          onMouseEnter={() => { if (pintando.current) aplicarMarca(actKey, d.fecha, base, pintando.current.valor); }}
-                          title={`${f.actividad} · ${d.dia}/${d.mes} — clic para ${on ? 'borrar' : 'pintar'}`}
-                          style={{
-                            flex: 1, minWidth: 0, height: ROW_H, cursor: 'pointer',
-                            borderRight: `1px solid ${d.fecha === hoyISO ? BASE.red : '#eef2f6'}`,
-                            background: d.finde && !on ? '#f6f8fa' : '#fff',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          }}>
-                          {on && <span style={{ width: '86%', height: '64%', background: f.color, borderRadius: '2px', boxShadow: `0 1px 2px ${f.color}66`, pointerEvents: 'none' }} />}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                  {acts.map(a => (
+                    <div key={a.actKey} style={{ display: 'flex', borderBottom: `1px solid #eef2f6`, minHeight: ROW_H }}>
+                      <div style={leftColsStyle}>
+                        <span style={{ flex: 1, fontSize: '9.5px', color: BASE.text, whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.18 }} title={a.actividad}>
+                          {a.id ? <b style={{ color: sec.color }}>{a.id} </b> : ''}{a.actividad}
+                        </span>
+                        <span style={colNum}>{fmtN(a.metrado)}</span>
+                        <span style={{ ...colNum, color: BASE.muted }}>{a.und || ''}</span>
+                        <span style={colNum}>{a.ip != null ? Number(a.ip).toFixed(2) : ''}</span>
+                        <span style={{ ...colNum, fontWeight: 800, color: BASE.navy }}>{a.hh != null ? Math.round(a.hh) : ''}</span>
+                        <span style={{ ...colNum, width: '24px', minWidth: '24px' }}>{a.mo != null ? a.mo : ''}</span>
+                      </div>
+                      <div style={cellWrap}>
+                        {dias.map((d, i) => {
+                          const base = a.set.has(d.fecha);
+                          const { on, color } = estado(a.actKey, d.fecha, base);
+                          return (
+                            <div key={i}
+                              onMouseDown={(e) => { e.preventDefault(); onCeldaDown(a.actKey, d.fecha, base, on); }}
+                              onMouseEnter={() => onCeldaEnter(a.actKey, d.fecha, base)}
+                              title={`${a.actividad} · ${d.dia}/${d.mes} — clic para ${on ? 'borrar' : 'pintar'}`}
+                              style={{
+                                flex: 1, minWidth: 0, cursor: 'pointer', alignSelf: 'stretch',
+                                borderRight: `1px solid ${d.fecha === hoyISO ? BASE.red : '#eef2f6'}`,
+                                background: d.finde && !on ? '#f6f8fa' : '#fff',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              }}>
+                              {on && <span style={{ width: '86%', height: 14, background: color || sec.color, borderRadius: '2px', boxShadow: `0 1px 2px ${(color || sec.color)}66`, pointerEvents: 'none' }} />}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </React.Fragment>
               );
-            })())}
+            })}
 
           </div>
         </div>
@@ -1953,30 +2040,27 @@ function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, semanasDisponib
     import('../data/lapCreditex').then(m => { if (vivo) setPlan(m.LAP_PLAN || []); }).catch(() => {});
     return () => { vivo = false; };
   }, []);
-  const { estaMarcado, aplicarMarca, pintando } = useLapMarcas();
+  const { estado, onCeldaDown, onCeldaEnter, colorPaint, setColorPaint } = useLapMarcas();
+  const [hideUnmarked, setHideUnmarked] = useState(false);
 
-  // Filas: actividades del LAP con marca esta semana, agrupadas por sección/frente.
-  const filas = useMemo(() => {
-    if (!semIni) return [];
-    const acts = (plan || [])
-      .filter(a => a.ini <= semFin && a.fin >= semIni && (a.dias || []).some(f => f >= semIni && f <= semFin))
-      .map(a => ({ ...a, set: new Set(a.dias) }));
+  // Secciones con TODAS las actividades del LAP (no se filtran por semana; el toggle oculta las no pintadas).
+  const secciones = useMemo(() => {
     const grupos = {};
-    acts.forEach(a => { const k = a.seccion || 'OTROS'; (grupos[k] || (grupos[k] = [])).push(a); });
-    const rows = [];
-    Object.keys(grupos)
+    (plan || []).forEach(a => { const k = a.seccion || 'OTROS'; (grupos[k] || (grupos[k] = [])).push(a); });
+    return Object.keys(grupos)
       .sort((A, B) => Math.min(...grupos[A].map(x => Date.parse(x.ini || '2100-01-01'))) - Math.min(...grupos[B].map(x => Date.parse(x.ini || '2100-01-01'))))
-      .forEach((sec, si) => {
-        const color = PALETA_LAP[si % PALETA_LAP.length];
-        rows.push({ tipo: 'sec', seccion: sec, color, key: 'sec-' + sec });
-        grupos[sec].sort((x, y) => (x.ini || '').localeCompare(y.ini || '')).forEach((a, ai) => rows.push({ tipo: 'act', color, key: sec + '-' + ai, ...a }));
-      });
-    return rows;
-  }, [plan, semIni, semFin]);
+      .map((sec, si) => ({
+        seccion: sec, color: PALETA_LAP[si % PALETA_LAP.length],
+        acts: grupos[sec].map(a => ({ ...a, set: new Set(a.dias), actKey: `${a.seccion || 'OTROS'}|${a.actividad}` }))
+          .sort((x, y) => (x.ini || '9999').localeCompare(y.ini || '9999')),
+      }));
+  }, [plan]);
 
   const fmtN = (n) => n == null ? '' : Number(n).toLocaleString('es-PE', { maximumFractionDigits: n < 100 ? 1 : 0 });
-  const nAct = filas.filter(f => f.tipo === 'act').length;
-  const totalHH = filas.reduce((s, f) => s + (f.tipo === 'act' ? (f.hh || 0) : 0), 0);
+  const todasActs = secciones.flatMap(s => s.acts);
+  const actMarcadaSemana = (a) => dias.some(d => estado(a.actKey, d.fecha, a.set.has(d.fecha)).on);
+  const nAct = todasActs.filter(actMarcadaSemana).length;
+  const totalHH = todasActs.filter(actMarcadaSemana).reduce((s, a) => s + (a.hh || 0), 0);
   const hoy = new Date();
   const hoyISO = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
   const navBtn = { padding: '7px 11px', background: BASE.white, color: BASE.navy, border: `1px solid ${BASE.border}`, borderRadius: '8px', fontSize: '13px', fontWeight: 800, cursor: 'pointer' };
@@ -2013,9 +2097,19 @@ function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, semanasDisponib
         </div>
       </div>
 
-      <p style={{ fontSize: '11px', color: BASE.muted, textAlign: 'center' }}>
-        <strong style={{ color: BASE.navy }}>{nAct}</strong> actividades · <strong style={{ color: BASE.navy }}>{Math.round(totalHH).toLocaleString('es-PE')}</strong> HH · INICIO {semIni}
-      </p>
+      {/* Herramientas: ocultar no programadas + color + conteo */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 700, color: BASE.navy, cursor: 'pointer' }}>
+          <input type="checkbox" checked={hideUnmarked} onChange={e => setHideUnmarked(e.target.checked)} />
+          Ocultar actividades sin programar esta semana
+        </label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+          <SelectorColor colorPaint={colorPaint} setColorPaint={setColorPaint} />
+          <span style={{ fontSize: '10.5px', color: BASE.muted }}>
+            <strong style={{ color: BASE.navy }}>{nAct}</strong> programadas · <strong style={{ color: BASE.navy }}>{Math.round(totalHH).toLocaleString('es-PE')}</strong> HH · INICIO {semIni}
+          </span>
+        </div>
+      </div>
 
       <div style={{ background: BASE.white, borderRadius: '14px', border: `1px solid ${BASE.border}`, overflow: 'hidden', boxShadow: BASE.shadowSm }}>
         <div style={{ overflow: 'auto', maxHeight: '72vh', userSelect: 'none' }}>
@@ -2040,44 +2134,48 @@ function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, semanasDisponib
               ))}
             </div>
 
-            {/* FILAS */}
-            {filas.length === 0 ? (
+            {/* FILAS: por sección, TODAS las actividades (toggle oculta las no pintadas) */}
+            {todasActs.length === 0 ? (
               <div style={{ padding: '40px', textAlign: 'center', color: BASE.muted, fontSize: '12px' }}>
-                {plan.length === 0 ? 'Cargando…' : 'Sin actividades del LAP esta semana. Cambia de semana (‹ ›) o píntalas en el Lookahead.'}
+                {plan.length === 0 ? 'Cargando…' : 'Sin actividades.'}
               </div>
-            ) : filas.map(f => f.tipo === 'sec' ? (
-              <div key={f.key} style={{ display: 'flex', background: '#f1f5f9', borderBottom: `1px solid ${BASE.border}`, borderLeft: `4px solid ${f.color}` }}>
-                <div style={{ ...pc, height: 26, fontSize: '10.5px', fontWeight: 900, color: BASE.navy, textTransform: 'uppercase' }}>{f.seccion}</div>
-              </div>
-            ) : (() => {
-              const actKey = `${f.seccion || 'OTROS'}|${f.actividad}`;
+            ) : secciones.map(sec => {
+              const acts = hideUnmarked ? sec.acts.filter(actMarcadaSemana) : sec.acts;
+              if (!acts.length) return null;
               return (
-                <div key={f.key} style={{ display: 'flex', borderBottom: `1px solid #eef2f6`, height: 26 }}>
-                  <div style={{ ...cCod, ...pc, justifyContent: 'center', fontWeight: 800, color: f.color, fontSize: '9px' }}>{f.id || ''}</div>
-                  <div style={{ ...cAct, ...pc, whiteSpace: 'nowrap', overflow: 'hidden' }}><span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }} title={f.actividad}>{f.actividad}</span></div>
-                  <div style={{ ...cSm, ...pr, color: BASE.muted }} />
-                  <div style={{ ...cSm, ...pr, color: BASE.muted }}>{f.und || ''}</div>
-                  <div style={{ ...cSm, ...pr, color: BASE.muted }}>{f.sectores != null ? f.sectores : ''}</div>
-                  <div style={{ ...cMet, ...pr }}>{fmtN(f.metrado)}</div>
-                  <div style={{ ...cSm, ...pr }}>{f.ip != null ? Number(f.ip).toFixed(2) : ''}</div>
-                  <div style={{ ...cSm, ...pr, fontWeight: 800, color: BASE.navy }}>{f.hh != null ? Math.round(f.hh) : ''}</div>
-                  <div style={{ ...cMo, ...pr }}>{f.mo != null ? f.mo : ''}</div>
-                  {dias.map((d, i) => {
-                    const base = f.set.has(d.fecha);
-                    const on = estaMarcado(actKey, d.fecha, base);
-                    return (
-                      <div key={i}
-                        onMouseDown={(e) => { e.preventDefault(); const val = !on; pintando.current = { valor: val }; aplicarMarca(actKey, d.fecha, base, val); }}
-                        onMouseEnter={() => { if (pintando.current) aplicarMarca(actKey, d.fecha, base, pintando.current.valor); }}
-                        title={`${f.actividad} · ${d.dia}/${d.mes} — clic para ${on ? 'borrar' : 'pintar'}`}
-                        style={{ ...celdaDia, height: 26, cursor: 'pointer', borderLeft: `1px solid ${d.fecha === hoyISO ? BASE.red : '#eef2f6'}`, background: d.fecha === hoyISO && !on ? '#fff5f5' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {on && <span style={{ width: '78%', height: '64%', background: f.color, borderRadius: '2px', boxShadow: `0 1px 2px ${f.color}66`, pointerEvents: 'none' }} />}
-                      </div>
-                    );
-                  })}
-                </div>
+                <React.Fragment key={sec.seccion}>
+                  <div style={{ display: 'flex', background: '#f1f5f9', borderBottom: `1px solid ${BASE.border}`, borderLeft: `4px solid ${sec.color}` }}>
+                    <div style={{ ...pc, height: 26, fontSize: '10.5px', fontWeight: 900, color: BASE.navy, textTransform: 'uppercase' }}>{sec.seccion} <span style={{ color: BASE.muted, fontWeight: 700 }}>({acts.length})</span></div>
+                  </div>
+                  {acts.map(a => (
+                    <div key={a.actKey} style={{ display: 'flex', borderBottom: `1px solid #eef2f6`, minHeight: 26, alignItems: 'stretch' }}>
+                      <div style={{ ...cCod, ...pc, justifyContent: 'center', fontWeight: 800, color: sec.color, fontSize: '9px' }}>{a.id || ''}</div>
+                      <div style={{ ...cAct, ...pc }}><span style={{ whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.18 }} title={a.actividad}>{a.actividad}</span></div>
+                      <div style={{ ...cSm, ...pr, color: BASE.muted }} />
+                      <div style={{ ...cSm, ...pr, color: BASE.muted }}>{a.und || ''}</div>
+                      <div style={{ ...cSm, ...pr, color: BASE.muted }}>{a.sectores != null ? a.sectores : ''}</div>
+                      <div style={{ ...cMet, ...pr }}>{fmtN(a.metrado)}</div>
+                      <div style={{ ...cSm, ...pr }}>{a.ip != null ? Number(a.ip).toFixed(2) : ''}</div>
+                      <div style={{ ...cSm, ...pr, fontWeight: 800, color: BASE.navy }}>{a.hh != null ? Math.round(a.hh) : ''}</div>
+                      <div style={{ ...cMo, ...pr }}>{a.mo != null ? a.mo : ''}</div>
+                      {dias.map((d, i) => {
+                        const base = a.set.has(d.fecha);
+                        const { on, color } = estado(a.actKey, d.fecha, base);
+                        return (
+                          <div key={i}
+                            onMouseDown={(e) => { e.preventDefault(); onCeldaDown(a.actKey, d.fecha, base, on); }}
+                            onMouseEnter={() => onCeldaEnter(a.actKey, d.fecha, base)}
+                            title={`${a.actividad} · ${d.dia}/${d.mes} — clic para ${on ? 'borrar' : 'pintar'}`}
+                            style={{ ...celdaDia, alignSelf: 'stretch', cursor: 'pointer', borderLeft: `1px solid ${d.fecha === hoyISO ? BASE.red : '#eef2f6'}`, background: d.fecha === hoyISO && !on ? '#fff5f5' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {on && <span style={{ width: '78%', height: 14, background: color || sec.color, borderRadius: '2px', boxShadow: `0 1px 2px ${(color || sec.color)}66`, pointerEvents: 'none' }} />}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </React.Fragment>
               );
-            })())}
+            })}
 
           </div>
         </div>
