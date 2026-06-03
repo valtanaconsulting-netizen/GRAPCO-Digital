@@ -1900,6 +1900,71 @@ function RetrospectivaProyecto({ saludLPS = {}, ppcOficial = {}, restricciones =
   );
 }
 
+// HOOK COMPARTIDO: actividades PROPIAS del usuario en el Lookahead.
+// Permite ARMAR un lookahead (agregar tus partidas, no solo pintar las importadas).
+// Persiste en Configuracion/lapActividades_<proyecto>. Lo usan LAP y Prog. Semanal
+// → las actividades nuevas aparecen en ambas y se programan pintando.
+function useActividadesCustom() {
+  const { proyectoActivoId } = useProyectoActivo();
+  const [actividades, setActividades] = useState([]);
+  useEffect(() => {
+    if (!proyectoActivoId) return;
+    return onSnapshot(doc(db, 'Configuracion', `lapActividades_${proyectoActivoId}`),
+      s => setActividades((s.exists() && s.data().items) || []), () => {});
+  }, [proyectoActivoId]);
+  const persistir = (items) => { setActividades(items); if (proyectoActivoId) setDoc(doc(db, 'Configuracion', `lapActividades_${proyectoActivoId}`), { items, actualizadoEn: new Date() }, { merge: true }).catch(() => {}); };
+  const agregar = (a) => {
+    const item = {
+      id: 'u' + Date.now().toString(36), custom: true,
+      actividad: (a.actividad || '').trim(), seccion: (a.seccion || 'OTROS').trim().toUpperCase(),
+      und: a.und || '', metrado: a.metrado !== '' && a.metrado != null ? Number(a.metrado) : null,
+      hh: a.hh !== '' && a.hh != null ? Number(a.hh) : null, ip: a.ip !== '' && a.ip != null ? Number(a.ip) : null,
+      dias: [],
+    };
+    persistir([...actividades, item]);
+  };
+  const eliminar = (id) => persistir(actividades.filter(x => x.id !== id));
+  return { actividades, agregar, eliminar };
+}
+
+// Modal para AGREGAR una actividad propia al Lookahead (armar tu lookahead).
+function ModalNuevaActividad({ secciones = [], onAdd, onClose }) {
+  const [f, setF] = useState({ actividad: '', seccion: '', und: '', metrado: '', hh: '', ip: '' });
+  const set = (k, v) => setF(p => ({ ...p, [k]: v }));
+  const guardar = () => { if (!f.actividad.trim()) return; onAdd(f); };
+  const lbl = { fontSize: 10, fontWeight: 800, color: BASE.muted, letterSpacing: 0.5 };
+  return (
+    <Modal title="➕ Nueva actividad del Lookahead" onClose={onClose} maxW="520px">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <p style={{ fontSize: 11, color: BASE.muted, margin: 0 }}>
+          Agrégala y luego <strong>píntala</strong> en las semanas/días que va. Se guarda <strong>por proyecto</strong> y aparece también en Programación Semanal.
+        </p>
+        <div>
+          <label style={lbl}>ACTIVIDAD / PARTIDA *</label>
+          <input value={f.actividad} onChange={e => set('actividad', e.target.value)} autoFocus
+            placeholder="Ej: VACIADO DE LOSA NIVEL 2" style={inp({ marginTop: 4, fontWeight: 700 })} />
+        </div>
+        <div>
+          <label style={lbl}>FRENTE / SECCIÓN</label>
+          <input value={f.seccion} onChange={e => set('seccion', e.target.value)} list="secLookahead"
+            placeholder="Ej: ESTRUCTURAS (agrupa la actividad)" style={inp({ marginTop: 4 })} />
+          <datalist id="secLookahead">{secciones.map((s, i) => <option key={i} value={s} />)}</datalist>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+          <div><label style={lbl}>UND</label><input value={f.und} onChange={e => set('und', e.target.value)} placeholder="m3" style={inp({ marginTop: 4 })} /></div>
+          <div><label style={lbl}>METRADO</label><input type="number" value={f.metrado} onChange={e => set('metrado', e.target.value)} placeholder="120" style={inp({ marginTop: 4 })} /></div>
+          <div><label style={lbl}>HH</label><input type="number" value={f.hh} onChange={e => set('hh', e.target.value)} placeholder="80" style={inp({ marginTop: 4 })} /></div>
+          <div><label style={lbl}>IP</label><input type="number" step="0.01" value={f.ip} onChange={e => set('ip', e.target.value)} placeholder="0.6" style={inp({ marginTop: 4 })} /></div>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={onClose} style={{ flex: 1, padding: 12, background: BASE.bgSoft, border: `1px solid ${BASE.border}`, color: BASE.muted, borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>Cancelar</button>
+          <button onClick={guardar} style={{ flex: 2, padding: 12, background: `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`, color: '#fff', border: 'none', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: 13 }}>➕ Agregar al Lookahead</button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 // HOOK COMPARTIDO: marcas editables del LAP (pintar/borrar días)
 // Persiste overrides del usuario en Configuracion/lapMarcas_<proyecto>. Lo usan
 // TANTO el Lookahead como la Programación Semanal → comparten las mismas marcas
@@ -2154,13 +2219,16 @@ function LookaheadView({ restricciones, lookupRestr = () => null, semanaActiva, 
   const winStart = semanaActiva;
   const semanas = useMemo(() => generarLookahead(winStart, 6, INICIO), [winStart, INICIO]);
 
-  // Plan LAP consolidado CON días marcados (carga bajo demanda).
-  const [plan, setPlan] = useState([]);
+  // Plan LAP consolidado CON días marcados (carga bajo demanda) + actividades PROPIAS.
+  const [planBase, setPlanBase] = useState([]);
   useEffect(() => {
     let vivo = true;
-    import('../data/lapCreditex').then(m => { if (vivo) setPlan(m.LAP_PLAN || []); }).catch(() => {});
+    import('../data/lapCreditex').then(m => { if (vivo) setPlanBase(m.LAP_PLAN || []); }).catch(() => {});
     return () => { vivo = false; };
   }, []);
+  const { actividades: actsCustom, agregar: agregarAct, eliminar: eliminarAct } = useActividadesCustom();
+  const [modalAct, setModalAct] = useState(false);
+  const plan = useMemo(() => [...planBase, ...actsCustom], [planBase, actsCustom]);
 
   // Eje de los 42 días de la ventana (6 semanas × 7 días).
   const dias = useMemo(
@@ -2170,8 +2238,8 @@ function LookaheadView({ restricciones, lookupRestr = () => null, semanaActiva, 
     [semanas]
   );
 
-  // Secciones con TODAS las actividades (partidas) del LAP. NO se filtran por la
-  // ventana: se ven todas para poder programarlas; un toggle oculta las no pintadas.
+  // Secciones con TODAS las actividades (partidas) del LAP + las propias. NO se
+  // filtran por la ventana; un toggle oculta las no pintadas.
   const secciones = useMemo(() => {
     const grupos = {};
     (plan || []).forEach(a => { const k = a.seccion || 'OTROS'; (grupos[k] || (grupos[k] = [])).push(a); });
@@ -2233,11 +2301,13 @@ function LookaheadView({ restricciones, lookupRestr = () => null, semanaActiva, 
         <div>
           <h3 style={{ fontSize: '16px', fontWeight: '900', color: BASE.navy }}>🔭 LOOKAHEAD · 6 semanas</h3>
           <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
-            Ventana de 6 semanas desde la <strong style={{ color: BASE.gold }}>semana activa</strong> (la misma que mueve Prog. Semanal, AR y PPC).
-            <strong> Clic/arrastra</strong> para pintar, <strong>Ctrl+Z</strong> deshace y eliges el color.
+            <strong style={{ color: BASE.navy }}>Arma tu lookahead:</strong> <strong style={{ color: BASE.gold }}>➕ agrega</strong> tus actividades y <strong>pinta</strong> los días en que van. Ventana de 6 sem desde la semana activa; <strong>Ctrl+Z</strong> deshace.
           </p>
         </div>
-        <BotonImprimir titulo="Lookahead 6 semanas" />
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <button onClick={() => setModalAct(true)} style={{ padding: '9px 16px', background: `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`, color: '#fff', border: 'none', borderRadius: '9px', fontSize: '12px', fontWeight: 800, cursor: 'pointer', boxShadow: `0 4px 12px ${BASE.gold}55`, whiteSpace: 'nowrap' }}>➕ Nueva actividad</button>
+          <BotonImprimir titulo="Lookahead 6 semanas" />
+        </div>
       </div>
 
       {/* FILTRO DE SEMANA UNIFICADO — mueve también PS, AR y PPC */}
@@ -2344,8 +2414,10 @@ function LookaheadView({ restricciones, lookupRestr = () => null, semanaActiva, 
                         <div style={{ ...leftColsStyle, background: bloq ? 'rgba(225,29,72,0.05)' : bgRow, borderLeft: `3px solid ${stripe}` }}>
                           <span style={{ flex: 1, minWidth: 0, fontSize: esSub ? '9px' : '9.5px', paddingLeft: pad, color: esSub ? BASE.navy : BASE.text, fontWeight: esSub ? 900 : 600, textTransform: esSub ? 'uppercase' : 'none', letterSpacing: esSub ? '0.3px' : 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={bloq ? `${rr.pend} restricción(es) pendiente(s) — NO comprometer hasta liberar` : a.actividad}>
                             {bloq ? <span style={{ color: BASE.red, fontWeight: 900 }}>🔒{rr.pend} </span> : ready === 'lista' ? <span title="Lista para comprometer" style={{ color: BASE.greenDark }}>✅ </span> : ''}
+                            {a.custom ? <span title="Actividad propia (la agregaste tú)" style={{ color: BASE.gold }}>✎ </span> : ''}
                             {a.id ? <b style={{ color: sec.color }}>{a.id} </b> : ''}{a.actividad}
                           </span>
+                          {a.custom && <button onClick={() => eliminarAct(a.id)} title="Eliminar esta actividad propia" style={{ border: 'none', background: 'transparent', color: BASE.red, cursor: 'pointer', fontSize: 11, padding: '0 3px', flexShrink: 0 }}>✕</button>}
                           <span style={colNum}>{fmtN(a.metrado)}</span>
                           <span style={{ ...colNum, color: BASE.muted }}>{a.und || ''}</span>
                           <span style={colNum}>{a.ip != null ? Number(a.ip).toFixed(2) : ''}</span>
@@ -2403,8 +2475,17 @@ function LookaheadView({ restricciones, lookupRestr = () => null, semanaActiva, 
           en dorado y la columna <strong style={{ color: BASE.red }}>roja</strong> es hoy. Usa <strong>‹ Anterior / Siguiente ›</strong> para recorrer las 28 semanas.
           <br /><strong style={{ color: BASE.gold }}>✍ Etiqueta:</strong> escribe un texto corto (ej <strong>S1, A1</strong>) en el campo «Etiqueta» y al pintar aparece <strong>dentro del cuadrito</strong> (como el sector del Excel). Vacío = solo color.
           <br /><strong style={{ color: BASE.red }}>🔒 Shielding:</strong> las actividades con restricciones pendientes salen con franja <strong style={{ color: BASE.red }}>roja</strong> y celdas con borde rojo — están <strong>programadas pero NO listas para comprometer</strong>. Libéralas en <strong>🚧 Análisis Restricciones</strong> y aquí pasan a verde ✅ <strong>automáticamente</strong>.
+          <br /><strong style={{ color: BASE.gold }}>➕ Arma tu lookahead:</strong> usa <strong>«Nueva actividad»</strong> para agregar tus propias partidas (frente, und, metrado, HH) — aparecen también en Programación Semanal. Las tuyas llevan <strong>✎</strong> para borrarlas.
         </span>
       </div>
+
+      {modalAct && (
+        <ModalNuevaActividad
+          secciones={secciones.map(s => s.seccion)}
+          onAdd={(a) => { agregarAct(a); setModalAct(false); }}
+          onClose={() => setModalAct(false)}
+        />
+      )}
     </div>
   );
 }
@@ -2417,13 +2498,15 @@ function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, lookupRestr = (
   const dias = useMemo(() => fechasDeSemana(semanaActiva, INICIO_PROYECTO), [semanaActiva]);
   const semIni = dias[0]?.fecha;
 
-  // Plan LAP consolidado (carga bajo demanda) + edición compartida con el Lookahead.
-  const [plan, setPlan] = useState([]);
+  // Plan LAP consolidado (carga bajo demanda) + actividades propias + edición compartida.
+  const [planBase, setPlanBase] = useState([]);
   useEffect(() => {
     let vivo = true;
-    import('../data/lapCreditex').then(m => { if (vivo) setPlan(m.LAP_PLAN || []); }).catch(() => {});
+    import('../data/lapCreditex').then(m => { if (vivo) setPlanBase(m.LAP_PLAN || []); }).catch(() => {});
     return () => { vivo = false; };
   }, []);
+  const { actividades: actsCustom } = useActividadesCustom();
+  const plan = useMemo(() => [...planBase, ...actsCustom], [planBase, actsCustom]);
   const { estado, onCeldaDown, onCeldaEnter, colorPaint, setColorPaint, textoPaint, setTextoPaint } = useLapMarcas();
   const [hideUnmarked, setHideUnmarked] = useState(false);
 
