@@ -209,10 +209,16 @@ export default function VDC({
     const listas = actsR.filter(a => a.pend === 0).length;
     const ppr = nAct ? Math.round(listas / nAct * 100) : null;
     const progActs = [...new Set(lapProgramado.map(c => c.actividad).filter(Boolean))];
-    const bloqProg = progActs.filter(act => readyDe(rpa[(act || '').toUpperCase().trim()]) === 'bloq').length;
+    const bloqProg = progActs.filter(act => readyDe(rpa[normActividad(act)]) === 'bloq').length;
     const ppc = ppcOficial.global ?? diag.promedioPct ?? null;
     return { ppc, pcr, ppr, bloqProg, progTotal: progActs.length, lib, tot, pend: tot - lib, listas, nAct };
   }, [restricciones, lapProgramado, ppcOficial, diag]);
+
+  // Lazo Learn: retroalimentación automática (CNC + restricciones + shielding).
+  const retro = useMemo(
+    () => generarRetroalimentacion({ cnc: ppcOficial.cnc, restricciones, salud: saludLPS }),
+    [ppcOficial, restricciones, saludLPS]
+  );
 
   if (loading) {
     return (
@@ -367,6 +373,7 @@ export default function VDC({
           setSemanaActiva={setSemanaActiva}
           semanasMeta={semanasMeta}
           total={totalSemanas}
+          lapNombres={lapNombres}
           onNueva={() => {
             setFormRestriccion({
               actividad: '', tipoFlujo: 'materiales', descripcion: '',
@@ -411,6 +418,7 @@ export default function VDC({
         <Lecciones
           lecciones={lecciones}
           sugerencias={sugerirLecciones(compromisos, lecciones)}
+          retro={retro}
           onNueva={(prefill) => {
             setFormLeccion({
               titulo: prefill?.titulo || '',
@@ -664,8 +672,12 @@ const arTd = { padding: '5px 8px', borderRight: '1px solid #eef2f6', verticalAli
 const arTdC = { ...arTd, textAlign: 'center', whiteSpace: 'nowrap' };
 const arMini = (bg, col) => ({ padding: '4px 7px', background: bg, color: col, border: 'none', borderRadius: '5px', fontSize: '10px', cursor: 'pointer', marginLeft: '3px' });
 
-function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar, onEstado, semanaActiva, setSemanaActiva, semanasMeta = {}, total = 35 }) {
+function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar, onEstado, semanaActiva, setSemanaActiva, semanasMeta = {}, total = 35, lapNombres = [] }) {
   const kpi = useMemo(() => calcularKPIRestricciones(restricciones), [restricciones]);
+  // Diagnóstico de vínculo AR↔LAP: restricciones cuya actividad no existe en el LAP
+  // (no aplicarían shielding/badges). Riesgo silencioso → lo hacemos visible.
+  const huerfanas = useMemo(() => restriccionesHuerfanas(restricciones, lapNombres), [restricciones, lapNombres]);
+  const [verHuerfanas, setVerHuerfanas] = useState(false);
   const [filtroEstado, setFiltroEstado] = useState('todos');
   // Semana COMPARTIDA con LAP / PS / PPC (un único filtro para todo el LPS).
   const semanaAR = semanaActiva;
@@ -770,6 +782,22 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
               <p style={{ fontSize: '9.5px', color: 'rgba(255,255,255,0.7)', marginTop: '2px' }}>{k.sub}</p>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* DIAGNÓSTICO DE VÍNCULO AR↔LAP: restricciones que no enlazan con el LAP */}
+      {lapNombres.length > 0 && huerfanas.length > 0 && (
+        <div style={{ background: '#fffbeb', border: `1px solid ${BASE.gold}`, borderLeft: `4px solid ${BASE.gold}`, borderRadius: '10px', padding: '10px 14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '12px', fontWeight: 900, color: BASE.goldDark }}>🔗 {huerfanas.length} restricción(es) no enlazan con el LAP</span>
+            <span style={{ fontSize: '10.5px', color: BASE.muted, flex: 1, minWidth: 0 }}>su nombre de actividad no coincide con ninguna del LAP → no aplican shielding ni badges. Revisa el nombre.</span>
+            <button onClick={() => setVerHuerfanas(v => !v)} style={{ padding: '5px 10px', borderRadius: '7px', border: `1px solid ${BASE.gold}`, background: '#fff', color: BASE.goldDark, fontSize: '10.5px', fontWeight: 800, cursor: 'pointer' }}>{verHuerfanas ? 'Ocultar' : 'Ver cuáles'}</button>
+          </div>
+          {verHuerfanas && (
+            <ul style={{ margin: '8px 0 0', paddingLeft: '20px', columns: '2', fontSize: '11px', color: BASE.text }}>
+              {huerfanas.map((n, i) => <li key={i} style={{ marginBottom: '2px' }}>{n}</li>)}
+            </ul>
+          )}
         </div>
       )}
 
@@ -960,11 +988,48 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
 // SUB-COMPONENTE: LECCIONES APRENDIDAS
 // ════════════════════════════════════════════════════════════════
 
-function Lecciones({ lecciones, sugerencias, onNueva, onEditar, onEliminar }) {
+function Lecciones({ lecciones, sugerencias, onNueva, onEditar, onEliminar, retro = [] }) {
   const kpi = useMemo(() => calcularKPILecciones(lecciones), [lecciones]);
+  const sevColor = { alta: BASE.red, media: BASE.gold, info: BASE.navy };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      {/* RETROALIMENTACIÓN AUTOMÁTICA (lazo Learn — Did→Learn) */}
+      <div style={{ background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, borderRadius: '14px', padding: '16px 18px', borderTop: `3px solid ${BASE.gold}`, boxShadow: BASE.shadowMd }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
+          <span style={{ fontSize: '13px', fontWeight: 900, color: '#fff', letterSpacing: '0.4px' }}>🔄 RETROALIMENTACIÓN AUTOMÁTICA</span>
+          <span style={{ fontSize: '10px', fontWeight: 800, color: BASE.gold }}>Lazo Learn · Did → Learn</span>
+        </div>
+        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.65)', marginBottom: '12px' }}>
+          Hallazgos derivados solos de las causas CNC del PPC, las restricciones y el shielding. Cada uno trae su <strong style={{ color: '#fff' }}>acción recomendada</strong> que vuelve a la planificación.
+        </p>
+        {retro.length === 0 ? (
+          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', background: 'rgba(255,255,255,0.06)', borderRadius: '8px', padding: '12px' }}>✅ Sin hallazgos críticos: el sistema no detecta causas recurrentes ni compromisos en riesgo ahora mismo.</p>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '10px' }}>
+            {retro.map((r, i) => {
+              const c = sevColor[r.sev] || BASE.gold;
+              return (
+                <div key={i} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderLeft: `4px solid ${c}`, borderRadius: '10px', padding: '11px 13px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                    <span style={{ fontSize: '15px' }}>{r.icon}</span>
+                    <span style={{ fontSize: '11.5px', fontWeight: 900, color: '#fff', lineHeight: 1.2 }}>{r.titulo}</span>
+                  </div>
+                  <p style={{ fontSize: '10.5px', color: 'rgba(255,255,255,0.72)', lineHeight: 1.4 }}>{r.detalle}</p>
+                  <p style={{ fontSize: '10.5px', color: '#fff', background: 'rgba(229,168,47,0.16)', border: `1px solid ${BASE.gold}55`, borderRadius: '7px', padding: '6px 9px', lineHeight: 1.4 }}>
+                    <strong style={{ color: BASE.gold }}>Acción → </strong>{r.accion}
+                  </p>
+                  <button onClick={() => onNueva({ titulo: r.titulo, categoria: r.categoria, descripcion: `${r.detalle}\n\nAcción recomendada: ${r.accion}` })}
+                    style={{ alignSelf: 'flex-start', padding: '5px 11px', borderRadius: '7px', border: 'none', background: BASE.gold, color: BASE.navy, fontSize: '10.5px', fontWeight: 800, cursor: 'pointer' }}>
+                    ＋ Guardar como lección
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px' }}>
         <div style={{ background: BASE.white, borderRadius: '12px', border: `1px solid ${BASE.border}`, padding: '14px 16px', boxShadow: BASE.shadowSm }}>
@@ -1219,17 +1284,75 @@ function BotonImprimir({ titulo }) {
 const lapHash = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; return h.toString(36); };
 const lapClave = (actKey, fecha) => `a${lapHash(actKey)}_${fecha.replace(/-/g, '')}`;
 
-// Indexa restricciones por nombre de actividad (AR ↔ LAP).
+// Normaliza un nombre de actividad para enlazar AR↔LAP↔PPC de forma ROBUSTA:
+// quita tildes/diacríticos, mayúsculas, elimina puntuación y colapsa espacios.
+// Así "Encofrado de columnas (eje A)" y "ENCOFRADO  DE COLUMNAS EJE A" enlazan.
+const normActividad = (s) => (s == null ? '' : String(s))
+  .normalize('NFD').replace(/[̀-ͯ]/g, '')   // tildes/diacríticos
+  .toUpperCase()
+  .replace(/[^A-Z0-9 ]/g, ' ')                         // puntuación → espacio
+  .replace(/\s+/g, ' ')
+  .trim();
+
+// Indexa restricciones por nombre de actividad NORMALIZADO (AR ↔ LAP).
 function restriccionesPorActividad(restricciones) {
   const m = {};
   (restricciones || []).forEach(r => {
-    const k = (r.actividad || '').toUpperCase().trim();
+    const k = normActividad(r.actividad);
     if (!k) return;
     if (!m[k]) m[k] = { pend: 0, total: 0 };
     m[k].total++;
     if (r.estado !== 'liberada') m[k].pend++;
   });
   return m;
+}
+
+// Diagnóstico de vínculo: nombres de actividad del AR que NO enlazan con ninguna
+// actividad del LAP (riesgo silencioso — el shielding/badges no aplicarían).
+function restriccionesHuerfanas(restricciones, actividadesLap) {
+  const setLap = new Set((actividadesLap || []).map(normActividad).filter(Boolean));
+  const out = []; const visto = new Set();
+  (restricciones || []).forEach(r => {
+    const k = normActividad(r.actividad);
+    if (!k || setLap.has(k) || visto.has(k)) return;
+    visto.add(k); out.push(r.actividad);
+  });
+  return out;
+}
+
+// ════════════════════════════════════════════════════════════════
+// LAZO LEARN (RETROALIMENTACIÓN AUTOMÁTICA)
+// Cierra el ciclo Ballard Did→Learn: de las causas CNC del PPC + las
+// restricciones (flujo dominante, vencidas) + el shielding/PPR, genera
+// hallazgos con su ACCIÓN recomendada que vuelven a la planificación.
+// ════════════════════════════════════════════════════════════════
+const ACCIONES_RETRO = [
+  { re: /material|logist|abastec|sumin|procur/i, a: 'Adelanta la procura y confirma fechas de entrega; vuélvelo restricción con fecha-límite en el AR.' },
+  { re: /mano de obra|personal|cuadrilla|rr ?hh/i, a: 'Revisa el dimensionamiento de cuadrillas y la curva de personal vs. la carga programada.' },
+  { re: /equipo|maquin/i, a: 'Asegura disponibilidad y mantenimiento de equipos antes de comprometer la actividad.' },
+  { re: /dise|ingenier|plano|rfi|informaci/i, a: 'Gestiona planos/RFIs con anticipación; llévalo a restricción de "información" con responsable y fecha.' },
+  { re: /prerre|predeces|secuen|previa/i, a: 'Respeta la secuencia constructiva: no comprometas hasta cerrar la actividad predecesora.' },
+  { re: /program|planif/i, a: 'Compromete sólo lo libre de restricciones (shielding) y ajusta el dimensionamiento semanal.' },
+  { re: /clima|extern|tercero|client|munic|permis/i, a: 'Planifica holguras y escala externos/permisos con tiempo; agrégalos como restricción temprana.' },
+  { re: /calidad|retrab|observ/i, a: 'Refuerza el control de calidad en proceso para evitar retrabajos y reprogramaciones.' },
+];
+const accionRetro = (label) => (ACCIONES_RETRO.find(x => x.re.test(label || '')) || { a: 'Analiza la causa raíz (5 porqués) y define una contramedida para el próximo lookahead.' }).a;
+
+function generarRetroalimentacion({ cnc = [], restricciones = [], salud = {} }) {
+  const out = [];
+  const hoy = new Date().toISOString().slice(0, 10);
+  const cncOrd = [...(cnc || [])].sort((a, b) => (b.n || 0) - (a.n || 0));
+  if (cncOrd[0]) out.push({ sev: 'alta', icon: '📉', titulo: `Causa de incumplimiento #1: ${cncOrd[0].cat}`, detalle: `${cncOrd[0].n} incumplimientos atribuidos a "${cncOrd[0].cat}" en el PPC.`, accion: accionRetro(cncOrd[0].cat), categoria: 'programacion' });
+  if (cncOrd[1] && cncOrd[1].n) out.push({ sev: 'media', icon: '📉', titulo: `Causa recurrente: ${cncOrd[1].cat}`, detalle: `${cncOrd[1].n} incumplimientos por "${cncOrd[1].cat}".`, accion: accionRetro(cncOrd[1].cat), categoria: 'programacion' });
+  const flujo = {};
+  (restricciones || []).forEach(r => { if (r.estado !== 'liberada' && r.tipoFlujo) flujo[r.tipoFlujo] = (flujo[r.tipoFlujo] || 0) + 1; });
+  const fOrd = Object.entries(flujo).sort((a, b) => b[1] - a[1]);
+  if (fOrd[0]) { const lab = (RESTRICCION_TIPOS_MAP[fOrd[0][0]] || {}).label || fOrd[0][0]; out.push({ sev: 'media', icon: '🚧', titulo: `Flujo que más restringe: ${lab}`, detalle: `${fOrd[0][1]} restricciones pendientes del flujo ${lab}.`, accion: accionRetro(lab), categoria: fOrd[0][0] }); }
+  const venc = (restricciones || []).filter(r => r.estado !== 'liberada' && r.fechaCompromisoLiberacion && r.fechaCompromisoLiberacion < hoy).length;
+  if (venc > 0) out.push({ sev: 'alta', icon: '⏰', titulo: `${venc} restricción(es) vencida(s)`, detalle: 'Su fecha-límite ya pasó y no están liberadas — riesgo inmediato para la programación.', accion: 'Libéralas hoy o re-secuencia las actividades afectadas en el lookahead.', categoria: 'programacion' });
+  if (salud.bloqProg > 0) out.push({ sev: 'alta', icon: '🔒', titulo: `${salud.bloqProg} actividad(es) comprometida(s) en riesgo`, detalle: 'Están en el plan con restricciones pendientes (rompen el production shielding).', accion: 'Sácalas del plan semanal o libera sus restricciones antes de comprometer.', categoria: 'prerequisito' });
+  if (salud.ppr != null && salud.ppr < 70) out.push({ sev: 'media', icon: '🛡️', titulo: `Sólo ${salud.ppr}% del plan está listo (PPR)`, detalle: 'Pocas actividades libres de restricción — la confiabilidad del plan está en riesgo.', accion: 'Refuerza el Make-Ready: prioriza liberar restricciones de las próximas semanas.', categoria: 'programacion' });
+  return out;
 }
 
 // Production shielding (Last Planner): una actividad sólo está LISTA para
@@ -1560,7 +1683,7 @@ function LookaheadView({ compromisos, restricciones, semanaActiva, setSemanaActi
   const totalHH = todasActs.filter(actMarcadaEnVentana).reduce((s, a) => s + (a.hh || 0), 0);
   // Shielding: de las programadas en la ventana, cuántas están bloqueadas (con
   // restricción pendiente) vs listas para comprometer. Conversa solo con el AR.
-  const progBloq = todasActs.filter(a => actMarcadaEnVentana(a) && readyDe(restrPorAct[(a.actividad || '').toUpperCase().trim()]) === 'bloq').length;
+  const progBloq = todasActs.filter(a => actMarcadaEnVentana(a) && readyDe(restrPorAct[normActividad(a.actividad)]) === 'bloq').length;
   const progListas = nAct - progBloq;
   const fmtN = (n) => n == null ? '' : Number(n).toLocaleString('es-PE', { maximumFractionDigits: n < 100 ? 1 : 0 });
   const leftColsStyle = { width: LEFT_W, minWidth: LEFT_W, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px', padding: '0 8px', background: BASE.white, borderRight: `2px solid ${BASE.border}` };
@@ -1679,7 +1802,7 @@ function LookaheadView({ compromisos, restricciones, semanaActiva, setSemanaActi
                     const esSub = a.nivel && !a.id && a.metrado == null;
                     const pad = esSub ? (a.nivel === 'N2' ? 6 : 16) : 26;
                     const bgRow = esSub ? `${sec.color}1a` : (ai % 2 ? '#f8fbff' : '#ffffff');
-                    const rr = restrPorAct[(a.actividad || '').toUpperCase().trim()];
+                    const rr = restrPorAct[normActividad(a.actividad)];
                     const ready = esSub ? 'sub' : readyDe(rr);   // shielding: bloq | lista | sin
                     const bloq = ready === 'bloq';
                     const stripe = esSub ? sec.color : bloq ? BASE.red : ready === 'lista' ? BASE.green : 'transparent';
@@ -1780,7 +1903,7 @@ function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, restricciones =
   const nAct = todasActs.filter(actMarcadaSemana).length;
   const totalHH = todasActs.filter(actMarcadaSemana).reduce((s, a) => s + (a.hh || 0), 0);
   // Shielding de la semana: programadas bloqueadas (restricción pendiente) vs listas.
-  const progBloq = todasActs.filter(a => actMarcadaSemana(a) && readyDe(restrPorAct[(a.actividad || '').toUpperCase().trim()]) === 'bloq').length;
+  const progBloq = todasActs.filter(a => actMarcadaSemana(a) && readyDe(restrPorAct[normActividad(a.actividad)]) === 'bloq').length;
   const progListas = nAct - progBloq;
   const hoy = new Date();
   const hoyISO = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
@@ -1868,7 +1991,7 @@ function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, restricciones =
                     const esSub = a.nivel && !a.id && a.metrado == null;   // sub-partida (encabezado de nivel)
                     const pad = esSub ? (a.nivel === 'N2' ? 4 : 14) : 0;
                     const bgRow = esSub ? `${sec.color}1a` : (ai % 2 ? '#f8fbff' : '#ffffff');
-                    const rr = restrPorAct[(a.actividad || '').toUpperCase().trim()];
+                    const rr = restrPorAct[normActividad(a.actividad)];
                     const ready = esSub ? 'sub' : readyDe(rr);   // shielding
                     const bloq = ready === 'bloq';
                     const stripe = esSub ? sec.color : bloq ? BASE.red : ready === 'lista' ? BASE.green : 'transparent';
@@ -1973,7 +2096,7 @@ function PPCLap({ semanaActiva, setSemanaActiva, semanasMeta = {}, total, restri
   };
 
   const planif = useMemo(() => planificadasDe(sem), [plan, marcas, sem]);
-  const bloqDe = (a) => readyDe(restrPorAct[(a.actividad || '').toUpperCase().trim()]) === 'bloq';
+  const bloqDe = (a) => readyDe(restrPorAct[normActividad(a.actividad)]) === 'bloq';
   const compBloq = planif.filter(bloqDe).length;   // comprometidas con restricción pendiente
   const estadoDe = (actKey) => cumpl[cumplKey(actKey, sem)];
   const ok = planif.filter(a => estadoDe(a.actKey) === 'ok').length;
@@ -2092,7 +2215,7 @@ function PPCLap({ semanaActiva, setSemanaActiva, semanasMeta = {}, total, restri
           const est = estadoDe(a.actKey);
           const esNo = est && est !== 'ok';
           const bloq = bloqDe(a);   // comprometida con restricción pendiente (shielding)
-          const rr = restrPorAct[(a.actividad || '').toUpperCase().trim()];
+          const rr = restrPorAct[normActividad(a.actividad)];
           return (
             <div key={a.actKey} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 14px', borderBottom: `1px solid #eef2f6`, background: bloq ? 'rgba(225,29,72,0.05)' : (i % 2 ? '#f8fbff' : '#fff'), borderLeft: `3px solid ${bloq ? BASE.red : 'transparent'}` }}>
               <span style={{ flex: 1, fontSize: '11px', color: BASE.text }}>
