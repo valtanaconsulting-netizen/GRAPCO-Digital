@@ -8,7 +8,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { collection, query, orderBy, onSnapshot, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import * as XLSX from 'xlsx';
 import {
-  ResponsiveContainer, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Legend,
+  ResponsiveContainer, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, LabelList,
 } from 'recharts';
 import { db } from '../firebaseConfig';
 import { BASE, CB_COL } from '../utils/styles';
@@ -69,6 +69,8 @@ function compPorCodigo(obs, categoria) {
   const tot = Object.values(g).reduce((s, e) => s + e.c, 0);
   return Object.values(g).map((e) => ({ codigo: e.codigo, name: e.name, value: tot ? Math.round(e.c / tot * 100) : 0 })).sort((a, b) => b.value - a.value);
 }
+// % TP/TC/TNC de un grupo {tp,tc,tnc,n} → etiquetas numéricas sobre las barras.
+const pctDe = (e) => { const n = e.n || 0; return { tpPct: n ? Math.round(e.tp / n * 100) : 0, tcPct: n ? Math.round(e.tc / n * 100) : 0, tncPct: n ? Math.round(e.tnc / n * 100) : 0 }; };
 // Calificación basada en TP (Productividad), no en LUF.
 const tpGrade = (tp) => tp >= 55 ? { g: 'A', l: 'Excelente', c: BASE.greenDark, emoji: '🟢' }
   : tp >= 45 ? { g: 'B', l: 'Bueno', c: '#65a30d', emoji: '🟢' }
@@ -85,9 +87,10 @@ function BarApilada({ data, onClick, filtroVal }) {
         <XAxis dataKey="label" tick={{ fontSize: 9.5, fill: BASE.text }} interval={0} />
         <YAxis tickFormatter={(v) => `${Math.round(v * 100)}%`} tick={{ fontSize: 9, fill: BASE.muted }} domain={[0, 1]} width={32} />
         <Tooltip formatter={(v, n, p) => [`${Math.round(v / (p.payload.n || 1) * 100)}% (${v})`, n]} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-        {[['tp', 'Productivo', CB_COL.TP], ['tc', 'Contributorio', CB_COL.TC], ['tnc', 'No contributorio', CB_COL.TNC]].map(([key, nm, col], bi) => (
+        {[['tp', 'Productivo', CB_COL.TP, 'tpPct'], ['tc', 'Contributorio', CB_COL.TC, 'tcPct'], ['tnc', 'No contributorio', CB_COL.TNC, 'tncPct']].map(([key, nm, col, pk], bi) => (
           <Bar key={key} dataKey={key} stackId="a" name={nm} radius={bi === 2 ? [4, 4, 0, 0] : undefined} cursor="pointer" onClick={(d) => d && onClick && onClick(d.key)}>
             {data.map((e, i) => <Cell key={i} fill={col} opacity={filtroVal && filtroVal !== e.key ? 0.3 : 1} />)}
+            <LabelList dataKey={pk} position="center" fill="#fff" fontSize={9} fontWeight={800} formatter={(v) => (v >= 8 ? `${v}%` : '')} />
           </Bar>
         ))}
       </BarChart>
@@ -218,13 +221,13 @@ export default function CartaBalanceAnalisis() {
     obs.forEach((o) => { const e = g[o[campo]] || (g[o[campo]] = { key: o[campo], tp: 0, tc: 0, tnc: 0, n: 0 }); if (o.categoria === 'TP') e.tp++; else if (o.categoria === 'TC') e.tc++; else if (o.categoria === 'TNC') e.tnc++; e.n++; });
     return g;
   };
-  const porFecha = useMemo(() => Object.values(agrupar(sets.fecha, 'fecha')).map((e) => ({ ...e, label: fmtCorta(e.key) })).sort((a, b) => (a.key < b.key ? -1 : 1)), [sets.fecha]);
-  const porCargo = useMemo(() => Object.values(agrupar(sets.cargo, 'cargo')).map((e) => ({ ...e, label: e.key })).sort((a, b) => CARGO_ORDEN.indexOf(a.key) - CARGO_ORDEN.indexOf(b.key)), [sets.cargo]);
+  const porFecha = useMemo(() => Object.values(agrupar(sets.fecha, 'fecha')).map((e) => ({ ...e, ...pctDe(e), label: fmtCorta(e.key) })).sort((a, b) => (a.key < b.key ? -1 : 1)), [sets.fecha]);
+  const porCargo = useMemo(() => Object.values(agrupar(sets.cargo, 'cargo')).map((e) => ({ ...e, ...pctDe(e), label: e.key })).sort((a, b) => CARGO_ORDEN.indexOf(a.key) - CARGO_ORDEN.indexOf(b.key)), [sets.cargo]);
   const crew = useMemo(() => {
     const g = {}; const cargoDe = {};
     sets.persona.forEach((o) => { const e = g[o.persona] || (g[o.persona] = { nombre: o.persona, tp: 0, tc: 0, tnc: 0, n: 0 }); if (o.categoria === 'TP') e.tp++; else if (o.categoria === 'TC') e.tc++; else if (o.categoria === 'TNC') e.tnc++; e.n++; cargoDe[o.persona] = o.cargo; });
     const ordC = (c) => { const i = CARGO_ORDEN.indexOf(c); return i === -1 ? 99 : i; };
-    return Object.values(g).map((e) => ({ ...e, cargo: cargoDe[e.nombre] || 'Sin cargo', ptp: e.n ? e.tp / e.n * 100 : 0 }))
+    return Object.values(g).map((e) => ({ ...e, cargo: cargoDe[e.nombre] || 'Sin cargo', ptp: e.n ? e.tp / e.n * 100 : 0, ...pctDe(e) }))
       .sort((a, b) => ordC(a.cargo) - ordC(b.cargo) || b.ptp - a.ptp);
   }, [sets.persona]);
   const cargoDeTrab = useMemo(() => { const m = {}; crew.forEach((c) => { m[c.nombre] = c.cargo; }); return m; }, [crew]);
@@ -397,17 +400,24 @@ export default function CartaBalanceAnalisis() {
           <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={donut} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius="55%" outerRadius="82%" paddingAngle={2} stroke="none" onClick={(d) => setF('categoria', d?.cat)} cursor="pointer">
-                  {donut.map((d, i) => <Cell key={i} fill={d.color} opacity={filtros.categoria && filtros.categoria !== d.cat ? 0.35 : 1} />)}
+                <Pie data={donut} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius="64%" outerRadius="90%" paddingAngle={2} cornerRadius={5} stroke={BASE.white} strokeWidth={2} onClick={(d) => setF('categoria', d?.cat)} cursor="pointer">
+                  {donut.map((d, i) => <Cell key={i} fill={d.color} opacity={filtros.categoria && filtros.categoria !== d.cat ? 0.3 : 1} />)}
                 </Pie>
                 <Tooltip formatter={(v) => `${v}%`} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                <Legend wrapperStyle={{ fontSize: 10 }} />
               </PieChart>
             </ResponsiveContainer>
-            <div style={{ position: 'absolute', top: '42%', left: 0, right: 0, textAlign: 'center', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-              <p style={{ fontSize: 22, fontWeight: 900, color: CB_COL.TP, lineHeight: 1 }}>{Math.round(k.pTP)}%</p>
-              <p style={{ fontSize: 8.5, fontWeight: 800, color: BASE.muted, textTransform: 'uppercase' }}>Productivo</p>
+            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
+              <p style={{ fontSize: 30, fontWeight: 900, color: CB_COL.TP, lineHeight: 1 }}>{Math.round(k.pTP)}%</p>
+              <p style={{ fontSize: 8.5, fontWeight: 800, color: BASE.muted, letterSpacing: 1.2, marginTop: 3 }}>PRODUCTIVO</p>
             </div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: 8, flexWrap: 'wrap' }}>
+            {donut.map((d) => (
+              <span key={d.cat} onClick={() => setF('categoria', d.cat)} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10.5, fontWeight: 700, color: BASE.text, cursor: 'pointer', opacity: filtros.categoria && filtros.categoria !== d.cat ? 0.4 : 1 }}>
+                <i style={{ width: 9, height: 9, borderRadius: '50%', background: d.color, display: 'inline-block' }} />
+                {d.name} <b style={{ color: d.color }}>{d.value}%</b>
+              </span>
+            ))}
           </div>
         </div>
 
@@ -450,12 +460,15 @@ export default function CartaBalanceAnalisis() {
                   <Tooltip formatter={(v, n, p) => [`${Math.round(v / (p.payload.n || 1) * 100)}%`, n]} labelFormatter={(l) => `${nombreCorto(l)} · ${cargoDeTrab[l] || ''}`} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
                   <Bar dataKey="tp" stackId="a" name="Productivo" cursor="pointer" onClick={(d) => d && setF('persona', d.nombre)}>
                     {crew.map((e, i) => <Cell key={i} fill={CB_COL.TP} opacity={filtros.persona && filtros.persona !== e.nombre ? 0.3 : 1} />)}
+                    <LabelList dataKey="tpPct" position="center" fill="#fff" fontSize={9} fontWeight={800} formatter={(v) => (v >= 8 ? `${v}%` : '')} />
                   </Bar>
                   <Bar dataKey="tc" stackId="a" name="Contributorio" cursor="pointer" onClick={(d) => d && setF('persona', d.nombre)}>
                     {crew.map((e, i) => <Cell key={i} fill={CB_COL.TC} opacity={filtros.persona && filtros.persona !== e.nombre ? 0.3 : 1} />)}
+                    <LabelList dataKey="tcPct" position="center" fill="#fff" fontSize={9} fontWeight={800} formatter={(v) => (v >= 8 ? `${v}%` : '')} />
                   </Bar>
                   <Bar dataKey="tnc" stackId="a" name="No contributorio" radius={[4, 4, 0, 0]} cursor="pointer" onClick={(d) => d && setF('persona', d.nombre)}>
                     {crew.map((e, i) => <Cell key={i} fill={CB_COL.TNC} opacity={filtros.persona && filtros.persona !== e.nombre ? 0.3 : 1} />)}
+                    <LabelList dataKey="tncPct" position="center" fill="#fff" fontSize={9} fontWeight={800} formatter={(v) => (v >= 8 ? `${v}%` : '')} />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
