@@ -267,6 +267,7 @@ export default function VDC({
           {[
             { id: 'huddle',        l: '🔔 Huddle del día',         group: 'exec' },
             { id: 'tablero',       l: '🟦 Tablero (Power BI)',     group: 'ctrl' },
+            { id: 'pronostico',    l: '📈 Plan vs Real · Pronóstico', group: 'ctrl' },
             { id: 'sectorizacion', l: '🧱 Sectorización · Tren',    group: 'plan' },
             { id: 'lap',           l: '🔭 LAP · Lookahead 6 sem',  group: 'plan' },
             { id: 'restricciones', l: '🚧 Análisis Restricciones', group: 'plan' },
@@ -323,6 +324,16 @@ export default function VDC({
           pareto={paretoReal}
           diag={{ promedioPct: ppcOficial.global }}
           semanaActiva={semanaActiva}
+          saludLPS={saludLPS}
+        />
+      )}
+
+      {/* === PLAN vs REAL + PRONÓSTICO (puente planeamiento↔producción) === */}
+      {tab === 'pronostico' && (
+        <PlanVsReal
+          lapPlan={lapPlan}
+          lapProgramado={lapProgramado}
+          ppcOficial={ppcOficial}
           saludLPS={saludLPS}
         />
       )}
@@ -1626,6 +1637,108 @@ function HuddleDiario({ semanaActiva, setSemanaActiva, saludLPS = {}, restriccio
 
       <p style={{ fontSize: 10.5, color: BASE.muted, textAlign: 'center', fontStyle: 'italic' }}>
         Pantalla para la reunión diaria a pie de obra (móvil). Las alertas y el foco se actualizan solos desde el AR, el LAP y el PPC — funciona offline.
+      </p>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+// PLAN vs REAL + PRONÓSTICO (puente Planeamiento ↔ Producción)
+// Should (plan base del LAP) vs Will (comprometido) por semana, y proyección de
+// la FECHA DE TÉRMINO según la confiabilidad real (PPC): si solo cumples X% de lo
+// que comprometes, el cronograma se estira → fin proyectado = hoy + restante/PPC.
+// ════════════════════════════════════════════════════════════════
+function PlanVsReal({ lapPlan = [], lapProgramado = [], ppcOficial = {}, saludLPS = {} }) {
+  const fmtFecha = (iso) => { try { return new Date(iso + 'T00:00:00').toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' }); } catch { return iso; } };
+  const datos = useMemo(() => {
+    const should = {}, will = {};
+    lapPlan.forEach(a => (a.dias || []).forEach(f => { const w = obtenerSemana(f); (should[w] || (should[w] = new Set())).add(a.actividad); }));
+    lapProgramado.forEach(c => { if (c.semana) (will[c.semana] || (will[c.semana] = new Set())).add(c.actividad); });
+    const planFin = Math.max(0, ...Object.keys(should).map(Number));
+    const maxW = Math.max(planFin, ...Object.keys(will).map(Number));
+    const filas = [];
+    let scope = 0, comprometido = 0;
+    for (let n = 1; n <= maxW; n++) {
+      const s = should[n] ? should[n].size : 0;
+      const w = will[n] ? will[n].size : 0;
+      scope += s; comprometido += w;
+      filas.push({ s: 'S' + n, sem: n, should: s, will: w });
+    }
+    return { filas, planFin, scope, comprometido };
+  }, [lapPlan, lapProgramado]);
+
+  const curWeek = obtenerSemana(new Date().toISOString().slice(0, 10));
+  const ppc = saludLPS.ppc != null ? saludLPS.ppc : (ppcOficial.global ?? 75);
+  const planFin = datos.planFin || 1;
+  const restante = Math.max(0, planFin - curWeek);
+  const factor = Math.max(0.4, ppc / 100);                 // confiabilidad (suelo 40% para no exagerar)
+  const proyFin = Math.round(curWeek + restante / factor);
+  const deriva = proyFin - planFin;
+  const fechaPlan = (fechasDeSemana(planFin, INICIO_PROYECTO)[6] || {}).fecha;
+  const fechaProy = (fechasDeSemana(proyFin, INICIO_PROYECTO)[6] || {}).fecha;
+  const pctComprometido = datos.scope ? Math.round(datos.comprometido / datos.scope * 100) : null;
+  const card = { background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 12, padding: '14px 16px', boxShadow: BASE.shadowSm };
+
+  const kpis = [
+    { l: 'CONFIABILIDAD (PPC)', v: ppc == null ? '—' : ppc + '%', c: ppcTone(ppc), sub: 'qué % de lo comprometido se cumple' },
+    { l: 'FIN SEGÚN PLAN', v: 'S' + planFin, c: BASE.navy, sub: fechaPlan ? fmtFecha(fechaPlan) : '—' },
+    { l: 'FIN PRONOSTICADO', v: 'S' + proyFin, c: deriva > 0 ? BASE.red : BASE.greenDark, sub: fechaProy ? fmtFecha(fechaProy) : '—' },
+    { l: 'DERIVA', v: (deriva > 0 ? '+' : '') + deriva + ' sem', c: deriva > 2 ? BASE.red : deriva > 0 ? BASE.gold : BASE.greenDark, sub: deriva > 0 ? 'de atraso al ritmo actual' : 'en plazo' },
+  ];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div>
+        <h3 style={{ fontSize: 16, fontWeight: 900, color: BASE.navy }}>📈 Plan vs Real · Pronóstico</h3>
+        <p style={{ fontSize: 11, color: BASE.muted, marginTop: 2 }}>
+          El puente <strong>planeamiento ↔ producción</strong>: <strong style={{ color: BASE.navy }}>Plan base (Should)</strong> vs <strong style={{ color: BASE.gold }}>Comprometido (Will)</strong> por semana, y la <strong>fecha de término proyectada</strong> según tu confiabilidad real (PPC).
+        </p>
+      </div>
+
+      {/* KPIs ejecutivos */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
+        {kpis.map(k => (
+          <div key={k.l} style={{ ...card, borderTop: `4px solid ${k.c}` }}>
+            <p style={{ fontSize: 9.5, fontWeight: 800, color: BASE.muted, letterSpacing: 0.4 }}>{k.l}</p>
+            <p style={{ fontSize: 26, fontWeight: 900, color: k.c, lineHeight: 1.1, marginTop: 2 }}>{k.v}</p>
+            <p style={{ fontSize: 9.5, color: BASE.muted, marginTop: 2 }}>{k.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Lectura ejecutiva */}
+      <div style={{ background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, borderRadius: 12, padding: '13px 16px', borderLeft: `4px solid ${deriva > 0 ? BASE.red : BASE.green}` }}>
+        <p style={{ fontSize: 12.5, color: '#fff', fontWeight: 600, lineHeight: 1.5 }}>
+          {deriva > 0
+            ? <>⚠️ Al ritmo actual (<strong style={{ color: BASE.gold }}>PPC {ppc}%</strong>), el proyecto terminaría la <strong>semana {proyFin}</strong>{fechaProy ? <> ({fmtFecha(fechaProy)})</> : ''} — <strong style={{ color: '#fda4af' }}>{deriva} semana(s) después</strong> del plan (S{planFin}). Subir el PPC acerca la fecha.</>
+            : <>✅ Al ritmo actual (<strong style={{ color: BASE.gold }}>PPC {ppc}%</strong>), el proyecto está <strong>en plazo</strong> para terminar la semana {planFin}{fechaPlan ? <> ({fmtFecha(fechaPlan)})</> : ''}.</>}
+          {pctComprometido != null && <> · Has comprometido el <strong>{pctComprometido}%</strong> del plan base.</>}
+        </p>
+      </div>
+
+      {/* Gráfico Should vs Will por semana */}
+      <div style={card}>
+        <p style={{ fontSize: 11, fontWeight: 900, color: BASE.navy, marginBottom: 6 }}>PLAN BASE vs COMPROMETIDO · ACTIVIDADES POR SEMANA</p>
+        {datos.filas.length === 0 ? (
+          <p style={{ fontSize: 11, color: BASE.muted, fontStyle: 'italic', padding: '30px 0', textAlign: 'center' }}>Cargando programación del LAP…</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={240}>
+            <ComposedChart data={datos.filas} margin={{ top: 8, right: 8, bottom: 4, left: -18 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={BASE.border} vertical={false} />
+              <XAxis dataKey="s" tick={{ fontSize: 8, fill: BASE.muted }} interval={Math.ceil(datos.filas.length / 16)} />
+              <YAxis tick={{ fontSize: 9, fill: BASE.muted }} allowDecimals={false} />
+              <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8 }} formatter={(v, n) => [v, n === 'should' ? 'Plan base' : 'Comprometido']} />
+              <Legend wrapperStyle={{ fontSize: 11 }} formatter={(v) => v === 'should' ? 'Plan base (Should)' : 'Comprometido (Will)'} />
+              <Bar dataKey="should" fill={BASE.navyLight} radius={[3, 3, 0, 0]} maxBarSize={20} />
+              <Bar dataKey="will" fill={BASE.gold} radius={[3, 3, 0, 0]} maxBarSize={20} />
+              <ReferenceLine x={'S' + curWeek} stroke={BASE.red} strokeDasharray="4 4" label={{ value: 'hoy', fontSize: 9, fill: BASE.red, position: 'top' }} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+
+      <p style={{ fontSize: 10.5, color: BASE.muted, textAlign: 'center', fontStyle: 'italic' }}>
+        Pronóstico = hoy + (semanas restantes del plan ÷ confiabilidad PPC). Es el indicador que mira un gerente de proyecto: une el plan (planeamiento) con el cumplimiento real (producción).
       </p>
     </div>
   );
