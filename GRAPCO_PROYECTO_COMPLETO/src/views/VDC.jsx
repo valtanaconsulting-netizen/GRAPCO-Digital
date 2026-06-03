@@ -1474,8 +1474,10 @@ function useLapMarcas() {
   const trazo = useRef(null);               // [{ k, prev }] del trazo en curso (1 paso de undo)
   const undoStack = useRef([]);
   const [colorPaint, setColorPaint] = useState(null);   // null = color de la sección
-  const colorRef = useRef(null);
+  const [textoPaint, setTextoPaint] = useState('');     // etiqueta a estampar (ej "S1")
+  const colorRef = useRef(null), textoRef = useRef('');
   useEffect(() => { colorRef.current = colorPaint; }, [colorPaint]);
+  useEffect(() => { textoRef.current = textoPaint; }, [textoPaint]);
 
   useEffect(() => {
     if (!proyectoActivoId) return;
@@ -1508,7 +1510,9 @@ function useLapMarcas() {
     aplicar(nuevo);
   };
   const onCeldaDown = (actKey, fecha, base, on) => {
-    const valor = on ? false : (colorRef.current || true);   // toggle; pinta con el color elegido
+    // toggle; al pintar usa el color y la ETIQUETA elegidos (ej "S1" dentro del cuadrito).
+    const c = colorRef.current, t = (textoRef.current || '').trim();
+    const valor = on ? false : (t ? { on: true, ...(c ? { c } : {}), t } : (c || true));
     pintando.current = { valor };
     trazo.current = [];
     setMarca(actKey, fecha, base, valor);
@@ -1547,11 +1551,16 @@ function useLapMarcas() {
   const estado = (actKey, fecha, base) => {
     const k = claveMarca(actKey, fecha);
     const ov = (k in edits) ? edits[k] : undefined;
-    const on = ov === undefined ? base : (ov !== false);
-    const color = (typeof ov === 'string') ? ov : null;   // color custom o null (usa el de la sección)
-    return { on, color };
+    let on, color = null, texto = null;
+    if (ov === undefined) on = base;
+    else if (ov === false) on = false;
+    else if (ov === true) on = true;
+    else if (typeof ov === 'string') { on = true; color = ov; }          // '#hex'
+    else if (ov && typeof ov === 'object') { on = ov.on !== false; color = ov.c || null; texto = ov.t || null; }
+    else on = base;
+    return { on, color, texto };
   };
-  return { estado, onCeldaDown, onCeldaEnter, colorPaint, setColorPaint };
+  return { estado, onCeldaDown, onCeldaEnter, colorPaint, setColorPaint, textoPaint, setTextoPaint };
 }
 
 // Paleta para que el usuario elija el color de los cuadritos al pintar.
@@ -1565,23 +1574,36 @@ const COLORES_PINTA = [
   { c: '#0f172a', label: 'Negro' },
 ];
 
-// Selector de color de pintado (compartido por Lookahead y Prog. Semanal).
-function SelectorColor({ colorPaint, setColorPaint }) {
+// Selector de color + ETIQUETA de pintado (compartido por Lookahead y Prog. Semanal).
+// La etiqueta (ej "S1", "A1") se escribe dentro del cuadrito al pintar — tal cual el Excel.
+function SelectorColor({ colorPaint, setColorPaint, textoPaint, setTextoPaint }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
-      <span style={{ fontSize: '10px', fontWeight: 800, color: BASE.muted }}>Color:</span>
-      {COLORES_PINTA.map((o, i) => {
-        const activo = colorPaint === o.c;
-        return (
-          <button key={i} onClick={() => setColorPaint(o.c)} title={o.label}
-            style={{
-              width: 20, height: 20, borderRadius: '5px', cursor: 'pointer',
-              border: activo ? `2px solid ${BASE.navy}` : `1px solid ${BASE.border}`,
-              background: o.c || `linear-gradient(135deg,#0ea5e9,#7c3aed)`,
-              boxShadow: activo ? `0 0 0 2px ${BASE.gold}` : 'none',
-            }} />
-        );
-      })}
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <span style={{ fontSize: '10px', fontWeight: 800, color: BASE.muted }}>Color</span>
+        {COLORES_PINTA.map((o, i) => {
+          const activo = colorPaint === o.c;
+          return (
+            <button key={i} onClick={() => setColorPaint(o.c)} title={o.label}
+              style={{
+                width: 19, height: 19, borderRadius: '50%', cursor: 'pointer', padding: 0,
+                border: activo ? `2px solid ${BASE.navy}` : `1px solid rgba(15,23,42,0.12)`,
+                background: o.c ? `linear-gradient(135deg, ${o.c}, ${o.c}cc)` : `linear-gradient(135deg,#0ea5e9,#7c3aed)`,
+                boxShadow: activo ? `0 0 0 2px ${BASE.gold}` : '0 1px 2px rgba(15,23,42,0.18)',
+                transition: '0.12s',
+              }} />
+          );
+        })}
+      </div>
+      {setTextoPaint && (
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '10px', fontWeight: 800, color: BASE.muted }}>
+          Etiqueta
+          <input value={textoPaint} onChange={e => setTextoPaint(e.target.value.slice(0, 4).toUpperCase())} placeholder="S1"
+            title="Texto a escribir dentro del cuadrito al pintar (ej S1, A1). Vacío = sin texto."
+            style={{ width: 46, padding: '4px 6px', borderRadius: '7px', border: `1.5px solid ${textoPaint ? BASE.gold : BASE.border}`, background: textoPaint ? BASE.goldSoft : '#fff', fontSize: '11px', fontWeight: 800, color: BASE.navy, textAlign: 'center', textTransform: 'uppercase', outline: 'none' }} />
+          {textoPaint && <button onClick={() => setTextoPaint('')} title="Quitar etiqueta" style={{ border: 'none', background: 'transparent', color: BASE.muted, cursor: 'pointer', fontSize: '12px', padding: 0 }}>✕</button>}
+        </label>
+      )}
     </div>
   );
 }
@@ -1724,7 +1746,7 @@ function LookaheadView({ restricciones, semanaActiva, setSemanaActiva, semanasMe
   }, [plan]);
 
   // Edición de marcas (pintar/borrar/mover días) — compartida con Prog. Semanal.
-  const { estado, onCeldaDown, onCeldaEnter, colorPaint, setColorPaint } = useLapMarcas();
+  const { estado, onCeldaDown, onCeldaEnter, colorPaint, setColorPaint, textoPaint, setTextoPaint } = useLapMarcas();
   const [hideUnmarked, setHideUnmarked] = useState(false);
 
   // Restricciones por actividad (AR ↔ LAP): badge 🚧 si tiene pendientes.
@@ -1789,7 +1811,7 @@ function LookaheadView({ restricciones, semanaActiva, setSemanaActiva, semanasMe
           Ocultar actividades sin programar en la ventana
         </label>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
-          <SelectorColor colorPaint={colorPaint} setColorPaint={setColorPaint} />
+          <SelectorColor colorPaint={colorPaint} setColorPaint={setColorPaint} textoPaint={textoPaint} setTextoPaint={setTextoPaint} />
           <BarraShielding listas={progListas} bloq={progBloq} />
           <span style={{ fontSize: '10.5px', color: BASE.muted }}>
             <strong style={{ color: BASE.navy }}>{nAct}</strong> programadas · <strong style={{ color: BASE.navy }}>{Math.round(totalHH).toLocaleString('es-PE')}</strong> HH
@@ -1860,12 +1882,14 @@ function LookaheadView({ restricciones, semanaActiva, setSemanaActiva, semanasMe
               return (
                 <React.Fragment key={sec.seccion}>
                   <div style={{ display: 'flex', borderBottom: `1px solid ${BASE.border}` }}>
-                    <div style={{ ...leftColsStyle, background: '#f1f5f9', borderLeft: `4px solid ${sec.color}` }}>
-                      <span style={{ fontSize: '10.5px', fontWeight: 900, color: BASE.navy, textTransform: 'uppercase' }}>
-                        {sec.seccion} <span style={{ color: BASE.muted, fontWeight: 700 }}>({acts.length})</span>
+                    <div style={{ ...leftColsStyle, background: `linear-gradient(90deg, ${sec.color}1f, #f1f5f9 70%)`, borderLeft: `4px solid ${sec.color}` }}>
+                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: sec.color, marginRight: 7, flexShrink: 0 }} />
+                      <span style={{ fontSize: '10.5px', fontWeight: 900, color: BASE.navy, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                        {sec.seccion}
                       </span>
+                      <span style={{ marginLeft: 8, fontSize: '9px', fontWeight: 800, color: sec.color, background: `${sec.color}1a`, borderRadius: 999, padding: '1px 8px' }}>{acts.length}</span>
                     </div>
-                    <div style={{ flex: 1, minWidth: 0, background: '#f1f5f9' }} />
+                    <div style={{ flex: 1, minWidth: 0, background: `linear-gradient(90deg, #f1f5f9, #f8fafc)` }} />
                   </div>
                   {acts.map((a, ai) => {
                     // 3 niveles visuales: sub-partida (encabezado de nivel sin COD/metrado) vs actividad.
@@ -1892,19 +1916,29 @@ function LookaheadView({ restricciones, semanaActiva, setSemanaActiva, semanasMe
                         <div style={cellWrap}>
                           {dias.map((d, i) => {
                             const base = a.set.has(d.fecha);
-                            const { on, color } = estado(a.actKey, d.fecha, base);
+                            const { on, color, texto } = estado(a.actKey, d.fecha, base);
+                            const cc = color || sec.color;
                             return (
                               <div key={i}
                                 onMouseDown={(e) => { e.preventDefault(); onCeldaDown(a.actKey, d.fecha, base, on); }}
                                 onMouseEnter={() => onCeldaEnter(a.actKey, d.fecha, base)}
-                                title={`${a.actividad} · ${d.dia}/${d.mes} — clic para ${on ? 'borrar' : 'pintar'}`}
+                                title={`${a.actividad} · ${d.dia}/${d.mes}${texto ? ` · ${texto}` : ''} — clic para ${on ? 'borrar' : 'pintar'}`}
                                 style={{
-                                  flex: 1, minWidth: 0, cursor: 'pointer', alignSelf: 'stretch',
-                                  borderRight: `1px solid ${d.fecha === hoyISO ? BASE.red : '#eef2f6'}`,
-                                  background: d.fecha === hoyISO && !on ? 'rgba(225,29,72,0.06)' : (d.finde && !on ? 'rgba(15,23,42,0.045)' : 'transparent'),
+                                  flex: 1, minWidth: 0, cursor: 'pointer', alignSelf: 'stretch', padding: '2px 1px',
+                                  borderRight: `1px solid ${d.fecha === hoyISO ? `${BASE.red}66` : '#eef2f6'}`,
+                                  background: d.fecha === hoyISO && !on ? 'rgba(225,29,72,0.06)' : (d.finde && !on ? 'rgba(15,23,42,0.04)' : 'transparent'),
                                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 }}>
-                                {on && <span style={{ width: '86%', height: 14, background: color || sec.color, borderRadius: '2px', boxShadow: bloq ? `0 0 0 1.6px ${BASE.red}` : `0 1px 2px ${(color || sec.color)}66`, opacity: bloq ? 0.78 : 1, pointerEvents: 'none' }} />}
+                                {on && (
+                                  <span style={{
+                                    width: '88%', minHeight: 15, alignSelf: 'stretch', margin: '1px 0', borderRadius: 4,
+                                    background: `linear-gradient(135deg, ${cc}, ${cc}d0)`,
+                                    boxShadow: bloq ? `0 0 0 1.5px ${BASE.red}, 0 1px 2px ${cc}55` : `0 1px 3px ${cc}55, inset 0 1px 0 rgba(255,255,255,0.25)`,
+                                    opacity: bloq ? 0.82 : 1, pointerEvents: 'none',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontSize: 8, fontWeight: 900, color: '#fff', letterSpacing: '0.2px', textShadow: '0 1px 1px rgba(0,0,0,0.35)', overflow: 'hidden',
+                                  }}>{texto || ''}</span>
+                                )}
                               </div>
                             );
                           })}
@@ -1928,6 +1962,7 @@ function LookaheadView({ restricciones, semanaActiva, setSemanaActiva, semanasMe
           pintar/borrar un día programado; <strong>arrastra</strong> para pintar varios o moverlos. Los cambios se <strong>guardan solos</strong> por
           proyecto (no tocan el LAP oficial). El color identifica el <strong>frente/sección</strong>; la <strong style={{ color: BASE.gold }}>semana actual</strong> va
           en dorado y la columna <strong style={{ color: BASE.red }}>roja</strong> es hoy. Usa <strong>‹ Anterior / Siguiente ›</strong> para recorrer las 28 semanas.
+          <br /><strong style={{ color: BASE.gold }}>✍ Etiqueta:</strong> escribe un texto corto (ej <strong>S1, A1</strong>) en el campo «Etiqueta» y al pintar aparece <strong>dentro del cuadrito</strong> (como el sector del Excel). Vacío = solo color.
           <br /><strong style={{ color: BASE.red }}>🔒 Shielding:</strong> las actividades con restricciones pendientes salen con franja <strong style={{ color: BASE.red }}>roja</strong> y celdas con borde rojo — están <strong>programadas pero NO listas para comprometer</strong>. Libéralas en <strong>🚧 Análisis Restricciones</strong> y aquí pasan a verde ✅ <strong>automáticamente</strong>.
         </span>
       </div>
@@ -1951,7 +1986,7 @@ function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, restricciones =
     import('../data/lapCreditex').then(m => { if (vivo) setPlan(m.LAP_PLAN || []); }).catch(() => {});
     return () => { vivo = false; };
   }, []);
-  const { estado, onCeldaDown, onCeldaEnter, colorPaint, setColorPaint } = useLapMarcas();
+  const { estado, onCeldaDown, onCeldaEnter, colorPaint, setColorPaint, textoPaint, setTextoPaint } = useLapMarcas();
   const [hideUnmarked, setHideUnmarked] = useState(false);
 
   // Secciones con TODAS las actividades del LAP (no se filtran por semana; el toggle oculta las no pintadas).
@@ -2013,7 +2048,7 @@ function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, restricciones =
           Ocultar actividades sin programar esta semana
         </label>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
-          <SelectorColor colorPaint={colorPaint} setColorPaint={setColorPaint} />
+          <SelectorColor colorPaint={colorPaint} setColorPaint={setColorPaint} textoPaint={textoPaint} setTextoPaint={setTextoPaint} />
           <BarraShielding listas={progListas} bloq={progBloq} />
           <span style={{ fontSize: '10.5px', color: BASE.muted }}>
             <strong style={{ color: BASE.navy }}>{nAct}</strong> programadas · <strong style={{ color: BASE.navy }}>{Math.round(totalHH).toLocaleString('es-PE')}</strong> HH · INICIO {semIni}
@@ -2082,14 +2117,15 @@ function ProgramacionSemanalLPS({ semanaActiva, setSemanaActiva, restricciones =
                         <div style={{ ...cMo, ...pr }}>{a.mo != null ? a.mo : ''}</div>
                         {dias.map((d, i) => {
                           const base = a.set.has(d.fecha);
-                          const { on, color } = estado(a.actKey, d.fecha, base);
+                          const { on, color, texto } = estado(a.actKey, d.fecha, base);
+                          const cc = color || sec.color;
                           return (
                             <div key={i}
                               onMouseDown={(e) => { e.preventDefault(); onCeldaDown(a.actKey, d.fecha, base, on); }}
                               onMouseEnter={() => onCeldaEnter(a.actKey, d.fecha, base)}
-                              title={`${a.actividad} · ${d.dia}/${d.mes} — clic para ${on ? 'borrar' : 'pintar'}`}
-                              style={{ ...celdaDia, alignSelf: 'stretch', cursor: 'pointer', borderLeft: `1px solid ${d.fecha === hoyISO ? BASE.red : '#eef2f6'}`, background: d.fecha === hoyISO && !on ? 'rgba(225,29,72,0.06)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              {on && <span style={{ width: '78%', height: 14, background: color || sec.color, borderRadius: '2px', boxShadow: bloq ? `0 0 0 1.6px ${BASE.red}` : `0 1px 2px ${(color || sec.color)}66`, opacity: bloq ? 0.78 : 1, pointerEvents: 'none' }} />}
+                              title={`${a.actividad} · ${d.dia}/${d.mes}${texto ? ` · ${texto}` : ''} — clic para ${on ? 'borrar' : 'pintar'}`}
+                              style={{ ...celdaDia, alignSelf: 'stretch', cursor: 'pointer', padding: '3px', borderLeft: `1px solid ${d.fecha === hoyISO ? `${BASE.red}66` : '#eef2f6'}`, background: d.fecha === hoyISO && !on ? 'rgba(225,29,72,0.06)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              {on && <span style={{ width: '92%', alignSelf: 'stretch', margin: '2px 0', borderRadius: 5, background: `linear-gradient(135deg, ${cc}, ${cc}d0)`, boxShadow: bloq ? `0 0 0 1.6px ${BASE.red}, 0 1px 3px ${cc}55` : `0 1px 3px ${cc}55, inset 0 1px 0 rgba(255,255,255,0.25)`, opacity: bloq ? 0.82 : 1, pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 900, color: '#fff', textShadow: '0 1px 1px rgba(0,0,0,0.35)' }}>{texto || ''}</span>}
                             </div>
                           );
                         })}
