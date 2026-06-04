@@ -13,7 +13,6 @@ import {
   obtenerSemana,
   COSTO_HORA_DEFAULT,
 } from '../utils/helpers';
-import { exportarValorizacion, exportarHHSemanal, exportarCostosHE } from '../utils/excelExport';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 import { useAuth } from '../contexts/AuthContext';
 import { diagnosticarMigracionProyectoId, migrarProyectoId } from '../utils/migracionProyectoId';
@@ -443,9 +442,10 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
   }, [filtrados, wbs]);
 
   // ── Exportación: Valorización con costos HE ──
-  const handleExportValorizacion = () => {
+  const handleExportValorizacion = async () => {
     if (!filtrados.length) return showToast('Sin datos para exportar', 'warning');
     try {
+      const { exportarValorizacion } = await import('../utils/excelExport');
       const periodo = (fDesde || fHasta) ? `${fDesde || '...'} al ${fHasta || '...'}`
                     : fSemana ? `Semana ${fSemana}${modoAcum ? ' (acumulado)' : ''}`
                     : 'Todo el proyecto';
@@ -464,9 +464,10 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
     }
   };
 
-  const handleExportHH = () => {
+  const handleExportHH = async () => {
     if (!hhPorSemana.length) return showToast('Sin datos de HH', 'warning');
     try {
+      const { exportarHHSemanal } = await import('../utils/excelExport');
       const fname = exportarHHSemanal(hhPorSemana, hhTotales, filtrados.length);
       showToast(`✅ ${fname} exportado`, 'success');
     } catch (e) {
@@ -474,9 +475,10 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
     }
   };
 
-  const handleExportCostosHE = () => {
+  const handleExportCostosHE = async () => {
     if (!filtrados.length) return showToast('Sin datos para exportar', 'warning');
     try {
+      const { exportarCostosHE } = await import('../utils/excelExport');
       const periodo = (fDesde || fHasta) ? `${fDesde || '...'} al ${fHasta || '...'}`
                     : fSemana ? `Semana ${fSemana}${modoAcum ? ' (acumulado)' : ''}`
                     : 'Todo el proyecto';

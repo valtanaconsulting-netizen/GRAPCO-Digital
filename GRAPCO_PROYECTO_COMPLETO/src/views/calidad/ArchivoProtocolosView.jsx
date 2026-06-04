@@ -7,7 +7,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestore';
-import * as XLSX from 'xlsx';
+import { loadXLSX } from '../../utils/xlsxLazy';
 import { db } from '../../firebaseConfig';
 import { BASE } from '../../utils/styles';
 import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
@@ -70,8 +70,9 @@ export default function ArchivoProtocolosView({ onEdit }) {
       }));
   }, [items]);
 
-  const exportarXLSX = () => {
+  const exportarXLSX = async () => {
     if (items.length === 0) return;
+    const XLSX = await loadXLSX();
     const rows = items.map(p => ({
       'N° Registro':    p.numeroRegistro || p.codigo || '',
       'Tipo':           TIPOS_PROTOCOLO[p.tipo]?.label || p.tipo,

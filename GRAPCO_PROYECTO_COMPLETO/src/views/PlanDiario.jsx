@@ -11,7 +11,7 @@
 //   Pie: HORAS PROGRAMADAS · HORAS CONSUMIDAS · TOTAL OBREROS
 
 import React, { useState, useEffect, useMemo } from 'react';
-import * as XLSX from 'xlsx';
+import { loadXLSX } from '../utils/xlsxLazy';
 import { db } from '../firebaseConfig';
 import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { onSnapshot, collection, query } from 'firebase/firestore';
@@ -339,9 +339,10 @@ export default function PlanDiario({ planesDiarios, cuadrillasActivas, cuadrilla
     } catch (err) { showToast(`Error: ${err.message}`, 'error'); }
   };
 
-  const exportarPlan = () => {
+  const exportarPlan = async () => {
     try {
       if (!grupos.length) return showToast('No hay items', 'warning');
+      const XLSX = await loadXLSX();
       const aoa = [];
       aoa.push(['OBRA:', pdObra, '', '', '', '', '', '', '', '', '', '', 'PROGRAMACIÓN DIARIA']);
       aoa.push(['SEMANA:', obtenerSemana(pdFecha)]);

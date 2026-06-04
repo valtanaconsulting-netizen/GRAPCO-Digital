@@ -1,6 +1,6 @@
 // src/views/ingeniero/Tareo.jsx
 import React, { useState, useMemo } from 'react';
-import * as XLSX from 'xlsx';
+import { loadXLSX } from '../utils/xlsxLazy';
 import { BASE, inp } from '../utils/styles';
 import { hoy, fmtFecha } from '../utils/helpers';
 import DateInput from '../components/DateInput';
@@ -98,9 +98,10 @@ export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobi
   };
 
   // ✅ EXPORTAR TAREO DIARIO (formato GRAPCO original)
-  const exportarTareoDiario = () => {
+  const exportarTareoDiario = async () => {
     try {
       if (!tareoRegistros.length) return showToast('No hay registros en el rango', 'warning');
+      const XLSX = await loadXLSX();
 
       // Agrupar por fecha + capataz
       const grupos = {};
@@ -193,9 +194,10 @@ export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobi
   };
 
   // ✅ EXPORTAR TAREO ADMIN (3 hojas: Resumen Pago, Por Actividad, Detalle Diario)
-  const exportarTareoAdmin = () => {
+  const exportarTareoAdmin = async () => {
     try {
       if (!tareoRegistros.length) return showToast('No hay registros en el rango', 'warning');
+      const XLSX = await loadXLSX();
 
       // Acumular por trabajador — clave canónica para que el resumen de pago
       // no duplique al mismo obrero por una variante del nombre.

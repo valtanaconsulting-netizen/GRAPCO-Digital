@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { collection, query, orderBy, onSnapshot, doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import * as XLSX from 'xlsx';
+import { loadXLSX } from '../utils/xlsxLazy';
 import {
   ResponsiveContainer, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, LabelList,
 } from 'recharts';
@@ -263,8 +263,9 @@ export default function CartaBalanceAnalisis() {
     return (c.conclusiones || '').trim().length > 0;
   }), [cartas, desde, hasta, selAct, filtros.fecha]);
 
-  const exportarExcel = useCallback(() => {
+  const exportarExcel = useCallback(async () => {
     try {
+      const XLSX = await loadXLSX();
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(porFecha.map((f) => ({ Fecha: f.key, 'TP %': Math.round(f.tp / (f.n || 1) * 100), 'TC %': Math.round(f.tc / (f.n || 1) * 100), 'TNC %': Math.round(f.tnc / (f.n || 1) * 100), Obs: f.n }))), 'Por fecha');
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(porCargo.map((c) => ({ Cargo: c.key, 'TP %': Math.round(c.tp / (c.n || 1) * 100), 'TC %': Math.round(c.tc / (c.n || 1) * 100), 'TNC %': Math.round(c.tnc / (c.n || 1) * 100), Obs: c.n }))), 'Por cargo');
