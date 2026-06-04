@@ -149,18 +149,16 @@ function AppInner() {
     if (!rol) return; // espera a que haya sesión
     const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 1500));
     const cancel = window.cancelIdleCallback || clearTimeout;
+    // Solo módulos LIGEROS y comunes. NO se prefetchea Calidad (arrastra el motor
+    // PDF ~420 KB), ni asistencia (TensorFlow): esos cargan on-demand al abrirlos.
     const tasks = [
       () => import('./views/Ingeniero'),
       () => import('./views/CartaBalanceWrapper'),
       () => import('./views/WarRoomCuadrillas'),
       () => import('./views/modulos/planMaestro/PlanMaestroPanel'),
       () => import('./views/modulos/apus/APUsPanel'),
-      () => import('./views/ComprasPanel'),
       () => import('./views/MaterialesPanel'),
       () => import('./views/BIM'),
-      () => import('./views/CalidadPanel'),
-      () => import('./views/OficinaTecnicaPanel'),
-      () => import('./views/seguridad/SeguridadPanel'),
     ];
     const ids = [];
     tasks.forEach((t, i) => {
