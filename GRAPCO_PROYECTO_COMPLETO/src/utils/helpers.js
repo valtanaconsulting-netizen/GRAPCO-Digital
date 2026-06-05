@@ -1143,7 +1143,10 @@ export const calcularControlHHVariaciones = (registros, numTrabajadoresActivos =
   const semanasMap = {};
 
   (registros || []).forEach(r => {
-    if (!r || !r.semana) return;
+    // Solo registros que RESUELVEN al catálogo WBS (_matched), igual que el ISP: su total
+    // (Σ TOTAL OBRA · wbs.hhR) solo cuenta actividades del catálogo. Antes se contaba TODO el
+    // HH de campo (incluidas actividades fuera del WBS) y el acumulado quedaba por encima del ISP.
+    if (!r || !r.semana || r._matched === false) return;
     const sem = r.semana;
     if (!semanasMap[sem]) {
       semanasMap[sem] = {
