@@ -1,5 +1,5 @@
 // src/views/ingeniero/CpiEac.jsx — V2 con CPI % y badges
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useLayoutEffect } from 'react';
 import { INFO_MAP } from '../utils/constants';
 import { BASE } from '../utils/styles';
 import { calcCPI, fmtCPIPct, fmt1, fmt2, getEstado } from '../utils/helpers';
@@ -165,6 +165,25 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
   const [chipMeta, setChipMeta] = useState(false);
   // Mostrar partidas/sub/actividades sin avance (HH=0, metrado=0). Default: true (todo visible).
   const [mostrarVacias, setMostrarVacias] = useState(true);
+
+  // Altura del recuadro de la tabla acotada a lo que queda de pantalla, MEDIDA en runtime.
+  // Así la ventana no scrollea verticalmente: el único scroll vertical es el interno del
+  // recuadro, donde el encabezado y la columna WBS se quedan pegados (sticky) y SIEMPRE
+  // visibles. Mido la posición absoluta del recuadro para no depender de números mágicos.
+  const scrollWrapRef = useRef(null);
+  const [tablaMaxH, setTablaMaxH] = useState(null);
+  useLayoutEffect(() => {
+    const calc = () => {
+      const el = scrollWrapRef.current;
+      if (!el) return;
+      const absTop = el.getBoundingClientRect().top + window.scrollY; // distancia al tope del documento
+      const disponible = window.innerHeight - absTop - 20;            // 20px de respiro inferior
+      setTablaMaxH(Math.max(300, Math.round(disponible)));            // mínimo razonable
+    };
+    calc();
+    window.addEventListener('resize', calc);
+    return () => window.removeEventListener('resize', calc);
+  }, [chipPpt, chipMeta, vista]);
 
   // Referencias y colores según vista
   const REF = esMeta
@@ -449,10 +468,11 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
 
       {/* TABLA */}
       <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,overflow:'hidden'}}>
-        {/* Altura acotada + overflow:auto → la barra de scroll HORIZONTAL queda fija al
-            borde inferior del recuadro (siempre visible, no hay que bajar a buscarla).
-            El scroll vertical ocurre DENTRO; el encabezado y la columna WBS se quedan pegados. */}
-        <div style={{overflow:'auto',maxHeight:'calc(100vh - 240px)'}}>
+        {/* Altura acotada (medida en runtime) + overflow:auto → la ventana no scrollea,
+            así el scroll vertical ocurre DENTRO del recuadro y el encabezado + la columna WBS
+            quedan SIEMPRE pegados. La barra de scroll HORIZONTAL queda fija al borde inferior
+            del recuadro (siempre visible, no hay que bajar a buscarla). */}
+        <div ref={scrollWrapRef} style={{overflow:'auto',maxHeight:tablaMaxH ? `${tablaMaxH}px` : 'calc(100vh - 280px)'}}>
           <table style={{width:'100%',borderCollapse:'collapse',fontSize:'11px',minWidth:'900px'}}>
             <thead>
               <tr>
