@@ -46,7 +46,6 @@ import {
 // Login y SelectorPerfil son la puerta de entrada → carga eager.
 import Login from './views/Login';
 import SelectorPerfil from './views/SelectorPerfil';
-import SelectorProyectoFrente from './components/SelectorProyectoFrente';
 // ── LAZY: todos los paneles/módulos cargan SOLO cuando se abren ───────────
 // Esto baja el bundle inicial del app: el usuario solo descarga el módulo en
 // el que entra (Producción, BIM, Plan Maestro, etc.); el resto queda como
@@ -491,20 +490,8 @@ function AppInner() {
       <Navbar rol={rol} isMobile={isMobile} onSalir={salir} onCambiarArea={cambiarArea}
         onMenu={['admin', 'ingeniero', 'planeamiento'].includes(rol) ? () => setDrawerOpen(true) : undefined} />
 
-      {/* Bloque 23 - Selector global Proyecto + Frente — paddingTop compensa el navbar
-          fixed (60px) + paddingLeft compensa el sidebar fixed (dinámico). */}
-      {(rol === 'admin' || rol === 'ingeniero') && (
-        <div style={{
-          paddingTop: '70px',
-          paddingLeft: isMobile ? '16px' : CONTENT_PAD_LEFT,
-          paddingRight: '16px',
-          width: '100%',
-          boxSizing: 'border-box',
-          transition: 'padding-left 0.22s ease',
-        }}>
-          <SelectorProyectoFrente />
-        </div>
-      )}
+      {/* Selector global Proyecto + Frente MOVIDO a la pantalla de entrada (SelectorPerfil):
+          el proyecto y el frente se eligen al ingresar desde el Módulo de áreas. Aquí ya no va. */}
 
       {/* Indicador de conexión (offline-first para obra sin señal) */}
       <OfflineBanner />
@@ -513,7 +500,7 @@ function AppInner() {
       <main id="main-content" style={{
         flex: 1,
         padding: '14px 16px',
-        paddingTop: (rol === 'admin' || rol === 'ingeniero') ? '14px' : '74px',
+        paddingTop: '74px',
         paddingLeft: isMobile ? '16px' : CONTENT_PAD_LEFT,
         width: '100%',
         boxSizing: 'border-box',
