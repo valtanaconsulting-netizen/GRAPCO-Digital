@@ -48,17 +48,21 @@ export default function Auditoria({ filtrados, eliminar, hhPorSemana = [], hhTot
         )}
       </div>
 
-      {/* TABLA AUDITORÍA */}
-      <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,overflow:'hidden',boxShadow:BASE.shadowMd}}>
+      {/* TABLA AUDITORÍA — overflow:clip (no 'hidden') para que el encabezado sticky pueda
+          escapar hasta la ventana al hacer scroll de página. */}
+      <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,overflow:'clip',boxShadow:BASE.shadowMd}}>
         <div style={{padding:'10px 14px',display:'flex',justifyContent:'space-between',alignItems:'center',borderBottom:`1px solid ${BASE.border}`,background:'#f8fafc'}}>
           <span style={{fontSize:'12px',fontWeight:'700',color:BASE.navy}}>📋 REGISTROS — Más reciente arriba</span>
           <span style={{fontSize:'10px',color:BASE.muted}}>{filtrados.length} registros</span>
         </div>
-        <div style={{overflowX:'auto'}}>
+        {/* overflow-x:auto = scroll horizontal; overflow-y:clip = NO crea contenedor de scroll
+            vertical, así el encabezado sticky se pega a la ventana bajo el navbar al bajar. */}
+        <div style={{overflowX:'auto',overflowY:'clip'}}>
           <table style={{width:'100%',borderCollapse:'collapse',fontSize:'12px',minWidth:'960px'}}>
             <thead>
+              {/* sticky top:60 = se queda fijo justo debajo del navbar (60px) al scrollear la página */}
               <tr>{['Sem.','Fecha','Partida','Actividad','Unidad','Metrado','HN','HE','HH Tot','IP Real','IP Meta','CPI','Fuente','📷',''].map((h,i)=>(
-                <th key={i} style={{padding:'11px 10px',fontSize:'11px',fontWeight:'700',color:'#fff',background:BASE.navy,textAlign:i>4?'center':'left',whiteSpace:'nowrap'}}>{h}</th>
+                <th key={i} style={{position:'sticky',top:60,zIndex:5,padding:'11px 10px',fontSize:'11px',fontWeight:'700',color:'#fff',background:BASE.navy,textAlign:i>4?'center':'left',whiteSpace:'nowrap'}}>{h}</th>
               ))}</tr>
             </thead>
             <tbody>
