@@ -74,6 +74,14 @@ const PRELOAD_BY_KEY = {
   capataz:     () => import('./views/capataz/CapatazPanel'),
   seguridad:   () => import('./views/seguridad/SeguridadPanel'),
   lps:         () => import('./views/Ingeniero'),
+  // Planeamiento (faltaban → por eso se demoraban al cambiar de módulo)
+  flujo:          () => import('./views/planeamiento/FlujoPlaneamiento'),
+  pullplanning:   () => import('./views/planeamiento/PullPlanning'),
+  planvaciado:    () => import('./views/planeamiento/PlanVaciado'),
+  cronogramaobra: () => import('./views/planeamiento/CronogramaObra'),
+  normaltec:      () => import('./views/planeamiento/NormalTecnologica'),
+  radarProd:      () => import('./views/modulos/radarProduccion/RadarProduccion'),
+  dashEjecutivo:  () => import('./views/modulos/dashboardEjecutivo/DashboardEjecutivo'),
 };
 const preloadModulo = (k) => { try { PRELOAD_BY_KEY[k]?.(); } catch { /* noop */ } };
 const Capataz             = lazy(() => import('./views/Capataz'));
@@ -149,20 +157,15 @@ function AppInner() {
     if (!rol) return; // espera a que haya sesión
     const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 1500));
     const cancel = window.cancelIdleCallback || clearTimeout;
-    // Solo módulos LIGEROS y comunes. NO se prefetchea Calidad (arrastra el motor
-    // PDF ~420 KB), ni asistencia (TensorFlow): esos cargan on-demand al abrirlos.
-    const tasks = [
-      () => import('./views/Ingeniero'),
-      () => import('./views/CartaBalanceWrapper'),
-      () => import('./views/WarRoomCuadrillas'),
-      () => import('./views/modulos/planMaestro/PlanMaestroPanel'),
-      () => import('./views/modulos/apus/APUsPanel'),
-      () => import('./views/MaterialesPanel'),
-      () => import('./views/BIM'),
-    ];
+    // Precarga en segundo plano TODOS los módulos del ÁREA del usuario (vía el mapa),
+    // así cualquier cambio de módulo es instantáneo. Se SALTAN los pesados que
+    // arrastran vendors grandes (Calidad→PDF): esos cargan on-demand al hover/clic.
+    const SKIP = new Set(['calidad', 'admin']);
+    const keys = keysPermitidasPorRol(rol) || Object.keys(PRELOAD_BY_KEY);
+    const tasks = [...new Set(keys)].filter(k => PRELOAD_BY_KEY[k] && !SKIP.has(k)).map(k => PRELOAD_BY_KEY[k]);
     const ids = [];
     tasks.forEach((t, i) => {
-      const id = idle(() => { t().catch(() => {}); }, { timeout: 4000 + i * 600 });
+      const id = idle(() => { t().catch(() => {}); }, { timeout: 3000 + i * 400 });
       ids.push(id);
     });
     return () => ids.forEach(id => { try { cancel(id); } catch { /* noop */ } });
