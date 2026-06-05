@@ -55,9 +55,10 @@ export default function Auditoria({ filtrados, eliminar, hhPorSemana = [], hhTot
           <span style={{fontSize:'12px',fontWeight:'700',color:BASE.navy}}>📋 REGISTROS — Más reciente arriba</span>
           <span style={{fontSize:'10px',color:BASE.muted}}>{filtrados.length} registros</span>
         </div>
-        {/* overflow-x:auto = scroll horizontal; overflow-y:clip = NO crea contenedor de scroll
-            vertical, así el encabezado sticky se pega a la ventana bajo el navbar al bajar. */}
-        <div style={{overflowX:'auto',overflowY:'clip'}}>
+        {/* overflow:visible (NO 'auto'): un overflow:auto/scroll haría de este div un contenedor
+            de scroll que "captura" el sticky e impide que el encabezado se ancle a la ventana.
+            Sin contenedor de scroll, el encabezado se pega de verdad bajo el navbar al bajar. */}
+        <div style={{overflow:'visible'}}>
           <table style={{width:'100%',borderCollapse:'collapse',fontSize:'12px',minWidth:'960px'}}>
             <thead>
               {/* sticky top:60 = se queda fijo justo debajo del navbar (60px) al scrollear la página */}

@@ -470,10 +470,11 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
       {/* TABLA — overflow:clip (no 'hidden') para que NO sea contenedor de scroll y el
           encabezado sticky pueda escapar hasta la ventana al hacer scroll de página. */}
       <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,overflow:'clip'}}>
-        {/* overflow-x:auto = scroll horizontal de columnas (la columna WBS queda fija a la
-            izquierda). overflow-y:clip = NO crea contenedor de scroll vertical, así el sticky
-            del encabezado escapa hasta la VENTANA y se pega bajo el navbar al scrollear la página. */}
-        <div ref={scrollWrapRef} style={{overflowX:'auto',overflowY:'clip'}}>
+        {/* overflow:visible (NO 'auto'): cualquier overflow:auto/scroll convierte a este div en
+            contenedor de scroll y "captura" el sticky, impidiendo que el encabezado se ancle a la
+            ventana. Sin contenedor de scroll, el encabezado + la fila TOTAL se pegan de verdad bajo
+            el navbar al hacer scroll de página. La tabla entra completa en pantalla. */}
+        <div ref={scrollWrapRef} style={{overflow:'visible'}}>
           <table style={{width:'100%',borderCollapse:'collapse',fontSize:'11px',minWidth:'900px'}}>
             <thead>
               <tr>
