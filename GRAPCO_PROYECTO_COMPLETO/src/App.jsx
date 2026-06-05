@@ -8,6 +8,7 @@ import { hoy } from './utils/helpers';
 
 import ErrorBoundary from './components/ErrorBoundary';
 import Navbar from './components/Navbar';
+import SelectorFrenteLateral from './components/SelectorFrenteLateral';
 import AppShell from './components/AppShell';
 import Icon from './components/Icon';
 
@@ -648,6 +649,11 @@ function AppInner() {
                   </button>
 
                   <div style={{ flex: 1, minHeight: 0, padding: sidebarCollapsed ? '12px 6px' : '12px 8px', overflowY: 'auto', overflowX: 'hidden' }}>
+                  {/* Selector de FRENTE — dentro del área de Planeamiento y Producción.
+                      El proyecto se eligió al entrar; aquí se cambia el frente. */}
+                  {(rol === 'ingeniero' || rol === 'admin') && (
+                    <SelectorFrenteLateral collapsed={sidebarCollapsed} />
+                  )}
                   {Object.entries(grupos).map(([grupo, lista]) => (
                     <div key={grupo} style={{ marginBottom: '8px' }}>
                       {sidebarCollapsed ? (

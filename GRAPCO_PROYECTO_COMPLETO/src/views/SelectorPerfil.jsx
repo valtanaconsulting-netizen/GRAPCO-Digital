@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useProyectoActivo, FRENTE_TODOS } from '../contexts/ProyectoActivoContext';
+import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 import { BASE, LOGO, LOGO_FALLBACK } from '../utils/styles';
 import Icon from '../components/Icon';
 // Lazy: face-api.js (~1 MB+) NO se carga en el arranque, solo al abrir el kiosko.
@@ -397,14 +397,6 @@ export default function SelectorPerfil() {
             <select value={proyectoActivoId || ''} onChange={e => setProyectoActivoId(e.target.value)} style={selKiosk}>
               <option value="" style={optKiosk}>— Selecciona proyecto —</option>
               {proyectosFiltrados.map(p => <option key={p.id} value={p.id} style={optKiosk}>{p.nombre || p.codigo || p.id}</option>)}
-            </select>
-          </div>
-          <div>
-            <label style={lblKiosk}>📍 FRENTE</label>
-            <select value={frenteActivoId || FRENTE_TODOS} onChange={e => setFrenteActivoId(e.target.value)} style={selKiosk}>
-              <option value={FRENTE_TODOS} style={optKiosk}>🌐 Todos los frentes (vista agregada)</option>
-              {(frentesDelProyecto || []).length === 0 && <option value="" disabled style={optKiosk}>— sin frentes —</option>}
-              {(frentesDelProyecto || []).map(f => <option key={f.id} value={f.id} style={optKiosk}>{f.codigo ? `${f.codigo} · ` : ''}{f.nombre || f.id}</option>)}
             </select>
           </div>
         </div>
