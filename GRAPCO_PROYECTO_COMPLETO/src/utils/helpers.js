@@ -736,11 +736,13 @@ export const calcularEVM = (historialEnriquecido, fechaInicio = null) => {
     if (!porSemana[sem]) porSemana[sem] = { semana: sem, ev: 0, ac: 0, registros: 0 };
     const met = parseFloat(r.metrado) || 0;
     const ipMeta = parseFloat(r._ipMeta) || 0;
-    let hh = 0;
-    (r.detalleTareo || []).forEach(t => {
-      hh += (parseFloat(t.hn) || 0) + (parseFloat(t.he) || 0);
-    });
-    if (hh === 0 && r.totalHH) hh = parseFloat(r.totalHH) || 0;
+    // HH desde r.totalHH (MISMA fuente que el ISP: wbs.hhR y grafData.bySem usan
+    // parseFloat(r.totalHH)). Antes se sumaba el detalleTareo (hn+he) y el acumulado
+    // divergía del ISP cuando totalHH ≠ Σ(detalle). Detalle solo como respaldo.
+    let hh = parseFloat(r.totalHH) || 0;
+    if (hh === 0 && Array.isArray(r.detalleTareo)) {
+      hh = r.detalleTareo.reduce((s, t) => s + (parseFloat(t.hn) || 0) + (parseFloat(t.he) || 0), 0);
+    }
 
     porSemana[sem].ev += met * ipMeta;  // EV = avance físico × ratio meta = "HH ganadas"
     porSemana[sem].ac += hh;            // AC = HH realmente trabajadas
@@ -837,11 +839,13 @@ export const calcularImpactoMedible = (historialEnriquecido) => {
     const sem = r.semana;
     if (!semanasMap[sem]) semanasMap[sem] = { hhMeta: 0, hhReal: 0 };
     const met = parseFloat(r.metrado) || 0;
-    let hh = 0;
-    (r.detalleTareo || []).forEach(t => {
-      hh += (parseFloat(t.hn) || 0) + (parseFloat(t.he) || 0);
-    });
-    if (hh === 0 && r.totalHH) hh = parseFloat(r.totalHH) || 0;
+    // HH desde r.totalHH (MISMA fuente que el ISP: wbs.hhR y grafData.bySem usan
+    // parseFloat(r.totalHH)). Antes se sumaba el detalleTareo (hn+he) y el acumulado
+    // divergía del ISP cuando totalHH ≠ Σ(detalle). Detalle solo como respaldo.
+    let hh = parseFloat(r.totalHH) || 0;
+    if (hh === 0 && Array.isArray(r.detalleTareo)) {
+      hh = r.detalleTareo.reduce((s, t) => s + (parseFloat(t.hn) || 0) + (parseFloat(t.he) || 0), 0);
+    }
     semanasMap[sem].hhMeta += met * (parseFloat(r._ipMeta) || 0);
     semanasMap[sem].hhReal += hh;
   });
@@ -1076,11 +1080,13 @@ export const calcularReporteTareos = (registros, tarifaPromedio = 25.50) => {
     const partida = (r.partida || 'SIN_PARTIDA').toUpperCase().trim();
     const subpartida = (r.subpartida || 'SIN_SUBPARTIDA').toUpperCase().trim();
 
-    let hh = 0;
-    (r.detalleTareo || []).forEach(t => {
-      hh += (parseFloat(t.hn) || 0) + (parseFloat(t.he) || 0);
-    });
-    if (hh === 0 && r.totalHH) hh = parseFloat(r.totalHH) || 0;
+    // HH desde r.totalHH (MISMA fuente que el ISP: wbs.hhR y grafData.bySem usan
+    // parseFloat(r.totalHH)). Antes se sumaba el detalleTareo (hn+he) y el acumulado
+    // divergía del ISP cuando totalHH ≠ Σ(detalle). Detalle solo como respaldo.
+    let hh = parseFloat(r.totalHH) || 0;
+    if (hh === 0 && Array.isArray(r.detalleTareo)) {
+      hh = r.detalleTareo.reduce((s, t) => s + (parseFloat(t.hn) || 0) + (parseFloat(t.he) || 0), 0);
+    }
 
     const costo = hh * tarifaPromedio;
     totalHH += hh;
@@ -1148,11 +1154,13 @@ export const calcularControlHHVariaciones = (registros, numTrabajadoresActivos =
       };
     }
 
-    let hh = 0;
-    (r.detalleTareo || []).forEach(t => {
-      hh += (parseFloat(t.hn) || 0) + (parseFloat(t.he) || 0);
-    });
-    if (hh === 0 && r.totalHH) hh = parseFloat(r.totalHH) || 0;
+    // HH desde r.totalHH (MISMA fuente que el ISP: wbs.hhR y grafData.bySem usan
+    // parseFloat(r.totalHH)). Antes se sumaba el detalleTareo (hn+he) y el acumulado
+    // divergía del ISP cuando totalHH ≠ Σ(detalle). Detalle solo como respaldo.
+    let hh = parseFloat(r.totalHH) || 0;
+    if (hh === 0 && Array.isArray(r.detalleTareo)) {
+      hh = r.detalleTareo.reduce((s, t) => s + (parseFloat(t.hn) || 0) + (parseFloat(t.he) || 0), 0);
+    }
 
     const ipMeta = parseFloat(r._ipMeta) || 0;
     const met = parseFloat(r.metrado) || 0;
@@ -1263,11 +1271,13 @@ export const calcularMatrizIP = (registros) => {
       actividadesMap[act].porSemana[sem] = { hh: 0, met: 0 };
     }
 
-    let hh = 0;
-    (r.detalleTareo || []).forEach(t => {
-      hh += (parseFloat(t.hn) || 0) + (parseFloat(t.he) || 0);
-    });
-    if (hh === 0 && r.totalHH) hh = parseFloat(r.totalHH) || 0;
+    // HH desde r.totalHH (MISMA fuente que el ISP: wbs.hhR y grafData.bySem usan
+    // parseFloat(r.totalHH)). Antes se sumaba el detalleTareo (hn+he) y el acumulado
+    // divergía del ISP cuando totalHH ≠ Σ(detalle). Detalle solo como respaldo.
+    let hh = parseFloat(r.totalHH) || 0;
+    if (hh === 0 && Array.isArray(r.detalleTareo)) {
+      hh = r.detalleTareo.reduce((s, t) => s + (parseFloat(t.hn) || 0) + (parseFloat(t.he) || 0), 0);
+    }
 
     actividadesMap[act].porSemana[sem].hh += hh;
     actividadesMap[act].porSemana[sem].met += parseFloat(r.metrado) || 0;
