@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { INFO_MAP } from '../utils/constants';
 import { BASE } from '../utils/styles';
-import { calcCPI, fmtCPIPct, fmt1, getEstado } from '../utils/helpers';
+import { calcCPI, fmtCPIPct, fmt1, fmt2, getEstado } from '../utils/helpers';
 import VistaHeader from '../components/VistaHeader';
 
 // Badge para etiquetas de tipo de dato
@@ -435,7 +435,7 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
           <table style={{width:'100%',borderCollapse:'collapse',fontSize:'11px',minWidth:'900px'}}>
             <thead>
               <tr>
-                <th rowSpan="2" style={{padding:'8px 12px',background:HEAD_BG,color:'#fff',textAlign:'left',fontWeight:'800',fontSize:'11px',letterSpacing:'0.6px',minWidth:'220px',borderRight:SEP,borderBottom:`3px solid ${BASE.gold}`}}>WBS</th>
+                <th rowSpan="2" style={{position:'sticky',left:0,zIndex:5,padding:'8px 12px',background:HEAD_BG,color:'#fff',textAlign:'left',fontWeight:'800',fontSize:'11px',letterSpacing:'0.6px',minWidth:'240px',borderRight:SEP,borderBottom:`3px solid ${BASE.gold}`,boxShadow:'4px 0 8px -4px rgba(15,23,42,0.25)'}}>WBS</th>
                 {chipPpt && (
                   <th colSpan="3" style={thGroup(SEC.ppt.accent,{borderRight:SEP})}>PRESUPUESTO (contractual)</th>
                 )}
@@ -479,7 +479,7 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
             <tbody>
               {/* ── FILA DE TOTALES DE OBRA (suma de HH de todas las partidas) ── */}
               <tr>
-                <td style={{ padding:'10px 14px', background:HEAD_BG, color:'#fff', fontWeight:900, fontSize:'12px', letterSpacing:'0.5px', borderRight:SEP, borderTop:`2px solid ${BASE.gold}`, borderBottom:`2px solid ${BASE.gold}`, whiteSpace:'nowrap' }}>Σ TOTAL OBRA · HH</td>
+                <td style={{ position:'sticky', left:0, zIndex:4, padding:'10px 14px', background:HEAD_BG, color:'#fff', fontWeight:900, fontSize:'12px', letterSpacing:'0.5px', borderRight:SEP, borderTop:`2px solid ${BASE.gold}`, borderBottom:`2px solid ${BASE.gold}`, whiteSpace:'nowrap', boxShadow:'4px 0 8px -4px rgba(15,23,42,0.25)' }}>Σ TOTAL OBRA · HH</td>
                 {chipPpt && <>
                   {td('—', TT({ color:'rgba(255,255,255,0.45)' }))}
                   {td(fmt1(totalSaldo.hhP), TT())}
@@ -548,7 +548,7 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
                     <tr onClick={()=>setOpenP(openP===pN?null:pN)} style={{cursor:'pointer',background:'#f1f5f9',transition:'background 0.12s',borderTop:`2px solid #cbd5e1`}}
                         onMouseEnter={e=>e.currentTarget.style.background='#e2e8f0'}
                         onMouseLeave={e=>e.currentTarget.style.background='#f1f5f9'}>
-                      <td style={{padding:'0',color:BASE.navy,borderBottom:`1px solid ${BASE.border}`,borderRight:SEP,textAlign:'left',verticalAlign:'middle',height:'44px'}}>
+                      <td style={{position:'sticky',left:0,zIndex:3,background:'#f1f5f9',padding:'0',color:BASE.navy,borderBottom:`1px solid ${BASE.border}`,borderRight:SEP,textAlign:'left',verticalAlign:'middle',height:'44px',boxShadow:'4px 0 8px -4px rgba(15,23,42,0.18)'}}>
                         <div style={{display:'flex',alignItems:'stretch',height:'100%'}}>
                           {/* Indicador lateral sólido (chip vertical) */}
                           <div style={{width:'6px',background:cc.color,flexShrink:0}}/>
@@ -632,7 +632,7 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
                           <tr onClick={e=>{e.stopPropagation();setOpenS(openS===sN?null:sN);}} style={{cursor:'pointer',background:'#fafbfc',transition:'background 0.12s'}}
                               onMouseEnter={e=>{e.currentTarget.style.background='#f1f5f9';}}
                               onMouseLeave={e=>{e.currentTarget.style.background='#fafbfc';}}>
-                            <td style={{padding:'0',color:'#1e293b',borderBottom:`1px solid ${BASE.border}`,borderRight:SEP,textAlign:'left',verticalAlign:'middle',height:'40px'}}>
+                            <td style={{position:'sticky',left:0,zIndex:3,background:'#fafbfc',padding:'0',color:'#1e293b',borderBottom:`1px solid ${BASE.border}`,borderRight:SEP,textAlign:'left',verticalAlign:'middle',height:'40px',boxShadow:'4px 0 8px -4px rgba(15,23,42,0.15)'}}>
                               <div style={{display:'flex',alignItems:'stretch',height:'100%'}}>
                                 <div style={{width:'6px',flexShrink:0}}/>
                                 <div style={{width:'3px',background:scc.color,flexShrink:0,opacity:0.7}}/>
@@ -706,7 +706,7 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
                               <tr key={aN} style={{background:zebraBg,fontSize:'10px',transition:'background 0.12s'}}
                                   onMouseEnter={e=>{e.currentTarget.style.background='#eef2f7';}}
                                   onMouseLeave={e=>{e.currentTarget.style.background=zebraBg;}}>
-                                <td title={aN} style={{padding:'0',color:'#475569',borderBottom:`1px solid ${BASE.border}`,borderRight:SEP,textAlign:'left',verticalAlign:'middle',height:'36px'}}>
+                                <td title={aN} style={{position:'sticky',left:0,zIndex:3,background:zebraBg,padding:'0',color:'#475569',borderBottom:`1px solid ${BASE.border}`,borderRight:SEP,textAlign:'left',verticalAlign:'middle',height:'36px',boxShadow:'4px 0 8px -4px rgba(15,23,42,0.12)'}}>
                                   <div style={{display:'flex',alignItems:'stretch',height:'100%'}}>
                                     <div style={{width:'9px',flexShrink:0}}/>
                                     <div style={{width:'1px',background:`${acc.color}55`,flexShrink:0}}/>
@@ -746,7 +746,7 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
                                           border:`1px solid ${acc.color}33`,
                                           flexShrink:0,
                                         }}>
-                                          {act.met.toFixed(1)} {ad.un||'UND'}
+                                          {act.met.toFixed(2)} {ad.un||'UND'}
                                         </span>
                                       )}
                                       {onActualizarFlags && (
@@ -768,25 +768,25 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
                                   </div>
                                 </td>
                                 {chipPpt && <>
-                                  {td(fmt1(ad.metP||0),{background:SEC.ppt.bgCell,color:SEC.ppt.text})}
+                                  {td(fmt2(ad.metP||0),{background:SEC.ppt.bgCell,color:SEC.ppt.text})}
                                   {td(fmt1(hhPptDe(aN)),{background:SEC.ppt.bgCell,color:SEC.ppt.text})}
                                   {td((ad.ipP||0).toFixed(2),{background:SEC.ppt.bgCell,color:SEC.ppt.text,...sepRight})}
                                 </>}
                                 {chipMeta && <>
-                                  {td(fmt1(ad.metM||0),{background:SEC.meta.bgCell,color:SEC.meta.text})}
+                                  {td(fmt2(ad.metM||0),{background:SEC.meta.bgCell,color:SEC.meta.text})}
                                   {td(fmt1(hhMetaDe(aN)),{background:SEC.meta.bgCell,color:SEC.meta.text})}
                                   {td((ad.ipM||0).toFixed(2),{background:SEC.meta.bgCell,color:SEC.meta.text,...sepRight})}
                                 </>}
-                                {td(act.met>0?fmt1(act.met):'0')}
+                                {td(act.met>0?fmt2(act.met):'0')}
                                 {td(fmt1(act.hhR))}
                                 {td(act.met>0?ipReal.toFixed(3):'—',{color:BASE.muted,...sepRight})}
                                 {td(fmt1(aHhRef))}
                                 {td(fmtVar(adiff),{color:colorVar(adiff),fontWeight:'700'})}
                                 {td(fmtCPIPct(acpi),{color:acc.color,fontWeight:'700',background:`${acc.color}10`,...sepRight})}
-                                {td(sm>0?fmt1(sm):'✓',{background:SEC.saldo.bgCell,color:SEC.saldo.text})}
+                                {td(sm>0?fmt2(sm):'✓',{background:SEC.saldo.bgCell,color:SEC.saldo.text})}
                                 {td(hhSRef>0?fmt1(hhSRef):'✓',{background:SEC.saldo.bgCell,color:SEC.saldo.text})}
                                 {td(sm>0?aIpRef.toFixed(2):'—',{background:SEC.saldo.bgCell,color:SEC.saldo.text,...sepRight})}
-                                {td(fmt1(metFinal),{background:SEC.estimado.bgCell,color:SEC.estimado.text})}
+                                {td(fmt2(metFinal),{background:SEC.estimado.bgCell,color:SEC.estimado.text})}
                                 {td(fmt1(hhEAC),{background:SEC.estimado.bgCell,color:SEC.estimado.text})}
                                 {td(metFinal>0?aEstIP.toFixed(3):'—',{background:SEC.estimado.bgCell,color:SEC.estimado.text,...sepRight})}
                                 {td(fmt1(hhRefTot),{background:SEC.forecast.bgCell,color:SEC.forecast.text})}
