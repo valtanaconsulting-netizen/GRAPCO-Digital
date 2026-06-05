@@ -271,7 +271,8 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
   const HEAD_BG = '#0f1f3a';      // navy profundo, igual para todos los headers
   const HEAD_BG2 = '#1a2c4d';     // navy sub-header (un poco más claro)
 
-  // Header de grupo (primera fila): navy + barra de acento abajo
+  // Header de grupo (primera fila): navy + barra de acento abajo.
+  // sticky top:0 + altura fija (border-box) → se queda pegado al hacer scroll vertical.
   const thGroup = (color, extra={}) => ({
     padding: '10px 10px',
     background: HEAD_BG,
@@ -282,9 +283,16 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
     textTransform: 'uppercase',
     borderBottom: `3px solid ${color}`,
     textAlign: 'center',
+    position: 'sticky',
+    top: 0,
+    zIndex: 5,
+    boxSizing: 'border-box',
+    height: '36px',   // 1ª fila con altura fija → offset exacto para la 2ª
     ...extra,
   });
-  // Sub-header (segunda fila): navy más claro, texto en el accent del grupo
+  // Sub-header (segunda fila): navy más claro, texto en el accent del grupo.
+  // sticky top:36px (justo debajo de la 1ª fila). Altura NATURAL: estos rótulos
+  // ("Var Act. HH", "META Act. HH") se parten en 2 líneas y no deben recortarse.
   const thCol = (color, extra={}) => ({
     padding: '9px 10px',
     background: HEAD_BG2,
@@ -294,6 +302,9 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
     letterSpacing: '0.3px',
     textAlign: 'center',
     textTransform: 'uppercase',
+    position: 'sticky',
+    top: '36px',
+    zIndex: 5,
     ...extra,
   });
 
@@ -438,11 +449,14 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
 
       {/* TABLA */}
       <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,overflow:'hidden'}}>
-        <div style={{overflowX:'auto'}}>
+        {/* Altura acotada + overflow:auto → la barra de scroll HORIZONTAL queda fija al
+            borde inferior del recuadro (siempre visible, no hay que bajar a buscarla).
+            El scroll vertical ocurre DENTRO; el encabezado y la columna WBS se quedan pegados. */}
+        <div style={{overflow:'auto',maxHeight:'calc(100vh - 240px)'}}>
           <table style={{width:'100%',borderCollapse:'collapse',fontSize:'11px',minWidth:'900px'}}>
             <thead>
               <tr>
-                <th rowSpan="2" style={{position:'sticky',left:0,zIndex:5,padding:'8px 12px',background:HEAD_BG,color:'#fff',textAlign:'left',fontWeight:'800',fontSize:'11px',letterSpacing:'0.6px',minWidth:'240px',borderRight:SEP,borderBottom:`3px solid ${BASE.gold}`,boxShadow:'4px 0 8px -4px rgba(15,23,42,0.25)'}}>WBS</th>
+                <th rowSpan="2" style={{position:'sticky',left:0,top:0,zIndex:7,padding:'8px 12px',background:HEAD_BG,color:'#fff',textAlign:'left',fontWeight:'800',fontSize:'11px',letterSpacing:'0.6px',minWidth:'240px',borderRight:SEP,borderBottom:`3px solid ${BASE.gold}`,boxShadow:'4px 0 8px -4px rgba(15,23,42,0.25)'}}>WBS</th>
                 {chipPpt && (
                   <th colSpan="3" style={thGroup(SEC.ppt.accent,{borderRight:SEP})}>PRESUPUESTO (contractual)</th>
                 )}
@@ -453,7 +467,7 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
                 <th colSpan="3" style={thGroup(SEC.saldo.accent,{borderRight:SEP})}>SALDO ACTUAL</th>
                 <th colSpan="3" style={thGroup(SEC.estimado.accent,{borderRight:SEP})}>ESTIMADO AL TÉRMINO</th>
                 <th colSpan="3" style={thGroup(SEC.forecast.accent,{borderRight:SEP})}>FORECAST {REF.etiqueta}</th>
-                <th rowSpan="2" style={{padding:'8px 10px',background:HEAD_BG,color:'#fff',fontSize:'10px',fontWeight:'800',letterSpacing:'0.6px',borderBottom:`3px solid ${BASE.gold}`}}>Estado</th>
+                <th rowSpan="2" style={{position:'sticky',top:0,zIndex:5,padding:'8px 10px',background:HEAD_BG,color:'#fff',fontSize:'10px',fontWeight:'800',letterSpacing:'0.6px',borderBottom:`3px solid ${BASE.gold}`}}>Estado</th>
               </tr>
               <tr>
                 {chipPpt && <>
@@ -554,6 +568,9 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
                 const pAbierta = openP.has(pN);
                 const pBg      = pAbierta ? '#d4dfee' : '#f1f5f9';
                 const pBgHover = pAbierta ? '#c3d2e7' : '#e2e8f0';
+                // Cuando está abierta, TODA la fila se oscurece (hasta el final): el wrapper
+                // fuerza el fondo en cada celda y tapa los tintes por sección (saldo/estimado/forecast).
+                const pCell = pAbierta ? (v, ex = {}) => td(v, { ...ex, background: pBg }) : td;
 
                 return (
                   <React.Fragment key={pN}>
@@ -577,31 +594,31 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
                       {/* Metrado e IP NO se muestran en partida/subpartida: no se pueden
                           sumar unidades distintas (m2, m3, mes, ml…). Solo HH se suma. */}
                       {chipPpt && <>
-                        {td('—',{background:SEC.ppt.bgCell,color:BASE.muted})}
-                        {td(fmt1(pHHP_tot),{background:SEC.ppt.bgCell,color:SEC.ppt.text})}
-                        {td('—',{background:SEC.ppt.bgCell,color:BASE.muted,...sepRight})}
+                        {pCell('—',{background:SEC.ppt.bgCell,color:BASE.muted})}
+                        {pCell(fmt1(pHHP_tot),{background:SEC.ppt.bgCell,color:SEC.ppt.text})}
+                        {pCell('—',{background:SEC.ppt.bgCell,color:BASE.muted,...sepRight})}
                       </>}
                       {chipMeta && <>
-                        {td('—',{background:SEC.meta.bgCell,color:BASE.muted})}
-                        {td(fmt1(pHHM_tot),{background:SEC.meta.bgCell,color:SEC.meta.text})}
-                        {td('—',{background:SEC.meta.bgCell,color:BASE.muted,...sepRight})}
+                        {pCell('—',{background:SEC.meta.bgCell,color:BASE.muted})}
+                        {pCell(fmt1(pHHM_tot),{background:SEC.meta.bgCell,color:SEC.meta.text})}
+                        {pCell('—',{background:SEC.meta.bgCell,color:BASE.muted,...sepRight})}
                       </>}
-                      {td('—',{color:BASE.muted})}
-                      {td(fmt1(p.hhR))}
-                      {td('—',{color:BASE.muted,...sepRight})}
-                      {td(fmt1(hhRef))}
-                      {td(fmtVar(diff),{color:colorVar(diff),fontWeight:'800'})}
-                      {td(fmtCPIPct(cpiV),{color:cc.color,fontWeight:'800',background:`${cc.color}10`,...sepRight})}
-                      {td('—',{background:SEC.saldo.bgCell,color:BASE.muted})}
-                      {td(fmt1(pSaldoRef),{background:SEC.saldo.bgCell,color:SEC.saldo.text})}
-                      {td('—',{background:SEC.saldo.bgCell,color:BASE.muted,...sepRight})}
-                      {td('—',{background:SEC.estimado.bgCell,color:BASE.muted})}
-                      {td(fmt1(pEAC),{background:SEC.estimado.bgCell,color:SEC.estimado.text})}
-                      {td('—',{background:SEC.estimado.bgCell,color:BASE.muted,...sepRight})}
-                      {td(fmt1(pRefTot),{background:SEC.forecast.bgCell,color:SEC.forecast.text})}
-                      {td(fmtVar(pVarFct),{background:SEC.forecast.bgCell,color:colorVar(pVarFct),fontWeight:'800'})}
-                      {td(fmtCPIPct(cpiEAC),{background:`${ccEAC.color}10`,color:ccEAC.color,fontWeight:'800',...sepRight})}
-                      <td style={{padding:'8px 10px',textAlign:'center',verticalAlign:'middle',borderBottom:`1px solid ${BASE.border}`}}>
+                      {pCell('—',{color:BASE.muted})}
+                      {pCell(fmt1(p.hhR))}
+                      {pCell('—',{color:BASE.muted,...sepRight})}
+                      {pCell(fmt1(hhRef))}
+                      {pCell(fmtVar(diff),{color:colorVar(diff),fontWeight:'800'})}
+                      {pCell(fmtCPIPct(cpiV),{color:cc.color,fontWeight:'800',background:`${cc.color}10`,...sepRight})}
+                      {pCell('—',{background:SEC.saldo.bgCell,color:BASE.muted})}
+                      {pCell(fmt1(pSaldoRef),{background:SEC.saldo.bgCell,color:SEC.saldo.text})}
+                      {pCell('—',{background:SEC.saldo.bgCell,color:BASE.muted,...sepRight})}
+                      {pCell('—',{background:SEC.estimado.bgCell,color:BASE.muted})}
+                      {pCell(fmt1(pEAC),{background:SEC.estimado.bgCell,color:SEC.estimado.text})}
+                      {pCell('—',{background:SEC.estimado.bgCell,color:BASE.muted,...sepRight})}
+                      {pCell(fmt1(pRefTot),{background:SEC.forecast.bgCell,color:SEC.forecast.text})}
+                      {pCell(fmtVar(pVarFct),{background:SEC.forecast.bgCell,color:colorVar(pVarFct),fontWeight:'800'})}
+                      {pCell(fmtCPIPct(cpiEAC),{background:`${ccEAC.color}10`,color:ccEAC.color,fontWeight:'800',...sepRight})}
+                      <td style={{padding:'8px 10px',textAlign:'center',verticalAlign:'middle',borderBottom:`1px solid ${BASE.border}`,background:pAbierta?pBg:undefined}}>
                         <span style={{display:'inline-flex',alignItems:'center',gap:'5px',background:cc.color,color:'#fff',padding:'4px 11px',borderRadius:'999px',fontSize:'9.5px',fontWeight:'800',letterSpacing:'0.5px',boxShadow:`0 1px 3px ${cc.color}55`,whiteSpace:'nowrap'}}>
                           {cc.label==='ÓPTIMO'?'✓':cc.label==='ALERTA'?'⚠':'✕'} {cc.label}
                         </span>
@@ -645,6 +662,7 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
                       const sAbierta  = openS.has(sKey);
                       const sBg       = sAbierta ? '#e6ecf4' : '#fafbfc';
                       const sBgHover  = sAbierta ? '#d9e2ee' : '#f1f5f9';
+                      const sCell     = sAbierta ? (v, ex = {}) => td(v, { ...ex, background: sBg }) : td;
 
                       return (
                         <React.Fragment key={sN}>
@@ -665,31 +683,31 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
                               </div>
                             </td>
                             {chipPpt && <>
-                              {td('—',{background:SEC.ppt.bgCell,color:BASE.muted})}
-                              {td(fmt1(spHHP_tot),{background:SEC.ppt.bgCell,color:SEC.ppt.text})}
-                              {td('—',{background:SEC.ppt.bgCell,color:BASE.muted,...sepRight})}
+                              {sCell('—',{background:SEC.ppt.bgCell,color:BASE.muted})}
+                              {sCell(fmt1(spHHP_tot),{background:SEC.ppt.bgCell,color:SEC.ppt.text})}
+                              {sCell('—',{background:SEC.ppt.bgCell,color:BASE.muted,...sepRight})}
                             </>}
                             {chipMeta && <>
-                              {td('—',{background:SEC.meta.bgCell,color:BASE.muted})}
-                              {td(fmt1(spHHM_tot),{background:SEC.meta.bgCell,color:SEC.meta.text})}
-                              {td('—',{background:SEC.meta.bgCell,color:BASE.muted,...sepRight})}
+                              {sCell('—',{background:SEC.meta.bgCell,color:BASE.muted})}
+                              {sCell(fmt1(spHHM_tot),{background:SEC.meta.bgCell,color:SEC.meta.text})}
+                              {sCell('—',{background:SEC.meta.bgCell,color:BASE.muted,...sepRight})}
                             </>}
-                            {td('—',{color:BASE.muted})}
-                            {td(fmt1(sub.hhR))}
-                            {td('—',{color:BASE.muted,...sepRight})}
-                            {td(fmt1(sHhRef))}
-                            {td(fmtVar(sdiff),{color:colorVar(sdiff),fontWeight:'700'})}
-                            {td(fmtCPIPct(scpi),{color:scc.color,fontWeight:'700',background:`${scc.color}10`,...sepRight})}
-                            {td('—',{background:SEC.saldo.bgCell,color:BASE.muted})}
-                            {td(fmt1(spSaldoRef),{background:SEC.saldo.bgCell,color:SEC.saldo.text})}
-                            {td('—',{background:SEC.saldo.bgCell,color:BASE.muted,...sepRight})}
-                            {td('—',{background:SEC.estimado.bgCell,color:BASE.muted})}
-                            {td(fmt1(spEAC),{background:SEC.estimado.bgCell,color:SEC.estimado.text})}
-                            {td('—',{background:SEC.estimado.bgCell,color:BASE.muted,...sepRight})}
-                            {td(fmt1(spRefTot),{background:SEC.forecast.bgCell,color:SEC.forecast.text})}
-                            {td(fmtVar(spVarFct),{background:SEC.forecast.bgCell,color:colorVar(spVarFct),fontWeight:'700'})}
-                            {td(fmtCPIPct(spCpiEAC),{background:`${getEstado(spCpiEAC).color}10`,color:getEstado(spCpiEAC).color,fontWeight:'700',...sepRight})}
-                            <td style={{padding:'8px 10px',textAlign:'center',verticalAlign:'middle',borderBottom:`1px solid ${BASE.border}`}}>
+                            {sCell('—',{color:BASE.muted})}
+                            {sCell(fmt1(sub.hhR))}
+                            {sCell('—',{color:BASE.muted,...sepRight})}
+                            {sCell(fmt1(sHhRef))}
+                            {sCell(fmtVar(sdiff),{color:colorVar(sdiff),fontWeight:'700'})}
+                            {sCell(fmtCPIPct(scpi),{color:scc.color,fontWeight:'700',background:`${scc.color}10`,...sepRight})}
+                            {sCell('—',{background:SEC.saldo.bgCell,color:BASE.muted})}
+                            {sCell(fmt1(spSaldoRef),{background:SEC.saldo.bgCell,color:SEC.saldo.text})}
+                            {sCell('—',{background:SEC.saldo.bgCell,color:BASE.muted,...sepRight})}
+                            {sCell('—',{background:SEC.estimado.bgCell,color:BASE.muted})}
+                            {sCell(fmt1(spEAC),{background:SEC.estimado.bgCell,color:SEC.estimado.text})}
+                            {sCell('—',{background:SEC.estimado.bgCell,color:BASE.muted,...sepRight})}
+                            {sCell(fmt1(spRefTot),{background:SEC.forecast.bgCell,color:SEC.forecast.text})}
+                            {sCell(fmtVar(spVarFct),{background:SEC.forecast.bgCell,color:colorVar(spVarFct),fontWeight:'700'})}
+                            {sCell(fmtCPIPct(spCpiEAC),{background:`${getEstado(spCpiEAC).color}10`,color:getEstado(spCpiEAC).color,fontWeight:'700',...sepRight})}
+                            <td style={{padding:'8px 10px',textAlign:'center',verticalAlign:'middle',borderBottom:`1px solid ${BASE.border}`,background:sAbierta?sBg:undefined}}>
                               <span style={{
                                 display:'inline-flex',alignItems:'center',justifyContent:'center',
                                 background:`${scc.color}1a`,color:scc.color,
