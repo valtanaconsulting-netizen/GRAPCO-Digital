@@ -1,5 +1,5 @@
 // src/views/Ingeniero.jsx — V3 con Alertas, Ranking, CPI%, Costos HE
-import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, deleteDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { CATALOGO_MASTER, INFO_MAP, FECHA_INICIO_PROYECTO } from '../utils/constants';
@@ -584,8 +584,31 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
   const cpiEstado = getEstado(stats.cpi);
   const totalAlertas = (alertas || []).length;
 
+  // Contenedor de scroll ÚNICO (vertical + horizontal) que llena la pantalla bajo el navbar.
+  // Es la clave para que el encabezado de las tablas se quede fijo arriba al bajar: al haber
+  // un solo contenedor de scroll, al scrollear se van los controles y el encabezado (sticky)
+  // se ancla a este contenedor; la columna WBS se ancla a la izquierda y la barra de scroll
+  // horizontal queda fija abajo (siempre visible). Mido la posición para llenar el alto exacto.
+  const shellRef = useRef(null);
+  const [shellH, setShellH] = useState('calc(100dvh - 130px)');
+  useLayoutEffect(() => {
+    const calc = () => {
+      const el = shellRef.current;
+      if (!el) return;
+      const absTop = el.getBoundingClientRect().top + window.scrollY; // tope del contenedor
+      setShellH(`${Math.max(360, Math.round(window.innerHeight - absTop - 8))}px`);
+    };
+    calc();
+    window.addEventListener('resize', calc);
+    return () => window.removeEventListener('resize', calc);
+  }, [soloPlaneamiento]);
+
+  // Solo las vistas de TABLA usan el contenedor de scroll acotado (encabezado fijo + barra
+  // horizontal abajo). Las demás vistas se comportan normal (scroll de página) para no alterarlas.
+  const vistaTabla = view === 'analisis' || view === 'auditoria';
+
   return (
-    <>
+    <div ref={shellRef} style={vistaTabla ? { height: shellH, overflow: 'auto', overscrollBehavior: 'contain' } : undefined}>
       {/* === NAVEGACIÓN POR GRUPOS (Nivel 1) — tabs limpios estilo SaaS premium ===
           En modo standalone (soloPlaneamiento) se oculta: el módulo vive en el
           menú lateral, sin tabs. En modo normal se excluye 'planificacion'
@@ -918,7 +941,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
         </div>
       )}
       {view==='impacto'    && <ImpactoTesis historialEnriquecido={historialEnriquecido} configuracion={configuracion}/>}
-    </>
+    </div>
   );
 }
 

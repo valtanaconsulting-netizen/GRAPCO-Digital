@@ -171,7 +171,7 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
   // El recuadro usa overflow-y:clip para NO crear un contenedor de scroll vertical (así el
   // sticky escapa hasta la ventana) y overflow-x:auto para el scroll horizontal de columnas.
   // Mido el alto real del thead para pegar la fila TOTAL justo debajo del encabezado.
-  const NAV_H = 60; // alto del navbar fijo de la plataforma (App.jsx)
+  const NAV_H = 0; // el contenedor de scroll de Ingeniero ya empieza bajo el navbar → offset 0
   const scrollWrapRef = useRef(null);
   const [theadH, setTheadH] = useState(73);
   useLayoutEffect(() => {
@@ -467,9 +467,10 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
         </div>
       </div>
 
-      {/* TABLA — overflow:clip (no 'hidden') para que NO sea contenedor de scroll y el
-          encabezado sticky pueda escapar hasta la ventana al hacer scroll de página. */}
-      <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,overflow:'clip'}}>
+      {/* TABLA — overflow:visible para NO ser contenedor de scroll: el scroll (vertical y
+          horizontal) lo maneja el contenedor único de Ingeniero, y así el encabezado sticky se
+          ancla a ÉL (queda fijo arriba) y la columna WBS a la izquierda. */}
+      <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,overflow:'visible'}}>
         {/* overflow:visible (NO 'auto'): cualquier overflow:auto/scroll convierte a este div en
             contenedor de scroll y "captura" el sticky, impidiendo que el encabezado se ancle a la
             ventana. Sin contenedor de scroll, el encabezado + la fila TOTAL se pegan de verdad bajo

@@ -48,9 +48,9 @@ export default function Auditoria({ filtrados, eliminar, hhPorSemana = [], hhTot
         )}
       </div>
 
-      {/* TABLA AUDITORÍA — overflow:clip (no 'hidden') para que el encabezado sticky pueda
-          escapar hasta la ventana al hacer scroll de página. */}
-      <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,overflow:'clip',boxShadow:BASE.shadowMd}}>
+      {/* TABLA AUDITORÍA — overflow:visible: el scroll lo maneja el contenedor único de
+          Ingeniero, así el encabezado sticky se ancla a ÉL y queda fijo arriba al bajar. */}
+      <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,overflow:'visible',boxShadow:BASE.shadowMd}}>
         <div style={{padding:'10px 14px',display:'flex',justifyContent:'space-between',alignItems:'center',borderBottom:`1px solid ${BASE.border}`,background:'#f8fafc'}}>
           <span style={{fontSize:'12px',fontWeight:'700',color:BASE.navy}}>📋 REGISTROS — Más reciente arriba</span>
           <span style={{fontSize:'10px',color:BASE.muted}}>{filtrados.length} registros</span>
@@ -61,9 +61,9 @@ export default function Auditoria({ filtrados, eliminar, hhPorSemana = [], hhTot
         <div style={{overflow:'visible'}}>
           <table style={{width:'100%',borderCollapse:'collapse',fontSize:'12px',minWidth:'960px'}}>
             <thead>
-              {/* sticky top:60 = se queda fijo justo debajo del navbar (60px) al scrollear la página */}
+              {/* sticky top:0 = se queda fijo arriba del contenedor de scroll de Ingeniero al bajar */}
               <tr>{['Sem.','Fecha','Partida','Actividad','Unidad','Metrado','HN','HE','HH Tot','IP Real','IP Meta','CPI','Fuente','📷',''].map((h,i)=>(
-                <th key={i} style={{position:'sticky',top:60,zIndex:5,padding:'11px 10px',fontSize:'11px',fontWeight:'700',color:'#fff',background:BASE.navy,textAlign:i>4?'center':'left',whiteSpace:'nowrap'}}>{h}</th>
+                <th key={i} style={{position:'sticky',top:0,zIndex:5,padding:'11px 10px',fontSize:'11px',fontWeight:'700',color:'#fff',background:BASE.navy,textAlign:i>4?'center':'left',whiteSpace:'nowrap'}}>{h}</th>
               ))}</tr>
             </thead>
             <tbody>
