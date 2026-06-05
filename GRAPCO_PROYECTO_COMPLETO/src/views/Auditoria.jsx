@@ -7,7 +7,6 @@ import VistaHeader from '../components/VistaHeader';
 
 export default function Auditoria({ filtrados, eliminar, hhPorSemana = [], hhTotales = { hn:0, he:0, total:0 }, totalBaseDatos = 0 }) {
   const [hhOpen, setHhOpen] = useState(false);
-  const ocultosPorFiltro = Math.max(0, totalBaseDatos - filtrados.length);
 
   const calcularHHRegistro = (r) => {
     let hn = 0, he = 0;
@@ -33,20 +32,6 @@ export default function Auditoria({ filtrados, eliminar, hhPorSemana = [], hhTot
 
   return (
     <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
-
-      {/* DIAGNÓSTICO — base de datos vs mostrados */}
-      <div style={{
-        background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:'10px',
-        padding:'9px 14px',display:'flex',gap:'18px',flexWrap:'wrap',alignItems:'center',fontSize:'11px',
-      }}>
-        <span style={{fontWeight:'800',color:BASE.navy}}>🛢️ Base de datos: <b>{totalBaseDatos}</b> registros (TODOS los proyectos)</span>
-        <span style={{fontWeight:'800',color:BASE.navy}}>👁️ Mostrados aquí: <b>{filtrados.length}</b></span>
-        {ocultosPorFiltro > 0 && (
-          <span style={{color:'#b45309',fontWeight:'700'}}>
-            ⚠️ {ocultosPorFiltro} ocultos por los filtros de arriba (semana / partida / fecha) — límpialos para verlos todos
-          </span>
-        )}
-      </div>
 
       {/* TABLA AUDITORÍA — overflow:visible: el scroll lo maneja el contenedor único de
           Ingeniero, así el encabezado sticky se ancla a ÉL y queda fijo arriba al bajar. */}

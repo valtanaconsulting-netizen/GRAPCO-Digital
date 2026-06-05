@@ -670,11 +670,6 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
         padding: '12px 16px',
         marginBottom: '14px',
       }}>
-        <p style={{ fontSize: '10.5px', color: BASE.muted, fontWeight: '600', marginBottom: '10px', letterSpacing: '0.2px' }}>
-          <span style={{ color: grupoCfg.color, fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.6px' }}>{grupoCfg.label}</span>
-          <span style={{ margin: '0 6px', opacity: 0.4 }}>·</span>
-          {grupoCfg.tagline}
-        </p>
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           {grupoCfg.items.map(item => {
             const activa = view === item.id;
