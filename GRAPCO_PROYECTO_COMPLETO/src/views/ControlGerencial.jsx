@@ -434,8 +434,8 @@ function ControlVariaciones({ historial, numTrabajadores, isMobile, asistencia }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      {/* KPIs cards más espaciados */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(216px, 1fr))', gap: '10px' }}>
+      {/* KPIs cards compactos (caben más por fila) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '8px' }}>
         {[
           { l: 'HH CAMPO TOTAL', v: fmt1(data.totales.hhCampo), c: BASE.navy, sub: 'Acumulado proyecto' },
           { l: 'HH META TOTAL', v: fmt1(data.totales.hhMeta), c: BASE.green, sub: 'Esperado ideal' },
@@ -443,59 +443,61 @@ function ControlVariaciones({ historial, numTrabajadores, isMobile, asistencia }
           { l: 'CPI GLOBAL', v: fmtCPIPct(data.totales.cpiGlobal), c: data.totales.cpiGlobal >= 1 ? BASE.green : data.totales.cpiGlobal >= 0.85 ? BASE.gold : BASE.red, sub: 'Eficiencia HH' },
         ].map(k => (
           <div key={k.l} style={{
-            background: BASE.white, borderRadius: '10px',
-            border: `1px solid ${BASE.border}`, padding: '10px 14px',
+            background: BASE.white, borderRadius: '9px',
+            border: `1px solid ${BASE.border}`, padding: '6px 10px',
             boxShadow: '0 1px 4px rgba(15,23,42,0.03)',
-            transition: 'transform 0.15s, box-shadow 0.15s',
           }}>
-            <p style={{ fontSize: '9px', fontWeight: '900', color: BASE.muted, letterSpacing: '0.8px' }}>{k.l}</p>
-            <p style={{ fontSize: '18px', fontWeight: '900', color: k.c, marginTop: '2px', letterSpacing: '-0.3px', lineHeight: 1.2 }}>{k.v}</p>
-            <p style={{ fontSize: '10px', color: BASE.muted, marginTop: '1px' }}>{k.sub}</p>
+            <p style={{ fontSize: '8.5px', fontWeight: '900', color: BASE.muted, letterSpacing: '0.6px' }}>{k.l}</p>
+            <p style={{ fontSize: '15px', fontWeight: '900', color: k.c, marginTop: '1px', letterSpacing: '-0.3px', lineHeight: 1.15 }}>{k.v}</p>
+            <p style={{ fontSize: '9px', color: BASE.muted }}>{k.sub}</p>
           </div>
         ))}
       </div>
 
-      {/* Tabla principal con heatmap */}
+      {/* Tabla principal con heatmap — encabezado fijo (título + 2 filas) al hacer scroll.
+          overflow:visible para que el sticky se ancle al contenedor de scroll de Ingeniero. */}
       <div style={{
-        background: BASE.white, borderRadius: '16px',
-        border: `1px solid ${BASE.border}`, overflow: 'hidden',
+        background: BASE.white, borderRadius: '12px',
+        border: `1px solid ${BASE.border}`, overflow: 'visible',
         boxShadow: '0 2px 8px rgba(15,23,42,0.05)',
       }}>
         <div style={{
           background: BASE.navy,
-          padding: '10px 18px', color: '#fff',
+          padding: '0 14px', height: '30px', boxSizing: 'border-box', color: '#fff',
           display: 'flex', alignItems: 'center', gap: '10px',
+          borderRadius: '12px 12px 0 0',
           borderBottom: `2px solid ${BASE.gold}`,
+          position: 'sticky', top: 0, zIndex: 13,
         }}>
-          <span style={{ fontSize: '12px', fontWeight: '800', letterSpacing: '0.4px' }}>
+          <span style={{ fontSize: '11px', fontWeight: '800', letterSpacing: '0.4px' }}>
             Control HH Variaciones · Semana × Partida
           </span>
         </div>
 
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', minWidth: '900px' }}>
+        <div style={{ overflow: 'visible' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', minWidth: '900px' }}>
             <thead>
-              <tr style={{ background: BASE.bgSoft }}>
-                <th rowSpan="2" style={thStyle({ width: '76px', position: 'sticky', left: 0, zIndex: 2, background: BASE.bgSoft, color: BASE.navy })}>SEM</th>
-                <th colSpan="2" style={thStyle({ background: '#fef3c7', color: '#92400e', textAlign: 'center', borderBottom: `2px solid ${BASE.gold}`, padding: '10px 12px' })}>ADMIN</th>
-                <th colSpan="2" style={thStyle({ background: '#dbeafe', color: '#1e40af', textAlign: 'center', borderBottom: '2px solid #2563eb', padding: '10px 12px' })}>CAMPO</th>
-                <th colSpan="3" style={thStyle({ background: '#dcfce7', color: '#15803d', textAlign: 'center', borderBottom: `2px solid ${BASE.green}`, padding: '10px 12px' })}>ACTUAL</th>
+              <tr>
+                <th rowSpan="2" style={thStyle({ width: '60px', padding: '4px 8px', fontSize: '10px', position: 'sticky', left: 0, top: 30, zIndex: 14, background: '#e2e8f0', color: BASE.navy, height: '50px', boxSizing: 'border-box' })}>SEM</th>
+                <th colSpan="2" style={thStyle({ background: '#fcd34d', color: '#713f12', textAlign: 'center', borderBottom: `2px solid #b45309`, padding: '4px 8px', fontSize: '10px', position: 'sticky', top: 30, zIndex: 12, height: '26px', boxSizing: 'border-box' })}>ADMIN</th>
+                <th colSpan="2" style={thStyle({ background: '#93c5fd', color: '#1e3a8a', textAlign: 'center', borderBottom: '2px solid #1d4ed8', padding: '4px 8px', fontSize: '10px', position: 'sticky', top: 30, zIndex: 12, height: '26px', boxSizing: 'border-box' })}>CAMPO</th>
+                <th colSpan="3" style={thStyle({ background: '#86efac', color: '#14532d', textAlign: 'center', borderBottom: `2px solid #15803d`, padding: '4px 8px', fontSize: '10px', position: 'sticky', top: 30, zIndex: 12, height: '26px', boxSizing: 'border-box' })}>ACTUAL</th>
                 <th colSpan={data.codigosPartida.length} style={thStyle({
-                  background: BASE.navy, color: BASE.gold, textAlign: 'center', borderBottom: `2px solid ${BASE.gold}`, padding: '10px 12px',
+                  background: BASE.navy, color: BASE.gold, textAlign: 'center', borderBottom: `2px solid ${BASE.gold}`, padding: '4px 8px', fontSize: '10px', position: 'sticky', top: 30, zIndex: 12, height: '26px', boxSizing: 'border-box',
                 })}>
                   HEATMAP DELTA HH POR PARTIDA
                 </th>
               </tr>
-              <tr style={{ background: BASE.bgSoft }}>
-                <th style={thMini}>HH PLA.</th>
-                <th style={thMini}>HH PLA. ACUM</th>
-                <th style={thMini}>HH CAM.</th>
-                <th style={thMini}>HH CAM. ACUM</th>
-                <th style={thMini}>HH META ACUM</th>
-                <th style={{ ...thMini, color: BASE.red }}>VAR HH</th>
-                <th style={{ ...thMini, color: BASE.gold, fontWeight: '900' }}>CPI</th>
+              <tr>
+                <th style={thMiniStk}>HH PLA.</th>
+                <th style={thMiniStk}>HH PLA. ACUM</th>
+                <th style={thMiniStk}>HH CAM.</th>
+                <th style={thMiniStk}>HH CAM. ACUM</th>
+                <th style={thMiniStk}>HH META ACUM</th>
+                <th style={{ ...thMiniStk, color: BASE.red }}>VAR HH</th>
+                <th style={{ ...thMiniStk, color: BASE.gold, fontWeight: '900' }}>CPI</th>
                 {data.codigosPartida.map(cod => (
-                  <th key={cod} style={{ ...thMini, background: BASE.navy, color: '#fff', fontWeight: '900' }}>{cod}</th>
+                  <th key={cod} style={{ ...thMiniStk, background: BASE.navy, color: '#fff', fontWeight: '900' }}>{cod}</th>
                 ))}
               </tr>
             </thead>
@@ -540,7 +542,7 @@ function ControlVariaciones({ historial, numTrabajadores, isMobile, asistencia }
                       const style = colorCelda(delta);
                       return (
                         <td key={cod} style={{
-                          padding: '10px 6px', textAlign: 'center', fontSize: '10.5px', fontWeight: '800',
+                          padding: '4px 4px', textAlign: 'center', fontSize: '9.5px', fontWeight: '800',
                           background: style.bg, color: style.color,
                           borderRight: `1px solid ${BASE.border}33`,
                         }}>
@@ -567,7 +569,7 @@ function ControlVariaciones({ historial, numTrabajadores, isMobile, asistencia }
                   // Aun en el TOTAL, suavizamos un poco para no saturar
                   return (
                     <td key={cod} style={{
-                      padding: '12px 6px', textAlign: 'center', fontSize: '11.5px', fontWeight: '900',
+                      padding: '4px 4px', textAlign: 'center', fontSize: '10px', fontWeight: '900',
                       background: delta >= 0 ? 'rgba(220, 38, 38, 0.78)' : 'rgba(37, 99, 235, 0.78)',
                       color: '#fff',
                     }}>
@@ -831,8 +833,8 @@ function MatrizIP({ historial, isMobile }) {
 // ════════════════════════════════════════════════════════════════
 
 const thStyle = (extra = {}) => ({
-  padding: '14px 16px', background: BASE.navy, color: '#fff',
-  fontSize: '10.5px', fontWeight: '800', letterSpacing: '0.5px',
+  padding: '7px 10px', background: BASE.navy, color: '#fff',
+  fontSize: '10px', fontWeight: '800', letterSpacing: '0.4px',
   whiteSpace: 'nowrap', borderBottom: `1px solid ${BASE.border}`,
   ...extra,
 });
@@ -843,9 +845,18 @@ const thMini = {
   textAlign: 'right', whiteSpace: 'nowrap',
 };
 
+// Sub-encabezado (2ª fila) STICKY, compacto y más oscuro. top:56 = título(30) + fila grupo(26).
+const thMiniStk = {
+  padding: '4px 7px', background: '#e2e8f0', color: '#475569',
+  fontSize: '9px', fontWeight: '800', letterSpacing: '0.2px',
+  textAlign: 'right', whiteSpace: 'nowrap',
+  position: 'sticky', top: 56, zIndex: 12,
+  height: '24px', boxSizing: 'border-box',
+};
+
 const tdStyle = (extra = {}) => ({
-  padding: '12px 16px', borderBottom: `1px solid ${BASE.border}`,
-  fontSize: '12px', color: BASE.text,
+  padding: '5px 10px', borderBottom: `1px solid ${BASE.border}`,
+  fontSize: '11px', color: BASE.text,
   ...extra,
 });
 

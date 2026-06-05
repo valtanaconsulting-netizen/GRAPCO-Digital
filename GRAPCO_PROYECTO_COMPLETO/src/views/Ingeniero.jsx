@@ -605,7 +605,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
 
   // Solo las vistas de TABLA usan el contenedor de scroll acotado (encabezado fijo + barra
   // horizontal abajo). Las demás vistas se comportan normal (scroll de página) para no alterarlas.
-  const vistaTabla = view === 'analisis' || view === 'auditoria';
+  const vistaTabla = view === 'analisis' || view === 'auditoria' || view === 'control';
 
   return (
     <div ref={shellRef} style={vistaTabla ? { height: shellH, overflow: 'auto', overscrollBehavior: 'contain' } : undefined}>
