@@ -687,7 +687,6 @@ function AppInner() {
                           <button
                             key={it.key}
                             onClick={() => cambiarModuloIngeniero(it.key)}
-                            onMouseEnter={() => preloadModulo(it.key)}
                             onFocus={() => preloadModulo(it.key)}
                             title={sidebarCollapsed ? it.label : ''}
                             style={{
@@ -713,7 +712,7 @@ function AppInner() {
                               overflow: 'hidden',
                               whiteSpace: 'nowrap',
                             }}
-                            onMouseEnter={e => { if (!activo) { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#fff'; } }}
+                            onMouseEnter={e => { preloadModulo(it.key); if (!activo) { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#fff'; } }}
                             onMouseLeave={e => { if (!activo) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.82)'; } }}
                           >
                             {!sidebarCollapsed && (

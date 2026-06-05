@@ -32,7 +32,7 @@ export default function ComparativoFrentes() {
       onSnapshot(collection(db, 'PlanMaestro'), cb(setActividades), errCb),
       onSnapshot(collection(db, 'APUs'), cb(setApus), errCb),
       onSnapshot(collection(db, 'Tareos'), cb(setTareos), errCb),
-      onSnapshot(collection(db, 'KardexMovimientos'), cb(setKardex), errCb),
+      onSnapshot(collection(db, 'Kardex_Movimientos'), cb(setKardex), errCb),
       onSnapshot(collection(db, 'ValorizacionesContractuales'), cb(setValorizaciones), errCb),
     ];
     return () => unsubs.forEach(u => u());

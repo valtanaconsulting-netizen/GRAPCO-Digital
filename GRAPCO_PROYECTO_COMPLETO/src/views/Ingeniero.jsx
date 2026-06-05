@@ -9,7 +9,6 @@ import {
   getActivityOrder, buscarActividadCanonica, resolverIP,
   calcularHHPorSemana, calcularHHTotales, metradoEsHomogeneo,
   detectarAlertas, rankingCuadrillas, calcularCostosHEPorTrabajador,
-  costoHoraDeTrabajador, calcularCostoTrabajador,
   obtenerSemana,
   COSTO_HORA_DEFAULT,
 } from '../utils/helpers';
@@ -494,28 +493,18 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
 
   // ── Costos en soles (real vs meta) ──
   const costos = useMemo(() => {
-    let costoReal = 0, costoMeta = 0;
+    // Costo REAL: agrupado por TRABAJADOR-DÍA antes del split HE 60/100 (helper
+    // canónico). Antes se aplicaba el split por fila → si un obrero estaba en varias
+    // actividades el mismo día, cada fila recontaba las "primeras 2h al 60%".
+    const costoReal = calcularCostosHEPorTrabajador(filtrados, costosCustomMap)
+      .reduce((s, w) => s + (w.costoTotal || 0), 0);
+    // Costo META: HH meta × tarifa promedio (mismo mix de cargos asumido).
+    const tarifaPromedio = Object.values(costosCustomMap).reduce((s, v) => s + v, 0) /
+      Math.max(1, Object.keys(costosCustomMap).length);
+    let costoMeta = 0;
     (filtrados || []).forEach(r => {
       if (!r) return;
-      const ipMeta = r._ipMeta || 0;
-      const met = parseFloat(r.metrado) || 0;
-      const hhMeta = met * ipMeta;
-
-      // Costo real: por trabajador con sus HE 60/100
-      (r.detalleTareo || []).forEach(t => {
-        const cargoFull = ['Capataz','Operario','Oficial','Ayudante'].includes(t.cargo)
-          ? t.cargo
-          : (Object.entries({Capataz:'CAP',Operario:'OP',Oficial:'OF',Ayudante:'AY'}).find(([_, s]) => s === t.cargo) || ['Operario'])[0];
-        const trabajadorObj = { cargo: cargoFull, costoHora: null };
-        const ch = costoHoraDeTrabajador(trabajadorObj, costosCustomMap);
-        const calc = calcularCostoTrabajador(t.hn || 0, t.he || 0, ch);
-        costoReal += calc.costoTotal;
-      });
-
-      // Costo meta: HH meta × tarifa promedio (asume mix similar de cargos)
-      const tarifaPromedio = Object.values(costosCustomMap).reduce((s, v) => s + v, 0) /
-        Math.max(1, Object.keys(costosCustomMap).length);
-      costoMeta += hhMeta * tarifaPromedio;
+      costoMeta += (parseFloat(r.metrado) || 0) * (r._ipMeta || 0) * tarifaPromedio;
     });
     return {
       real: costoReal,

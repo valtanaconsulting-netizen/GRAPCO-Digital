@@ -2334,15 +2334,10 @@ function LookaheadView({ restricciones, lookupRestr = () => null, semanaActiva, 
     const mapa = {};
     semanas.forEach(s => { mapa[s.numero] = 0; });
     (restricciones || []).forEach(r => {
-      if (!r.fechaCompromisoLiberacion) return;
-      // Calcular semana aproximada de la fecha de compromiso (mismo inicio real)
-      const fechaInicio = new Date(INICIO + 'T00:00:00');
-      const fechaCompromiso = new Date(r.fechaCompromisoLiberacion + 'T00:00:00');
-      if (isNaN(fechaCompromiso)) return;
-      const semanaCompromiso = Math.ceil((fechaCompromiso - fechaInicio) / (1000 * 60 * 60 * 24 * 7)) + 1;
-      if (mapa[semanaCompromiso] !== undefined && r.estado !== 'liberada') {
-        mapa[semanaCompromiso] += 1;
-      }
+      if (!r.fechaCompromisoLiberacion || r.estado === 'liberada') return;
+      // Semana de la fecha de compromiso con la fuente ÚNICA (alineada a SemanaNav/AR/PPC).
+      const semanaCompromiso = obtenerSemana(r.fechaCompromisoLiberacion);
+      if (mapa[semanaCompromiso] !== undefined) mapa[semanaCompromiso] += 1;
     });
     return mapa;
   }, [restricciones, semanas]);

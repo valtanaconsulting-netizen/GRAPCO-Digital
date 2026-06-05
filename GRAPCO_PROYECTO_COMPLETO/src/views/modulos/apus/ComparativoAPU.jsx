@@ -24,7 +24,7 @@ export default function ComparativoAPU() {
         (snap) => setActividades(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
       onSnapshot(collection(db, 'Historial'),
         (snap) => setHistorial(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
-      onSnapshot(collection(db, 'KardexMovimientos'),
+      onSnapshot(collection(db, 'Kardex_Movimientos'),
         (snap) => setKardexMov(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
         (e) => console.warn('[Kardex]', e)),
     ];

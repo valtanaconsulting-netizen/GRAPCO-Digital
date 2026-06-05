@@ -145,8 +145,15 @@ function ModalAjustarSaldo({ datos, onCerrar, onGuardar }) {
 export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, onActualizarFlags }) {
   // Catálogo de datos: el editable del proyecto, o el fijo del código como respaldo.
   const INFO = infoMap || INFO_MAP;
-  const [openP, setOpenP] = useState(null);
-  const [openS, setOpenS] = useState(null);
+  // Multi-abierto: se pueden expandir varias partidas/subpartidas a la vez (no acordeón).
+  // Las subpartidas se llavean por `${partida}::${sub}` para no chocar entre partidas homónimas.
+  const [openP, setOpenP] = useState(() => new Set());
+  const [openS, setOpenS] = useState(() => new Set());
+  const toggleEn = (set, key) => {
+    const n = new Set(set);
+    if (n.has(key)) n.delete(key); else n.add(key);
+    return n;
+  };
   // Estado del modal "ajustar saldo / terminada" — guarda qué actividad se está editando.
   const [edicion, setEdicion] = useState(null);  // { partida, subpartida, actividad, act, ad }
   // Vista única: META o PPT (no se pueden mezclar; replica el Excel ISP CREDITEX que tiene
@@ -543,17 +550,22 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
                   totalMet += p.subs[sN].acts[aN].met;
                 }));
 
+                // Resaltado "estoy aquí": la partida abierta se pinta más oscura que las cerradas.
+                const pAbierta = openP.has(pN);
+                const pBg      = pAbierta ? '#d4dfee' : '#f1f5f9';
+                const pBgHover = pAbierta ? '#c3d2e7' : '#e2e8f0';
+
                 return (
                   <React.Fragment key={pN}>
-                    <tr onClick={()=>setOpenP(openP===pN?null:pN)} style={{cursor:'pointer',background:'#f1f5f9',transition:'background 0.12s',borderTop:`2px solid #cbd5e1`}}
-                        onMouseEnter={e=>e.currentTarget.style.background='#e2e8f0'}
-                        onMouseLeave={e=>e.currentTarget.style.background='#f1f5f9'}>
-                      <td style={{position:'sticky',left:0,zIndex:3,background:'#f1f5f9',padding:'0',color:BASE.navy,borderBottom:`1px solid ${BASE.border}`,borderRight:SEP,textAlign:'left',verticalAlign:'middle',height:'44px',boxShadow:'4px 0 8px -4px rgba(15,23,42,0.18)'}}>
+                    <tr onClick={()=>setOpenP(prev=>toggleEn(prev,pN))} style={{cursor:'pointer',background:pBg,transition:'background 0.12s',borderTop:`2px solid #cbd5e1`}}
+                        onMouseEnter={e=>e.currentTarget.style.background=pBgHover}
+                        onMouseLeave={e=>e.currentTarget.style.background=pBg}>
+                      <td style={{position:'sticky',left:0,zIndex:3,background:pBg,padding:'0',color:BASE.navy,borderBottom:`1px solid ${BASE.border}`,borderRight:SEP,textAlign:'left',verticalAlign:'middle',height:'44px',boxShadow:pAbierta?'4px 0 8px -4px rgba(15,23,42,0.28)':'4px 0 8px -4px rgba(15,23,42,0.18)'}}>
                         <div style={{display:'flex',alignItems:'stretch',height:'100%'}}>
                           {/* Indicador lateral sólido (chip vertical) */}
                           <div style={{width:'6px',background:cc.color,flexShrink:0}}/>
                           <div style={{display:'flex',alignItems:'center',gap:'10px',padding:'0 14px',flex:1}}>
-                            <span style={{color:cc.color,fontSize:'10px',fontWeight:'900',width:'12px',flexShrink:0}}>{openP===pN?'▼':'▶'}</span>
+                            <span style={{color:cc.color,fontSize:'10px',fontWeight:'900',width:'12px',flexShrink:0}}>{pAbierta?'▼':'▶'}</span>
                             <span style={{
                               fontSize:'12px',fontWeight:'800',letterSpacing:'0.3px',
                               textTransform:'uppercase',color:BASE.navy,
@@ -596,7 +608,7 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
                       </td>
                     </tr>
 
-                    {openP===pN && Object.keys(p.subs).map(sN=>{
+                    {pAbierta && Object.keys(p.subs).map(sN=>{
                       const sub=p.subs[sN];
                       if (!mostrarVacias && sub.hhR === 0 && sub.hhM === 0 && sub.hhP === 0) return null;
                       const sHhRef = sub[REF.hhKey];
@@ -627,17 +639,24 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
                       let spMet = 0;
                       Object.keys(sub.acts).forEach(aN=>{ spMet += sub.acts[aN].met; });
 
+                      // Llave compuesta partida::sub para no colisionar entre partidas con
+                      // subpartidas de igual nombre. La abierta se pinta más oscura.
+                      const sKey      = `${pN}::${sN}`;
+                      const sAbierta  = openS.has(sKey);
+                      const sBg       = sAbierta ? '#e6ecf4' : '#fafbfc';
+                      const sBgHover  = sAbierta ? '#d9e2ee' : '#f1f5f9';
+
                       return (
                         <React.Fragment key={sN}>
-                          <tr onClick={e=>{e.stopPropagation();setOpenS(openS===sN?null:sN);}} style={{cursor:'pointer',background:'#fafbfc',transition:'background 0.12s'}}
-                              onMouseEnter={e=>{e.currentTarget.style.background='#f1f5f9';}}
-                              onMouseLeave={e=>{e.currentTarget.style.background='#fafbfc';}}>
-                            <td style={{position:'sticky',left:0,zIndex:3,background:'#fafbfc',padding:'0',color:'#1e293b',borderBottom:`1px solid ${BASE.border}`,borderRight:SEP,textAlign:'left',verticalAlign:'middle',height:'40px',boxShadow:'4px 0 8px -4px rgba(15,23,42,0.15)'}}>
+                          <tr onClick={e=>{e.stopPropagation();setOpenS(prev=>toggleEn(prev,sKey));}} style={{cursor:'pointer',background:sBg,transition:'background 0.12s'}}
+                              onMouseEnter={e=>{e.currentTarget.style.background=sBgHover;}}
+                              onMouseLeave={e=>{e.currentTarget.style.background=sBg;}}>
+                            <td style={{position:'sticky',left:0,zIndex:3,background:sBg,padding:'0',color:'#1e293b',borderBottom:`1px solid ${BASE.border}`,borderRight:SEP,textAlign:'left',verticalAlign:'middle',height:'40px',boxShadow:sAbierta?'4px 0 8px -4px rgba(15,23,42,0.24)':'4px 0 8px -4px rgba(15,23,42,0.15)'}}>
                               <div style={{display:'flex',alignItems:'stretch',height:'100%'}}>
                                 <div style={{width:'6px',flexShrink:0}}/>
                                 <div style={{width:'3px',background:scc.color,flexShrink:0,opacity:0.7}}/>
                                 <div style={{display:'flex',alignItems:'center',gap:'8px',padding:'0 14px 0 22px',flex:1}}>
-                                  <span style={{color:scc.color,fontSize:'9px',fontWeight:'700',width:'10px',flexShrink:0}}>{openS===sN?'▼':'▶'}</span>
+                                  <span style={{color:scc.color,fontSize:'9px',fontWeight:'700',width:'10px',flexShrink:0}}>{sAbierta?'▼':'▶'}</span>
                                   <span style={{
                                     fontSize:'11px',fontWeight:'700',letterSpacing:'0.2px',color:'#1e293b',
                                     whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',
@@ -683,7 +702,7 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
                             </td>
                           </tr>
 
-                          {openS===sN && Object.keys(sub.acts).map((aN, aIdx)=>{
+                          {sAbierta && Object.keys(sub.acts).map((aN, aIdx)=>{
                             const act=sub.acts[aN];
                             if (!mostrarVacias && act.hhR === 0 && act.met === 0) return null;
                             const ad = obtenerDatosActividad(aN, act.met);
