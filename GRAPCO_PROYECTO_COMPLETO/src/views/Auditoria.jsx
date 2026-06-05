@@ -34,63 +34,6 @@ export default function Auditoria({ filtrados, eliminar, hhPorSemana = [], hhTot
   return (
     <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
 
-      <VistaHeader icono="registro" eyebrow="Producción"
-        titulo="Auditoría de Registros"
-        subtitulo="Validación de tareos, HH y CPI por registro de campo" />
-
-      {/* PANEL HH SEMANAL — colapsable */}
-      <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,overflow:'hidden',boxShadow:BASE.shadowMd}}>
-        <button onClick={()=>setHhOpen(!hhOpen)}
-          style={{width:'100%',padding:'12px 16px',display:'flex',alignItems:'center',gap:'10px',background:'transparent',border:'none',cursor:'pointer',fontWeight:'700'}}>
-          <span style={{fontSize:'14px',color:BASE.navy}}>{hhOpen?'▼':'▶'}</span>
-          <span style={{fontSize:'12px',color:BASE.navy}}>⏱️ HORAS HOMBRE — DESGLOSE SEMANAL</span>
-          <div style={{flex:1,display:'flex',justifyContent:'flex-end',gap:'10px',fontSize:'11px',color:BASE.muted}}>
-            <span><b style={{color:BASE.green}}>{fmt1(hhTotales.hn)}</b> HN</span>
-            <span style={{color:hhTotales.he>0?BASE.orange:BASE.muted}}><b>{fmt1(hhTotales.he)}</b> HE</span>
-            <span><b style={{color:BASE.navy}}>{fmt1(hhTotales.total)}</b> TOT</span>
-            <span>{hhPorSemana.length} sem.</span>
-          </div>
-        </button>
-        {hhOpen && hhPorSemana.length > 0 && (
-          <div style={{padding:'0 16px 16px',borderTop:`1px solid ${BASE.border}`}}>
-            <div style={{overflowX:'auto'}}>
-              <table style={{width:'100%',borderCollapse:'collapse',fontSize:'12px',minWidth:'480px',marginTop:'10px'}}>
-                <thead>
-                  <tr>
-                    {['Sem','HN','HE','Total','Reg','% Total'].map((h,i)=>(
-                      <th key={i} style={{padding:'8px 10px',background:'#f8fafc',color:BASE.navy,fontSize:'10px',fontWeight:'700',textAlign:i===0?'left':'center',borderBottom:`1px solid ${BASE.border}`,whiteSpace:'nowrap'}}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {hhPorSemana.map((s)=>{
-                    const pct = hhTotales.total > 0 ? (s.total / hhTotales.total * 100) : 0;
-                    return (
-                      <tr key={s.semana} style={{borderBottom:`1px solid ${BASE.border}`}}>
-                        <td style={{padding:'9px 12px',fontWeight:'700',color:BASE.navy}}>S{s.semana}</td>
-                        <td style={{padding:'9px 12px',textAlign:'center'}}>{fmt1(s.hn)}</td>
-                        <td style={{padding:'9px 12px',textAlign:'center',color:s.he>0?BASE.orange:BASE.muted,fontWeight:s.he>0?'700':'400'}}>{fmt1(s.he)}</td>
-                        <td style={{padding:'9px 12px',textAlign:'center',fontWeight:'800',color:BASE.navy}}>{fmt1(s.total)}</td>
-                        <td style={{padding:'9px 12px',textAlign:'center',color:BASE.muted}}>{s.registros}</td>
-                        <td style={{padding:'9px 12px',textAlign:'center',color:BASE.muted,fontWeight:'600'}}>{pct.toFixed(1)}%</td>
-                      </tr>
-                    );
-                  })}
-                  <tr style={{background:BASE.navy,color:'#fff',fontWeight:'800'}}>
-                    <td style={{padding:'10px 13px',color:'#fff'}}>TOTAL</td>
-                    <td style={{padding:'10px 13px',textAlign:'center',color:'#fff'}}>{fmt1(hhTotales.hn)}</td>
-                    <td style={{padding:'10px 13px',textAlign:'center',color:'#fdba74'}}>{fmt1(hhTotales.he)}</td>
-                    <td style={{padding:'10px 13px',textAlign:'center',color:'#fff',fontSize:'13px'}}>{fmt1(hhTotales.total)}</td>
-                    <td style={{padding:'10px 13px',textAlign:'center',color:'#fff'}}>{filtrados.length}</td>
-                    <td style={{padding:'10px 13px',textAlign:'center',color:'#86efac'}}>100.0%</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* DIAGNÓSTICO — base de datos vs mostrados */}
       <div style={{
         background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:'10px',

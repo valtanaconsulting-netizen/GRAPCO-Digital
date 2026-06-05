@@ -166,24 +166,23 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
   // Mostrar partidas/sub/actividades sin avance (HH=0, metrado=0). Default: true (todo visible).
   const [mostrarVacias, setMostrarVacias] = useState(true);
 
-  // Altura del recuadro de la tabla acotada a lo que queda de pantalla, MEDIDA en runtime.
-  // Así la ventana no scrollea verticalmente: el único scroll vertical es el interno del
-  // recuadro, donde el encabezado y la columna WBS se quedan pegados (sticky) y SIEMPRE
-  // visibles. Mido la posición absoluta del recuadro para no depender de números mágicos.
+  // Encabezado pegado a la VENTANA al hacer scroll de página: los controles de arriba se van
+  // hacia arriba y el encabezado de la tabla (+ la fila TOTAL) queda fijo bajo el navbar fijo.
+  // El recuadro usa overflow-y:clip para NO crear un contenedor de scroll vertical (así el
+  // sticky escapa hasta la ventana) y overflow-x:auto para el scroll horizontal de columnas.
+  // Mido el alto real del thead para pegar la fila TOTAL justo debajo del encabezado.
+  const NAV_H = 60; // alto del navbar fijo de la plataforma (App.jsx)
   const scrollWrapRef = useRef(null);
-  const [tablaMaxH, setTablaMaxH] = useState(null);
+  const [theadH, setTheadH] = useState(73);
   useLayoutEffect(() => {
     const calc = () => {
-      const el = scrollWrapRef.current;
-      if (!el) return;
-      const absTop = el.getBoundingClientRect().top + window.scrollY; // distancia al tope del documento
-      const disponible = window.innerHeight - absTop - 20;            // 20px de respiro inferior
-      setTablaMaxH(Math.max(300, Math.round(disponible)));            // mínimo razonable
+      const thead = scrollWrapRef.current && scrollWrapRef.current.querySelector('thead');
+      if (thead) setTheadH(thead.offsetHeight);
     };
     calc();
     window.addEventListener('resize', calc);
     return () => window.removeEventListener('resize', calc);
-  }, [chipPpt, chipMeta, vista]);
+  }, [chipPpt, chipMeta, vista, mostrarVacias]);
 
   // Referencias y colores según vista
   const REF = esMeta
@@ -291,7 +290,7 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
   const HEAD_BG2 = '#1a2c4d';     // navy sub-header (un poco más claro)
 
   // Header de grupo (primera fila): navy + barra de acento abajo.
-  // sticky top:0 + altura fija (border-box) → se queda pegado al hacer scroll vertical.
+  // sticky top:NAV_H (bajo el navbar fijo) + altura fija (border-box) → offset exacto para la 2ª.
   const thGroup = (color, extra={}) => ({
     padding: '10px 10px',
     background: HEAD_BG,
@@ -303,14 +302,14 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
     borderBottom: `3px solid ${color}`,
     textAlign: 'center',
     position: 'sticky',
-    top: 0,
+    top: NAV_H,
     zIndex: 5,
     boxSizing: 'border-box',
     height: '36px',   // 1ª fila con altura fija → offset exacto para la 2ª
     ...extra,
   });
   // Sub-header (segunda fila): navy más claro, texto en el accent del grupo.
-  // sticky top:36px (justo debajo de la 1ª fila). Altura NATURAL: estos rótulos
+  // sticky top:NAV_H+36 (justo debajo de la 1ª fila). Altura NATURAL: estos rótulos
   // ("Var Act. HH", "META Act. HH") se parten en 2 líneas y no deben recortarse.
   const thCol = (color, extra={}) => ({
     padding: '9px 10px',
@@ -322,7 +321,7 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
     textAlign: 'center',
     textTransform: 'uppercase',
     position: 'sticky',
-    top: '36px',
+    top: NAV_H + 36,
     zIndex: 5,
     ...extra,
   });
@@ -364,8 +363,10 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
     });
     return { saldoMet, hhSaldoRef, hhSaldoReal, hhEAC, hhRefTotal, hhReal, hhRefAct, hhP, hhM };
   }, [wbs, REF.metKey, REF.ipKey, REF.hhKey, INFO]);
-  // Estilo de celda para la fila de TOTALES (navy, números claros)
-  const TT = (extra = {}) => ({ background: HEAD_BG2, color: '#fff', fontWeight: 800, borderTop: `2px solid ${BASE.gold}`, borderBottom: `2px solid ${BASE.gold}`, ...extra });
+  // Estilo de celda para la fila de TOTALES (navy, números claros).
+  // sticky top: NAV_H + alto del encabezado → la fila TOTAL queda pegada justo debajo del
+  // encabezado al hacer scroll de página (junto con él, como un bloque fijo).
+  const TT = (extra = {}) => ({ background: HEAD_BG2, color: '#fff', fontWeight: 800, borderTop: `2px solid ${BASE.gold}`, borderBottom: `2px solid ${BASE.gold}`, position:'sticky', top: NAV_H + theadH, zIndex: 4, ...extra });
   const vcD = (n) => { const v = parseFloat(n); if (!v || isNaN(v)) return 'rgba(255,255,255,0.55)'; return v > 0 ? '#86efac' : '#fca5a5'; };
 
   return (
@@ -466,17 +467,17 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
         </div>
       </div>
 
-      {/* TABLA */}
-      <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,overflow:'hidden'}}>
-        {/* Altura acotada (medida en runtime) + overflow:auto → la ventana no scrollea,
-            así el scroll vertical ocurre DENTRO del recuadro y el encabezado + la columna WBS
-            quedan SIEMPRE pegados. La barra de scroll HORIZONTAL queda fija al borde inferior
-            del recuadro (siempre visible, no hay que bajar a buscarla). */}
-        <div ref={scrollWrapRef} style={{overflow:'auto',maxHeight:tablaMaxH ? `${tablaMaxH}px` : 'calc(100vh - 280px)'}}>
+      {/* TABLA — overflow:clip (no 'hidden') para que NO sea contenedor de scroll y el
+          encabezado sticky pueda escapar hasta la ventana al hacer scroll de página. */}
+      <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,overflow:'clip'}}>
+        {/* overflow-x:auto = scroll horizontal de columnas (la columna WBS queda fija a la
+            izquierda). overflow-y:clip = NO crea contenedor de scroll vertical, así el sticky
+            del encabezado escapa hasta la VENTANA y se pega bajo el navbar al scrollear la página. */}
+        <div ref={scrollWrapRef} style={{overflowX:'auto',overflowY:'clip'}}>
           <table style={{width:'100%',borderCollapse:'collapse',fontSize:'11px',minWidth:'900px'}}>
             <thead>
               <tr>
-                <th rowSpan="2" style={{position:'sticky',left:0,top:0,zIndex:7,padding:'8px 12px',background:HEAD_BG,color:'#fff',textAlign:'left',fontWeight:'800',fontSize:'11px',letterSpacing:'0.6px',minWidth:'240px',borderRight:SEP,borderBottom:`3px solid ${BASE.gold}`,boxShadow:'4px 0 8px -4px rgba(15,23,42,0.25)'}}>WBS</th>
+                <th rowSpan="2" style={{position:'sticky',left:0,top:NAV_H,zIndex:7,padding:'8px 12px',background:HEAD_BG,color:'#fff',textAlign:'left',fontWeight:'800',fontSize:'11px',letterSpacing:'0.6px',minWidth:'240px',borderRight:SEP,borderBottom:`3px solid ${BASE.gold}`,boxShadow:'4px 0 8px -4px rgba(15,23,42,0.25)'}}>WBS</th>
                 {chipPpt && (
                   <th colSpan="3" style={thGroup(SEC.ppt.accent,{borderRight:SEP})}>PRESUPUESTO (contractual)</th>
                 )}
@@ -487,7 +488,7 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
                 <th colSpan="3" style={thGroup(SEC.saldo.accent,{borderRight:SEP})}>SALDO ACTUAL</th>
                 <th colSpan="3" style={thGroup(SEC.estimado.accent,{borderRight:SEP})}>ESTIMADO AL TÉRMINO</th>
                 <th colSpan="3" style={thGroup(SEC.forecast.accent,{borderRight:SEP})}>FORECAST {REF.etiqueta}</th>
-                <th rowSpan="2" style={{position:'sticky',top:0,zIndex:5,padding:'8px 10px',background:HEAD_BG,color:'#fff',fontSize:'10px',fontWeight:'800',letterSpacing:'0.6px',borderBottom:`3px solid ${BASE.gold}`}}>Estado</th>
+                <th rowSpan="2" style={{position:'sticky',top:NAV_H,zIndex:5,padding:'8px 10px',background:HEAD_BG,color:'#fff',fontSize:'10px',fontWeight:'800',letterSpacing:'0.6px',borderBottom:`3px solid ${BASE.gold}`}}>Estado</th>
               </tr>
               <tr>
                 {chipPpt && <>
@@ -520,7 +521,7 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
             <tbody>
               {/* ── FILA DE TOTALES DE OBRA (suma de HH de todas las partidas) ── */}
               <tr>
-                <td style={{ position:'sticky', left:0, zIndex:4, padding:'10px 14px', background:HEAD_BG, color:'#fff', fontWeight:900, fontSize:'12px', letterSpacing:'0.5px', borderRight:SEP, borderTop:`2px solid ${BASE.gold}`, borderBottom:`2px solid ${BASE.gold}`, whiteSpace:'nowrap', boxShadow:'4px 0 8px -4px rgba(15,23,42,0.25)' }}>Σ TOTAL OBRA · HH</td>
+                <td style={{ position:'sticky', left:0, top:NAV_H + theadH, zIndex:6, padding:'10px 14px', background:HEAD_BG, color:'#fff', fontWeight:900, fontSize:'12px', letterSpacing:'0.5px', borderRight:SEP, borderTop:`2px solid ${BASE.gold}`, borderBottom:`2px solid ${BASE.gold}`, whiteSpace:'nowrap', boxShadow:'4px 0 8px -4px rgba(15,23,42,0.25)' }}>Σ TOTAL OBRA · HH</td>
                 {chipPpt && <>
                   {td('—', TT({ color:'rgba(255,255,255,0.45)' }))}
                   {td(fmt1(totalSaldo.hhP), TT())}
@@ -546,7 +547,7 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
                 {td(fmt1(totalSaldo.hhRefTotal), TT())}
                 {td(fmtVar(totalSaldo.hhRefTotal - totalSaldo.hhEAC), TT({ color: vcD(totalSaldo.hhRefTotal - totalSaldo.hhEAC) }))}
                 {td(fmtCPIPct(totalSaldo.hhEAC > 0 ? totalSaldo.hhRefTotal / totalSaldo.hhEAC : null), TT({ ...sepRight }))}
-                <td style={{ background:HEAD_BG, borderTop:`2px solid ${BASE.gold}`, borderBottom:`2px solid ${BASE.gold}` }} />
+                <td style={{ position:'sticky', top:NAV_H + theadH, zIndex:4, background:HEAD_BG, borderTop:`2px solid ${BASE.gold}`, borderBottom:`2px solid ${BASE.gold}` }} />
               </tr>
               {Object.keys(wbs).map(pN=>{
                 const p=wbs[pN];

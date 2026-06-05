@@ -8,7 +8,7 @@ import {
   calcCPI, fmtCPIPct, fmt1, fmtMoney, getEstado,
   getActivityOrder, buscarActividadCanonica, resolverIP,
   calcularHHPorSemana, calcularHHTotales, metradoEsHomogeneo,
-  detectarAlertas, rankingCuadrillas, calcularCostosHEPorTrabajador,
+  detectarAlertas, calcularCostosHEPorTrabajador,
   obtenerSemana,
   COSTO_HORA_DEFAULT,
 } from '../utils/helpers';
@@ -18,7 +18,6 @@ import { diagnosticarMigracionProyectoId, migrarProyectoId } from '../utils/migr
 import AlertasPanel from '../components/AlertasPanel';
 import Tooltip from '../components/Tooltip';
 import Icon from '../components/Icon';
-import RankingCuadrillas from './RankingCuadrillas';
 import Auditoria from './Auditoria';
 import CpiEac from './CpiEac';
 import Graficos from './Graficos';
@@ -51,7 +50,6 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
   const [view, setView] = useState(vistaInicial || 'auditoria');
   const [grupoActivo, setGrupoActivo] = useState(soloPlaneamiento ? 'planificacion' : 'produccion');
   const [resumenAbierto, setResumenAbierto] = useState(false);
-  const [rankingAbierto, setRankingAbierto] = useState(false);
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
   const [fPartida,    setFPartida]    = useState('');
   const [fSubpartida, setFSubpartida] = useState('');
@@ -272,9 +270,6 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
     const max = Math.max(24, ...(set.size ? Array.from(set) : [0]));
     return Array.from({ length: max }, (_, i) => i + 1);
   }, [historialEnriquecido]);
-
-  // ── Ranking de cuadrillas ──
-  const ranking = useMemo(() => rankingCuadrillas(historialEnriquecido), [historialEnriquecido]);
 
   // WBS
   const wbs = useMemo(() => {
@@ -591,6 +586,100 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
 
   return (
     <>
+      {/* === NAVEGACIÓN POR GRUPOS (Nivel 1) — tabs limpios estilo SaaS premium ===
+          En modo standalone (soloPlaneamiento) se oculta: el módulo vive en el
+          menú lateral, sin tabs. En modo normal se excluye 'planificacion'
+          (ahora es módulo lateral propio, no pestaña de Producción). */}
+      {!soloPlaneamiento && (
+      <div style={{
+        background: BASE.white,
+        border: `1px solid ${BASE.border}`,
+        borderRadius: '12px 12px 0 0',
+        borderBottom: 'none',
+        padding: '0',
+        marginBottom: 0,
+      }}>
+        <div style={{ display: 'flex', gap: '0', flexWrap: 'wrap' }}>
+          {Object.entries(GRUPOS).filter(([gid]) => gid !== 'planificacion' && gid !== 'ejecutivo').map(([gid, g]) => {
+            const activo = grupoActivo === gid;
+            return (
+              <button key={gid} onClick={() => {
+                setGrupoActivo(gid);
+                if (VIEW_TO_GRUPO[view] !== gid) {
+                  setView(g.items[0].id);
+                }
+              }} style={{
+                flex: '1 1 0',
+                minWidth: 0,
+                padding: isMobile ? '11px 6px' : '14px 18px',
+                background: 'transparent',
+                color: activo ? g.color : BASE.muted,
+                border: 'none',
+                fontSize: isMobile ? '11.5px' : '12px',
+                fontWeight: activo ? '800' : '600',
+                letterSpacing: isMobile ? '0.2px' : '0.5px',
+                cursor: 'pointer',
+                transition: 'color 0.15s',
+                position: 'relative',
+                borderBottom: activo ? `3px solid ${g.color}` : '3px solid transparent',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? '5px' : '8px',
+                whiteSpace: 'nowrap',
+              }}
+              onMouseEnter={e => { if (!activo) e.currentTarget.style.color = BASE.navy; }}
+              onMouseLeave={e => { if (!activo) e.currentTarget.style.color = BASE.muted; }}>
+                <Icon name={g.iconName} size={15} color={activo ? g.color : BASE.muted} strokeWidth={2} />
+                {g.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      )}
+
+      {/* === SUBTABS DEL GRUPO ACTIVO (Nivel 2) — solo si el grupo tiene >1 módulo
+          (en Planeamiento hay un único módulo → la barra sobra y se oculta) === */}
+      {grupoCfg.items.length > 1 && (
+      <div style={{
+        background: BASE.white,
+        borderRadius: !soloPlaneamiento ? '0 0 12px 12px' : '12px',
+        border: `1px solid ${BASE.border}`,
+        borderTop: !soloPlaneamiento ? 'none' : `1px solid ${BASE.border}`,
+        padding: '12px 16px',
+        marginBottom: '14px',
+      }}>
+        <p style={{ fontSize: '10.5px', color: BASE.muted, fontWeight: '600', marginBottom: '10px', letterSpacing: '0.2px' }}>
+          <span style={{ color: grupoCfg.color, fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.6px' }}>{grupoCfg.label}</span>
+          <span style={{ margin: '0 6px', opacity: 0.4 }}>·</span>
+          {grupoCfg.tagline}
+        </p>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          {grupoCfg.items.map(item => {
+            const activa = view === item.id;
+            return (
+              <button key={item.id} onClick={() => handleSetView(item.id)} style={{
+                padding: '8px 14px',
+                background: activa ? `${grupoCfg.color}15` : 'transparent',
+                color: activa ? grupoCfg.color : BASE.muted,
+                border: `1px solid ${activa ? `${grupoCfg.color}55` : BASE.border}`,
+                borderRadius: '8px',
+                fontSize: '11.5px',
+                fontWeight: activa ? '800' : '600',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+                display: 'inline-flex', alignItems: 'center', gap: '7px',
+                letterSpacing: '0.2px',
+              }}
+              onMouseEnter={e => { if (!activa) { e.currentTarget.style.background = BASE.bgSoft; e.currentTarget.style.color = BASE.navy; } }}
+              onMouseLeave={e => { if (!activa) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = BASE.muted; } }}>
+                <Icon name={item.iconName} size={13} color={activa ? grupoCfg.color : BASE.muted} strokeWidth={2} />
+                {item.l}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      )}
+
       {/* === BARRA DE COMANDO — premium minimal ===
           KPIs CPI/EF como segmentos en lugar de chip + botones colapsables con SVG icons. */}
       <div className="anim-slide-down" style={{
@@ -658,7 +747,6 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
           {[
             { open: filtrosAbiertos, setOpen: setFiltrosAbiertos, icon: 'filter',    label: 'Filtros',  active: tieneFiltrosActivos, activeBg: BASE.gold },
             { open: resumenAbierto,  setOpen: setResumenAbierto,  icon: 'barChart3', label: 'Resumen' },
-            ...(ranking.length > 0 ? [{ open: rankingAbierto, setOpen: setRankingAbierto, icon: 'trophy', label: 'Ranking', badge: ranking.length }] : []),
           ].map((b) => (
             <button
               key={b.label}
@@ -779,120 +867,6 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
             ))}
           </div>
         </div>
-      )}
-
-      {/* === RANKING (colapsable) === */}
-      {rankingAbierto && ranking.length > 0 && (
-        <div style={{
-          background: BASE.white, borderRadius: '14px', border: `1px solid ${BASE.border}`,
-          padding: '18px', marginBottom: '12px',
-          boxShadow: '0 2px 8px rgba(15,23,42,0.04)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-            <div style={{ width: '4px', height: '20px', background: BASE.gold, borderRadius: '2px' }} />
-            <h3 style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.4px' }}>
-              🏆 RANKING DE CUADRILLAS — Top 5 por desempeño
-            </h3>
-          </div>
-          <p style={{ fontSize: '11px', color: BASE.muted, marginBottom: '14px', marginLeft: '14px' }}>
-            Score = CPI × consistencia × cumplimiento. Más alto = mejor productividad sostenida.
-          </p>
-          <RankingCuadrillas ranking={ranking} compact={true}/>
-        </div>
-      )}
-
-      {/* === NAVEGACIÓN POR GRUPOS (Nivel 1) — tabs limpios estilo SaaS premium ===
-          En modo standalone (soloPlaneamiento) se oculta: el módulo vive en el
-          menú lateral, sin tabs. En modo normal se excluye 'planificacion'
-          (ahora es módulo lateral propio, no pestaña de Producción). */}
-      {!soloPlaneamiento && (
-      <div style={{
-        background: BASE.white,
-        border: `1px solid ${BASE.border}`,
-        borderRadius: '12px 12px 0 0',
-        borderBottom: 'none',
-        padding: '0',
-        marginBottom: 0,
-      }}>
-        <div style={{ display: 'flex', gap: '0', flexWrap: 'wrap' }}>
-          {Object.entries(GRUPOS).filter(([gid]) => gid !== 'planificacion' && gid !== 'ejecutivo').map(([gid, g]) => {
-            const activo = grupoActivo === gid;
-            return (
-              <button key={gid} onClick={() => {
-                setGrupoActivo(gid);
-                if (VIEW_TO_GRUPO[view] !== gid) {
-                  setView(g.items[0].id);
-                }
-              }} style={{
-                flex: '1 1 0',
-                minWidth: 0,
-                padding: isMobile ? '11px 6px' : '14px 18px',
-                background: 'transparent',
-                color: activo ? g.color : BASE.muted,
-                border: 'none',
-                fontSize: isMobile ? '11.5px' : '12px',
-                fontWeight: activo ? '800' : '600',
-                letterSpacing: isMobile ? '0.2px' : '0.5px',
-                cursor: 'pointer',
-                transition: 'color 0.15s',
-                position: 'relative',
-                borderBottom: activo ? `3px solid ${g.color}` : '3px solid transparent',
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? '5px' : '8px',
-                whiteSpace: 'nowrap',
-              }}
-              onMouseEnter={e => { if (!activo) e.currentTarget.style.color = BASE.navy; }}
-              onMouseLeave={e => { if (!activo) e.currentTarget.style.color = BASE.muted; }}>
-                <Icon name={g.iconName} size={15} color={activo ? g.color : BASE.muted} strokeWidth={2} />
-                {g.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      )}
-
-      {/* === SUBTABS DEL GRUPO ACTIVO (Nivel 2) — solo si el grupo tiene >1 módulo
-          (en Planeamiento hay un único módulo → la barra sobra y se oculta) === */}
-      {grupoCfg.items.length > 1 && (
-      <div style={{
-        background: BASE.white,
-        borderRadius: !soloPlaneamiento ? '0 0 12px 12px' : '12px',
-        border: `1px solid ${BASE.border}`,
-        borderTop: !soloPlaneamiento ? 'none' : `1px solid ${BASE.border}`,
-        padding: '12px 16px',
-        marginBottom: '14px',
-      }}>
-        <p style={{ fontSize: '10.5px', color: BASE.muted, fontWeight: '600', marginBottom: '10px', letterSpacing: '0.2px' }}>
-          <span style={{ color: grupoCfg.color, fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.6px' }}>{grupoCfg.label}</span>
-          <span style={{ margin: '0 6px', opacity: 0.4 }}>·</span>
-          {grupoCfg.tagline}
-        </p>
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-          {grupoCfg.items.map(item => {
-            const activa = view === item.id;
-            return (
-              <button key={item.id} onClick={() => handleSetView(item.id)} style={{
-                padding: '8px 14px',
-                background: activa ? `${grupoCfg.color}15` : 'transparent',
-                color: activa ? grupoCfg.color : BASE.muted,
-                border: `1px solid ${activa ? `${grupoCfg.color}55` : BASE.border}`,
-                borderRadius: '8px',
-                fontSize: '11.5px',
-                fontWeight: activa ? '800' : '600',
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-                display: 'inline-flex', alignItems: 'center', gap: '7px',
-                letterSpacing: '0.2px',
-              }}
-              onMouseEnter={e => { if (!activa) { e.currentTarget.style.background = BASE.bgSoft; e.currentTarget.style.color = BASE.navy; } }}
-              onMouseLeave={e => { if (!activa) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = BASE.muted; } }}>
-                <Icon name={item.iconName} size={13} color={activa ? grupoCfg.color : BASE.muted} strokeWidth={2} />
-                {item.l}
-              </button>
-            );
-          })}
-        </div>
-      </div>
       )}
 
       {/* === VISTAS === */}
