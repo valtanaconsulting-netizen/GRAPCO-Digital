@@ -6,7 +6,7 @@ import { hoy, fmtFecha } from '../utils/helpers';
 import DateInput from '../components/DateInput';
 import VistaHeader from '../components/VistaHeader';
 import { crearResolverNombre } from '../utils/nombresCanonicos';
-import { generarPDFTareo } from '../components/TareoPDF';
+import { generarPDFTareo, cargarLogoBase64 } from '../components/TareoPDF';
 
 export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobile, showToast, fDesde, fHasta, fCapataz, setFDesde, setFHasta, setFCapataz }) {
   // Resolver de nombres compartido — el MISMO obrero escrito distinto cuenta
@@ -211,7 +211,10 @@ export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobi
         registrosPorDia[key].push(r);
       });
 
-      const blob = await generarPDFTareo(registrosPorDia, personalDB, '20203071702', 'GRAPCO');
+      // Cargar logo
+      const logoBase64 = await cargarLogoBase64();
+
+      const blob = await generarPDFTareo(registrosPorDia, personalDB, '20203071702', logoBase64);
 
       // Crear descarga con tipo MIME explícito
       const url = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));

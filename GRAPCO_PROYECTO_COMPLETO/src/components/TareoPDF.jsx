@@ -1,118 +1,149 @@
-import React from 'react';
-import { Document, Page, Text, View, StyleSheet, pdf } from '@react-pdf/renderer';
+import React, { useEffect, useState } from 'react';
+import { Document, Page, Text, View, StyleSheet, pdf, Image } from '@react-pdf/renderer';
 import { crearResolverNombre } from '../utils/nombresCanonicos';
 
 const styles = StyleSheet.create({
   page: {
-    padding: 12,
     pageSize: 'A4',
     pageOrientation: 'landscape',
+    padding: [10, 15],
     fontSize: 8,
     fontFamily: 'Helvetica',
   },
   header: {
     flexDirection: 'row',
     marginBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#000',
-    paddingBottom: 4,
     alignItems: 'flex-start',
+    gap: 10,
   },
-  headerLogo: {
-    width: '25%',
+  logo: {
+    width: 50,
+    height: 50,
   },
-  headerTitle: {
-    width: '50%',
-    textAlign: 'center',
-    fontSize: 11,
+  headerInfo: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  headerLeft: {
+    flexDirection: 'column',
+  },
+  headerCenter: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    flex: 1,
+  },
+  headerRight: {
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+  },
+  headerText: {
+    fontSize: 9,
     fontWeight: 'bold',
   },
-  headerDate: {
-    width: '25%',
-    textAlign: 'right',
-    fontSize: 9,
+  rucText: {
+    fontSize: 7,
+  },
+  divider: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+    marginBottom: 6,
+  },
+  infoGrid: {
+    marginBottom: 6,
   },
   infoRow: {
+    flexDirection: 'row',
+    marginBottom: 4,
+    alignItems: 'stretch',
+  },
+  infoCell: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#000',
+    paddingHorizontal: 3,
+    paddingVertical: 2,
+    justifyContent: 'flex-start',
+  },
+  infoCellLabel: {
+    fontSize: 7,
+    fontWeight: 'bold',
+  },
+  infoCellValue: {
+    fontSize: 8,
+    marginTop: 2,
+    minHeight: 12,
+  },
+  sectionTitle: {
+    fontSize: 7,
+    fontWeight: 'bold',
+    marginBottom: 3,
+    marginTop: 4,
+  },
+  activitiesGrid: {
     flexDirection: 'row',
     marginBottom: 6,
     gap: 8,
   },
-  infoBlock: {
-    flex: 1,
-  },
-  infoLabel: {
-    fontSize: 7,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  infoBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#000',
-    minHeight: 12,
-    paddingLeft: 2,
-  },
-  activitiesSection: {
-    marginBottom: 6,
-    fontSize: 7,
-    fontWeight: 'bold',
-  },
-  activitiesContainer: {
-    flexDirection: 'row',
-    gap: 6,
-    marginBottom: 6,
-  },
   activityColumn: {
     flex: 1,
   },
-  activityItem: {
+  activityRow: {
     flexDirection: 'row',
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#999',
-    minHeight: 12,
+    borderWidth: 1,
+    borderColor: '#000',
+    minHeight: 14,
   },
   activityNum: {
-    width: '35%',
-    borderRightWidth: 0.5,
-    borderRightColor: '#999',
-    paddingHorizontal: 2,
+    width: '40%',
+    borderRightWidth: 1,
+    borderRightColor: '#000',
+    paddingHorizontal: 3,
+    paddingVertical: 1,
+    justifyContent: 'center',
     fontSize: 7,
+    fontWeight: 'bold',
   },
   activityName: {
-    width: '65%',
-    paddingHorizontal: 2,
+    width: '60%',
+    paddingHorizontal: 3,
+    paddingVertical: 1,
     fontSize: 7,
   },
-  table: {
-    marginBottom: 6,
+  tableContainer: {
+    marginBottom: 4,
   },
   tableHeader: {
     flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#000',
-    backgroundColor: '#f0f0f0',
-    minHeight: 14,
-    fontWeight: 'bold',
+    borderWidth: 1,
+    borderColor: '#000',
+    backgroundColor: '#f5f5f5',
+    minHeight: 16,
   },
   tableRow: {
     flexDirection: 'row',
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#999',
-    minHeight: 12,
+    borderWidth: 1,
+    borderColor: '#000',
+    minHeight: 14,
   },
   tableCell: {
-    borderRightWidth: 0.5,
-    borderRightColor: '#999',
+    borderRightWidth: 1,
+    borderRightColor: '#000',
     paddingHorizontal: 2,
     paddingVertical: 1,
     justifyContent: 'center',
+    alignItems: 'center',
+    fontSize: 7,
   },
   tableCellHeader: {
-    borderRightWidth: 0.5,
-    borderRightColor: '#999',
+    borderRightWidth: 1,
+    borderRightColor: '#000',
     paddingHorizontal: 2,
     paddingVertical: 1,
     justifyContent: 'center',
+    alignItems: 'center',
     fontSize: 6,
+    fontWeight: 'bold',
   },
   footerSignatures: {
     flexDirection: 'row',
@@ -120,22 +151,21 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
   },
   signatureLine: {
-    width: '32%',
+    flex: 1,
     alignItems: 'center',
-  },
-  signatureSpace: {
     borderTopWidth: 1,
     borderTopColor: '#000',
-    height: 20,
-    marginBottom: 2,
+    paddingTop: 2,
+    marginHorizontal: 4,
   },
   signatureLabel: {
     fontSize: 7,
-    textAlign: 'center',
+    fontWeight: 'bold',
+    marginTop: 2,
   },
 });
 
-export default function TareoPDF({ registrosPorDia, personalDB, ruc = '20203071702', proyectoNombre = 'PROYECTO' }) {
+function TareoPDFContent({ registrosPorDia, personalDB, ruc, logoBase64 }) {
   const resolverNombre = React.useMemo(
     () => crearResolverNombre(Object.values(registrosPorDia).flat() || [], personalDB || []),
     [registrosPorDia, personalDB],
@@ -157,7 +187,7 @@ export default function TareoPDF({ registrosPorDia, personalDB, ruc = '202030717
         const [fecha, capataz] = fechaCapKey.split('__');
         if (!registros.length) return null;
 
-        // Agrupar trabajadores por nombre canónico (sin duplicar)
+        // Agrupar trabajadores sin duplicar
         const trabajadoresMap = {};
         registros.forEach(r => {
           (r.detalleTareo || []).forEach(t => {
@@ -170,14 +200,10 @@ export default function TareoPDF({ registrosPorDia, personalDB, ruc = '202030717
                 dni: ficha?.dni || '',
                 cargo: ficha?.cargo || 'OP',
                 actividades: {},
-                totHN: 0,
-                totHE: 0,
               };
             }
             const act = r._actividadCanonica || r.actividad;
             trabajadoresMap[nomKey].actividades[act] = (trabajadoresMap[nomKey].actividades[act] || 0) + (parseFloat(t.hn) || 0) + (parseFloat(t.he) || 0);
-            trabajadoresMap[nomKey].totHN += parseFloat(t.hn) || 0;
-            trabajadoresMap[nomKey].totHE += parseFloat(t.he) || 0;
           });
         });
 
@@ -188,141 +214,201 @@ export default function TareoPDF({ registrosPorDia, personalDB, ruc = '202030717
           <Page key={fechaCapKey} style={styles.page}>
             {/* Header */}
             <View style={styles.header}>
-              <View style={styles.headerLogo}>
-                <Text style={{ fontSize: 10, fontWeight: 'bold' }}>GRAPCO</Text>
-                <Text style={{ fontSize: 6 }}>RUC: {ruc}</Text>
-              </View>
-              <View style={styles.headerTitle}>
-                <Text>TAREO DIARIO</Text>
-              </View>
-              <View style={styles.headerDate}>
-                <Text>FECHA: {fecha}</Text>
-              </View>
-            </View>
-
-            {/* Info row 1 */}
-            <View style={styles.infoRow}>
-              <View style={{ ...styles.infoBlock, flex: 0.25 }}>
-                <Text style={styles.infoLabel}>SUPERVISOR:</Text>
-                <View style={styles.infoBorder} />
-              </View>
-              <View style={{ ...styles.infoBlock, flex: 0.25 }}>
-                <Text style={styles.infoLabel}>ZONA:</Text>
-                <View style={styles.infoBorder} />
-              </View>
-              <View style={{ ...styles.infoBlock, flex: 0.5 }}>
-                <Text style={styles.infoLabel}>HORARIO DE TRABAJO</Text>
-                <View style={{ flexDirection: 'row', gap: 4 }}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 6 }}>INICIO</Text>
-                    <View style={styles.infoBorder} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 6 }}>FIN</Text>
-                    <View style={styles.infoBorder} />
-                  </View>
+              {logoBase64 && <Image src={logoBase64} style={styles.logo} />}
+              <View style={styles.headerInfo}>
+                <View style={styles.headerLeft}>
+                  <Text style={styles.headerText}>GRAPCO</Text>
+                  <Text style={styles.rucText}>RUC: {ruc}</Text>
+                </View>
+                <View style={styles.headerCenter}>
+                  <Text style={{ fontSize: 12, fontWeight: 'bold' }}>TAREO DIARIO</Text>
+                </View>
+                <View style={styles.headerRight}>
+                  <Text style={styles.rucText}>FECHA:</Text>
+                  <Text style={{ fontSize: 9, fontWeight: 'bold' }}>{fecha}</Text>
                 </View>
               </View>
             </View>
 
-            {/* Info row 2 */}
-            <View style={styles.infoRow}>
-              <View style={{ ...styles.infoBlock, flex: 0.25 }}>
-                <Text style={styles.infoLabel}>CUADRILLA:</Text>
-                <View style={styles.infoBorder}>
-                  <Text style={{ fontSize: 8 }}>{capataz}</Text>
+            <View style={styles.divider} />
+
+            {/* Info Grid */}
+            <View style={styles.infoGrid}>
+              <View style={styles.infoRow}>
+                <View style={{ ...styles.infoCell, width: '20%' }}>
+                  <Text style={styles.infoCellLabel}>Supervisor:</Text>
+                  <View style={styles.infoCellValue} />
+                </View>
+                <View style={{ ...styles.infoCell, width: '30%' }}>
+                  <Text style={styles.infoCellLabel}>ZONA:</Text>
+                  <View style={styles.infoCellValue} />
+                </View>
+                <View style={{ ...styles.infoCell, width: '50%' }}>
+                  <Text style={styles.infoCellLabel}>HORARIO DE TRABAJO</Text>
+                  <View style={{ flexDirection: 'row', gap: 4 }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 6 }}>INICIO</Text>
+                      <View style={{ minHeight: 8 }} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 6 }}>FIN</Text>
+                      <View style={{ minHeight: 8 }} />
+                    </View>
+                  </View>
                 </View>
               </View>
-              <View style={{ ...styles.infoBlock, flex: 0.25 }}>
-                <Text style={styles.infoLabel}>SECTOR:</Text>
-                <View style={styles.infoBorder} />
-              </View>
-              <View style={{ ...styles.infoBlock, flex: 0.25 }}>
-                <Text style={styles.infoLabel}>JORNADA:</Text>
-                <View style={styles.infoBorder} />
-              </View>
-              <View style={{ ...styles.infoBlock, flex: 0.25 }}>
-                <Text style={styles.infoLabel}>REFRIGERIO:</Text>
-                <View style={styles.infoBorder} />
+
+              <View style={styles.infoRow}>
+                <View style={{ ...styles.infoCell, width: '20%' }}>
+                  <Text style={styles.infoCellLabel}>CUADRILLA</Text>
+                  <Text style={styles.infoCellValue}>{capataz}</Text>
+                </View>
+                <View style={{ ...styles.infoCell, width: '20%' }}>
+                  <Text style={styles.infoCellLabel}>SECTOR:</Text>
+                  <View style={styles.infoCellValue} />
+                </View>
+                <View style={{ ...styles.infoCell, width: '20%' }}>
+                  <Text style={styles.infoCellLabel}>NIVEL:</Text>
+                  <View style={styles.infoCellValue} />
+                </View>
+                <View style={{ ...styles.infoCell, width: '20%' }}>
+                  <Text style={styles.infoCellLabel}>Jornada:</Text>
+                  <View style={styles.infoCellValue} />
+                </View>
+                <View style={{ ...styles.infoCell, width: '20%' }}>
+                  <Text style={styles.infoCellLabel}>Refrigerio:</Text>
+                  <View style={styles.infoCellValue} />
+                </View>
               </View>
             </View>
 
             {/* Activities */}
-            <Text style={styles.activitiesSection}>CUENTA DE COSTO (Fase)</Text>
-            <View style={styles.activitiesContainer}>
+            <Text style={styles.sectionTitle}>CUENTA DE COSTO (Fase)</Text>
+            <View style={styles.activitiesGrid}>
               <View style={styles.activityColumn}>
                 {todasActividades.slice(0, 7).map((act, i) => (
-                  <View key={i} style={styles.activityItem}>
-                    <Text style={styles.activityNum}>Act. {i + 1}</Text>
-                    <Text style={styles.activityName}>{act}</Text>
+                  <View key={i} style={styles.activityRow}>
+                    <View style={styles.activityNum}>
+                      <Text>Act. {i + 1}</Text>
+                    </View>
+                    <View style={styles.activityName}>
+                      <Text>{act}</Text>
+                    </View>
                   </View>
                 ))}
               </View>
               <View style={styles.activityColumn}>
                 {todasActividades.slice(7, 14).map((act, i) => (
-                  <View key={i + 7} style={styles.activityItem}>
-                    <Text style={styles.activityNum}>Act. {i + 8}</Text>
-                    <Text style={styles.activityName}>{act}</Text>
+                  <View key={i + 7} style={styles.activityRow}>
+                    <View style={styles.activityNum}>
+                      <Text>Act. {i + 8}</Text>
+                    </View>
+                    <View style={styles.activityName}>
+                      <Text>{act}</Text>
+                    </View>
                   </View>
                 ))}
               </View>
             </View>
 
-            {/* Workers table */}
-            <View style={styles.table}>
+            {/* Workers Table */}
+            <Text style={styles.sectionTitle}>REFERENCIAS / TRABAJADORES / ACTIVIDADES / HORAS REALES</Text>
+            <View style={styles.tableContainer}>
               <View style={styles.tableHeader}>
-                <Text style={{ ...styles.tableCellHeader, width: '4%' }}>COD</Text>
-                <Text style={{ ...styles.tableCellHeader, width: '6%' }}>CAR.</Text>
-                <Text style={{ ...styles.tableCellHeader, width: '7%' }}>OCP</Text>
-                <Text style={{ ...styles.tableCellHeader, width: '10%' }}>DNI</Text>
-                <Text style={{ ...styles.tableCellHeader, width: '28%' }}>TRABAJADORES</Text>
-                {todasActividades.map((_, i) => (
-                  <Text key={`h${i}`} style={{ ...styles.tableCellHeader, width: '2.5%' }}>{i + 1}</Text>
+                <View style={{ ...styles.tableCellHeader, width: '3%' }}>
+                  <Text>COD</Text>
+                </View>
+                <View style={{ ...styles.tableCellHeader, width: '4%' }}>
+                  <Text>CAR.</Text>
+                </View>
+                <View style={{ ...styles.tableCellHeader, width: '6%' }}>
+                  <Text>OCUPACION</Text>
+                </View>
+                <View style={{ ...styles.tableCellHeader, width: '7%' }}>
+                  <Text>DNI</Text>
+                </View>
+                <View style={{ ...styles.tableCellHeader, width: '22%' }}>
+                  <Text>TRABAJADORES</Text>
+                </View>
+                <View style={{ ...styles.tableCellHeader, width: '6%' }}>
+                  <Text>Hora Ingreso</Text>
+                </View>
+                <View style={{ ...styles.tableCellHeader, width: '6%' }}>
+                  <Text>FIRMA INGRESO</Text>
+                </View>
+                <View style={{ ...styles.tableCellHeader, width: '6%' }}>
+                  <Text>Hora Salida</Text>
+                </View>
+                <View style={{ ...styles.tableCellHeader, width: '6%' }}>
+                  <Text>FIRMA SALIDA</Text>
+                </View>
+                {todasActividades.slice(0, 10).map((_, i) => (
+                  <View key={`a${i}`} style={{ ...styles.tableCellHeader, width: '2.5%' }}>
+                    <Text>{i + 1}</Text>
+                  </View>
                 ))}
-                <Text style={{ ...styles.tableCellHeader, width: '5%' }}>TOT</Text>
+                <View style={{ ...styles.tableCellHeader, width: '2.5%' }}>
+                  <Text>N</Text>
+                </View>
+                <View style={{ ...styles.tableCellHeader, width: '2.5%' }}>
+                  <Text>0.6</Text>
+                </View>
+                <View style={{ ...styles.tableCellHeader, width: '2.5%' }}>
+                  <Text>1.0</Text>
+                </View>
+                <View style={{ ...styles.tableCellHeader, width: '3%' }}>
+                  <Text>TOT</Text>
+                </View>
               </View>
 
-              {trabajadores.map((t, idx) => (
-                <View key={idx} style={styles.tableRow}>
-                  <View style={{ ...styles.tableCell, width: '4%' }}>
-                    <Text>{idx + 1}</Text>
-                  </View>
-                  <View style={{ ...styles.tableCell, width: '6%' }}>
-                    <Text>{t.cargo.slice(0, 3).toUpperCase()}</Text>
-                  </View>
-                  <View style={{ ...styles.tableCell, width: '7%' }}>
-                    <Text>{t.cargo.toUpperCase()}</Text>
-                  </View>
-                  <View style={{ ...styles.tableCell, width: '10%' }}>
-                    <Text>{t.dni}</Text>
-                  </View>
-                  <View style={{ ...styles.tableCell, width: '28%' }}>
-                    <Text>{t.nombre}</Text>
-                  </View>
-                  {todasActividades.map((act, i) => (
-                    <View key={i} style={{ ...styles.tableCell, width: '2.5%' }}>
-                      <Text>{t.actividades[act] ? t.actividades[act].toFixed(1) : ''}</Text>
+              {trabajadores.map((t, idx) => {
+                const totHH = Object.values(t.actividades).reduce((a, b) => a + b, 0);
+                return (
+                  <View key={idx} style={styles.tableRow}>
+                    <View style={{ ...styles.tableCell, width: '3%' }}>
+                      <Text>{idx + 1}</Text>
                     </View>
-                  ))}
-                  <View style={{ ...styles.tableCell, width: '5%' }}>
-                    <Text>{(t.totHN + t.totHE).toFixed(1)}</Text>
+                    <View style={{ ...styles.tableCell, width: '4%' }}>
+                      <Text>{t.cargo.slice(0, 3).toUpperCase()}</Text>
+                    </View>
+                    <View style={{ ...styles.tableCell, width: '6%' }}>
+                      <Text>{t.cargo.toUpperCase()}</Text>
+                    </View>
+                    <View style={{ ...styles.tableCell, width: '7%' }}>
+                      <Text>{t.dni}</Text>
+                    </View>
+                    <View style={{ ...styles.tableCell, width: '22%' }}>
+                      <Text>{t.nombre}</Text>
+                    </View>
+                    <View style={{ ...styles.tableCell, width: '6%' }} />
+                    <View style={{ ...styles.tableCell, width: '6%' }} />
+                    <View style={{ ...styles.tableCell, width: '6%' }} />
+                    <View style={{ ...styles.tableCell, width: '6%' }} />
+                    {todasActividades.slice(0, 10).map((act, i) => (
+                      <View key={i} style={{ ...styles.tableCell, width: '2.5%' }}>
+                        <Text>{t.actividades[act] ? t.actividades[act].toFixed(1) : ''}</Text>
+                      </View>
+                    ))}
+                    <View style={{ ...styles.tableCell, width: '2.5%' }} />
+                    <View style={{ ...styles.tableCell, width: '2.5%' }} />
+                    <View style={{ ...styles.tableCell, width: '2.5%' }} />
+                    <View style={{ ...styles.tableCell, width: '3%' }}>
+                      <Text>{totHH.toFixed(1)}</Text>
+                    </View>
                   </View>
-                </View>
-              ))}
+                );
+              })}
             </View>
 
             {/* Signatures */}
             <View style={styles.footerSignatures}>
               <View style={styles.signatureLine}>
-                <View style={styles.signatureSpace} />
                 <Text style={styles.signatureLabel}>MAESTRO</Text>
               </View>
               <View style={styles.signatureLine}>
-                <View style={styles.signatureSpace} />
                 <Text style={styles.signatureLabel}>INGENIERO DE PRODUCCIÓN</Text>
               </View>
               <View style={styles.signatureLine}>
-                <View style={styles.signatureSpace} />
                 <Text style={styles.signatureLabel}>INGENIERO RESIDENTE</Text>
               </View>
             </View>
@@ -333,14 +419,30 @@ export default function TareoPDF({ registrosPorDia, personalDB, ruc = '202030717
   );
 }
 
-export async function generarPDFTareo(registrosPorDia, personalDB, ruc, proyectoNombre) {
+export async function generarPDFTareo(registrosPorDia, personalDB, ruc, logoBase64) {
   try {
-    const doc = <TareoPDF registrosPorDia={registrosPorDia} personalDB={personalDB} ruc={ruc} proyectoNombre={proyectoNombre} />;
+    const doc = <TareoPDFContent registrosPorDia={registrosPorDia} personalDB={personalDB} ruc={ruc} logoBase64={logoBase64} />;
     const asPdf = pdf(doc);
     const blob = await asPdf.toBlob();
     return blob;
   } catch (err) {
     console.error('Error generando PDF:', err);
     throw err;
+  }
+}
+
+export async function cargarLogoBase64() {
+  try {
+    const response = await fetch('/brand/grapco-256.png');
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (err) {
+    console.warn('No se pudo cargar logo:', err);
+    return null;
   }
 }
