@@ -334,7 +334,13 @@ export default function TareoPDF({ registrosPorDia, personalDB, ruc = '202030717
 }
 
 export async function generarPDFTareo(registrosPorDia, personalDB, ruc, proyectoNombre) {
-  const doc = <TareoPDF registrosPorDia={registrosPorDia} personalDB={personalDB} ruc={ruc} proyectoNombre={proyectoNombre} />;
-  const blob = await pdf(doc).toBlob();
-  return blob;
+  try {
+    const doc = <TareoPDF registrosPorDia={registrosPorDia} personalDB={personalDB} ruc={ruc} proyectoNombre={proyectoNombre} />;
+    const asPdf = pdf(doc);
+    const blob = await asPdf.toBlob();
+    return blob;
+  } catch (err) {
+    console.error('Error generando PDF:', err);
+    throw err;
+  }
 }

@@ -8,7 +8,7 @@ import VistaHeader from '../components/VistaHeader';
 import { crearResolverNombre } from '../utils/nombresCanonicos';
 import { generarPDFTareo } from '../components/TareoPDF';
 
-export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobile, showToast }) {
+export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobile, showToast, fDesde, fHasta, fCapataz, setFDesde, setFHasta, setFCapataz }) {
   // Resolver de nombres compartido — el MISMO obrero escrito distinto cuenta
   // como UNA persona (ej. Marcelino con/sin espacio en el apellido) en el
   // tareo, en la exportación y en el resumen de pago.
@@ -27,9 +27,6 @@ export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobi
     });
     return m;
   }, [personalDB, resolverNombre]);
-  const [tareoFechaIni,   setTareoFechaIni]   = useState(hoy());
-  const [tareoFechaFin,   setTareoFechaFin]   = useState(hoy());
-  const [tareoCapataz,    setTareoCapataz]    = useState('');
   const [tareoZona,       setTareoZona]       = useState('');
   const [tareoSector,     setTareoSector]     = useState('');
   const [tareoNivel,      setTareoNivel]      = useState('');
@@ -38,6 +35,11 @@ export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobi
   const [tareoHoraIni,    setTareoHoraIni]    = useState('07:30');
   const [tareoHoraFin,    setTareoHoraFin]    = useState('17:00');
   const [tareoSupervisor, setTareoSupervisor] = useState('');
+
+  // Inicializar filtros globales si no hay
+  const tareoFechaIni = fDesde || hoy();
+  const tareoFechaFin = fHasta || hoy();
+  const tareoCapataz = fCapataz || '';
 
   const tareoRegistros = useMemo(() => {
     return historial.filter(r => {
@@ -75,26 +77,26 @@ export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobi
     };
   }, [tareoRegistros]);
 
-  // Atajos de fecha
+  // Atajos de fecha — actualiza filtros globales
   const setRangoRapido = tipo => {
     const h = new Date();
-    if (tipo === 'hoy') { setTareoFechaIni(hoy()); setTareoFechaFin(hoy()); }
+    if (tipo === 'hoy') { setFDesde(hoy()); setFHasta(hoy()); }
     else if (tipo === 'ayer') {
       const a = new Date(h); a.setDate(a.getDate() - 1);
       const aIso = a.toISOString().split('T')[0];
-      setTareoFechaIni(aIso); setTareoFechaFin(aIso);
+      setFDesde(aIso); setFHasta(aIso);
     }
     else if (tipo === 'semana') {
       const ini = new Date(h); ini.setDate(h.getDate() - h.getDay() + 1);
-      setTareoFechaIni(ini.toISOString().split('T')[0]); setTareoFechaFin(hoy());
+      setFDesde(ini.toISOString().split('T')[0]); setFHasta(hoy());
     }
     else if (tipo === '7dias') {
       const ini = new Date(h); ini.setDate(h.getDate() - 6);
-      setTareoFechaIni(ini.toISOString().split('T')[0]); setTareoFechaFin(hoy());
+      setFDesde(ini.toISOString().split('T')[0]); setFHasta(hoy());
     }
     else if (tipo === 'mes') {
       const ini = new Date(h.getFullYear(), h.getMonth(), 1);
-      setTareoFechaIni(ini.toISOString().split('T')[0]); setTareoFechaFin(hoy());
+      setFDesde(ini.toISOString().split('T')[0]); setFHasta(hoy());
     }
   };
 
@@ -349,28 +351,9 @@ export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobi
         titulo="Tareo"
         subtitulo="Horas-hombre por trabajador y exportación de planilla semanal" />
 
-      {/* Filtros de rango */}
-      <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,padding:'18px'}}>
-        <h4 style={{fontSize:'13px',fontWeight:'800',color:BASE.navy,borderLeft:`4px solid ${BASE.green}`,paddingLeft:'10px',marginBottom:'14px'}}>📅 RANGO DE FECHAS</h4>
-
-        <div style={{display:'flex',gap:'8px',flexWrap:'wrap',marginBottom:'12px'}}>
-          {[['Hoy','hoy'],['Ayer','ayer'],['Esta semana','semana'],['Últimos 7 días','7dias'],['Mes actual','mes']].map(([l,k])=>(
-            <button key={k} onClick={()=>setRangoRapido(k)}
-              style={{padding:'6px 14px',background:'#f1f5f9',color:BASE.navy,border:'1px solid #cbd5e1',borderRadius:'7px',fontWeight:'700',cursor:'pointer',fontSize:'11px'}}>{l}</button>
-          ))}
-        </div>
-
-        <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr 1fr',gap:'12px'}}>
-          <DateInput label="DESDE" value={tareoFechaIni} onChange={setTareoFechaIni} max={null}/>
-          <DateInput label="HASTA" value={tareoFechaFin} onChange={setTareoFechaFin} max={null}/>
-          <div>
-            <label style={{fontSize:'11px',fontWeight:'700',color:BASE.muted,letterSpacing:'0.6px',display:'block',marginBottom:'6px'}}>CAPATAZ (OPCIONAL)</label>
-            <select value={tareoCapataz} onChange={e=>setTareoCapataz(e.target.value)} style={inp({fontSize:'13px'})}>
-              <option value="">Todos los capataces</option>
-              {Object.keys(cuadrillasActivas).map(c=><option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-        </div>
+      {/* Los filtros se controlan desde FILTROS DEL DASHBOARD arriba */}
+      <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,padding:'14px',fontSize:'12px',color:BASE.muted}}>
+        <p style={{margin:0}}>Los filtros de fecha y capataz se aplican desde <strong>FILTROS DEL DASHBOARD</strong> arriba 👆</p>
       </div>
 
       {/* Datos del encabezado */}
