@@ -16,6 +16,7 @@ import { useCatalogoWBS } from '../../hooks/useCatalogoWBS';
 import { BASE } from '../../utils/styles';
 import Icon from '../../components/Icon';
 import VistaHeader from '../../components/VistaHeader';
+import ConfirmModal from '../../components/ConfirmModal';
 import { calcularCPM, renumerarEDT, nuevoId, fechaDeIso, isoDeFecha, indiceDeFecha } from '../../utils/cpm';
 import { CRONOGRAMAOBRA } from '../../data/cronogramaObraCreditex';
 import CronogramaObra from './CronogramaObra';
@@ -217,9 +218,9 @@ export default function CronogramaPro() {
   };
 
   // ── Línea base: congela el plan actual (como "Set Baseline" de MS Project) ──
-  const fijarBaseline = () => {
+  const [confirmBaseline, setConfirmBaseline] = useState(false);
+  const aplicarBaseline = () => {
     if (!cpm) return;
-    if (baseline && !window.confirm('Ya existe una línea base. ¿Reemplazarla con el plan actual?')) return;
     const porId = {};
     cpm.tareas.forEach(t => { if (!t.resumen) porId[t.id] = { es: t.es, ef: t.ef }; });
     setBaseline({
@@ -229,6 +230,12 @@ export default function CronogramaPro() {
       porId,
     });
     setSinGuardar(true);
+    setConfirmBaseline(false);
+  };
+  const fijarBaseline = () => {
+    if (!cpm) return;
+    if (baseline) setConfirmBaseline(true);
+    else aplicarBaseline();
   };
 
   // Desvío del fin de obra vs línea base (en días laborables)
@@ -364,6 +371,16 @@ export default function CronogramaPro() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <ConfirmModal
+        abierto={confirmBaseline}
+        titulo="Reemplazar línea base"
+        mensaje="Ya existe una línea base fijada. ¿Reemplazarla con el plan actual?"
+        detalle={baseline ? `La línea base vigente se fijó el ${baseline.fecha}. Al reemplazarla, los desvíos se medirán contra el plan de hoy.` : ''}
+        textoConfirmar="Reemplazar"
+        icono="📌"
+        onConfirmar={aplicarBaseline}
+        onCancelar={() => setConfirmBaseline(false)}
+      />
       <VistaHeader icono="clock" eyebrow="Planeamiento · CPM"
         titulo="Cronograma de Obra"
         subtitulo="Planificador con ruta crítica, dependencias y auto-scheduling — estilo MS Project / Primavera P6" />

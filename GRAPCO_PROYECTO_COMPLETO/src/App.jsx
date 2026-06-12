@@ -73,7 +73,7 @@ const PRELOAD_BY_KEY = {
   bim:         () => import('./views/BIM'),
   capataz:     () => import('./views/capataz/CapatazPanel'),
   seguridad:   () => import('./views/seguridad/SeguridadPanel'),
-  lps:         () => import('./views/Ingeniero'),
+  lps:         () => import('./views/planeamiento/LastPlannerPro'),
   // Planeamiento (faltaban → por eso se demoraban al cambiar de módulo)
   flujo:          () => import('./views/planeamiento/FlujoPlaneamiento'),
   pullplanning:   () => import('./views/planeamiento/PullPlanning'),
@@ -100,6 +100,7 @@ const FlujoPlaneamiento   = lazy(() => import('./views/planeamiento/FlujoPlaneam
 const PullPlanning        = lazy(() => import('./views/planeamiento/PullPlanning'));
 const PlanVaciado         = lazy(() => import('./views/planeamiento/PlanVaciado'));
 const CronogramaPro       = lazy(() => import('./views/planeamiento/CronogramaPro'));
+const LastPlannerPro      = lazy(() => import('./views/planeamiento/LastPlannerPro'));
 const NormalTecnologica   = lazy(() => import('./views/planeamiento/NormalTecnologica'));
 const PanelGerencia       = lazy(() => import('./views/modulos/panelGerencia/PanelGerencia'));
 const ProyectosPanel      = lazy(() => import('./views/modulos/proyectos/ProyectosPanel'));
@@ -857,21 +858,7 @@ function AppInner() {
             {moduloIngeniero === 'planvaciado' && <PlanVaciado />}
 
             {/* Planeamiento — Last Planner System (módulo lateral propio) */}
-            {moduloIngeniero === 'lps' && (
-              <Ingeniero
-                historial={historial}
-                cuadrillasActivas={cuadrillasActivas}
-                cuadrillasDB={cuadrillasDB}
-                personalDB={personalDB}
-                planesDiarios={planesDiarios}
-                configuracion={configuracion}
-                asistencia={asistencia}
-                isMobile={isMobile}
-                showToast={showToast}
-                vistaInicial="vdc"
-                soloPlaneamiento
-              />
-            )}
+            {moduloIngeniero === 'lps' && <LastPlannerPro />}
 
             {/* Registro de producción (vista capataz para ingeniero) */}
             {moduloIngeniero === 'registro' && (
