@@ -1,64 +1,73 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Document, Page, Text, View, StyleSheet, pdf, Image } from '@react-pdf/renderer';
 import { crearResolverNombre } from '../utils/nombresCanonicos';
 
 const styles = StyleSheet.create({
   page: {
-    padding: [10, 15],
-    fontSize: 8,
+    padding: [15, 20],
+    fontSize: 7,
     fontFamily: 'Helvetica',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  container: {
+    width: 780,
+    maxWidth: '100%',
   },
   header: {
     flexDirection: 'row',
-    marginBottom: 8,
+    marginBottom: 10,
     alignItems: 'flex-start',
-    gap: 10,
-  },
-  logo: {
-    width: 50,
-    height: 50,
-  },
-  headerInfo: {
-    flex: 1,
-    flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  headerLeft: {
-    flexDirection: 'column',
-  },
-  headerCenter: {
-    flexDirection: 'column',
-    alignItems: 'center',
+  logoSection: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
     flex: 1,
   },
-  headerRight: {
-    flexDirection: 'column',
-    alignItems: 'flex-end',
+  logo: {
+    width: 45,
+    height: 45,
   },
-  headerText: {
-    fontSize: 9,
+  logoText: {
+    fontSize: 11,
     fontWeight: 'bold',
   },
   rucText: {
-    fontSize: 7,
+    fontSize: 8,
   },
-  divider: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#000',
-    marginBottom: 6,
+  headerCenter: {
+    flex: 1,
+    textAlign: 'center',
   },
-  infoGrid: {
-    marginBottom: 6,
+  headerTitle: {
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  headerRight: {
+    textAlign: 'right',
+  },
+  fechaLabel: {
+    fontSize: 8,
+    fontWeight: 'bold',
+  },
+  fechaValue: {
+    fontSize: 9,
+    fontWeight: 'bold',
   },
   infoRow: {
     flexDirection: 'row',
-    marginBottom: 4,
-    alignItems: 'stretch',
+    marginBottom: 0,
+    borderWidth: 1,
+    borderColor: '#000',
+    minHeight: 20,
   },
   infoCell: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: '#000',
+    borderRightWidth: 1,
+    borderRightColor: '#000',
     paddingHorizontal: 3,
     paddingVertical: 2,
     justifyContent: 'flex-start',
@@ -66,22 +75,34 @@ const styles = StyleSheet.create({
   infoCellLabel: {
     fontSize: 7,
     fontWeight: 'bold',
+    color: '#000',
   },
   infoCellValue: {
     fontSize: 8,
-    marginTop: 2,
-    minHeight: 12,
+    marginTop: 1,
+    minHeight: 10,
   },
-  sectionTitle: {
+  infoCellLabelBg: {
     fontSize: 7,
     fontWeight: 'bold',
-    marginBottom: 3,
-    marginTop: 4,
+    backgroundColor: '#d3d3d3',
+    paddingVertical: 1,
+    marginHorizontal: -3,
+    marginVertical: -2,
+    paddingHorizontal: 3,
+  },
+  activitiesSection: {
+    marginTop: 6,
+    marginBottom: 6,
+  },
+  activitiesTitle: {
+    fontSize: 7,
+    fontWeight: 'bold',
+    marginBottom: 2,
   },
   activitiesGrid: {
     flexDirection: 'row',
-    marginBottom: 6,
-    gap: 8,
+    gap: 10,
   },
   activityColumn: {
     flex: 1,
@@ -90,39 +111,39 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderWidth: 1,
     borderColor: '#000',
-    minHeight: 14,
+    minHeight: 16,
   },
   activityNum: {
-    width: '40%',
+    width: '35%',
     borderRightWidth: 1,
     borderRightColor: '#000',
     paddingHorizontal: 3,
-    paddingVertical: 1,
+    paddingVertical: 2,
     justifyContent: 'center',
-    fontSize: 7,
     fontWeight: 'bold',
+    fontSize: 7,
   },
   activityName: {
-    width: '60%',
+    width: '65%',
     paddingHorizontal: 3,
-    paddingVertical: 1,
+    paddingVertical: 2,
     fontSize: 7,
   },
   tableContainer: {
-    marginBottom: 4,
+    marginBottom: 8,
   },
   tableHeader: {
     flexDirection: 'row',
     borderWidth: 1,
     borderColor: '#000',
-    backgroundColor: '#f5f5f5',
-    minHeight: 16,
+    backgroundColor: '#f0f0f0',
+    minHeight: 18,
   },
   tableRow: {
     flexDirection: 'row',
     borderWidth: 1,
     borderColor: '#000',
-    minHeight: 14,
+    minHeight: 16,
   },
   tableCell: {
     borderRightWidth: 1,
@@ -137,29 +158,61 @@ const styles = StyleSheet.create({
     borderRightWidth: 1,
     borderRightColor: '#000',
     paddingHorizontal: 2,
-    paddingVertical: 1,
+    paddingVertical: 2,
     justifyContent: 'center',
     alignItems: 'center',
     fontSize: 6,
     fontWeight: 'bold',
   },
-  footerSignatures: {
+  footerContainer: {
+    marginTop: 12,
+  },
+  footerRow: {
     flexDirection: 'row',
-    marginTop: 8,
-    justifyContent: 'space-around',
+    borderWidth: 1,
+    borderColor: '#000',
+    minHeight: 50,
+    marginBottom: -1,
   },
-  signatureLine: {
+  footerCell: {
     flex: 1,
+    borderRightWidth: 1,
+    borderRightColor: '#000',
+    paddingHorizontal: 3,
+    paddingVertical: 4,
+    justifyContent: 'flex-end',
     alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: '#000',
-    paddingTop: 2,
-    marginHorizontal: 4,
   },
-  signatureLabel: {
+  footerLabel: {
     fontSize: 7,
     fontWeight: 'bold',
-    marginTop: 2,
+    textAlign: 'center',
+  },
+  footerSignatureRow: {
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderColor: '#000',
+    minHeight: 20,
+  },
+  footerSignatureCell: {
+    flex: 1,
+    borderRightWidth: 1,
+    borderRightColor: '#000',
+    paddingHorizontal: 3,
+    paddingVertical: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  footerSignatureName: {
+    fontSize: 7,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  trabajadoresCount: {
+    textAlign: 'right',
+    paddingRight: 10,
+    fontSize: 8,
+    fontWeight: 'bold',
   },
 });
 
@@ -185,7 +238,6 @@ function TareoPDFContent({ registrosPorDia, personalDB, ruc, logoBase64 }) {
         const [fecha, capataz] = fechaCapKey.split('__');
         if (!registros.length) return null;
 
-        // Agrupar trabajadores sin duplicar
         const trabajadoresMap = {};
         registros.forEach(r => {
           (r.detalleTareo || []).forEach(t => {
@@ -210,204 +262,289 @@ function TareoPDFContent({ registrosPorDia, personalDB, ruc, logoBase64 }) {
 
         return (
           <Page key={fechaCapKey} size={[841.89, 595.28]} style={styles.page}>
-            {/* Header */}
-            <View style={styles.header}>
-              {logoBase64 && <Image src={logoBase64} style={styles.logo} />}
-              <View style={styles.headerInfo}>
-                <View style={styles.headerLeft}>
-                  <Text style={styles.headerText}>GRAPCO</Text>
-                  <Text style={styles.rucText}>RUC: {ruc}</Text>
+            <View style={styles.container}>
+              {/* HEADER */}
+              <View style={styles.header}>
+                <View style={styles.logoSection}>
+                  {logoBase64 && <Image src={logoBase64} style={styles.logo} />}
+                  <View>
+                    <Text style={styles.logoText}>GRAPCO</Text>
+                    <Text style={styles.rucText}>RUC: {ruc}</Text>
+                  </View>
                 </View>
                 <View style={styles.headerCenter}>
-                  <Text style={{ fontSize: 12, fontWeight: 'bold' }}>TAREO DIARIO</Text>
+                  <Text style={styles.headerTitle}>TAREO DIARIO</Text>
                 </View>
                 <View style={styles.headerRight}>
-                  <Text style={styles.rucText}>FECHA:</Text>
-                  <Text style={{ fontSize: 9, fontWeight: 'bold' }}>{fecha}</Text>
+                  <Text style={styles.fechaLabel}>FECHA:</Text>
+                  <Text style={styles.fechaValue}>{fecha}</Text>
                 </View>
               </View>
-            </View>
 
-            <View style={styles.divider} />
-
-            {/* Info Grid */}
-            <View style={styles.infoGrid}>
+              {/* INFO ROWS */}
               <View style={styles.infoRow}>
-                <View style={{ ...styles.infoCell, width: '20%' }}>
+                <View style={{ ...styles.infoCell, width: '20%', borderRightWidth: 0 }}>
                   <Text style={styles.infoCellLabel}>Supervisor:</Text>
-                  <View style={styles.infoCellValue} />
                 </View>
                 <View style={{ ...styles.infoCell, width: '30%' }}>
                   <Text style={styles.infoCellLabel}>ZONA:</Text>
-                  <View style={styles.infoCellValue} />
                 </View>
                 <View style={{ ...styles.infoCell, width: '50%' }}>
-                  <Text style={styles.infoCellLabel}>HORARIO DE TRABAJO</Text>
-                  <View style={{ flexDirection: 'row', gap: 4 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 6 }}>INICIO</Text>
-                      <View style={{ minHeight: 8 }} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 6 }}>FIN</Text>
-                      <View style={{ minHeight: 8 }} />
+                      <Text style={styles.infoCellLabel}>HORARIO DE TRABAJO</Text>
                     </View>
                   </View>
                 </View>
               </View>
 
               <View style={styles.infoRow}>
-                <View style={{ ...styles.infoCell, width: '20%' }}>
-                  <Text style={styles.infoCellLabel}>CUADRILLA</Text>
+                <View style={{ ...styles.infoCell, width: '20%', borderRightWidth: 0 }}>
+                  <Text style={styles.infoCellLabelBg}>CUADRILLA</Text>
+                </View>
+                <View style={{ ...styles.infoCell, width: '30%' }}>
+                  <Text style={styles.infoCellLabelBg}>ZONA:</Text>
+                </View>
+                <View style={{ ...styles.infoCell, width: '50%' }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 15 }}>
+                    <View style={{ flex: 0.4 }}>
+                      <Text style={styles.infoCellLabel}>HORARIO DE TRABAJO</Text>
+                    </View>
+                    <View style={{ flex: 0.3 }}>
+                      <Text style={styles.infoCellLabel}>INICIO</Text>
+                    </View>
+                    <View style={{ flex: 0.3 }}>
+                      <Text style={styles.infoCellLabel}>FIN</Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.infoRow}>
+                <View style={{ ...styles.infoCell, width: '20%', borderRightWidth: 0 }}>
                   <Text style={styles.infoCellValue}>{capataz}</Text>
                 </View>
-                <View style={{ ...styles.infoCell, width: '20%' }}>
-                  <Text style={styles.infoCellLabel}>SECTOR:</Text>
+                <View style={{ ...styles.infoCell, width: '30%' }}>
                   <View style={styles.infoCellValue} />
                 </View>
-                <View style={{ ...styles.infoCell, width: '20%' }}>
-                  <Text style={styles.infoCellLabel}>NIVEL:</Text>
-                  <View style={styles.infoCellValue} />
-                </View>
-                <View style={{ ...styles.infoCell, width: '20%' }}>
-                  <Text style={styles.infoCellLabel}>Jornada:</Text>
-                  <View style={styles.infoCellValue} />
-                </View>
-                <View style={{ ...styles.infoCell, width: '20%' }}>
-                  <Text style={styles.infoCellLabel}>Refrigerio:</Text>
-                  <View style={styles.infoCellValue} />
-                </View>
-              </View>
-            </View>
-
-            {/* Activities */}
-            <Text style={styles.sectionTitle}>CUENTA DE COSTO (Fase)</Text>
-            <View style={styles.activitiesGrid}>
-              <View style={styles.activityColumn}>
-                {todasActividades.slice(0, 7).map((act, i) => (
-                  <View key={i} style={styles.activityRow}>
-                    <View style={styles.activityNum}>
-                      <Text>Act. {i + 1}</Text>
+                <View style={{ ...styles.infoCell, width: '50%' }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 15 }}>
+                    <View style={{ flex: 0.4 }}>
+                      <View style={styles.infoCellValue} />
                     </View>
-                    <View style={styles.activityName}>
-                      <Text>{act}</Text>
+                    <View style={{ flex: 0.3 }}>
+                      <View style={styles.infoCellValue} />
+                    </View>
+                    <View style={{ flex: 0.3 }}>
+                      <View style={styles.infoCellValue} />
                     </View>
                   </View>
-                ))}
-              </View>
-              <View style={styles.activityColumn}>
-                {todasActividades.slice(7, 14).map((act, i) => (
-                  <View key={i + 7} style={styles.activityRow}>
-                    <View style={styles.activityNum}>
-                      <Text>Act. {i + 8}</Text>
-                    </View>
-                    <View style={styles.activityName}>
-                      <Text>{act}</Text>
-                    </View>
-                  </View>
-                ))}
-              </View>
-            </View>
-
-            {/* Workers Table */}
-            <Text style={styles.sectionTitle}>REFERENCIAS / TRABAJADORES / ACTIVIDADES / HORAS REALES</Text>
-            <View style={styles.tableContainer}>
-              <View style={styles.tableHeader}>
-                <View style={{ ...styles.tableCellHeader, width: '3%' }}>
-                  <Text>COD</Text>
-                </View>
-                <View style={{ ...styles.tableCellHeader, width: '4%' }}>
-                  <Text>CAR.</Text>
-                </View>
-                <View style={{ ...styles.tableCellHeader, width: '6%' }}>
-                  <Text>OCUPACION</Text>
-                </View>
-                <View style={{ ...styles.tableCellHeader, width: '7%' }}>
-                  <Text>DNI</Text>
-                </View>
-                <View style={{ ...styles.tableCellHeader, width: '22%' }}>
-                  <Text>TRABAJADORES</Text>
-                </View>
-                <View style={{ ...styles.tableCellHeader, width: '6%' }}>
-                  <Text>Hora Ingreso</Text>
-                </View>
-                <View style={{ ...styles.tableCellHeader, width: '6%' }}>
-                  <Text>FIRMA INGRESO</Text>
-                </View>
-                <View style={{ ...styles.tableCellHeader, width: '6%' }}>
-                  <Text>Hora Salida</Text>
-                </View>
-                <View style={{ ...styles.tableCellHeader, width: '6%' }}>
-                  <Text>FIRMA SALIDA</Text>
-                </View>
-                {todasActividades.slice(0, 10).map((_, i) => (
-                  <View key={`a${i}`} style={{ ...styles.tableCellHeader, width: '2.5%' }}>
-                    <Text>{i + 1}</Text>
-                  </View>
-                ))}
-                <View style={{ ...styles.tableCellHeader, width: '2.5%' }}>
-                  <Text>N</Text>
-                </View>
-                <View style={{ ...styles.tableCellHeader, width: '2.5%' }}>
-                  <Text>0.6</Text>
-                </View>
-                <View style={{ ...styles.tableCellHeader, width: '2.5%' }}>
-                  <Text>1.0</Text>
-                </View>
-                <View style={{ ...styles.tableCellHeader, width: '3%' }}>
-                  <Text>TOT</Text>
                 </View>
               </View>
 
-              {trabajadores.map((t, idx) => {
-                const totHH = Object.values(t.actividades).reduce((a, b) => a + b, 0);
-                return (
-                  <View key={idx} style={styles.tableRow}>
-                    <View style={{ ...styles.tableCell, width: '3%' }}>
-                      <Text>{idx + 1}</Text>
-                    </View>
-                    <View style={{ ...styles.tableCell, width: '4%' }}>
-                      <Text>{t.cargo.slice(0, 3).toUpperCase()}</Text>
-                    </View>
-                    <View style={{ ...styles.tableCell, width: '6%' }}>
-                      <Text>{t.cargo.toUpperCase()}</Text>
-                    </View>
-                    <View style={{ ...styles.tableCell, width: '7%' }}>
-                      <Text>{t.dni}</Text>
-                    </View>
-                    <View style={{ ...styles.tableCell, width: '22%' }}>
-                      <Text>{t.nombre}</Text>
-                    </View>
-                    <View style={{ ...styles.tableCell, width: '6%' }} />
-                    <View style={{ ...styles.tableCell, width: '6%' }} />
-                    <View style={{ ...styles.tableCell, width: '6%' }} />
-                    <View style={{ ...styles.tableCell, width: '6%' }} />
-                    {todasActividades.slice(0, 10).map((act, i) => (
-                      <View key={i} style={{ ...styles.tableCell, width: '2.5%' }}>
-                        <Text>{t.actividades[act] ? t.actividades[act].toFixed(1) : ''}</Text>
+              <View style={styles.infoRow}>
+                <View style={{ ...styles.infoCell, width: '20%', borderRightWidth: 0 }}>
+                  <Text style={styles.infoCellLabelBg}>ESPECIALIDAD</Text>
+                </View>
+                <View style={{ ...styles.infoCell, width: '30%' }}>
+                  <Text style={styles.infoCellLabelBg}>SECTOR:</Text>
+                </View>
+                <View style={{ ...styles.infoCell, width: '20%' }}>
+                  <Text style={styles.infoCellLabelBg}>Jornada:</Text>
+                </View>
+                <View style={{ ...styles.infoCell, width: '30%', borderRightWidth: 0 }}>
+                  <Text style={styles.infoCellLabelBg}>Refrigerio:</Text>
+                </View>
+              </View>
+
+              <View style={styles.infoRow}>
+                <View style={{ ...styles.infoCell, width: '20%', borderRightWidth: 0 }}>
+                  <View style={styles.infoCellValue} />
+                </View>
+                <View style={{ ...styles.infoCell, width: '30%' }}>
+                  <View style={styles.infoCellValue} />
+                </View>
+                <View style={{ ...styles.infoCell, width: '20%' }}>
+                  <View style={styles.infoCellValue} />
+                </View>
+                <View style={{ ...styles.infoCell, width: '30%', borderRightWidth: 0 }}>
+                  <View style={styles.infoCellValue} />
+                </View>
+              </View>
+
+              <View style={styles.infoRow}>
+                <View style={{ ...styles.infoCell, width: '20%', borderRightWidth: 0 }}>
+                  <Text style={styles.infoCellLabelBg}>JEFE GRUPO</Text>
+                </View>
+                <View style={{ ...styles.infoCell, width: '30%' }}>
+                  <Text style={styles.infoCellLabelBg}>NIVEL:</Text>
+                </View>
+                <View style={{ ...styles.infoCell, width: '50%', borderRightWidth: 0 }}>
+                  <View style={styles.infoCellValue} />
+                </View>
+              </View>
+
+              {/* ACTIVITIES */}
+              <View style={styles.activitiesSection}>
+                <Text style={styles.activitiesTitle}>CUENTA DE COSTO (Fase)</Text>
+                <View style={styles.activitiesGrid}>
+                  <View style={styles.activityColumn}>
+                    {todasActividades.slice(0, 7).map((act, i) => (
+                      <View key={i} style={styles.activityRow}>
+                        <View style={styles.activityNum}>
+                          <Text>Act. {i + 1}</Text>
+                        </View>
+                        <View style={styles.activityName}>
+                          <Text>{act}</Text>
+                        </View>
                       </View>
                     ))}
-                    <View style={{ ...styles.tableCell, width: '2.5%' }} />
-                    <View style={{ ...styles.tableCell, width: '2.5%' }} />
-                    <View style={{ ...styles.tableCell, width: '2.5%' }} />
-                    <View style={{ ...styles.tableCell, width: '3%' }}>
-                      <Text>{totHH.toFixed(1)}</Text>
-                    </View>
                   </View>
-                );
-              })}
-            </View>
+                  <View style={styles.activityColumn}>
+                    {todasActividades.slice(7, 14).map((act, i) => (
+                      <View key={i + 7} style={styles.activityRow}>
+                        <View style={styles.activityNum}>
+                          <Text>Act. {i + 8}</Text>
+                        </View>
+                        <View style={styles.activityName}>
+                          <Text>{act}</Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              </View>
 
-            {/* Signatures */}
-            <View style={styles.footerSignatures}>
-              <View style={styles.signatureLine}>
-                <Text style={styles.signatureLabel}>MAESTRO</Text>
+              {/* TABLE */}
+              <View style={styles.tableContainer}>
+                <Text style={{ fontSize: 6, fontWeight: 'bold', marginBottom: 2 }}>REFERENCIAS / ACTIVIDADES / HORAS REALES</Text>
+                <View style={styles.tableHeader}>
+                  <View style={{ ...styles.tableCellHeader, width: '3%' }}>
+                    <Text>CODIGO</Text>
+                  </View>
+                  <View style={{ ...styles.tableCellHeader, width: '4%' }}>
+                    <Text>CAR.</Text>
+                  </View>
+                  <View style={{ ...styles.tableCellHeader, width: '5%' }}>
+                    <Text>OCUPACION</Text>
+                  </View>
+                  <View style={{ ...styles.tableCellHeader, width: '7%' }}>
+                    <Text>DNI</Text>
+                  </View>
+                  <View style={{ ...styles.tableCellHeader, width: '20%' }}>
+                    <Text>TRABAJADORES</Text>
+                  </View>
+                  <View style={{ ...styles.tableCellHeader, width: '5%' }}>
+                    <Text>Hora Ingreso</Text>
+                  </View>
+                  <View style={{ ...styles.tableCellHeader, width: '5%' }}>
+                    <Text>FIRMA INGRESO</Text>
+                  </View>
+                  <View style={{ ...styles.tableCellHeader, width: '5%' }}>
+                    <Text>Hora Salida</Text>
+                  </View>
+                  <View style={{ ...styles.tableCellHeader, width: '5%' }}>
+                    <Text>FIRMA SALIDA</Text>
+                  </View>
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                    <View key={n} style={{ ...styles.tableCellHeader, width: '2.2%' }}>
+                      <Text>{n}</Text>
+                    </View>
+                  ))}
+                  <View style={{ ...styles.tableCellHeader, width: '2.2%' }}>
+                    <Text>N</Text>
+                  </View>
+                  <View style={{ ...styles.tableCellHeader, width: '2.2%' }}>
+                    <Text>0.6</Text>
+                  </View>
+                  <View style={{ ...styles.tableCellHeader, width: '2.2%' }}>
+                    <Text>1.0</Text>
+                  </View>
+                  <View style={{ ...styles.tableCellHeader, width: '3%' }}>
+                    <Text>TOT.</Text>
+                  </View>
+                </View>
+
+                {trabajadores.map((t, idx) => {
+                  const totHH = Object.values(t.actividades).reduce((a, b) => a + b, 0);
+                  return (
+                    <View key={idx} style={styles.tableRow}>
+                      <View style={{ ...styles.tableCell, width: '3%' }}>
+                        <Text>{idx + 1}</Text>
+                      </View>
+                      <View style={{ ...styles.tableCell, width: '4%' }}>
+                        <Text>{t.cargo.slice(0, 2).toUpperCase()}</Text>
+                      </View>
+                      <View style={{ ...styles.tableCell, width: '5%' }}>
+                        <Text>{t.cargo.toUpperCase().slice(0, 9)}</Text>
+                      </View>
+                      <View style={{ ...styles.tableCell, width: '7%' }}>
+                        <Text>{t.dni}</Text>
+                      </View>
+                      <View style={{ ...styles.tableCell, width: '20%' }}>
+                        <Text>{t.nombre}</Text>
+                      </View>
+                      <View style={{ ...styles.tableCell, width: '5%' }} />
+                      <View style={{ ...styles.tableCell, width: '5%' }} />
+                      <View style={{ ...styles.tableCell, width: '5%' }} />
+                      <View style={{ ...styles.tableCell, width: '5%' }} />
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => {
+                        const act = todasActividades[n - 1];
+                        return (
+                          <View key={n} style={{ ...styles.tableCell, width: '2.2%' }}>
+                            <Text>{act && t.actividades[act] ? t.actividades[act].toFixed(1) : ''}</Text>
+                          </View>
+                        );
+                      })}
+                      <View style={{ ...styles.tableCell, width: '2.2%' }} />
+                      <View style={{ ...styles.tableCell, width: '2.2%' }} />
+                      <View style={{ ...styles.tableCell, width: '2.2%' }} />
+                      <View style={{ ...styles.tableCell, width: '3%' }}>
+                        <Text>{totHH.toFixed(1)}</Text>
+                      </View>
+                    </View>
+                  );
+                })}
+
+                {/* Blank row for spacing */}
+                <View style={styles.tableRow}>
+                  {Array.from({ length: 24 }).map((_, i) => (
+                    <View key={i} style={{ ...styles.tableCell, width: i < 5 ? '3-7%' : '2.2%', borderWidth: i === 23 ? 1 : 0.5 }} />
+                  ))}
+                </View>
               </View>
-              <View style={styles.signatureLine}>
-                <Text style={styles.signatureLabel}>INGENIERO DE PRODUCCIÓN</Text>
-              </View>
-              <View style={styles.signatureLine}>
-                <Text style={styles.signatureLabel}>INGENIERO RESIDENTE</Text>
+
+              {/* SIGNATURES */}
+              <View style={styles.footerContainer}>
+                <View style={styles.footerRow}>
+                  <View style={styles.footerCell}>
+                    <Text style={styles.footerLabel}>ARAYA QUISPECONDORI MARCELINO</Text>
+                  </View>
+                  <View style={styles.footerCell}>
+                    <Text style={styles.footerLabel}>RAFAEL CONDORI ALEXANDER</Text>
+                  </View>
+                  <View style={styles.footerCell}>
+                    <Text style={styles.footerLabel}>GONZALES GUTIERREZ GUIDO</Text>
+                  </View>
+                  <View style={{ ...styles.footerCell, flex: 0.3, paddingRight: 5, alignItems: 'flex-end', borderRightWidth: 0 }}>
+                    <Text style={{ fontSize: 6, fontWeight: 'bold' }}>Número de Trabajadores Parte</Text>
+                  </View>
+                </View>
+
+                <View style={styles.footerSignatureRow}>
+                  <View style={styles.footerSignatureCell}>
+                    <Text style={styles.footerSignatureName}>MAESTRO</Text>
+                  </View>
+                  <View style={styles.footerSignatureCell}>
+                    <Text style={styles.footerSignatureName}>INGENIERO DE PRODUCCIÓN</Text>
+                  </View>
+                  <View style={styles.footerSignatureCell}>
+                    <Text style={styles.footerSignatureName}>INGENIERO RESIDENTE</Text>
+                  </View>
+                  <View style={{ ...styles.footerSignatureCell, flex: 0.3, borderRightWidth: 0 }}>
+                    <Text style={styles.trabajadoresCount}>{trabajadores.length}</Text>
+                  </View>
+                </View>
               </View>
             </View>
           </Page>
