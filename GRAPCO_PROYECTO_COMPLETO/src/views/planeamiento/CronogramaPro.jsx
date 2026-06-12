@@ -10,8 +10,9 @@
 //   · Pestaña "Plan base" con el Excel CREDITEX original de referencia
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { db } from '../../firebaseConfig';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs } from 'firebase/firestore';
 import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
+import { useCatalogoWBS } from '../../hooks/useCatalogoWBS';
 import { BASE } from '../../utils/styles';
 import Icon from '../../components/Icon';
 import VistaHeader from '../../components/VistaHeader';
@@ -59,6 +60,18 @@ const seedEnBlanco = () => ([
 
 const hoyIso = () => isoDeFecha(new Date());
 
+// Normaliza nombres de actividad para cruzar cronograma ↔ tareos ↔ catálogo:
+// mayúsculas, sin acentos, sin sufijo de frente «(F1-PTARI)», sin puntos
+// finales ni espacios dobles. Mismo criterio tolerante que usa el ISP.
+const FRENTE_RE = /\s*\([^()]*(?:F\s*\d|PTAR|NAVE|DECANTAD)[^()]*\)\s*$/i;
+const normAct = (s) => {
+  let t = String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+  let prev;
+  do { prev = t; t = t.replace(FRENTE_RE, ''); } while (t !== prev);
+  return t.toUpperCase().replace(/\.+$/, '').replace(/\s+/g, ' ').trim();
+};
+const normActSinParen = (s) => normAct(s).replace(/\s*\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim();
+
 export default function CronogramaPro() {
   const { proyectoActivoId } = useProyectoActivo();
   const [tab, setTab] = useState('pro');
@@ -72,6 +85,10 @@ export default function CronogramaPro() {
   // Línea base (como MS Project): snapshot congelado del plan para medir desvíos
   const [baseline, setBaseline] = useState(null);      // { fecha, finProyecto, duracion, porId: {id:{es,ef}} }
   const [verCurvaS, setVerCurvaS] = useState(true);
+  const [sincronizando, setSincronizando] = useState(false);
+  const [syncMsg, setSyncMsg] = useState(null);
+  // Catálogo WBS del proyecto: metrados totales por actividad (fuente única)
+  const { infoMap } = useCatalogoWBS(proyectoActivoId);
 
   // ── Cargar de Firestore ──
   useEffect(() => {
@@ -141,6 +158,61 @@ export default function CronogramaPro() {
       setSinGuardar(false);
     } finally {
       setGuardando(false);
+    }
+  };
+
+  // ── SINCRONIZAR AVANCE DESDE LOS TAREOS (producción → planeamiento) ──
+  // % real por actividad = metrado ejecutado (Registros_Campo) ÷ metrado
+  // total del catálogo WBS. Las tareas del cronograma se cruzan por nombre
+  // normalizado y su % de avance se actualiza SOLO (sin digitación doble).
+  const sincronizarAvance = async () => {
+    setSincronizando(true);
+    setSyncMsg(null);
+    try {
+      // 1) Metrado ejecutado por actividad (todos los registros de producción)
+      const snap = await getDocs(collection(db, 'Registros_Campo'));
+      const ejecutado = {};
+      snap.forEach(d => {
+        const r = d.data();
+        const k = normAct(r.actividad);
+        if (!k) return;
+        ejecutado[k] = (ejecutado[k] || 0) + (parseFloat(r.metrado) || 0);
+      });
+
+      // 2) Metrado total por actividad (catálogo WBS — fuente única)
+      const totalPorAct = {};
+      Object.entries(infoMap || {}).forEach(([nombre, info]) => {
+        const tot = (parseFloat(info.metM) || 0) || (parseFloat(info.metP) || 0);
+        if (tot > 0) {
+          totalPorAct[normAct(nombre)] = tot;
+          totalPorAct[normActSinParen(nombre)] = totalPorAct[normActSinParen(nombre)] || tot;
+        }
+      });
+
+      // 3) Cruce con las tareas del cronograma (hojas; exacto → sin paréntesis)
+      let actualizadas = 0, sinMatch = 0, sinTotal = 0;
+      const tareasConResumen = calcularCPM(renumerarEDT(tareas), fechaInicio).tareas;
+      const nuevas = tareas.map((t, i) => {
+        if (tareasConResumen[i]?.resumen) return t;
+        const k1 = normAct(t.nombre), k2 = normActSinParen(t.nombre);
+        const ejec = ejecutado[k1] ?? ejecutado[k2];
+        if (ejec == null) { sinMatch++; return t; }
+        const total = totalPorAct[k1] ?? totalPorAct[k2];
+        if (!total) { sinTotal++; return t; }
+        const pct = Math.min(100, Math.round((ejec / total) * 100));
+        if (pct !== (t.avance || 0)) actualizadas++;
+        return { ...t, avance: pct };
+      });
+
+      if (actualizadas > 0) { setTareas(nuevas); setSinGuardar(true); }
+      setSyncMsg(
+        `${actualizadas} tarea(s) actualizadas con el avance real de los tareos · ` +
+        `${sinMatch} sin registros de producción · ${sinTotal} sin metrado total en el catálogo WBS`
+      );
+    } catch (e) {
+      setSyncMsg(`Error al sincronizar: ${e.message}`);
+    } finally {
+      setSincronizando(false);
     }
   };
 
@@ -359,6 +431,13 @@ export default function CronogramaPro() {
                 border: `1.5px solid ${baseline ? BASE.gold : BASE.border}`,
                 borderRadius: '8px', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer',
               }}>{baseline ? `Línea base: ${baseline.fecha}` : 'Fijar línea base'}</button>
+              <button onClick={sincronizarAvance} disabled={sincronizando}
+                title="Llena el % de avance de cada tarea con el metrado real registrado por los capataces (tareos ÷ metrado total del catálogo WBS)"
+                style={{
+                  padding: '8px 14px', background: TEAL, color: '#fff', border: 'none',
+                  borderRadius: '8px', fontSize: '11.5px', fontWeight: 800, cursor: 'pointer',
+                  opacity: sincronizando ? 0.6 : 1, letterSpacing: '0.3px',
+                }}>{sincronizando ? 'Sincronizando…' : '↻ Avance desde tareos'}</button>
               <button onClick={guardar} disabled={!sinGuardar || guardando} style={{
                 padding: '8px 18px', borderRadius: '8px', border: 'none', cursor: sinGuardar ? 'pointer' : 'default',
                 background: sinGuardar ? BASE.navy : BASE.bgSoft, color: sinGuardar ? BASE.gold : BASE.mutedSoft,
@@ -370,6 +449,17 @@ export default function CronogramaPro() {
           {cpm?.errores?.length > 0 && (
             <div style={{ background: '#FEF2F2', border: `1px solid ${ROJO}40`, borderRadius: '10px', padding: '9px 14px', fontSize: '11.5px', color: ROJO, fontWeight: 600 }}>
               {cpm.errores.join(' · ')}
+            </div>
+          )}
+
+          {syncMsg && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              background: '#F0FDFA', border: `1px solid ${TEAL}40`, borderRadius: '10px',
+              padding: '9px 14px', fontSize: '11.5px', color: TEAL, fontWeight: 600,
+            }}>
+              <span style={{ flex: 1 }}>{syncMsg}</span>
+              <button onClick={() => setSyncMsg(null)} style={{ border: 'none', background: 'transparent', color: TEAL, cursor: 'pointer', fontWeight: 800, fontSize: '13px' }}>×</button>
             </div>
           )}
 
