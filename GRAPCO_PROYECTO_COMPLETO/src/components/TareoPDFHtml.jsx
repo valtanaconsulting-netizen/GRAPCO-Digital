@@ -3,8 +3,10 @@
 // así las celdas de arriba (CUENTA DE COSTO / Uni / Avance / Rendim.) y los
 // totales de colores del pie quedan perfectamente alineados con las columnas
 // 1-10 / N / 0.6 / 1.0 / TOT de la tabla de trabajadores.
+// Los datos (trabajadores sin duplicar, APELLIDOS NOMBRES, capataz primero,
+// cargos desde la BD) vienen de utils/tareoDatos.js — compartidos con el Excel.
 import html2pdf from 'html2pdf.js';
-import { crearResolverNombre } from '../utils/nombresCanonicos';
+import { prepararDatosTareo, fmtFechaLargaF13 } from '../utils/tareoDatos';
 
 const GREY = '#d9d9d9';
 const PEACH = '#fde9d9';   // totales por actividad
@@ -15,26 +17,10 @@ const SALMON = '#f8b9b9';  // total general
 // profesional en Windows); Segoe UI / Arial como respaldo.
 const FONT = `Calibri,'Segoe UI',Tahoma,Arial,sans-serif`;
 
-const CAR_MAP = { Capataz: 'MA', Operario: 'OP', Oficial: 'OF', Ayudante: 'AYU' };
-const OCUP_MAP = {
-  'Albañilería': 'ALBAÑIL', 'Encofrado': 'ENCOFRADO', 'Acero': 'ACERO',
-  'Concreto': 'CONCRETO', 'Instalaciones': 'INSTALAC.', 'Movimiento de Tierras': 'MOV.TIERRA',
-  'General': 'GENERAL',
-};
-
 // 23 columnas de la grilla (suman 100)
 const COLS = [4, 3.2, 6, 5.8, 16, 4.5, 7.5, 4.5, 7.5, 2.6, 2.6, 2.6, 2.6, 2.6, 2.6, 2.6, 2.6, 2.6, 2.6, 3, 3, 3, 6];
 
 const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-function fmtFechaLarga(fechaIso) {
-  const [y, m, d] = (fechaIso || '').split('-').map(Number);
-  if (!y) return fechaIso;
-  const dt = new Date(y, m - 1, d);
-  const weekday = dt.toLocaleDateString('es-ES', { weekday: 'long' });
-  const month = dt.toLocaleDateString('es-ES', { month: 'long' });
-  return `${weekday}, ${month} ${String(d).padStart(2, '0')}, ${y}`;
-}
 
 async function cargarLogo() {
   try {
@@ -56,7 +42,7 @@ const td = (content, { cs = 1, bg = '', bold = false, align = 'center', fs = 8, 
   `<td colspan="${cs}" style="border:1px solid #000;${bg ? `background:${bg};` : ''}font-size:${fs}px;${bold ? 'font-weight:bold;' : ''}text-align:${align};padding:${pad};${h ? `height:${h}px;` : ''}vertical-align:middle;letter-spacing:0;">${content}</td>`;
 
 function paginaHTML({ fecha, capataz, trabajadores, actividades, totales, supervisor, ruc, logo, esUltima }) {
-  const fechaLarga = fmtFechaLarga(fecha);
+  const fechaLarga = fmtFechaLargaF13(fecha);
 
   // ── Filas de actividades (Act.1-7 | Act.8-14) ──
   const filasActs = [0, 1, 2, 3, 4, 5, 6].map(i => `
@@ -218,103 +204,60 @@ function paginaHTML({ fecha, capataz, trabajadores, actividades, totales, superv
   </div>`;
 }
 
-export async function generarPDFTareoHtml(registrosPorDia, personalDB, ruc, supervisor = 'DIRAC') {
-  const resolverNombre = crearResolverNombre(Object.values(registrosPorDia).flat() || [], personalDB || []);
-
-  const fichaPorCanonico = {};
-  (personalDB || []).forEach(p => {
-    if (!p?.nombre) return;
-    const c = resolverNombre(p.nombre);
-    if (c && !fichaPorCanonico[c]) fichaPorCanonico[c] = p;
-  });
+// Construye el contenedor HTML con todas las páginas del tareo.
+// Lo comparten la DESCARGA (generarPDFTareoHtml) y la VISTA (verPDFTareoHtml).
+async function construirContainerTareo(registrosPorDia, personalDB, ruc, supervisor = 'DIRAC') {
+  const datos = prepararDatosTareo(registrosPorDia, personalDB);
+  if (!datos.length) throw new Error('Sin registros para exportar');
 
   const logo = await cargarLogo();
 
-  // Ordenar páginas por fecha y capataz
-  const entradas = Object.entries(registrosPorDia)
-    .filter(([, regs]) => regs.length)
-    .sort(([a], [b]) => a.localeCompare(b));
-  if (!entradas.length) throw new Error('Sin registros para exportar');
-
-  const paginas = entradas.map(([fechaCapKey, registros], i) => {
-    const [fecha, capataz] = fechaCapKey.split('__');
-
-    // Trabajadores agrupados por nombre canónico (el MISMO obrero escrito
-    // distinto cuenta como UNA persona) + HN/HE separados para N / 0.6 / 1.0.
-    const trabajadoresMap = {};
-    registros.forEach(r => {
-      (r.detalleTareo || []).forEach(t => {
-        if (!t?.nombre) return;
-        const nomKey = resolverNombre(t.nombre);
-        if (!trabajadoresMap[nomKey]) {
-          const ficha = fichaPorCanonico[nomKey] || {};
-          const cargo = ficha.cargo || 'Operario';
-          trabajadoresMap[nomKey] = {
-            nombre: nomKey,
-            dni: ficha.dni || '',
-            cargo,
-            car: CAR_MAP[cargo] || cargo.slice(0, 2).toUpperCase(),
-            ocupacion: cargo === 'Capataz'
-              ? 'GENERAL'
-              : (OCUP_MAP[ficha.especialidad] || (ficha.especialidad || cargo).toUpperCase().slice(0, 10)),
-            actividades: {},
-            totHN: 0,
-            totHE: 0,
-          };
-        }
-        const act = r._actividadCanonica || r.actividad;
-        const hn = parseFloat(t.hn) || 0;
-        const he = parseFloat(t.he) || 0;
-        trabajadoresMap[nomKey].actividades[act] = (trabajadoresMap[nomKey].actividades[act] || 0) + hn + he;
-        trabajadoresMap[nomKey].totHN += hn;
-        trabajadoresMap[nomKey].totHE += he;
-      });
-    });
-
-    // Capataz primero (es el MAESTRO del parte), resto alfabético
-    const trabajadores = Object.values(trabajadoresMap).sort((a, b) => {
-      if (a.cargo === 'Capataz' && b.cargo !== 'Capataz') return -1;
-      if (b.cargo === 'Capataz' && a.cargo !== 'Capataz') return 1;
-      return a.nombre.localeCompare(b.nombre);
-    });
-
-    const actividades = [...new Set(registros.map(r => r._actividadCanonica || r.actividad))].slice(0, 14);
-
-    // Totales: columnas 1-10 SIEMPRE muestran valor (0.0 incluido, como el original)
-    const totales = { porCol: [], hn: 0, he: 0, he06: 0, total: 0 };
-    for (let n = 0; n < 10; n++) {
-      const act = actividades[n];
-      totales.porCol[n] = act
-        ? trabajadores.reduce((s, t) => s + (t.actividades[act] || 0), 0)
-        : 0;
-    }
-    trabajadores.forEach(t => { totales.hn += t.totHN; totales.he += t.totHE; });
-    totales.he06 = totales.he * 0.6;
-    totales.total = totales.hn + totales.he;
-
-    return paginaHTML({
-      fecha, capataz, trabajadores, actividades, totales,
-      supervisor, ruc, logo, esUltima: i === entradas.length - 1,
-    });
-  });
+  const paginas = datos.map((d, i) => paginaHTML({
+    ...d, supervisor, ruc, logo, esUltima: i === datos.length - 1,
+  }));
 
   const container = document.createElement('div');
   container.innerHTML = paginas.join('');
 
-  const fechas = entradas.map(([k]) => k.split('__')[0]);
+  const fechas = datos.map(d => d.fecha);
   const nombre = fechas.length > 1
     ? `Tareo_${fechas[0]}_a_${fechas[fechas.length - 1]}.pdf`
     : `Tareo_${fechas[0]}.pdf`;
 
-  await html2pdf().set({
-    margin: [6, 6, 6, 6],
-    filename: nombre,
-    image: { type: 'png' },
-    // scale 3 + windowWidth holgado → texto nítido y el borde derecho no se recorta
-    html2canvas: { scale: 3, useCORS: true, backgroundColor: '#ffffff', windowWidth: 1180 },
-    jsPDF: { orientation: 'landscape', unit: 'mm', format: 'a4' },
-    pagebreak: { mode: ['css', 'legacy'] },
-  }).from(container).save();
+  return { container, nombre, numPaginas: datos.length };
+}
 
-  return entradas.length;
+const OPCIONES_PDF = (nombre) => ({
+  margin: [6, 6, 6, 6],
+  filename: nombre,
+  image: { type: 'png' },
+  // scale 3 + windowWidth holgado → texto nítido y el borde derecho no se recorta
+  html2canvas: { scale: 3, useCORS: true, backgroundColor: '#ffffff', windowWidth: 1180 },
+  jsPDF: { orientation: 'landscape', unit: 'mm', format: 'a4' },
+  pagebreak: { mode: ['css', 'legacy'] },
+});
+
+// Descarga el PDF (botón de Gestión → Tareo).
+export async function generarPDFTareoHtml(registrosPorDia, personalDB, ruc, supervisor = 'DIRAC') {
+  const { container, nombre, numPaginas } = await construirContainerTareo(registrosPorDia, personalDB, ruc, supervisor);
+  await html2pdf().set(OPCIONES_PDF(nombre)).from(container).save();
+  return numPaginas;
+}
+
+// VISUALIZA el PDF en una pestaña nueva (vista del capataz: verificar las
+// horas de su gente antes de imprimir/firmar). Si el navegador bloquea la
+// pestaña, cae a descarga directa.
+export async function verPDFTareoHtml(registrosPorDia, personalDB, ruc, supervisor = 'DIRAC') {
+  const { container, nombre, numPaginas } = await construirContainerTareo(registrosPorDia, personalDB, ruc, supervisor);
+  const pdf = await html2pdf().set(OPCIONES_PDF(nombre)).from(container).toPdf().get('pdf');
+  const blob = pdf.output('blob');
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, '_blank');
+  if (!win) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nombre;
+    a.click();
+  }
+  return numPaginas;
 }

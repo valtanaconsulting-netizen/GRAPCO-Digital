@@ -6,7 +6,8 @@ import { hoy, fmtFecha } from '../utils/helpers';
 import DateInput from '../components/DateInput';
 import VistaHeader from '../components/VistaHeader';
 import { crearResolverNombre } from '../utils/nombresCanonicos';
-import { generarPDFTareoHtml } from '../components/TareoPDFHtml';
+// TareoPDFHtml se importa DINÁMICO en el handler: html2pdf (~0.5 MB) solo se
+// descarga cuando el usuario exporta, no al abrir el área.
 
 export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobile, showToast, fDesde, fHasta, fCapataz, setFDesde, setFHasta, setFCapataz }) {
   // Resolver de nombres compartido — el MISMO obrero escrito distinto cuenta
@@ -100,96 +101,25 @@ export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobi
     }
   };
 
-  // ✅ EXPORTAR TAREO DIARIO (formato GRAPCO original)
+  // ✅ EXPORTAR TAREO DIARIO (Excel IDÉNTICO al F13_MPO oficial — usa el
+  // propio archivo F13 como plantilla: estilos, grises, colores y logo exactos)
   const exportarTareoDiario = async () => {
     try {
       if (!tareoRegistros.length) return showToast('No hay registros en el rango', 'warning');
-      const XLSX = await loadXLSX();
+      showToast('Generando Excel formato F13...', 'info');
 
-      // Agrupar por fecha + capataz
-      const grupos = {};
+      // Agrupar por fecha + capataz (una hoja por día/cuadrilla)
+      const registrosPorDia = {};
       tareoRegistros.forEach(r => {
         const key = `${r.fecha}__${r.capataz}`;
-        if (!grupos[key]) grupos[key] = { fecha: r.fecha, capataz: r.capataz, registros: [] };
-        grupos[key].registros.push(r);
+        if (!registrosPorDia[key]) registrosPorDia[key] = [];
+        registrosPorDia[key].push(r);
       });
 
-      const wb = XLSX.utils.book_new();
-
-      Object.values(grupos).forEach(g => {
-        const aoa = [];
-        // Encabezado
-        aoa.push(['Supervisor:', tareoSupervisor, '', '', '', '', 'ZONA:', tareoZona, '', '', '', '', 'HORARIO DE TRABAJO']);
-        aoa.push(['CUADRILLA', g.capataz, '', '', '', '', 'SECTOR:', tareoSector, '', '', '', 'INICIO', tareoHoraIni, 'FIN', tareoHoraFin]);
-        aoa.push(['ESPECIALIDAD', '', '', '', '', '', 'NIVEL:', tareoNivel, '', '', '', 'Jornada:', tareoJornada]);
-        aoa.push(['JEFE GRUPO', g.capataz, '', '', '', '', '', '', '', '', '', 'Refrigerio:', tareoRefrigerio]);
-        aoa.push([]);
-        aoa.push(['', '', '', '', '', '', '', '', 'CUENTA DE COSTO (Fase)', '', '', '', '', 'Uni', 'Avance', 'Rendim.']);
-
-        // 14 actividades
-        const acts = [...new Set(g.registros.map(r => r._actividadCanonica || r.actividad))].slice(0, 14);
-        for (let i = 0; i < 14; i++) {
-          const reg = g.registros.find(r => (r._actividadCanonica || r.actividad) === acts[i]);
-          aoa.push([`Act. ${i + 1}`, '', '', '', '', '', '', '', acts[i] || '', '', '', '', '', reg?.unidad || '', reg?.metrado || '', reg?.ipReal || '']);
-        }
-        aoa.push([]);
-        aoa.push(['', '', '', '', '', 'REFERENCIAS', '', '', '', '', '', '', '', 'ACTIVIDADES', '', '', '', '', '', '', '', '', '', '', 'HORAS REALES']);
-        aoa.push(['CODIGO', 'CAR.', 'OCUPACION', 'DNI', 'TRABAJADORES', 'Hora Ingreso', 'FIRMA INGRESO', 'Hora Salida', 'FIRMA SALIDA',
-          '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', 'N', '0.6', '1.0', 'TOT.']);
-
-        // Trabajadores — se agrupan por nombre canónico (no por la variante
-        // exacta) para que el MISMO obrero no salga 2 veces si fue escrito
-        // distinto en algún día.
-        const trabajadoresMap = {};
-        g.registros.forEach((r, idx) => {
-          (r.detalleTareo || []).forEach(t => {
-            if (!t?.nombre) return;
-            const nomKey = resolverNombre(t.nombre);
-            if (!trabajadoresMap[nomKey]) {
-              const ficha = fichaPorCanonico[nomKey];
-              trabajadoresMap[nomKey] = {
-                nombre: nomKey, dni: ficha?.dni || '', cargo: ficha?.cargo || 'OP',
-                actividades: {}, totHN: 0, totHE: 0,
-              };
-            }
-            const actIdx = acts.indexOf(r._actividadCanonica || r.actividad);
-            if (actIdx >= 0) {
-              trabajadoresMap[nomKey].actividades[actIdx] = (trabajadoresMap[nomKey].actividades[actIdx] || 0) + (parseFloat(t.hn) || 0) + (parseFloat(t.he) || 0);
-            }
-            trabajadoresMap[nomKey].totHN += parseFloat(t.hn) || 0;
-            trabajadoresMap[nomKey].totHE += parseFloat(t.he) || 0;
-          });
-        });
-        const trabajadoresArr = Object.values(trabajadoresMap);
-        trabajadoresArr.forEach((t, i) => {
-          const row = [i + 1, t.cargo.slice(0, 3).toUpperCase(), t.cargo.toUpperCase(), t.dni, t.nombre, '', '', '', ''];
-          for (let j = 0; j < 12; j++) row.push(t.actividades[j] ? t.actividades[j].toFixed(1) : '');
-          row.push(t.totHN.toFixed(1));
-          row.push((t.totHE * 0.6).toFixed(1));
-          row.push(t.totHE.toFixed(1));
-          row.push((t.totHN + t.totHE).toFixed(1));
-          aoa.push(row);
-        });
-
-        // Pie firmas
-        aoa.push([]);
-        aoa.push(['', '', '', '', '', '', '', '', '', '', '', '', '', 'Número de Trabajadores Parte', '', trabajadoresArr.length]);
-        aoa.push(['', '', '', tareoSupervisor, '', '', '', '', tareoSupervisor, '', '', '', '', '', '']);
-        aoa.push(['', '', '', 'MAESTRO', '', '', '', '', 'INGENIERO DE PRODUCCIÓN', '', '', '', 'INGENIERO RESIDENTE']);
-
-        const ws = XLSX.utils.aoa_to_sheet(aoa);
-        ws['!cols'] = [
-          { wch: 7 }, { wch: 6 }, { wch: 13 }, { wch: 11 }, { wch: 34 }, { wch: 8 }, { wch: 14 }, { wch: 8 }, { wch: 14 },
-          ...Array(12).fill({ wch: 5 }),
-          { wch: 6 }, { wch: 6 }, { wch: 6 }, { wch: 7 }
-        ];
-
-        const sheetName = `${g.fecha}_${(g.capataz || '').split(' ')[0] || 'Cuad'}`.replace(/[^\w\d_]/g, '').slice(0, 31);
-        XLSX.utils.book_append_sheet(wb, ws, sheetName);
-      });
-
-      XLSX.writeFile(wb, `Tareo_Diario_${tareoFechaIni}_a_${tareoFechaFin}.xlsx`);
-      showToast(`✅ Tareo diario exportado — ${Object.keys(grupos).length} hojas`, 'success');
+      // Import dinámico: exceljs solo se carga al exportar
+      const { generarExcelTareoF13 } = await import('../utils/tareoExcelF13');
+      const hojas = await generarExcelTareoF13(registrosPorDia, personalDB, tareoSupervisor || 'DIRAC');
+      showToast(`✅ Tareo F13 exportado — ${hojas} hoja(s)`, 'success');
     } catch (err) {
       console.error('[exportarTareoDiario]', err);
       showToast(`Error: ${err.message}`, 'error');
@@ -211,6 +141,7 @@ export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobi
         registrosPorDia[key].push(r);
       });
 
+      const { generarPDFTareoHtml } = await import('../components/TareoPDFHtml');
       await generarPDFTareoHtml(registrosPorDia, personalDB, '20203071702', tareoSupervisor || 'DIRAC');
 
       showToast(`✅ PDF generado — ${Object.keys(registrosPorDia).length} páginas en landscape A4`, 'success');
@@ -409,8 +340,8 @@ export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobi
         <button onClick={exportarTareoDiario} disabled={!tareoStats.registros}
           style={{padding:'18px',background:tareoStats.registros?BASE.green:'#cbd5e1',color:'#fff',border:'none',borderRadius:'12px',fontWeight:'800',cursor:tareoStats.registros?'pointer':'not-allowed',fontSize:'14px',boxShadow:tareoStats.registros?'0 4px 12px rgba(22,163,74,0.3)':'none',display:'flex',flexDirection:'column',alignItems:'center',gap:'4px'}}>
           <span style={{fontSize:'24px'}}>📋</span>
-          <span>TAREO DIARIO</span>
-          <span style={{fontSize:'11px',fontWeight:'500',opacity:0.9}}>Formato GRAPCO original (Excel)</span>
+          <span>TAREO DIARIO (EXCEL)</span>
+          <span style={{fontSize:'11px',fontWeight:'500',opacity:0.9}}>Formato F13 oficial — idéntico al PDF, con logo</span>
         </button>
         <button onClick={exportarTareoAdmin} disabled={!tareoStats.registros}
           style={{padding:'18px',background:tareoStats.registros?BASE.orange:'#cbd5e1',color:'#fff',border:'none',borderRadius:'12px',fontWeight:'800',cursor:tareoStats.registros?'pointer':'not-allowed',fontSize:'14px',boxShadow:tareoStats.registros?'0 4px 12px rgba(234,88,12,0.3)':'none',display:'flex',flexDirection:'column',alignItems:'center',gap:'4px'}}>

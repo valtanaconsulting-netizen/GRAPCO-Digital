@@ -728,6 +728,31 @@ export default function Capataz({
   // RENDER — Layout sidebar + main + sticky actions
   // ════════════════════════════════════════════════════════════
 
+  // ── Ver Tareo (PDF) — el capataz verifica las horas de su gente antes de
+  // imprimir/firmar. Usa las actividades EN PANTALLA (incluye lo no subido);
+  // el PDF se abre en una pestaña nueva con el formato oficial F13.
+  const verTareoPDF = async () => {
+    try {
+      const conHH = (actividades || []).filter(a =>
+        (a.detalleTareo || []).some(t => (parseFloat(t?.hn) || 0) + (parseFloat(t?.he) || 0) > 0));
+      if (!conHH.length) return showToast('Aún no hay horas asignadas en las actividades de hoy', 'warning');
+      showToast('Generando tareo en PDF...', 'info');
+      const registrosPorDia = {
+        [`${fecha}__${capataz}`]: conHH.map(a => ({
+          fecha, capataz,
+          actividad: a.actividad,
+          detalleTareo: a.detalleTareo,
+        })),
+      };
+      // Import dinámico: html2pdf solo se carga cuando el capataz lo pide
+      const { verPDFTareoHtml } = await import('../components/TareoPDFHtml');
+      await verPDFTareoHtml(registrosPorDia, personalDB, '20203071702');
+    } catch (err) {
+      console.error('[verTareoPDF]', err);
+      showToast(`Error generando el tareo: ${err.message}`, 'error');
+    }
+  };
+
   const sinSeleccion = !capataz;
   const sidebarWidth = 280;
 
@@ -754,6 +779,7 @@ export default function Capataz({
       onAbrirHistorial={abrirHistorial}
       onAgregarActividad={agregarActividad}
       onEliminarBorrador={eliminarBorrador}
+      onVerTareo={verTareoPDF}
     />
   );
 

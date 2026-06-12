@@ -8,13 +8,23 @@
 //   1) "clave dura"     = sin espacios, sin acentos, en mayúsculas → une
 //                         diferencias de espaciado (ej. QUISPECONDORI vs QUISPE CONDORI).
 //   2) similitud Levenshtein → une errores de tipeo leves.
-//   3) Nombre a mostrar: el del registro de Personal (oficial). Si no está
-//      en Personal, se elige la variante mejor escrita del propio historial
-//      (más separada por espacios, luego la más frecuente).
+//   3) "clave de tokens" = mismas palabras en CUALQUIER orden → une
+//      "ADRIAN MARTINEZ CASAPAICO" con "CASAPAICO MARTINEZ ADRIAN"
+//      (apellidos-nombre vs nombre-apellidos).
+//   4) Nombre a mostrar: el del registro de Personal (oficial, en formato
+//      APELLIDOS NOMBRES). Si no está en Personal, se elige la variante mejor
+//      escrita del propio historial (más separada por espacios, luego la más
+//      frecuente).
 
 export const normNombreKey = (s) => String(s || '')
   .normalize('NFD').replace(/[̀-ͯ]/g, '')
   .toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+// Clave de tokens: mismas palabras ordenadas alfabéticamente → detecta el
+// MISMO nombre escrito con las palabras en otro orden (apellidos↔nombres).
+export const tokenNombreKey = (s) => String(s || '')
+  .normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .toUpperCase().split(/[^A-Z0-9]+/).filter(Boolean).sort().join('|');
 
 export const limpiaNombre = (s) => String(s || '').trim().replace(/\s+/g, ' ');
 
@@ -87,6 +97,31 @@ export function crearResolverNombre(historial = [], personalDB = []) {
     if (asignado) repDeKey[k] = asignado;
     else { reps.push(k); repDeKey[k] = k; }
   });
+
+  // 3b) Union-find por clave de tokens: si dos clusters tienen variantes con
+  //     las MISMAS palabras en distinto orden, son la misma persona
+  //     (ej. "ADRIAN MARTINEZ CASAPAICO" ↔ "CASAPAICO MARTINEZ ADRIAN").
+  const parent = {};
+  reps.forEach(r => { parent[r] = r; });
+  const find = (x) => {
+    while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; }
+    return x;
+  };
+  const repPorTokenKey = {};
+  Object.keys(variantes).forEach(k => {
+    const rep = repDeKey[k];
+    Object.keys(variantes[k]).forEach(nom => {
+      const tk = tokenNombreKey(nom);
+      if (!tk) return;
+      if (repPorTokenKey[tk]) {
+        const a = find(repPorTokenKey[tk]), b = find(rep);
+        if (a !== b) parent[b] = a;
+      } else {
+        repPorTokenKey[tk] = rep;
+      }
+    });
+  });
+  Object.keys(repDeKey).forEach(k => { repDeKey[k] = find(repDeKey[k]); });
 
   // 4) Nombre canónico por representante
   const variantesPorRep = {};

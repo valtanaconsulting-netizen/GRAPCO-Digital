@@ -46,6 +46,7 @@ export default function SidebarCapataz({
   onAbrirHistorial,
   onAgregarActividad,
   onEliminarBorrador,
+  onVerTareo,
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -135,6 +136,18 @@ export default function SidebarCapataz({
                 <span style={{ fontSize: '16px' }}>➕</span>
                 <span>Nueva actividad</span>
               </button>
+              {actividades.length > 0 && onVerTareo && (
+                <button type="button" onClick={onVerTareo} style={{
+                  padding: '10px 12px', background: BASE.navy, color: '#fff',
+                  border: 'none', borderRadius: '8px',
+                  fontSize: '12px', fontWeight: '800', cursor: 'pointer',
+                  textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px',
+                  boxShadow: `0 2px 6px ${BASE.navy}55`,
+                }}>
+                  <span style={{ fontSize: '16px' }}>📄</span>
+                  <span>Ver Tareo (PDF)</span>
+                </button>
+              )}
               {actividades.length > 0 && (
                 <button type="button" onClick={onEliminarBorrador} style={{
                   padding: '10px 12px', background: 'transparent', color: BASE.red,

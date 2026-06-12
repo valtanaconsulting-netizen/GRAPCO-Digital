@@ -26,7 +26,7 @@ export default defineConfig({
     // No PRECARGAR los chunks pesados opcionales (PDF, reconocimiento facial, Excel)
     // en el arranque: se descargan SOLO cuando se abre la función que los usa.
     modulePreload: {
-      resolveDependencies: (url, deps) => deps.filter(d => !/vendor-(pdf|faceapi|xlsx)/.test(d)),
+      resolveDependencies: (url, deps) => deps.filter(d => !/vendor-(pdf|faceapi|xlsx|exceljs|html2pdf)/.test(d)),
     },
     rollupOptions: {
       output: {
@@ -38,6 +38,13 @@ export default defineConfig({
           if (id.includes('firebase') || id.includes('@firebase')) return 'vendor-firebase';
           if (id.includes('recharts') || id.includes('d3-') || id.includes('victory-vendor')) return 'vendor-charts';
           if (id.includes('xlsx')) return 'vendor-xlsx';
+          // ExcelJS (~0.9 MB) → chunk AISLADO. Solo se descarga al exportar el
+          // Tareo F13 con estilos (lazy import), NO en el arranque.
+          if (id.includes('exceljs') || id.includes('/archiver') || id.includes('unzipper')
+            || id.includes('fast-csv') || id.includes('saxes') || id.includes('/jszip')) return 'vendor-exceljs';
+          // html2pdf + html2canvas + jspdf (~0.5 MB) → chunk AISLADO. Solo al
+          // generar/ver el Tareo en PDF (lazy), NO en el arranque.
+          if (id.includes('html2pdf') || id.includes('html2canvas') || id.includes('jspdf')) return 'vendor-html2pdf';
           // TensorFlow + face-api → mismo chunk AISLADO (~0.6 MB). Solo se descarga al
           // abrir asistencia/reconocimiento facial (lazy), NO en el arranque.
           if (id.includes('face-api.js') || id.includes('@tensorflow') || id.includes('tfjs') || id.includes('seedrandom')) return 'vendor-faceapi';
