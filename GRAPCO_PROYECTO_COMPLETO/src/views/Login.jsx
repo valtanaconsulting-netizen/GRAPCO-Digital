@@ -180,17 +180,29 @@ export default function Login() {
     }
   };
 
+  // Split-screen estilo Procore / Autodesk Construction Cloud:
+  // video de obra + mensaje de marca a la izquierda · panel de acceso a la derecha.
+  const [anchoPantalla, setAnchoPantalla] = useState(() => (typeof window !== 'undefined' ? window.innerWidth : 1280));
+  useEffect(() => {
+    const onResize = () => setAnchoPantalla(window.innerWidth);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  const esEscritorio = anchoPantalla >= 1024;
+
   return (
     <div className="grapco-login-bg" style={{
       minHeight: '100dvh',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '20px',
+      display: 'flex',
+      alignItems: 'stretch',
+      justifyContent: esEscritorio ? 'flex-start' : 'center',
+      padding: 0,
       fontFamily: BASE.font,
       position: 'relative',
       overflow: 'hidden',
       background: '#0a1628',
     }}>
-      {/* === CAPA 0: video hero PTARI Precotex === */}
+      {/* Video de obra a pantalla completa — el protagonista */}
       <video
         className="grapco-hero-video"
         autoPlay muted loop playsInline preload="auto"
@@ -199,55 +211,110 @@ export default function Login() {
       >
         <source src="/grapco-bg.mp4" type="video/mp4" />
       </video>
-      {/* Overlay oscuro encima del video para que el card resalte */}
-      <div className="grapco-hero-overlay" aria-hidden="true" />
+      {/* Overlay sobrio: legibilidad sin matar el video */}
+      <div aria-hidden="true" style={{
+        position: 'absolute', inset: 0, zIndex: 1,
+        background: esEscritorio
+          ? 'linear-gradient(90deg, rgba(8,18,34,0.78) 0%, rgba(8,18,34,0.35) 52%, rgba(8,18,34,0.45) 100%)'
+          : 'radial-gradient(circle at center, rgba(15,23,42,0.45) 0%, rgba(10,22,40,0.85) 78%)',
+      }} />
+      {/* Firma dorada superior */}
+      <div aria-hidden="true" style={{
+        position: 'absolute', top: 0, left: 0, right: 0, height: '3px', zIndex: 8,
+        background: `linear-gradient(90deg, transparent, ${BASE.gold}, transparent)`,
+      }} />
 
-      {/* === CAPA 1: gradiente animado base (atenuado al haber video) === */}
-      <div className="grapco-mesh" />
+      {/* ══ PANEL IZQUIERDO — la marca sobre la obra (solo escritorio) ══ */}
+      {esEscritorio && (
+        <div style={{
+          position: 'relative', zIndex: 5, flex: 1, minWidth: 0,
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+          padding: '44px 60px 36px',
+          animation: 'grapco-card-in 0.8s cubic-bezier(0.16,1,0.3,1)',
+        }}>
+          {/* Marca arriba */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: '44px', height: '44px', borderRadius: '12px', background: '#fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5px',
+              boxShadow: `0 4px 16px rgba(0,0,0,0.4), 0 0 0 1.5px ${BASE.gold}`,
+            }}>
+              <img src={LOGO} alt="GRAPCO" style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                onError={(e) => { if (!e.target.dataset.fallback) { e.target.dataset.fallback = '1'; e.target.src = LOGO_FALLBACK; } }} />
+            </div>
+            <div>
+              <p style={{ fontSize: '15px', fontWeight: 900, color: '#fff', letterSpacing: '2px', lineHeight: 1 }}>GRAPCO <span style={{ color: BASE.gold }}>S.A.C</span></p>
+              <p style={{ fontSize: '9px', fontWeight: 800, color: BASE.gold, letterSpacing: '2.2px', marginTop: '3px' }}>GESTIÓN INTEGRAL DE OBRA</p>
+            </div>
+          </div>
 
-      {/* === CAPA 2: blobs de color que se mueven === */}
-      <div className="grapco-blob grapco-blob-1" />
-      <div className="grapco-blob grapco-blob-2" />
-      <div className="grapco-blob grapco-blob-3" />
-      <div className="grapco-blob grapco-blob-4" />
+          {/* Claim central */}
+          <div style={{ maxWidth: '560px' }}>
+            <p style={{
+              fontSize: '11px', fontWeight: 800, color: BASE.gold, letterSpacing: '3px',
+              marginBottom: '14px',
+            }}>PLATAFORMA VDC · LEAN CONSTRUCTION</p>
+            <h2 style={{
+              fontSize: 'clamp(30px, 3.6vw, 46px)', fontWeight: 900, color: '#fff',
+              lineHeight: 1.12, letterSpacing: '-0.5px', marginBottom: '16px',
+              textShadow: '0 2px 24px rgba(0,0,0,0.45)',
+            }}>
+              La obra bajo control,<br />en <span style={{ color: BASE.gold }}>tiempo real</span>.
+            </h2>
+            <p style={{ fontSize: '14.5px', color: 'rgba(255,255,255,0.82)', lineHeight: 1.65, marginBottom: '26px', maxWidth: '470px' }}>
+              Del tareo en campo a la curva S: producción, planeamiento, calidad y costos
+              conectados en una sola plataforma.
+            </p>
+            {/* Value props con check dorado */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {[
+                'Producción y tareo digital desde el celular del capataz',
+                'Cronograma CPM con ruta crítica y Last Planner System',
+                'CPI, curva S y protocolos de calidad con firma digital',
+              ].map(t => (
+                <div key={t} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{
+                    width: '22px', height: '22px', borderRadius: '50%', flexShrink: 0,
+                    background: `linear-gradient(145deg, ${BASE.gold}, ${BASE.goldDark})`,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#0F2A47', fontSize: '12px', fontWeight: 900,
+                    boxShadow: `0 2px 10px ${BASE.gold}66`,
+                  }}>✓</span>
+                  <span style={{ fontSize: '13.5px', color: 'rgba(255,255,255,0.92)', fontWeight: 600 }}>{t}</span>
+                </div>
+              ))}
+            </div>
+          </div>
 
-      {/* === CAPA 3: grilla tecnica + lineas de construccion === */}
-      <svg className="grapco-grid" xmlns="http://www.w3.org/2000/svg" style={{
-        position: 'absolute', inset: 0, width: '100%', height: '100%',
-        opacity: 0.13, pointerEvents: 'none',
+          {/* Confianza abajo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '10px', fontWeight: 800, color: 'rgba(255,255,255,0.5)', letterSpacing: '1.6px' }}>CONFÍAN EN GRAPCO</span>
+            {['CREDITEX SAA', 'TEXTIL S.A.A'].map(c => (
+              <span key={c} style={{
+                padding: '5px 14px', borderRadius: '999px',
+                border: '1px solid rgba(255,255,255,0.22)', background: 'rgba(255,255,255,0.08)',
+                backdropFilter: 'blur(6px)',
+                fontSize: '10.5px', fontWeight: 800, color: 'rgba(255,255,255,0.85)', letterSpacing: '0.8px',
+              }}>{c}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ══ PANEL DERECHO — acceso (vidrio oscuro con filo dorado) ══ */}
+      <div style={{
+        position: 'relative', zIndex: 5,
+        width: esEscritorio ? '480px' : '100%',
+        flexShrink: 0,
+        minHeight: '100dvh',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        padding: '28px 20px',
+        background: esEscritorio ? 'rgba(8,18,34,0.45)' : 'transparent',
+        backdropFilter: esEscritorio ? 'blur(16px)' : undefined,
+        WebkitBackdropFilter: esEscritorio ? 'blur(16px)' : undefined,
+        borderLeft: esEscritorio ? `1px solid ${BASE.gold}35` : 'none',
+        overflowY: 'auto',
       }}>
-        <defs>
-          <pattern id="grapco-grid-pattern" width="60" height="60" patternUnits="userSpaceOnUse">
-            <path d="M 60 0 L 0 0 0 60" fill="none" stroke="#f59e0b" strokeWidth="0.5" />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#grapco-grid-pattern)" />
-      </svg>
-
-      {/* === CAPA 4: iconos de construccion flotando === */}
-      <div className="grapco-floating-icons" aria-hidden="true">
-        <span className="grapco-fi grapco-fi-1">🏗️</span>
-        <span className="grapco-fi grapco-fi-2">⚙️</span>
-        <span className="grapco-fi grapco-fi-3">🔩</span>
-        <span className="grapco-fi grapco-fi-4">🦺</span>
-        <span className="grapco-fi grapco-fi-5">📐</span>
-        <span className="grapco-fi grapco-fi-6">🏢</span>
-        <span className="grapco-fi grapco-fi-7">🔧</span>
-      </div>
-
-      {/* === CAPA 5: particulas doradas flotando === */}
-      <div className="grapco-particles" aria-hidden="true">
-        {Array.from({ length: 18 }).map((_, i) => (
-          <span key={i} className="grapco-particle" style={{
-            left: `${(i * 5.55 + 7) % 100}%`,
-            animationDelay: `${(i * 0.7) % 12}s`,
-            animationDuration: `${12 + (i % 6) * 2}s`,
-          }} />
-        ))}
-      </div>
-
-      {/* === CAPA 6: linea barrido tipo "scan" === */}
-      <div className="grapco-scan" />
 
       <div style={{
         background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
@@ -653,8 +720,9 @@ export default function Login() {
         </p>
         </div>
       </div>
+      </div>
 
-      {/* === ESTILOS DEL FONDO DINAMICO TIPO LINKEDIN === */}
+      {/* === ESTILOS DEL LOGIN === */}
       <style>{`
         @keyframes grapco-card-in {
           from { opacity: 0; transform: translateY(20px) scale(0.96); }
