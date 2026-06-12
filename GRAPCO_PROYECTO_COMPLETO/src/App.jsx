@@ -78,7 +78,7 @@ const PRELOAD_BY_KEY = {
   flujo:          () => import('./views/planeamiento/FlujoPlaneamiento'),
   pullplanning:   () => import('./views/planeamiento/PullPlanning'),
   planvaciado:    () => import('./views/planeamiento/PlanVaciado'),
-  cronogramaobra: () => import('./views/planeamiento/CronogramaObra'),
+  cronogramaobra: () => import('./views/planeamiento/CronogramaPro'),
   normaltec:      () => import('./views/planeamiento/NormalTecnologica'),
   radarProd:      () => import('./views/modulos/radarProduccion/RadarProduccion'),
   dashEjecutivo:  () => import('./views/modulos/dashboardEjecutivo/DashboardEjecutivo'),
@@ -99,7 +99,7 @@ const APUsPanel           = lazy(() => import('./views/modulos/apus/APUsPanel'))
 const FlujoPlaneamiento   = lazy(() => import('./views/planeamiento/FlujoPlaneamiento'));
 const PullPlanning        = lazy(() => import('./views/planeamiento/PullPlanning'));
 const PlanVaciado         = lazy(() => import('./views/planeamiento/PlanVaciado'));
-const CronogramaObra      = lazy(() => import('./views/planeamiento/CronogramaObra'));
+const CronogramaPro       = lazy(() => import('./views/planeamiento/CronogramaPro'));
 const NormalTecnologica   = lazy(() => import('./views/planeamiento/NormalTecnologica'));
 const PanelGerencia       = lazy(() => import('./views/modulos/panelGerencia/PanelGerencia'));
 const ProyectosPanel      = lazy(() => import('./views/modulos/proyectos/ProyectosPanel'));
@@ -851,7 +851,7 @@ function AppInner() {
             {/* Planeamiento — Métricas VDC (tablero ejecutivo de objetivos) */}
 
             {/* Planeamiento — secciones del cronograma importadas del Excel */}
-            {moduloIngeniero === 'cronogramaobra' && <CronogramaObra />}
+            {moduloIngeniero === 'cronogramaobra' && <CronogramaPro />}
             {moduloIngeniero === 'normaltec' && <NormalTecnologica />}
             {moduloIngeniero === 'pullplanning' && <PullPlanning />}
             {moduloIngeniero === 'planvaciado' && <PlanVaciado />}
