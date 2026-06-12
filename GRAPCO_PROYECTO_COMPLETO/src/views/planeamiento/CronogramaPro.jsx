@@ -10,7 +10,7 @@
 //   · Pestaña "Plan base" con el Excel CREDITEX original de referencia
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { db } from '../../firebaseConfig';
-import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs, query, where } from 'firebase/firestore';
 import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import { useCatalogoWBS } from '../../hooks/useCatalogoWBS';
 import { BASE } from '../../utils/styles';
@@ -20,6 +20,8 @@ import ConfirmModal from '../../components/ConfirmModal';
 import { calcularCPM, renumerarEDT, nuevoId, fechaDeIso, isoDeFecha, indiceDeFecha } from '../../utils/cpm';
 import { CRONOGRAMAOBRA } from '../../data/cronogramaObraCreditex';
 import CronogramaObra from './CronogramaObra';
+import GateProyectoLegacy from '../../components/GateProyectoLegacy';
+import { LEGACY_CREDITEX_IDS } from '../../hooks/useCatalogoWBS';
 import {
   ResponsiveContainer, ComposedChart, Line, XAxis, YAxis,
   CartesianGrid, Tooltip as RTooltip, Legend, ReferenceLine, ReferenceDot,
@@ -170,8 +172,9 @@ export default function CronogramaPro() {
     setSincronizando(true);
     setSyncMsg(null);
     try {
-      // 1) Metrado ejecutado por actividad (todos los registros de producción)
-      const snap = await getDocs(collection(db, 'Registros_Campo'));
+      // 1) Metrado ejecutado por actividad — SOLO del proyecto activo
+      // (aislamiento multi-proyecto: TEXTIL no jala metrados de CREDITEX)
+      const snap = await getDocs(query(collection(db, 'Registros_Campo'), where('proyectoId', '==', proyectoActivoId)));
       const ejecutado = {};
       snap.forEach(d => {
         const r = d.data();
@@ -353,15 +356,21 @@ export default function CronogramaPro() {
         como MS Project / Primavera P6).
       </p>
       <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
-        <button onClick={() => { mutar(() => seedDesdeCreditex()); }} style={{
-          padding: '12px 22px', background: BASE.navy, color: '#fff', border: 'none', borderRadius: '10px',
-          fontSize: '12.5px', fontWeight: 800, cursor: 'pointer', letterSpacing: '0.4px',
-        }}>
-          IMPORTAR PLAN CREDITEX ({CRONOGRAMAOBRA.totalTareas} tareas)
-        </button>
+        {/* El plan CREDITEX solo se ofrece en SU proyecto (aislamiento) */}
+        {LEGACY_CREDITEX_IDS.includes(proyectoActivoId) && (
+          <button onClick={() => { mutar(() => seedDesdeCreditex()); }} style={{
+            padding: '12px 22px', background: BASE.navy, color: '#fff', border: 'none', borderRadius: '10px',
+            fontSize: '12.5px', fontWeight: 800, cursor: 'pointer', letterSpacing: '0.4px',
+          }}>
+            IMPORTAR PLAN CREDITEX ({CRONOGRAMAOBRA.totalTareas} tareas)
+          </button>
+        )}
         <button onClick={() => { mutar(() => seedEnBlanco()); }} style={{
-          padding: '12px 22px', background: BASE.white, color: BASE.navy, border: `1.5px solid ${BASE.border}`,
-          borderRadius: '10px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer',
+          padding: '12px 22px',
+          background: LEGACY_CREDITEX_IDS.includes(proyectoActivoId) ? BASE.white : BASE.navy,
+          color: LEGACY_CREDITEX_IDS.includes(proyectoActivoId) ? BASE.navy : '#fff',
+          border: `1.5px solid ${LEGACY_CREDITEX_IDS.includes(proyectoActivoId) ? BASE.border : BASE.navy}`,
+          borderRadius: '10px', fontSize: '12.5px', fontWeight: 800, cursor: 'pointer',
         }}>
           Empezar con plantilla en blanco
         </button>
@@ -397,7 +406,11 @@ export default function CronogramaPro() {
         ))}
       </div>
 
-      {tab === 'base' && <CronogramaObra />}
+      {tab === 'base' && (
+        <GateProyectoLegacy modulo="El plan base en Excel" icono="clock">
+          <CronogramaObra />
+        </GateProyectoLegacy>
+      )}
 
       {tab === 'pro' && (arranque || (
         <>

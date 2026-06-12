@@ -30,16 +30,24 @@ export function useCatalogoWBS(proyectoId) {
     return () => { cancel = true; unsub(); };
   }, [proyectoId]);
 
-  // Estructuras que consume el ISP — del catálogo propio o, si no existe, del fijo.
+  // Estructuras que consume el ISP — del catálogo propio del proyecto.
+  // AISLAMIENTO MULTI-PROYECTO: el catálogo fijo del código (CATALOGO_MASTER,
+  // que es el presupuesto CREDITEX) solo aplica como respaldo a los proyectos
+  // LEGACY de CREDITEX. Un proyecto NUEVO sin catálogo arranca VACÍO — debe
+  // cargar el suyo desde el Editor WBS (no hereda actividades ajenas).
+  const esLegacy = LEGACY_CREDITEX_IDS.includes(proyectoId);
   const existe = Array.isArray(arbol) && arbol.length > 0;
   const catalogoMaster = useMemo(
-    () => (existe ? arbolACatalogoMaster(arbol) : CATALOGO_MASTER),
-    [existe, arbol]
+    () => (existe ? arbolACatalogoMaster(arbol) : (esLegacy ? CATALOGO_MASTER : {})),
+    [existe, arbol, esLegacy]
   );
   const infoMap = useMemo(
-    () => (existe ? arbolAInfoMap(arbol) : INFO_MAP),
-    [existe, arbol]
+    () => (existe ? arbolAInfoMap(arbol) : (esLegacy ? INFO_MAP : {})),
+    [existe, arbol, esLegacy]
   );
 
   return { loading, arbol, existe, catalogoMaster, infoMap };
 }
+
+// Proyectos "legacy" cuyo respaldo es el catálogo CREDITEX hardcodeado.
+export const LEGACY_CREDITEX_IDS = ['creditex-ptar', 'default-ptari'];

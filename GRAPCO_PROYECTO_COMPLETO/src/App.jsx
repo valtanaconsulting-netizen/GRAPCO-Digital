@@ -39,6 +39,7 @@ import { NotificationProvider, useNotifications } from './contexts/NotificationC
 import PwaInstallPrompt from './components/PwaInstallPrompt';
 import CommandPalette from './components/CommandPalette';
 import OfflineBanner from './components/OfflineBanner';
+import GateProyectoLegacy from './components/GateProyectoLegacy';
 
 import {
   useHistorial, useCuadrillas, usePersonal,
@@ -862,9 +863,9 @@ function AppInner() {
 
             {/* Planeamiento — secciones del cronograma importadas del Excel */}
             {moduloIngeniero === 'cronogramaobra' && <CronogramaPro />}
-            {moduloIngeniero === 'normaltec' && <NormalTecnologica />}
-            {moduloIngeniero === 'pullplanning' && <PullPlanning />}
-            {moduloIngeniero === 'planvaciado' && <PlanVaciado />}
+            {moduloIngeniero === 'normaltec' && <GateProyectoLegacy modulo='La Normal Tecnológica' icono='ruler'><NormalTecnologica /></GateProyectoLegacy>}
+            {moduloIngeniero === 'pullplanning' && <GateProyectoLegacy modulo='El Pull Planning' icono='layers'><PullPlanning /></GateProyectoLegacy>}
+            {moduloIngeniero === 'planvaciado' && <GateProyectoLegacy modulo='El Plan de Vaciado' icono='cube'><PlanVaciado /></GateProyectoLegacy>}
 
             {/* Planeamiento — Last Planner System (módulo lateral propio) */}
             {moduloIngeniero === 'lps' && <LastPlannerPro />}

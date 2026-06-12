@@ -18,6 +18,7 @@ import { diagnosticarMigracionProyectoId, migrarProyectoId } from '../utils/migr
 import AlertasPanel from '../components/AlertasPanel';
 import Tooltip from '../components/Tooltip';
 import Icon from '../components/Icon';
+import GateProyectoLegacy from '../components/GateProyectoLegacy';
 import Auditoria from './Auditoria';
 import CpiEac from './CpiEac';
 import Graficos from './Graficos';
@@ -127,13 +128,13 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
     return map;
   }, [configuracion]);
 
-  // Vista de ingeniero = supervisión integral: ve TODO lo que registre cualquier
-  // capataz, sin importar a qué proyecto/frente quedó etiquetado el registro.
-  // (ignorarProyecto: así no se "pierde" data cuando el capataz y el ingeniero
-  //  estaban en proyectos distintos al momento de guardar — pedido del usuario.)
+  // AISLAMIENTO MULTI-PROYECTO (pedido del usuario 12/06/2026): cada proyecto
+  // ve SOLO su información. El ingeniero ve los registros del PROYECTO ACTIVO
+  // (el selector de frente sigue permitiendo "todos los frentes"). Un proyecto
+  // nuevo (ej. TEXTIL) arranca en blanco; CREDITEX se ve solo al activarlo.
   const { filtrarPorContexto, proyectoActivoId, frenteActivoId, modoTodosFrentes, FRENTE_DEFAULT_ID } = useProyectoActivo();
   const historialProyecto = useMemo(
-    () => filtrarPorContexto(historial || [], { ignorarProyecto: true, ignorarFrente: true }),
+    () => filtrarPorContexto(historial || [], { ignorarFrente: true }),
     [historial, filtrarPorContexto],
   );
 
@@ -1006,13 +1007,13 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
       {view==='analisis'   && <CpiEac wbs={wbs} historial={historialEnriquecido} infoMap={infoWbs} onModificarWBS={() => handleSetView('wbs-editor')} onActualizarFlags={actualizarFlagsActividad}/>}
       {view==='wbs-editor' && <EditorWbsIsp showToast={showToast}/>}
       {view==='control'    && <ControlGerencial historialEnriquecido={historialEnriquecido} personalDB={personalDB} configuracion={configuracion} asistencia={asistencia} isMobile={isMobile}/>}
-      {view==='vdc'        && <VDC
+      {view==='vdc'        && <GateProyectoLegacy modulo="El VDC / LAP (lookahead del Excel)" icono="target"><VDC
                                 cuadrillasActivas={cuadrillasActivas}
                                 cuadrillasDB={cuadrillasDB}
                                 planesDiarios={planesDiarios}
                                 historial={historialEnriquecido}
                                 isMobile={isMobile}
-                                showToast={showToast}/>}
+                                showToast={showToast}/></GateProyectoLegacy>}
       {view==='graficos'   && <Graficos grafData={grafData} filtrados={filtrados} wbs={wbs}/>}
       {view==='hhcross'    && <AnalisisHHCross filtrados={filtrados} personalDB={personalDB}/>}
       {view==='tendencias' && <Tendencias filtrados={filtrados} historial={historialEnriquecido} wbs={wbs}/>}
