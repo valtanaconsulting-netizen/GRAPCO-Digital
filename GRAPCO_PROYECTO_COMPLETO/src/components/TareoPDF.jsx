@@ -4,8 +4,6 @@ import { crearResolverNombre } from '../utils/nombresCanonicos';
 
 const styles = StyleSheet.create({
   page: {
-    pageSize: 'A4',
-    pageOrientation: 'landscape',
     padding: [10, 15],
     fontSize: 8,
     fontFamily: 'Helvetica',
@@ -211,7 +209,7 @@ function TareoPDFContent({ registrosPorDia, personalDB, ruc, logoBase64 }) {
         const todasActividades = [...new Set(registros.flatMap(r => [(r._actividadCanonica || r.actividad)]))].slice(0, 14);
 
         return (
-          <Page key={fechaCapKey} style={styles.page}>
+          <Page key={fechaCapKey} size={[841.89, 595.28]} style={styles.page}>
             {/* Header */}
             <View style={styles.header}>
               {logoBase64 && <Image src={logoBase64} style={styles.logo} />}
