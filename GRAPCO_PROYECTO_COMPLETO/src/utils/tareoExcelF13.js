@@ -97,11 +97,12 @@ export function rellenarHoja(ws, dia, supervisor, snap) {
       const v = act ? (t.actividades[act] || 0) : 0;
       if (v) ws.getCell(`${COLS_ACT[n]}${r}`).value = Number(v.toFixed(1));
     }
+    // Columnas 0.6 / 1.0 = CANTIDAD de horas en cada tramo (2 primeras HE
+    // del día → 0.6; de la 3.ª en adelante → 1.0). El costo se multiplica
+    // recién en planilla (×1.6 y ×2.0 del costo-hora).
     ws.getCell(`Z${r}`).value = Number(t.totHN.toFixed(1));
-    if (t.totHE > 0) {
-      ws.getCell(`AA${r}`).value = Number((t.totHE * 0.6).toFixed(1));
-      ws.getCell(`AB${r}`).value = Number(t.totHE.toFixed(1));
-    }
+    if (t.totHE60 > 0) ws.getCell(`AA${r}`).value = Number(t.totHE60.toFixed(1));
+    if (t.totHE100 > 0) ws.getCell(`AB${r}`).value = Number(t.totHE100.toFixed(1));
     ws.getCell(`AC${r}`).value = Number((t.totHN + t.totHE).toFixed(1));
   });
 
@@ -117,8 +118,8 @@ export function rellenarHoja(ws, dia, supervisor, snap) {
     ws.getCell(`${COLS_ACT[n]}${rTot}`).value = Number(totales.porCol[n].toFixed(1));
   }
   ws.getCell(`Z${rTot}`).value = Number(totales.hn.toFixed(1));
-  ws.getCell(`AA${rTot}`).value = Number(totales.he06.toFixed(1));
-  ws.getCell(`AB${rTot}`).value = Number(totales.he.toFixed(1));
+  ws.getCell(`AA${rTot}`).value = Number(totales.he60.toFixed(1));
+  ws.getCell(`AB${rTot}`).value = Number(totales.he100.toFixed(1));
   ws.getCell(`AC${rTot}`).value = Number(totales.total.toFixed(1));
 
   // Número de trabajadores (merge AB27:AC28 en la plantilla)

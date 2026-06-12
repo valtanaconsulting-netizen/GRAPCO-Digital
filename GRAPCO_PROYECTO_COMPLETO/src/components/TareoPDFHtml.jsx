@@ -75,8 +75,8 @@ function paginaHTML({ fecha, capataz, trabajadores, actividades, totales, superv
         return td(v ? v.toFixed(1) : '', { fs: 7.5 });
       }).join('')}
       ${td(t.totHN.toFixed(1), { fs: 7.5 })}
-      ${td(t.totHE > 0 ? (t.totHE * 0.6).toFixed(1) : '', { fs: 7.5 })}
-      ${td(t.totHE > 0 ? t.totHE.toFixed(1) : '', { fs: 7.5 })}
+      ${td(t.totHE60 > 0 ? t.totHE60.toFixed(1) : '', { fs: 7.5 })}
+      ${td(t.totHE100 > 0 ? t.totHE100.toFixed(1) : '', { fs: 7.5 })}
       ${td((t.totHN + t.totHE).toFixed(1), { bold: true, fs: 7.5 })}
     </tr>`).join('');
 
@@ -94,8 +94,8 @@ function paginaHTML({ fecha, capataz, trabajadores, actividades, totales, superv
   const celdasTotales = `
     ${[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => td(totales.porCol[n].toFixed(1), { bg: PEACH, bold: true, fs: 7.5 })).join('')}
     ${td(totales.hn.toFixed(1), { bg: GREEN, bold: true, fs: 7.5 })}
-    ${td(totales.he06.toFixed(1), { bg: GREEN, bold: true, fs: 7.5 })}
-    ${td(totales.he.toFixed(1), { bg: GREEN, bold: true, fs: 7.5 })}
+    ${td(totales.he60.toFixed(1), { bg: GREEN, bold: true, fs: 7.5 })}
+    ${td(totales.he100.toFixed(1), { bg: GREEN, bold: true, fs: 7.5 })}
     ${td(totales.total.toFixed(1), { bg: SALMON, bold: true, fs: 7.5 })}`;
 
   return `

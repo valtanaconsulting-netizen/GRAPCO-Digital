@@ -19,10 +19,12 @@ const NotificationContext = createContext(null);
 let nextId = 1;
 
 const TIPOS = {
-  success: { color: '#16a34a', bg: '#dcfce7', icon: '✅', textColor: '#15803d' },
-  error:   { color: '#dc2626', bg: '#fee2e2', icon: '❌', textColor: '#991b1b' },
-  warning: { color: '#d97706', bg: '#fef3c7', icon: '⚠️', textColor: '#92400e' },
-  info:    { color: '#1e3a5f', bg: '#eff6ff', icon: 'ℹ️', textColor: '#1e3a5f' },
+  // colorDark = versión CLARA del color para fondos oscuros (legibilidad
+  // garantizada: antes "info" pintaba navy sobre navy y no se leía).
+  success: { color: '#16a34a', colorDark: '#4ade80', bg: '#dcfce7', icon: '✅', textColor: '#15803d' },
+  error:   { color: '#dc2626', colorDark: '#f87171', bg: '#fee2e2', icon: '❌', textColor: '#991b1b' },
+  warning: { color: '#d97706', colorDark: '#fbbf24', bg: '#fef3c7', icon: '⚠️', textColor: '#92400e' },
+  info:    { color: '#1e3a5f', colorDark: '#E5A82F', bg: '#eff6ff', icon: 'ℹ️', textColor: '#1e3a5f' },
 };
 
 export function NotificationProvider({ children }) {
@@ -122,7 +124,7 @@ function NotificationCard({ notif, onClose, esDark }) {
       <span style={{ fontSize: '18px', flexShrink: 0, marginTop: '2px' }}>{cfg.icon}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
         {notif.titulo && (
-          <p style={{ fontSize: '12px', fontWeight: '900', color: cfg.color, marginBottom: '3px', letterSpacing: '0.3px' }}>
+          <p style={{ fontSize: '12px', fontWeight: '900', color: esDark ? (cfg.colorDark || '#fff') : cfg.color, marginBottom: '3px', letterSpacing: '0.3px' }}>
             {notif.titulo}
           </p>
         )}

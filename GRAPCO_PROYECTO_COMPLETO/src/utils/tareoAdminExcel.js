@@ -22,7 +22,7 @@ const GOLD = 'FFFCEFC9';
 const PEACH = 'FFFDE9D9';
 const GREEN = 'FFE2EFDA';
 const SALMON = 'FFF8B9B9';
-const DIAS_LBL = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+const DIAS_LBL = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
 const bordeFino = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
@@ -63,6 +63,7 @@ export async function generarTareoAdminExcel(registros, personalDB, fechaIni, fe
   // (todo con nombre canónico; partida/actividad canónicas si existen)
   const porDia = {};            // nombre → { iso: {hn, he} }
   const porSemAct = {};         // semana → nombre → actKey → hh
+  const porSemDiaAct = {};      // semana → fechaIso → nombre → actKey → hh
   const actInfo = {};           // actKey → { partida, actividad }
   const semanas = new Set();
   const nombres = new Set();
@@ -89,6 +90,10 @@ export async function generarTareoAdminExcel(registros, personalDB, fechaIni, fe
       if (!porSemAct[sem]) porSemAct[sem] = {};
       if (!porSemAct[sem][nom]) porSemAct[sem][nom] = {};
       porSemAct[sem][nom][actKey] = (porSemAct[sem][nom][actKey] || 0) + hn + he;
+      if (!porSemDiaAct[sem]) porSemDiaAct[sem] = {};
+      if (!porSemDiaAct[sem][r.fecha]) porSemDiaAct[sem][r.fecha] = {};
+      if (!porSemDiaAct[sem][r.fecha][nom]) porSemDiaAct[sem][r.fecha][nom] = {};
+      porSemDiaAct[sem][r.fecha][nom][actKey] = (porSemDiaAct[sem][r.fecha][nom][actKey] || 0) + hn + he;
     });
   });
 
@@ -252,26 +257,25 @@ export async function generarTareoAdminExcel(registros, personalDB, fechaIni, fe
   celda(ws2, `A${f2}`, `Período: ${fechaIni} al ${fechaFin} · HH = horas normales + extras`, { size: 9 });
   f2 += 2;
 
-  for (const sem of semanasOrden) {
-    const datosSem = porSemAct[sem];
-    if (!datosSem) continue;
-
-    // Actividades de la semana, agrupadas por partida (orden alfabético)
-    const actKeys = [...new Set(Object.values(datosSem).flatMap(o => Object.keys(o)))]
+  // Pinta una matriz trabajadores × actividades (con encabezado de 2 niveles
+  // PARTIDA → actividad y totales por actividad/partida). Devuelve la fila
+  // siguiente. Se usa para CADA DÍA y para el consolidado semanal.
+  const pintarMatriz = (fIni, titulo, tituloFill, datosNomAct) => {
+    let f = fIni;
+    const actKeys = [...new Set(Object.values(datosNomAct).flatMap(o => Object.keys(o)))]
       .sort((a, b) => a.localeCompare(b));
-    if (!actKeys.length) continue;
+    if (!actKeys.length) return f;
     const nCols = actKeys.length;
 
-    ws2.mergeCells(f2, 1, f2, 2 + nCols + 1);
-    celda(ws2, `A${f2}`, `SEMANA ${sem}`, { bold: true, fill: GOLD, size: 11 });
-    f2++;
+    ws2.mergeCells(f, 1, f, 2 + nCols + 1);
+    celda(ws2, `A${f}`, titulo, { bold: true, fill: tituloFill, size: 10 });
+    f++;
 
     // Encabezado nivel 1: PARTIDA (merge sobre sus actividades) · nivel 2: actividad
-    const fPart = f2, fAct = f2 + 1;
+    const fPart = f, fAct = f + 1;
     ws2.mergeCells(fPart, 1, fAct, 1); celda(ws2, `A${fPart}`, '#', { bold: true, fill: GREY });
     ws2.mergeCells(fPart, 2, fAct, 2); celda(ws2, `B${fPart}`, 'TRABAJADOR', { bold: true, fill: GREY });
-    let c = 3;
-    let i = 0;
+    let c = 3, i = 0;
     while (i < nCols) {
       const partida = actInfo[actKeys[i]].partida;
       let j = i;
@@ -279,60 +283,81 @@ export async function generarTareoAdminExcel(registros, personalDB, fechaIni, fe
       ws2.mergeCells(fPart, c, fPart, c + (j - i) - 1);
       celda(ws2, ws2.getRow(fPart).getCell(c).address, partida, { bold: true, fill: NAVY, color: 'FFFFFFFF', size: 8 });
       for (let k = i; k < j; k++) {
-        ws2.getColumn(c + (k - i)).width = 14;
+        if (!ws2.getColumn(c + (k - i)).width || ws2.getColumn(c + (k - i)).width < 14) ws2.getColumn(c + (k - i)).width = 14;
         celda(ws2, ws2.getRow(fAct).getCell(c + (k - i)).address, actInfo[actKeys[k]].actividad, { bold: true, fill: GREY, size: 7 });
       }
       c += (j - i);
       i = j;
     }
     ws2.mergeCells(fPart, c, fAct, c);
-    ws2.getColumn(c).width = 9;
+    if (!ws2.getColumn(c).width || ws2.getColumn(c).width < 9) ws2.getColumn(c).width = 9;
     celda(ws2, ws2.getRow(fPart).getCell(c).address, 'TOTAL HH', { bold: true, fill: GREY });
-    f2 += 2;
+    f += 2;
 
     // Filas de trabajadores
     const totalPorAct = actKeys.map(() => 0);
     listaNombres.forEach((nom, idx) => {
-      const o = datosSem[nom];
+      const o = datosNomAct[nom];
       if (!o) return;
-      celda(ws2, `A${f2}`, idx + 1, { size: 8 });
-      celda(ws2, `B${f2}`, nom, { center: false, bold: true, size: 8 });
+      celda(ws2, `A${f}`, idx + 1, { size: 8 });
+      celda(ws2, `B${f}`, nom, { center: false, bold: true, size: 8 });
       let suma = 0;
       actKeys.forEach((k, kk) => {
         const v = o[k] || 0;
         suma += v;
         totalPorAct[kk] += v;
-        celda(ws2, ws2.getRow(f2).getCell(3 + kk).address, v ? Number(v.toFixed(1)) : '', { size: 8 });
+        celda(ws2, ws2.getRow(f).getCell(3 + kk).address, v ? Number(v.toFixed(1)) : '', { size: 8 });
       });
-      celda(ws2, ws2.getRow(f2).getCell(3 + nCols).address, Number(suma.toFixed(1)), { bold: true, fill: GREEN, size: 8 });
-      f2++;
+      celda(ws2, ws2.getRow(f).getCell(3 + nCols).address, Number(suma.toFixed(1)), { bold: true, fill: GREEN, size: 8 });
+      f++;
     });
 
     // TOTAL POR ACTIVIDAD
-    ws2.mergeCells(f2, 1, f2, 2);
-    celda(ws2, `A${f2}`, 'TOTAL ACTIVIDAD', { bold: true, fill: PEACH });
+    ws2.mergeCells(f, 1, f, 2);
+    celda(ws2, `A${f}`, 'TOTAL ACTIVIDAD', { bold: true, fill: PEACH });
     let granTotal = 0;
     actKeys.forEach((k, kk) => {
       granTotal += totalPorAct[kk];
-      celda(ws2, ws2.getRow(f2).getCell(3 + kk).address, totalPorAct[kk] ? Number(totalPorAct[kk].toFixed(1)) : '', { bold: true, fill: PEACH, size: 8 });
+      celda(ws2, ws2.getRow(f).getCell(3 + kk).address, totalPorAct[kk] ? Number(totalPorAct[kk].toFixed(1)) : '', { bold: true, fill: PEACH, size: 8 });
     });
-    celda(ws2, ws2.getRow(f2).getCell(3 + nCols).address, Number(granTotal.toFixed(1)), { bold: true, fill: SALMON });
-    f2++;
+    celda(ws2, ws2.getRow(f).getCell(3 + nCols).address, Number(granTotal.toFixed(1)), { bold: true, fill: SALMON });
+    f++;
 
     // TOTAL POR PARTIDA (mismos merges que el encabezado)
-    ws2.mergeCells(f2, 1, f2, 2);
-    celda(ws2, `A${f2}`, 'TOTAL PARTIDA', { bold: true, fill: GOLD });
+    ws2.mergeCells(f, 1, f, 2);
+    celda(ws2, `A${f}`, 'TOTAL PARTIDA', { bold: true, fill: GOLD });
     c = 3; i = 0;
     while (i < nCols) {
       const partida = actInfo[actKeys[i]].partida;
       let j = i, sumaP = 0;
       while (j < nCols && actInfo[actKeys[j]].partida === partida) { sumaP += totalPorAct[j]; j++; }
-      ws2.mergeCells(f2, c, f2, c + (j - i) - 1);
-      celda(ws2, ws2.getRow(f2).getCell(c).address, Number(sumaP.toFixed(1)), { bold: true, fill: GOLD });
+      ws2.mergeCells(f, c, f, c + (j - i) - 1);
+      celda(ws2, ws2.getRow(f).getCell(c).address, Number(sumaP.toFixed(1)), { bold: true, fill: GOLD });
       c += (j - i); i = j;
     }
-    celda(ws2, ws2.getRow(f2).getCell(3 + nCols).address, Number(granTotal.toFixed(1)), { bold: true, fill: SALMON });
-    f2 += 2;
+    celda(ws2, ws2.getRow(f).getCell(3 + nCols).address, Number(granTotal.toFixed(1)), { bold: true, fill: SALMON });
+    return f + 1;
+  };
+
+  for (const sem of semanasOrden) {
+    const datosSem = porSemAct[sem];
+    if (!datosSem) continue;
+
+    ws2.mergeCells(f2, 1, f2, 16);
+    celda(ws2, `A${f2}`, `SEMANA ${sem}`, { bold: true, fill: NAVY, color: 'FFFFFFFF', size: 11 });
+    f2 += 1;
+
+    // ── DÍA POR DÍA: una matriz por cada día con registros ──
+    const fechasSem = Object.keys(porSemDiaAct[sem] || {}).sort();
+    for (const iso of fechasSem) {
+      const dt = fechaDe(iso);
+      const nombreDia = DIAS_LBL[(dt.getDay() + 6) % 7];
+      f2 = pintarMatriz(f2, `${nombreDia} ${fmtCorto(dt)}`, GOLD, porSemDiaAct[sem][iso]);
+    }
+
+    // ── CONSOLIDADO DE LA SEMANA ──
+    f2 = pintarMatriz(f2, `CONSOLIDADO SEMANA ${sem}`, PEACH, datosSem);
+    f2 += 1; // espacio entre semanas
   }
 
   // ════════════════ HOJA 3 — RESUMEN PAGO ════════════════
