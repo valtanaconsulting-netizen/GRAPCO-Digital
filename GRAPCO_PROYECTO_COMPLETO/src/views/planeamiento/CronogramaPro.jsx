@@ -17,6 +17,7 @@ import { BASE } from '../../utils/styles';
 import Icon from '../../components/Icon';
 import VistaHeader from '../../components/VistaHeader';
 import ConfirmModal from '../../components/ConfirmModal';
+import SkeletonPantalla from '../../components/SkeletonPantalla';
 import { calcularCPM, renumerarEDT, nuevoId, fechaDeIso, isoDeFecha, indiceDeFecha } from '../../utils/cpm';
 import { CRONOGRAMAOBRA } from '../../data/cronogramaObraCreditex';
 import CronogramaObra from './CronogramaObra';
@@ -337,7 +338,7 @@ export default function CronogramaPro() {
   }, [cpm, pxDia, fechaInicio]);
 
   if (tareas === null) {
-    return <p style={{ padding: '40px', color: BASE.muted, fontSize: '13px' }}>Cargando cronograma…</p>;
+    return <SkeletonPantalla titulo="Cargando cronograma" />;
   }
 
   // ── Pantalla de arranque (sin cronograma aún) ──

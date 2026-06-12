@@ -40,6 +40,7 @@ import PwaInstallPrompt from './components/PwaInstallPrompt';
 import CommandPalette from './components/CommandPalette';
 import OfflineBanner from './components/OfflineBanner';
 import GateProyectoLegacy from './components/GateProyectoLegacy';
+import SkeletonPantalla from './components/SkeletonPantalla';
 
 import {
   useHistorial, useCuadrillas, usePersonal,
@@ -518,15 +519,9 @@ function AppInner() {
         boxSizing: 'border-box',
         transition: 'padding-left 0.22s ease',
       }}>
-      <Suspense fallback={
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', gap: 12, color: BASE.muted }}>
-          <span style={{ position: 'relative', display: 'inline-block', width: 38, height: 38 }}>
-            <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: `2.5px solid transparent`, borderTopColor: BASE.gold, borderRightColor: BASE.gold, animation: 'spin 1s cubic-bezier(0.5,0.1,0.5,0.9) infinite' }} />
-            <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: `2.5px solid transparent`, borderBottomColor: BASE.gold + '40', borderLeftColor: BASE.gold + '40', animation: 'spin 2s linear infinite reverse' }} />
-          </span>
-          <span style={{ fontSize: '11.5px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase' }}>Cargando módulo…</span>
-        </div>
-      }>
+      {/* Skeleton de página (shimmer): la estructura aparece al instante y el
+          módulo la rellena — sensación de velocidad estilo grandes plataformas */}
+      <Suspense fallback={<SkeletonPantalla titulo="Cargando módulo" />}>
 
         {/* ── ROL: CAPATAZ ── */}
         {rol === 'capataz' && (

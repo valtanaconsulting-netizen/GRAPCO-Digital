@@ -3,9 +3,13 @@
 // Paleta GRAPCO: navy + gold del isotipo, con tarjetas claras y acento por rol.
 
 import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
 import { useAuth } from '../contexts/AuthContext';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 import { BASE, LOGO, LOGO_FALLBACK } from '../utils/styles';
+import { obtenerSemana } from '../utils/helpers';
+import { FECHA_INICIO_PROYECTO } from '../utils/constants';
 import Icon from '../components/Icon';
 // Lazy: face-api.js (~1 MB+) NO se carga en el arranque, solo al abrir el kiosko.
 const MarcadorAsistencia = lazy(() => import('./asistencia/MarcadorAsistencia'));
@@ -98,15 +102,43 @@ const ROL_CARDS_PERMITIDAS = {
   subcontratista:     ['subcontratista'],
 };
 
+// Primer nombre capitalizado: "FRANKLIN ROSAS" → "Franklin".
+const primerNombre = (s) => {
+  const n = String(s || '').trim().split(/\s+/)[0] || '';
+  return n ? n.charAt(0).toUpperCase() + n.slice(1).toLowerCase() : '';
+};
+
 export default function SelectorPerfil() {
-  const { entrarComoRol, logout, rolPermitido } = useAuth();
+  const { user, entrarComoRol, logout, rolPermitido } = useAuth();
   const { proyectos, frentesDelProyecto, proyectoActivoId, setProyectoActivoId, frenteActivoId, setFrenteActivoId } = useProyectoActivo();
   const [modoMarcador, setModoMarcador] = useState(false);
   const [modoPin, setModoPin] = useState(false);
   const [pin, setPin] = useState('');
   const [errorPin, setErrorPin] = useState('');
   const [clienteSel, setClienteSel] = useState('');
+  const [nombreUsuario, setNombreUsuario] = useState('');
   const videoRef = useRef(null);
+
+  // Nombre del usuario para el saludo: primero /Usuarios/{uid}.nombre; si no, displayName o email.
+  useEffect(() => {
+    let activo = true;
+    setNombreUsuario(primerNombre(user?.displayName || (user?.email || '').split('@')[0]));
+    if (!user?.uid) return;
+    getDoc(doc(db, 'Usuarios', user.uid))
+      .then(snap => {
+        const n = snap.exists() ? snap.data()?.nombre : '';
+        if (activo && n) setNombreUsuario(primerNombre(n));
+      })
+      .catch(() => {});
+    return () => { activo = false; };
+  }, [user]);
+
+  // Saludo según hora local + datos de contexto (fecha larga y semana del proyecto).
+  const hora = new Date().getHours();
+  const saludo = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches';
+  const fechaLargaRaw = new Date().toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const fechaLarga = fechaLargaRaw.charAt(0).toUpperCase() + fechaLargaRaw.slice(1);
+  const semanaProyecto = obtenerSemana(new Date(), FECHA_INICIO_PROYECTO);
 
   // Cards visibles según el rol almacenado del usuario
   // Sin escalada: si el rol no está mapeado, solo ve su propia área (no TODAS).
@@ -459,6 +491,40 @@ export default function SelectorPerfil() {
               ❌ {errorPin}
             </p>
           )}
+        </div>
+      )}
+
+      {/* Saludo personalizado — bienvenida estilo dashboard (solo vista de grid) */}
+      {!modoPin && (
+        <div style={{
+          position: 'relative', zIndex: 1,
+          width: '100%', maxWidth: '1180px',
+          textAlign: 'left', marginBottom: '18px',
+          animation: 'anim-fade-in 0.4s ease-out',
+        }}>
+          <p style={{
+            margin: 0, color: '#fff',
+            fontSize: '24px', fontWeight: 900,
+            letterSpacing: '0.5px', textTransform: 'uppercase', lineHeight: 1.2,
+          }}>
+            {saludo}{nombreUsuario ? <>, <span style={{ color: '#E5A82F' }}>{nombreUsuario}</span></> : null}
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginTop: '7px' }}>
+            <span style={{ fontSize: '12.5px', color: 'rgba(255,255,255,0.65)', fontWeight: 600 }}>
+              {fechaLarga}
+            </span>
+            <span style={{ fontSize: '12.5px', color: 'rgba(255,255,255,0.65)', fontWeight: 600 }}>·</span>
+            <span style={{
+              border: '1px solid rgba(229,168,47,0.4)', color: '#E5A82F',
+              borderRadius: '999px', padding: '3px 12px',
+              fontSize: '11.5px', fontWeight: 800, letterSpacing: '0.3px',
+            }}>
+              Semana {semanaProyecto} del proyecto
+            </span>
+          </div>
+          <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>
+            ¿En qué área vas a trabajar hoy?
+          </p>
         </div>
       )}
 

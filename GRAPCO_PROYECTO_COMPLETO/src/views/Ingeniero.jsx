@@ -974,32 +974,64 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
       })()}
 
       {/* === RESUMEN EJECUTIVO (colapsable) — 8 KPIs === */}
-      {resumenAbierto && (
-        <div style={{
-          background: BASE.white, borderRadius: '14px', border: `1px solid ${BASE.border}`,
-          padding: '18px', marginBottom: '12px',
-          boxShadow: '0 2px 8px rgba(15,23,42,0.04)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-            <div style={{ width: '4px', height: '20px', background: BASE.gold, borderRadius: '2px' }} />
-            <h3 style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.4px' }}>
-              📊 RESUMEN EJECUTIVO — Indicadores clave del proyecto
+      {resumenAbierto && (() => {
+        const heroKpi = kpis.find(k => k.l === 'CPI GLOBAL') || kpis[0];
+        const restoKpis = kpis.filter(k => k !== heroKpi);
+        const mono = 'var(--grapco-font-mono, monospace)';
+        return (
+          <div style={{
+            background: BASE.white, borderRadius: '14px',
+            border: `1px solid ${BASE.border}`, borderTop: `3px solid ${BASE.navy}`,
+            padding: '16px 18px', marginBottom: '12px',
+            boxShadow: BASE.shadowMd,
+          }}>
+            <h3 style={{
+              fontSize: '12px', fontWeight: '800', color: BASE.navy,
+              letterSpacing: '1.2px', textTransform: 'uppercase', marginBottom: '14px',
+            }}>
+              Resumen Ejecutivo — Indicadores clave del proyecto
             </h3>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: '10px' }}>
-            {kpis.map((s, i) => (
-              <div key={i} style={{
-                background: BASE.bgSoft, borderRadius: '10px',
-                border: `1px solid ${BASE.border}`, padding: '12px',
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 0, alignItems: 'stretch' }}>
+              {/* HERO: KPI principal (CPI) */}
+              <div style={{
+                paddingRight: '24px', borderRight: `1px solid ${BASE.border}`,
+                display: 'flex', flexDirection: 'column', justifyContent: 'center', flexShrink: 0,
               }}>
-                <small style={{ fontSize: '9px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.8px', display: 'block', marginBottom: '4px' }}>{s.l}</small>
-                <strong style={{ fontSize: '20px', fontWeight: '900', color: s.c }}>{s.v}</strong>
-                {s.sub && <p style={{ fontSize: '10px', color: BASE.muted, marginTop: '4px', fontWeight: '600' }}>{s.sub}</p>}
+                <small style={{
+                  fontSize: '10px', fontWeight: '800', color: BASE.mutedSoft,
+                  letterSpacing: '1.2px', textTransform: 'uppercase',
+                  display: 'block', marginBottom: '2px',
+                }}>{heroKpi.l}</small>
+                <strong style={{
+                  fontSize: '32px', fontWeight: '900', lineHeight: 1.1,
+                  fontFamily: mono, color: heroKpi.c,
+                }}>{heroKpi.v}</strong>
+                {heroKpi.sub && (
+                  <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '4px', fontWeight: '600' }}>{heroKpi.sub}</p>
+                )}
               </div>
-            ))}
+              {/* Resto de KPIs en grilla compacta */}
+              <div style={{
+                flex: '1 1 320px', minWidth: 0, paddingLeft: '24px',
+                display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(130px,1fr))',
+                gap: '14px', alignContent: 'center',
+              }}>
+                {restoKpis.map((s, i) => (
+                  <div key={i} style={{ minWidth: 0 }}>
+                    <small style={{
+                      fontSize: '9.5px', fontWeight: '700', color: BASE.mutedSoft,
+                      letterSpacing: '1px', textTransform: 'uppercase',
+                      display: 'block', marginBottom: '3px',
+                    }}>{s.l}</small>
+                    <strong style={{ fontSize: '17px', fontWeight: '800', fontFamily: mono, color: s.c, whiteSpace: 'nowrap' }}>{s.v}</strong>
+                    {s.sub && <p style={{ fontSize: '9.5px', color: BASE.mutedSoft, marginTop: '2px', fontWeight: '600' }}>{s.sub}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* === VISTAS === */}
       {view==='cockpit'    && <CockpitEjecutivo historial={historialEnriquecido} wbs={wbs} filtrados={filtrados} costosCustomMap={costosCustomMap} isMobile={isMobile}/>}

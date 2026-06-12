@@ -12,6 +12,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import { BASE } from '../../utils/styles';
 import VistaHeader from '../../components/VistaHeader';
+import SkeletonPantalla from '../../components/SkeletonPantalla';
 import { calcularCPM, renumerarEDT, isoDeFecha, fechaDeIso } from '../../utils/cpm';
 import { obtenerSemana } from '../../utils/helpers';
 import { FECHA_INICIO_PROYECTO } from '../../utils/constants';
@@ -214,7 +215,7 @@ export default function LastPlannerPro() {
   );
 
   if (crono === null || lps === null) {
-    return <p style={{ padding: '40px', color: BASE.muted, fontSize: '13px' }}>Cargando Last Planner…</p>;
+    return <SkeletonPantalla titulo="Cargando Last Planner" />;
   }
 
   return (
