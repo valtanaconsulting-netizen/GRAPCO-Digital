@@ -201,6 +201,8 @@ export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobi
     try {
       if (!tareoRegistros.length) return showToast('No hay registros en el rango', 'warning');
 
+      showToast('Generando PDF...', 'info');
+
       // Agrupar por fecha + capataz
       const registrosPorDia = {};
       tareoRegistros.forEach(r => {
@@ -210,16 +212,22 @@ export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobi
       });
 
       const blob = await generarPDFTareo(registrosPorDia, personalDB, '20203071702', 'GRAPCO');
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Tareo_PDF_${tareoFechaIni}_a_${tareoFechaFin}.pdf`;
-      a.click();
+
+      // Crear descarga con tipo MIME explícito
+      const url = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Tareo_${tareoFechaIni}_a_${tareoFechaFin}.pdf`;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      showToast(`✅ PDF de tareo generado — ${Object.keys(registrosPorDia).length} páginas`, 'success');
+
+      showToast(`✅ PDF generado — ${Object.keys(registrosPorDia).length} páginas`, 'success');
     } catch (err) {
       console.error('[exportarTareoPDF]', err);
-      showToast(`Error: ${err.message}`, 'error');
+      showToast(`Error generando PDF: ${err.message}`, 'error');
     }
   };
 
