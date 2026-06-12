@@ -13,6 +13,8 @@ import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import { BASE } from '../../utils/styles';
 import VistaHeader from '../../components/VistaHeader';
 import { calcularCPM, renumerarEDT, isoDeFecha, fechaDeIso } from '../../utils/cpm';
+import { obtenerSemana } from '../../utils/helpers';
+import { FECHA_INICIO_PROYECTO } from '../../utils/constants';
 import {
   ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis,
   CartesianGrid, Tooltip as RTooltip, Legend, ReferenceLine,
@@ -232,10 +234,12 @@ export default function LastPlannerPro() {
             width: '28px', height: '28px', border: `1.5px solid ${BASE.border}`, borderRadius: '7px',
             background: BASE.white, cursor: 'pointer', fontWeight: 800, color: BASE.navy,
           }}>‹</button>
-          <div style={{ textAlign: 'center', minWidth: '170px' }}>
-            <p style={{ fontSize: '9px', fontWeight: 700, color: BASE.mutedSoft, letterSpacing: '1px' }}>SEMANA DEL</p>
-            <p style={{ fontSize: '13px', fontWeight: 800, color: BASE.navy, fontFamily: MONO }}>
-              {fmtCorto(lunes)} — {fmtCorto(addDias(lunes, 6))}
+          <div style={{ textAlign: 'center', minWidth: '190px' }}>
+            <p style={{ fontSize: '13px', fontWeight: 900, color: BASE.navy, letterSpacing: '1px' }}>
+              SEMANA {obtenerSemana(semanaIso, FECHA_INICIO_PROYECTO)}
+            </p>
+            <p style={{ fontSize: '11px', fontWeight: 700, color: BASE.muted, fontFamily: MONO }}>
+              lun {fmtCorto(lunes)} — dom {fmtCorto(addDias(lunes, 6))}
             </p>
           </div>
           <button onClick={() => setSemanaIso(isoDeFecha(addDias(lunes, 7)))} style={{
