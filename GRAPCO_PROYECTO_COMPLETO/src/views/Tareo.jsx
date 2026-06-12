@@ -6,7 +6,7 @@ import { hoy, fmtFecha } from '../utils/helpers';
 import DateInput from '../components/DateInput';
 import VistaHeader from '../components/VistaHeader';
 import { crearResolverNombre } from '../utils/nombresCanonicos';
-import { generarPDFTareo, cargarLogoBase64 } from '../components/TareoPDF';
+import { generarPDFTareoHtml } from '../components/TareoPDFHtml';
 
 export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobile, showToast, fDesde, fHasta, fCapataz, setFDesde, setFHasta, setFCapataz }) {
   // Resolver de nombres compartido — el MISMO obrero escrito distinto cuenta
@@ -201,7 +201,7 @@ export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobi
     try {
       if (!tareoRegistros.length) return showToast('No hay registros en el rango', 'warning');
 
-      showToast('Generando PDF...', 'info');
+      showToast('Generando PDF en LANDSCAPE A4...', 'info');
 
       // Agrupar por fecha + capataz
       const registrosPorDia = {};
@@ -211,23 +211,9 @@ export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobi
         registrosPorDia[key].push(r);
       });
 
-      // Cargar logo
-      const logoBase64 = await cargarLogoBase64();
+      await generarPDFTareoHtml(registrosPorDia, personalDB, '20203071702', tareoSupervisor || 'DIRAC');
 
-      const blob = await generarPDFTareo(registrosPorDia, personalDB, '20203071702', logoBase64);
-
-      // Crear descarga con tipo MIME explícito
-      const url = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `Tareo_${tareoFechaIni}_a_${tareoFechaFin}.pdf`;
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      showToast(`✅ PDF generado — ${Object.keys(registrosPorDia).length} páginas`, 'success');
+      showToast(`✅ PDF generado — ${Object.keys(registrosPorDia).length} páginas en landscape A4`, 'success');
     } catch (err) {
       console.error('[exportarTareoPDF]', err);
       showToast(`Error generando PDF: ${err.message}`, 'error');
