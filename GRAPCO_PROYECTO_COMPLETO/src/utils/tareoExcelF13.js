@@ -24,7 +24,28 @@ function fechaLocalDate(fechaIso) {
   return new Date(y, m - 1, d, 12, 0, 0); // mediodía: evita corrimiento por TZ
 }
 
-export function rellenarHoja(ws, dia, supervisor) {
+// Snapshot de TODOS los estilos (bordes/grises/fuentes) de la plantilla virgen.
+// exceljs PIERDE bordes de las celdas esclavas al re-aplicar merges (hojas
+// clonadas y filas duplicadas) — este snapshot permite re-imponerlos al final.
+export function capturarEstilos(ws, maxFila = 28, maxCol = 30) {
+  const snap = {};
+  for (let r = 1; r <= maxFila; r++) {
+    snap[r] = {};
+    for (let c = 1; c <= maxCol; c++) {
+      snap[r][c] = ws.getRow(r).getCell(c).style;
+    }
+  }
+  return snap;
+}
+
+// Re-impone los estilos del snapshot: filaDestino = filaOrigen + desplaza
+function aplicarEstilosFila(ws, snap, filaOrigen, filaDestino, maxCol = 30) {
+  for (let c = 1; c <= maxCol; c++) {
+    if (snap[filaOrigen]?.[c]) ws.getRow(filaDestino).getCell(c).style = snap[filaOrigen][c];
+  }
+}
+
+export function rellenarHoja(ws, dia, supervisor, snap) {
   const { fecha, capataz, trabajadores, actividades, totales } = dia;
 
   ws.getCell('S3').value = fechaLocalDate(fecha);
@@ -102,16 +123,34 @@ export function rellenarHoja(ws, dia, supervisor) {
 
   // Número de trabajadores (merge AB27:AC28 en la plantilla)
   ws.getCell(`AB${27 + extra}`).value = trabajadores.length;
+
+  // ── Re-imponer estilos del snapshot (los merges/duplicados los pisaron) ──
+  if (snap) {
+    // Filas fijas 1-25 → idénticas a la plantilla
+    for (let r = 1; r <= 25; r++) aplicarEstilosFila(ws, snap, r, r);
+    // Filas insertadas → estilo de la última fila de datos (25)
+    for (let i = 0; i < extra; i++) aplicarEstilosFila(ws, snap, 25, 26 + i);
+    // Pie (26-28 en plantilla) → desplazado `extra` filas
+    for (let r = 26; r <= 28; r++) aplicarEstilosFila(ws, snap, r, r + extra);
+  }
 }
 
 // Clona la hoja plantilla (estilos, merges, anchos, altos e imagen del logo)
-export function clonarHoja(wb, plantilla, nombre) {
+export function clonarHoja(wb, plantilla, nombre, snap) {
   const nueva = wb.addWorksheet(nombre);
   nueva.model = Object.assign({}, JSON.parse(JSON.stringify(plantilla.model)), {
     name: nombre,
     mergeCells: plantilla.model.merges,
   });
   nueva.name = nombre;
+  // Anchos de columna explícitos (el .model a veces los reporta distinto)
+  for (let c = 1; c <= 30; c++) {
+    const w = plantilla.getColumn(c).width;
+    if (w) nueva.getColumn(c).width = w;
+  }
+  // Re-imponer estilos celda a celda: re-aplicar merges via .model pisa los
+  // bordes de las celdas esclavas (los merges toman el estilo de la master)
+  if (snap) for (let r = 1; r <= 28; r++) aplicarEstilosFila(nueva, snap, r, r);
   // Re-anclar el logo (las imágenes no viajan con .model)
   try {
     plantilla.getImages().forEach(img => {
@@ -145,14 +184,18 @@ export async function generarExcelTareoF13(registrosPorDia, personalDB, supervis
   const sinLiq = wb.getWorksheet('SIN LIQUIDADOS');
   if (sinLiq) wb.removeWorksheet(sinLiq.id);
 
+  // Snapshot de estilos de la plantilla VIRGEN — clonado y duplicado de filas
+  // pisan bordes de celdas merged; el snapshot los restaura al final.
+  const snap = capturarEstilos(plantilla);
+
   // 1° CLONAR todas las hojas desde la plantilla VIRGEN (si se rellenara antes
   // de clonar, los clones heredarían los datos del primer día), 2° rellenar.
   const hojas = datos.map((dia, i) => {
     const nombreHoja = `${dia.fecha}`.replace(/[^\w-]/g, '').slice(0, 31) || `Dia${i + 1}`;
     if (i === 0) { plantilla.name = nombreHoja; return plantilla; }
-    return clonarHoja(wb, plantilla, nombreHoja);
+    return clonarHoja(wb, plantilla, nombreHoja, snap);
   });
-  hojas.forEach((ws, i) => rellenarHoja(ws, datos[i], supervisor));
+  hojas.forEach((ws, i) => rellenarHoja(ws, datos[i], supervisor, snap));
 
   const out = await wb.xlsx.writeBuffer();
   const blob = new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });

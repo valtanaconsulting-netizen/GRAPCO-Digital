@@ -2,7 +2,7 @@
 // Uso: node scripts/test-tareo-excel.mjs
 import { readFileSync, writeFileSync } from 'node:fs';
 import { prepararDatosTareo } from '../src/utils/tareoDatos.js';
-import { rellenarHoja, clonarHoja } from '../src/utils/tareoExcelF13.js';
+import { rellenarHoja, clonarHoja, capturarEstilos } from '../src/utils/tareoExcelF13.js';
 import ExcelJS from 'exceljs';
 
 const personalDB = [
@@ -57,12 +57,13 @@ const plantilla = wb.getWorksheet('Tareo');
 const sinLiq = wb.getWorksheet('SIN LIQUIDADOS');
 if (sinLiq) wb.removeWorksheet(sinLiq.id);
 
+const snap = capturarEstilos(plantilla);
 const hojas = datos.map((d, i) => {
   const nombre = d.fecha.replace(/[^\w-]/g, '');
   if (i === 0) { plantilla.name = nombre; return plantilla; }
-  return clonarHoja(wb, plantilla, nombre);
+  return clonarHoja(wb, plantilla, nombre, snap);
 });
-hojas.forEach((ws, i) => rellenarHoja(ws, datos[i], 'DIRAC'));
+hojas.forEach((ws, i) => rellenarHoja(ws, datos[i], 'DIRAC', snap));
 
 const out = await wb.xlsx.writeBuffer();
 writeFileSync('scripts/test-tareo-out.xlsx', Buffer.from(out));

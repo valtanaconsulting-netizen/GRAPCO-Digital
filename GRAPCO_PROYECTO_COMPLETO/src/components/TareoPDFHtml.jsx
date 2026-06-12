@@ -5,7 +5,10 @@
 // 1-10 / N / 0.6 / 1.0 / TOT de la tabla de trabajadores.
 // Los datos (trabajadores sin duplicar, APELLIDOS NOMBRES, capataz primero,
 // cargos desde la BD) vienen de utils/tareoDatos.js — compartidos con el Excel.
-import html2pdf from 'html2pdf.js';
+// Render: html2canvas mide y captura cada página REAL → jsPDF la centra en la
+// hoja A4 landscape (horizontal y vertical) sin posibilidad de recorte.
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import { prepararDatosTareo, fmtFechaLargaF13 } from '../utils/tareoDatos';
 
 const GREY = '#d9d9d9';
@@ -96,7 +99,7 @@ function paginaHTML({ fecha, capataz, trabajadores, actividades, totales, superv
     ${td(totales.total.toFixed(1), { bg: SALMON, bold: true, fs: 7.5 })}`;
 
   return `
-  <div class="tareo-page" style="box-sizing:border-box;width:1122px;padding:24px 30px 10px;${esUltima ? '' : 'page-break-after:always;'}font-family:${FONT};color:#000;background:#fff;letter-spacing:0;">
+  <div class="tareo-page" style="box-sizing:border-box;width:1122px;padding:10px 14px;font-family:${FONT};color:#000;background:#fff;letter-spacing:0;">
 
     <!-- ENCABEZADO (sin bordes) -->
     <div style="position:relative;height:52px;margin-bottom:4px;">
@@ -204,43 +207,58 @@ function paginaHTML({ fecha, capataz, trabajadores, actividades, totales, superv
   </div>`;
 }
 
-// Construye el contenedor HTML con todas las páginas del tareo.
+// Construye el PDF completo: monta cada página fuera de pantalla, la captura
+// con html2canvas (mide el tamaño REAL → nunca se recorta) y la inserta
+// CENTRADA horizontal y verticalmente en una hoja A4 landscape con jsPDF.
 // Lo comparten la DESCARGA (generarPDFTareoHtml) y la VISTA (verPDFTareoHtml).
-async function construirContainerTareo(registrosPorDia, personalDB, ruc, supervisor = 'DIRAC') {
+async function construirPDFTareo(registrosPorDia, personalDB, ruc, supervisor = 'DIRAC') {
   const datos = prepararDatosTareo(registrosPorDia, personalDB);
   if (!datos.length) throw new Error('Sin registros para exportar');
 
   const logo = await cargarLogo();
 
-  const paginas = datos.map((d, i) => paginaHTML({
-    ...d, supervisor, ruc, logo, esUltima: i === datos.length - 1,
-  }));
-
   const container = document.createElement('div');
-  container.innerHTML = paginas.join('');
+  container.innerHTML = datos.map(d => paginaHTML({ ...d, supervisor, ruc, logo })).join('');
+  // Montado fuera de pantalla: html2canvas necesita layout real para medir
+  container.style.position = 'fixed';
+  container.style.left = '-99999px';
+  container.style.top = '0';
+  document.body.appendChild(container);
 
-  const fechas = datos.map(d => d.fecha);
-  const nombre = fechas.length > 1
-    ? `Tareo_${fechas[0]}_a_${fechas[fechas.length - 1]}.pdf`
-    : `Tareo_${fechas[0]}.pdf`;
+  try {
+    const PW = 297, PH = 210, M = 8; // A4 landscape (mm) + margen
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const paginas = [...container.querySelectorAll('.tareo-page')];
 
-  return { container, nombre, numPaginas: datos.length };
+    for (let i = 0; i < paginas.length; i++) {
+      const canvas = await html2canvas(paginas[i], {
+        scale: 3, useCORS: true, backgroundColor: '#ffffff', logging: false,
+      });
+      const ratio = canvas.height / canvas.width;
+      let w = PW - 2 * M;
+      let h = w * ratio;
+      if (h > PH - 2 * M) { h = PH - 2 * M; w = h / ratio; }
+      const x = (PW - w) / 2;   // centrado horizontal
+      const y = (PH - h) / 2;   // centrado vertical — "al medio de todo"
+      if (i > 0) pdf.addPage();
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', x, y, w, h);
+    }
+
+    const fechas = datos.map(d => d.fecha);
+    const nombre = fechas.length > 1
+      ? `Tareo_${fechas[0]}_a_${fechas[fechas.length - 1]}.pdf`
+      : `Tareo_${fechas[0]}.pdf`;
+
+    return { pdf, nombre, numPaginas: datos.length };
+  } finally {
+    container.remove();
+  }
 }
-
-const OPCIONES_PDF = (nombre) => ({
-  margin: [6, 6, 6, 6],
-  filename: nombre,
-  image: { type: 'png' },
-  // scale 3 + windowWidth holgado → texto nítido y el borde derecho no se recorta
-  html2canvas: { scale: 3, useCORS: true, backgroundColor: '#ffffff', windowWidth: 1180 },
-  jsPDF: { orientation: 'landscape', unit: 'mm', format: 'a4' },
-  pagebreak: { mode: ['css', 'legacy'] },
-});
 
 // Descarga el PDF (botón de Gestión → Tareo).
 export async function generarPDFTareoHtml(registrosPorDia, personalDB, ruc, supervisor = 'DIRAC') {
-  const { container, nombre, numPaginas } = await construirContainerTareo(registrosPorDia, personalDB, ruc, supervisor);
-  await html2pdf().set(OPCIONES_PDF(nombre)).from(container).save();
+  const { pdf, nombre, numPaginas } = await construirPDFTareo(registrosPorDia, personalDB, ruc, supervisor);
+  pdf.save(nombre);
   return numPaginas;
 }
 
@@ -248,10 +266,8 @@ export async function generarPDFTareoHtml(registrosPorDia, personalDB, ruc, supe
 // horas de su gente antes de imprimir/firmar). Si el navegador bloquea la
 // pestaña, cae a descarga directa.
 export async function verPDFTareoHtml(registrosPorDia, personalDB, ruc, supervisor = 'DIRAC') {
-  const { container, nombre, numPaginas } = await construirContainerTareo(registrosPorDia, personalDB, ruc, supervisor);
-  const pdf = await html2pdf().set(OPCIONES_PDF(nombre)).from(container).toPdf().get('pdf');
-  const blob = pdf.output('blob');
-  const url = URL.createObjectURL(blob);
+  const { pdf, nombre, numPaginas } = await construirPDFTareo(registrosPorDia, personalDB, ruc, supervisor);
+  const url = URL.createObjectURL(pdf.output('blob'));
   const win = window.open(url, '_blank');
   if (!win) {
     const a = document.createElement('a');
