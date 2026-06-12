@@ -11,6 +11,10 @@ const PEACH = '#fde9d9';   // totales por actividad
 const GREEN = '#e2efda';   // totales N / 0.6 / 1.0
 const SALMON = '#f8b9b9';  // total general
 
+// Tipografía: Calibri es la fuente del Excel original GRAPCO (limpia y
+// profesional en Windows); Segoe UI / Arial como respaldo.
+const FONT = `Calibri,'Segoe UI',Tahoma,Arial,sans-serif`;
+
 const CAR_MAP = { Capataz: 'MA', Operario: 'OP', Oficial: 'OF', Ayudante: 'AYU' };
 const OCUP_MAP = {
   'Albañilería': 'ALBAÑIL', 'Encofrado': 'ENCOFRADO', 'Acero': 'ACERO',
@@ -49,7 +53,7 @@ async function cargarLogo() {
 
 // celda genérica
 const td = (content, { cs = 1, bg = '', bold = false, align = 'center', fs = 8, pad = '3px 4px', h = '' } = {}) =>
-  `<td colspan="${cs}" style="border:1px solid #000;${bg ? `background:${bg};` : ''}font-size:${fs}px;${bold ? 'font-weight:bold;' : ''}text-align:${align};padding:${pad};${h ? `height:${h}px;` : ''}vertical-align:middle;">${content}</td>`;
+  `<td colspan="${cs}" style="border:1px solid #000;${bg ? `background:${bg};` : ''}font-size:${fs}px;${bold ? 'font-weight:bold;' : ''}text-align:${align};padding:${pad};${h ? `height:${h}px;` : ''}vertical-align:middle;letter-spacing:0;">${content}</td>`;
 
 function paginaHTML({ fecha, capataz, trabajadores, actividades, totales, supervisor, ruc, logo, esUltima }) {
   const fechaLarga = fmtFechaLarga(fecha);
@@ -106,26 +110,26 @@ function paginaHTML({ fecha, capataz, trabajadores, actividades, totales, superv
     ${td(totales.total.toFixed(1), { bg: SALMON, bold: true, fs: 7.5 })}`;
 
   return `
-  <div class="tareo-page" style="width:1122px;padding:24px 28px 10px;${esUltima ? '' : 'page-break-after:always;'}font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff;">
+  <div class="tareo-page" style="box-sizing:border-box;width:1122px;padding:24px 30px 10px;${esUltima ? '' : 'page-break-after:always;'}font-family:${FONT};color:#000;background:#fff;letter-spacing:0;">
 
     <!-- ENCABEZADO (sin bordes) -->
     <div style="position:relative;height:52px;margin-bottom:4px;">
       ${logo
         ? `<img src="${logo}" style="position:absolute;left:0;top:0;height:46px;" />`
         : `<span style="position:absolute;left:0;top:8px;font-weight:bold;font-size:16px;">GRAPCO <span style="font-size:9px;">S.A.C</span></span>`}
-      <span style="position:absolute;left:190px;top:16px;font-weight:bold;font-size:10px;">RUC: ${esc(ruc)}</span>
-      <span style="position:absolute;left:63%;top:16px;font-weight:bold;font-size:9px;">FECHA:</span>
-      <span style="position:absolute;left:78%;top:16px;font-weight:bold;font-size:9px;">${esc(fechaLarga)}</span>
+      <span style="position:absolute;left:190px;top:16px;font-weight:bold;font-size:11px;">RUC: ${esc(ruc)}</span>
+      <span style="position:absolute;left:63%;top:16px;font-weight:bold;font-size:10px;">FECHA:</span>
+      <span style="position:absolute;left:78%;top:16px;font-weight:bold;font-size:10px;">${esc(fechaLarga)}</span>
     </div>
 
     <!-- Supervisor / HORARIO DE TRABAJO (sin bordes) -->
     <div style="position:relative;height:18px;margin-bottom:2px;">
-      <span style="position:absolute;left:6px;font-weight:bold;font-size:9px;">Supervisor:&nbsp;&nbsp;&nbsp;${esc(supervisor)}</span>
-      <span style="position:absolute;left:76%;font-weight:bold;font-size:9px;">HORARIO DE TRABAJO</span>
+      <span style="position:absolute;left:6px;font-weight:bold;font-size:10px;">Supervisor:&nbsp;&nbsp;&nbsp;${esc(supervisor)}</span>
+      <span style="position:absolute;left:76%;font-weight:bold;font-size:10px;">HORARIO DE TRABAJO</span>
     </div>
 
-    <!-- GRILLA ÚNICA (23 columnas) -->
-    <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
+    <!-- GRILLA ÚNICA (23 columnas) — borde exterior 2px para que el marco cierre -->
+    <table style="width:100%;border-collapse:collapse;table-layout:fixed;border:2px solid #000;">
       <colgroup>${COLS.map(w => `<col style="width:${w}%;">`).join('')}</colgroup>
 
       <!-- Bloque info -->
@@ -305,8 +309,9 @@ export async function generarPDFTareoHtml(registrosPorDia, personalDB, ruc, supe
   await html2pdf().set({
     margin: [6, 6, 6, 6],
     filename: nombre,
-    image: { type: 'jpeg', quality: 0.97 },
-    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+    image: { type: 'png' },
+    // scale 3 + windowWidth holgado → texto nítido y el borde derecho no se recorta
+    html2canvas: { scale: 3, useCORS: true, backgroundColor: '#ffffff', windowWidth: 1180 },
     jsPDF: { orientation: 'landscape', unit: 'mm', format: 'a4' },
     pagebreak: { mode: ['css', 'legacy'] },
   }).from(container).save();
