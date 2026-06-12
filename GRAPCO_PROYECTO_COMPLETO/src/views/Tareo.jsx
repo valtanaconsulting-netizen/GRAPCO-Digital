@@ -2,13 +2,12 @@
 import React, { useState, useMemo } from 'react';
 import { BASE, inp } from '../utils/styles';
 import { hoy, fmtFecha } from '../utils/helpers';
-import DateInput from '../components/DateInput';
 import VistaHeader from '../components/VistaHeader';
 import { crearResolverNombre } from '../utils/nombresCanonicos';
 // TareoPDFHtml se importa DINÁMICO en el handler: html2pdf (~0.5 MB) solo se
 // descarga cuando el usuario exporta, no al abrir el área.
 
-export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobile, showToast, fDesde, fHasta, fCapataz, setFDesde, setFHasta, setFCapataz }) {
+export default function Tareo({ historial, filtrados, personalDB, cuadrillasActivas, isMobile, showToast, fDesde, fHasta, fCapataz }) {
   // Resolver de nombres compartido — el MISMO obrero escrito distinto cuenta
   // como UNA persona (ej. Marcelino con/sin espacio en el apellido) en el
   // tareo, en la exportación y en el resumen de pago.
@@ -25,19 +24,28 @@ export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobi
   const [tareoHoraFin,    setTareoHoraFin]    = useState('17:00');
   const [tareoSupervisor, setTareoSupervisor] = useState('');
 
-  // Inicializar filtros globales si no hay
-  const tareoFechaIni = fDesde || hoy();
-  const tareoFechaFin = fHasta || hoy();
-  const tareoCapataz = fCapataz || '';
-
+  // LOS FILTROS DEL DASHBOARD MANDAN: el Tareo exporta exactamente lo que
+  // está filtrado arriba (semana, partida, actividad, capataz, desde/hasta).
+  // Si no llega `filtrados` (compatibilidad), cae al filtro propio de fechas.
   const tareoRegistros = useMemo(() => {
-    return historial.filter(r => {
+    if (Array.isArray(filtrados)) return filtrados.filter(Boolean);
+    const ini = fDesde || hoy(), fin = fHasta || hoy();
+    return (historial || []).filter(r => {
       if (!r) return false;
-      if (r.fecha < tareoFechaIni || r.fecha > tareoFechaFin) return false;
-      if (tareoCapataz && r.capataz !== tareoCapataz) return false;
+      if (r.fecha < ini || r.fecha > fin) return false;
+      if (fCapataz && r.capataz !== fCapataz) return false;
       return true;
     });
-  }, [historial, tareoFechaIni, tareoFechaFin, tareoCapataz]);
+  }, [filtrados, historial, fDesde, fHasta, fCapataz]);
+
+  // Rango real del resultado filtrado (para nombres de archivo y el subtítulo)
+  const { tareoFechaIni, tareoFechaFin } = useMemo(() => {
+    const fechas = tareoRegistros.map(r => r.fecha).filter(Boolean).sort();
+    return {
+      tareoFechaIni: fDesde || fechas[0] || hoy(),
+      tareoFechaFin: fHasta || fechas[fechas.length - 1] || hoy(),
+    };
+  }, [tareoRegistros, fDesde, fHasta]);
 
   const tareoStats = useMemo(() => {
     const trabajadores = new Set();
@@ -65,29 +73,6 @@ export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobi
       totHH: totHH.toFixed(1),
     };
   }, [tareoRegistros]);
-
-  // Atajos de fecha — actualiza filtros globales
-  const setRangoRapido = tipo => {
-    const h = new Date();
-    if (tipo === 'hoy') { setFDesde(hoy()); setFHasta(hoy()); }
-    else if (tipo === 'ayer') {
-      const a = new Date(h); a.setDate(a.getDate() - 1);
-      const aIso = a.toISOString().split('T')[0];
-      setFDesde(aIso); setFHasta(aIso);
-    }
-    else if (tipo === 'semana') {
-      const ini = new Date(h); ini.setDate(h.getDate() - h.getDay() + 1);
-      setFDesde(ini.toISOString().split('T')[0]); setFHasta(hoy());
-    }
-    else if (tipo === '7dias') {
-      const ini = new Date(h); ini.setDate(h.getDate() - 6);
-      setFDesde(ini.toISOString().split('T')[0]); setFHasta(hoy());
-    }
-    else if (tipo === 'mes') {
-      const ini = new Date(h.getFullYear(), h.getMonth(), 1);
-      setFDesde(ini.toISOString().split('T')[0]); setFHasta(hoy());
-    }
-  };
 
   // ✅ EXPORTAR TAREO DIARIO (Excel IDÉNTICO al F13_MPO oficial — usa el
   // propio archivo F13 como plantilla: estilos, grises, colores y logo exactos)
@@ -165,7 +150,7 @@ export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobi
 
       {/* Los filtros se controlan desde FILTROS DEL DASHBOARD arriba */}
       <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,padding:'14px',fontSize:'12px',color:BASE.muted}}>
-        <p style={{margin:0}}>Los filtros de fecha y capataz se aplican desde <strong>FILTROS DEL DASHBOARD</strong> arriba 👆</p>
+        <p style={{margin:0}}>El tareo exporta exactamente lo filtrado en <strong>FILTROS DEL DASHBOARD</strong> 👆 — semana, partida, actividad, capataz y fechas. Sin filtros, exporta todo el historial.</p>
       </div>
 
       {/* Datos del encabezado */}

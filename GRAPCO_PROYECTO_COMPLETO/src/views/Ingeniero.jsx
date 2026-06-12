@@ -904,7 +904,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
       {view==='hhcross'    && <AnalisisHHCross filtrados={filtrados} personalDB={personalDB}/>}
       {view==='tendencias' && <Tendencias filtrados={filtrados} historial={historialEnriquecido} wbs={wbs}/>}
       {view==='bim'        && <BIM historialEnriquecido={historialEnriquecido} showToast={showToast}/>}
-      {view==='tareo'      && <Tareo historial={historialEnriquecido} personalDB={personalDB} cuadrillasActivas={cuadrillasActivas} cuadrillasDB={cuadrillasDB} costosCustomMap={costosCustomMap} isMobile={isMobile} showToast={showToast} fDesde={fDesde} fHasta={fHasta} fCapataz={fCapataz} setFDesde={setFDesde} setFHasta={setFHasta} setFCapataz={setFCapataz}/>}
+      {view==='tareo'      && <Tareo historial={historialEnriquecido} filtrados={filtrados} personalDB={personalDB} cuadrillasActivas={cuadrillasActivas} cuadrillasDB={cuadrillasDB} costosCustomMap={costosCustomMap} isMobile={isMobile} showToast={showToast} fDesde={fDesde} fHasta={fHasta} fCapataz={fCapataz} setFDesde={setFDesde} setFHasta={setFHasta} setFCapataz={setFCapataz}/>}
       {view==='gestion'    && <Personal cuadrillasDB={cuadrillasDB} personalDB={personalDB} configuracion={configuracion} showToast={showToast}/>}
       {view==='pago-obreros' && <PagoObreros historial={historialEnriquecido} cuadrillasActivas={cuadrillasActivas} configuracion={configuracion} personalDB={personalDB} showToast={showToast}/>}
       {view==='export' && (
