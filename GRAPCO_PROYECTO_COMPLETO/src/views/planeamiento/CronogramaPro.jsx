@@ -18,6 +18,10 @@ import VistaHeader from '../../components/VistaHeader';
 import { calcularCPM, renumerarEDT, nuevoId, fechaDeIso, isoDeFecha, indiceDeFecha } from '../../utils/cpm';
 import { CRONOGRAMAOBRA } from '../../data/cronogramaObraCreditex';
 import CronogramaObra from './CronogramaObra';
+import {
+  ResponsiveContainer, ComposedChart, Line, XAxis, YAxis,
+  CartesianGrid, Tooltip as RTooltip, Legend, ReferenceLine, ReferenceDot,
+} from 'recharts';
 
 const MONO = 'var(--grapco-font-mono, ui-monospace, monospace)';
 const ROJO = '#DC2626';
@@ -65,6 +69,9 @@ export default function CronogramaPro() {
   const [guardando, setGuardando] = useState(false);
   const [edit, setEdit] = useState(null);              // { idx, campo, valor }
   const [sel, setSel] = useState(null);                // fila seleccionada
+  // Línea base (como MS Project): snapshot congelado del plan para medir desvíos
+  const [baseline, setBaseline] = useState(null);      // { fecha, finProyecto, duracion, porId: {id:{es,ef}} }
+  const [verCurvaS, setVerCurvaS] = useState(true);
 
   // ── Cargar de Firestore ──
   useEffect(() => {
@@ -77,6 +84,7 @@ export default function CronogramaPro() {
           const d = snap.data();
           setTareas(d.tareas || []);
           if (d.fechaInicio) setFechaInicio(d.fechaInicio);
+          if (d.baseline) setBaseline(d.baseline);
         } else {
           setTareas([]); // vacío → pantalla de arranque
         }
@@ -127,6 +135,7 @@ export default function CronogramaPro() {
         fechaInicio,
         tareas: tareas.map(({ id, nombre, nivel, duracion, predecesoras, avance, inicioManual }) =>
           ({ id, nombre, nivel, duracion, predecesoras: predecesoras || '', avance: avance || 0, inicioManual: inicioManual || null })),
+        baseline: baseline || null,
         actualizadoEn: serverTimestamp(),
       });
       setSinGuardar(false);
@@ -134,6 +143,65 @@ export default function CronogramaPro() {
       setGuardando(false);
     }
   };
+
+  // ── Línea base: congela el plan actual (como "Set Baseline" de MS Project) ──
+  const fijarBaseline = () => {
+    if (!cpm) return;
+    if (baseline && !window.confirm('Ya existe una línea base. ¿Reemplazarla con el plan actual?')) return;
+    const porId = {};
+    cpm.tareas.forEach(t => { if (!t.resumen) porId[t.id] = { es: t.es, ef: t.ef }; });
+    setBaseline({
+      fecha: hoyIso(),
+      finProyecto: cpm.finProyecto,
+      duracion: cpm.duracionProyecto,
+      porId,
+    });
+    setSinGuardar(true);
+  };
+
+  // Desvío del fin de obra vs línea base (en días laborables)
+  const desvioDias = useMemo(() => {
+    if (!cpm || !baseline) return null;
+    return cpm.duracionProyecto - (baseline.duracion || 0);
+  }, [cpm, baseline]);
+
+  // ── Curva S: % programado acumulado por semana (CPM) vs línea base vs HOY ──
+  const curvaS = useMemo(() => {
+    if (!cpm) return null;
+    const hojas = cpm.tareas.filter(t => !t.resumen && t.duracion > 0);
+    const total = hojas.reduce((s, t) => s + t.duracion, 0);
+    if (!total) return null;
+    const durBase = baseline?.duracion || 0;
+    const nSem = Math.ceil(Math.max(cpm.duracionProyecto, durBase) / 6) + 1;
+    const puntos = [];
+    for (let w = 0; w <= nSem; w++) {
+      const corte = w * 6; // fin de la semana w (en días laborables)
+      const prog = hojas.reduce((s, t) => {
+        const f = t.ef <= t.es ? 1 : Math.min(1, Math.max(0, (corte - t.es) / (t.ef - t.es)));
+        return s + f * t.duracion;
+      }, 0) / total * 100;
+      let base = null;
+      if (baseline) {
+        let acc = 0, totB = 0;
+        hojas.forEach(t => {
+          const b = baseline.porId?.[t.id];
+          if (!b) return;
+          const d = Math.max(0, b.ef - b.es);
+          totB += d;
+          const f = b.ef <= b.es ? 1 : Math.min(1, Math.max(0, (corte - b.es) / (b.ef - b.es)));
+          acc += f * d;
+        });
+        base = totB > 0 ? acc / totB * 100 : null;
+      }
+      puntos.push({
+        sem: `S${w}`,
+        Programado: Math.round(prog),
+        ...(base != null ? { 'Línea base': Math.round(base) } : {}),
+      });
+    }
+    const semHoy = Math.min(nSem, Math.max(0, Math.floor(indiceDeFecha(fechaInicio, hoyIso()) / 6)));
+    return { puntos, semHoy, avanceReal: cpm.avanceGlobal };
+  }, [cpm, baseline, fechaInicio]);
 
   // ── celda editable ──
   const commitEdit = () => {
@@ -256,6 +324,11 @@ export default function CronogramaPro() {
               ['AVANCE', cpm ? `${cpm.avanceGlobal}%` : '—'],
               ['TAREAS CRÍTICAS', cpm ? cpm.criticas : '—', cpm && cpm.criticas > 0 ? ROJO : undefined],
               ['TAREAS', tareas.length],
+              ...(desvioDias != null ? [[
+                'VS LÍNEA BASE',
+                desvioDias === 0 ? 'En plan' : `${desvioDias > 0 ? '+' : ''}${Math.round(desvioDias * 10) / 10} d`,
+                desvioDias > 0 ? ROJO : BASE.green,
+              ]] : []),
             ].map(([lbl, val, color], i) => (
               <div key={lbl} style={{ display: 'flex', alignItems: 'center' }}>
                 {i > 0 && <span style={{ width: '1px', height: '22px', background: BASE.border, margin: '0 14px' }} />}
@@ -281,6 +354,11 @@ export default function CronogramaPro() {
                 padding: '8px 14px', background: BASE.white, color: BASE.navy, border: `1.5px solid ${BASE.border}`,
                 borderRadius: '8px', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer',
               }}>+ Tarea</button>
+              <button onClick={fijarBaseline} title="Congela el plan actual para medir desvíos (como Set Baseline en MS Project)" style={{
+                padding: '8px 14px', background: BASE.white, color: baseline ? BASE.goldDark : BASE.navy,
+                border: `1.5px solid ${baseline ? BASE.gold : BASE.border}`,
+                borderRadius: '8px', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer',
+              }}>{baseline ? `Línea base: ${baseline.fecha}` : 'Fijar línea base'}</button>
               <button onClick={guardar} disabled={!sinGuardar || guardando} style={{
                 padding: '8px 18px', borderRadius: '8px', border: 'none', cursor: sinGuardar ? 'pointer' : 'default',
                 background: sinGuardar ? BASE.navy : BASE.bgSoft, color: sinGuardar ? BASE.gold : BASE.mutedSoft,
@@ -304,7 +382,7 @@ export default function CronogramaPro() {
                 <table style={{ borderCollapse: 'collapse', tableLayout: 'fixed' }}>
                   <thead>
                     <tr>
-                      {[['', 86], ['EDT', 52], ['NOMBRE DE TAREA', 260], ['DUR (d)', 50], ['INICIO', 78], ['FIN', 78], ['PRED.', 72], ['%', 42], ['HOLG.', 46]].map(([h, w]) => (
+                      {[['', 86], ['EDT', 52], ['NOMBRE DE TAREA', 260], ['DUR (d)', 50], ['INICIO', 78], ['FIN', 78], ['PRED.', 72], ['%', 42], ['HOLG.', 46], ...(baseline ? [['VAR.', 46]] : [])].map(([h, w]) => (
                         <th key={h || 'acc'} style={{
                           position: 'sticky', top: 0, zIndex: 3,
                           width: `${w}px`, minWidth: `${w}px`, maxWidth: `${w}px`,
@@ -358,6 +436,18 @@ export default function CronogramaPro() {
                           fontFamily: MONO, fontSize: '10.5px', textAlign: 'center', fontWeight: 700,
                           color: t.critica ? ROJO : (t.holgura > 0 ? BASE.green : BASE.mutedSoft),
                         }}>{t.resumen ? '' : t.holgura}</td>
+                        {baseline && (() => {
+                          if (t.resumen) return <td />;
+                          const b = baseline.porId?.[t.id];
+                          if (!b) return <td style={{ fontSize: '10px', color: BASE.mutedSoft, textAlign: 'center' }}>nueva</td>;
+                          const v = Math.round((t.ef - b.ef) * 10) / 10;
+                          return (
+                            <td style={{
+                              fontFamily: MONO, fontSize: '10.5px', textAlign: 'center', fontWeight: 700,
+                              color: v > 0 ? ROJO : (v < 0 ? BASE.green : BASE.mutedSoft),
+                            }}>{v === 0 ? '0' : (v > 0 ? `+${v}` : v)}</td>
+                          );
+                        })()}
                       </tr>
                     ))}
                   </tbody>
@@ -426,12 +516,18 @@ export default function CronogramaPro() {
                         }
                         const color = t.critica ? ROJO : TEAL;
                         const wAv = w * Math.min(100, t.avance || 0) / 100;
+                        const b = baseline?.porId?.[t.id];
                         return (
                           <g key={t.id}>
-                            <rect x={x} y={y + 8} width={w} height={14} rx={3} fill={color} opacity={0.32} />
-                            <rect x={x} y={y + 8} width={wAv} height={14} rx={3} fill={color} />
+                            {/* barra fantasma de la línea base (plan congelado) */}
+                            {b && (
+                              <rect x={b.es * pxDia} y={y + 23} width={Math.max((b.ef - b.es) * pxDia, 2)} height={4} rx={2}
+                                fill={BASE.mutedSoft} opacity={0.55} />
+                            )}
+                            <rect x={x} y={y + 7} width={w} height={14} rx={3} fill={color} opacity={0.32} />
+                            <rect x={x} y={y + 7} width={wAv} height={14} rx={3} fill={color} />
                             {pxDia >= 8 && w > 34 && (
-                              <text x={x + w + 5} y={y + 19} fontSize="8.5" fill={BASE.mutedSoft} fontFamily={MONO}>
+                              <text x={x + w + 5} y={y + 18} fontSize="8.5" fill={BASE.mutedSoft} fontFamily={MONO}>
                                 {Math.round(t.avance || 0)}%
                               </text>
                             )}
@@ -449,7 +545,7 @@ export default function CronogramaPro() {
               display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center',
               padding: '9px 16px', borderTop: `1px solid ${BASE.borderSoft}`, background: BASE.bgSoft,
             }}>
-              {[[TEAL, 'Tarea'], [ROJO, 'Ruta crítica'], [BASE.navy, 'Fase resumen'], [BASE.goldDark, 'Hito ◆']].map(([c, l]) => (
+              {[[TEAL, 'Tarea'], [ROJO, 'Ruta crítica'], [BASE.navy, 'Fase resumen'], [BASE.goldDark, 'Hito ◆'], ...(baseline ? [[BASE.mutedSoft, 'Línea base (plan congelado)']] : [])].map(([c, l]) => (
                 <span key={l} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '10.5px', fontWeight: 600, color: BASE.muted }}>
                   <span style={{ width: '14px', height: '8px', borderRadius: '2px', background: c, display: 'inline-block' }} />{l}
                 </span>
@@ -459,6 +555,44 @@ export default function CronogramaPro() {
               </span>
             </div>
           </div>
+
+          {/* ══ CURVA S — avance programado vs línea base vs avance real ══ */}
+          {curvaS && (
+            <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '14px', boxShadow: BASE.shadowMd, overflow: 'hidden' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: verCurvaS ? `1px solid ${BASE.borderSoft}` : 'none' }}>
+                <span style={{ fontSize: '12.5px', fontWeight: 800, color: BASE.navy, letterSpacing: '1.2px' }}>
+                  CURVA S — AVANCE PROGRAMADO DE OBRA
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <span style={{ fontSize: '11px', color: BASE.muted, fontWeight: 600 }}>
+                    Hoy (S{curvaS.semHoy}): programado {curvaS.puntos[curvaS.semHoy]?.Programado ?? '—'}% · real <strong style={{ color: (curvaS.puntos[curvaS.semHoy]?.Programado ?? 0) > curvaS.avanceReal ? ROJO : BASE.green, fontFamily: MONO }}>{curvaS.avanceReal}%</strong>
+                  </span>
+                  <button onClick={() => setVerCurvaS(!verCurvaS)} style={{
+                    padding: '5px 12px', background: BASE.bgSoft, border: `1px solid ${BASE.border}`, borderRadius: '7px',
+                    fontSize: '10px', fontWeight: 800, color: BASE.muted, cursor: 'pointer', letterSpacing: '0.5px',
+                  }}>{verCurvaS ? 'OCULTAR' : 'MOSTRAR'}</button>
+                </div>
+              </div>
+              {verCurvaS && (
+                <div style={{ padding: '12px 8px 6px', height: '260px' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={curvaS.puntos} margin={{ top: 6, right: 24, bottom: 0, left: -14 }}>
+                      <CartesianGrid stroke={BASE.borderSoft} strokeDasharray="3 3" />
+                      <XAxis dataKey="sem" tick={{ fontSize: 10, fill: BASE.muted }} interval="preserveStartEnd" />
+                      <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: BASE.muted }} unit="%" />
+                      <RTooltip formatter={(v) => `${v}%`} contentStyle={{ fontSize: '11px', borderRadius: '8px', border: `1px solid ${BASE.border}` }} />
+                      <Legend wrapperStyle={{ fontSize: '11px' }} />
+                      {baseline && <Line type="monotone" dataKey="Línea base" stroke={BASE.mutedSoft} strokeDasharray="6 4" strokeWidth={2} dot={false} />}
+                      <Line type="monotone" dataKey="Programado" stroke={BASE.navy} strokeWidth={2.5} dot={false} />
+                      <ReferenceLine x={`S${curvaS.semHoy}`} stroke={ROJO} strokeDasharray="4 3" label={{ value: 'HOY', fontSize: 9, fill: ROJO, position: 'top' }} />
+                      <ReferenceDot x={`S${curvaS.semHoy}`} y={curvaS.avanceReal} r={5} fill={BASE.gold} stroke={BASE.navy} strokeWidth={2}
+                        label={{ value: `Real ${curvaS.avanceReal}%`, fontSize: 10, fill: BASE.goldDark, position: 'right', fontWeight: 700 }} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+          )}
         </>
       ))}
     </div>
