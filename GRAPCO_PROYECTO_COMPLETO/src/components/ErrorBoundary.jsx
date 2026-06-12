@@ -22,6 +22,21 @@ export default class ErrorBoundary extends React.Component {
     console.error('[ErrorBoundary]', error, info);
     this.setState({ errorInfo: info });
 
+    // ── Auto-recuperación: chunk viejo tras un deploy ──
+    // "Failed to fetch dynamically imported module" = el navegador pide un
+    // archivo con hash antiguo que ya no existe en el hosting. La cura es
+    // recargar para tomar el index nuevo — automática, una sola vez por minuto.
+    const msg = String(error?.message || error);
+    if (/Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i.test(msg)) {
+      const KEY = 'grapco_chunk_reload_eb';
+      const ultimo = Number(sessionStorage.getItem(KEY) || 0);
+      if (Date.now() - ultimo > 60000) {
+        sessionStorage.setItem(KEY, String(Date.now()));
+        window.location.reload();
+        return;
+      }
+    }
+
     // Log a Firebase (best-effort, no rompe si falla)
     try {
       await addDoc(collection(db, 'Auditoria_Seguridad'), {

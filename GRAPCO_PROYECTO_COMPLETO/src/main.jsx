@@ -5,6 +5,21 @@ import App from './App';
 import './styles/animatedBg.css';
 import './styles/global.css';
 
+// ── Auto-recuperación tras un deploy ──
+// Si hubo un deploy mientras la app estaba abierta, los chunks viejos (hash
+// distinto) ya no existen en el hosting y el lazy-load falla con "Failed to
+// fetch dynamically imported module". Vite emite vite:preloadError justo para
+// esto: recargamos UNA vez para tomar el index nuevo (guard en sessionStorage
+// evita bucles de recarga si el problema persiste).
+window.addEventListener('vite:preloadError', (event) => {
+  const KEY = 'grapco_chunk_reload';
+  const ultimo = Number(sessionStorage.getItem(KEY) || 0);
+  if (Date.now() - ultimo < 30000) return; // ya recargamos hace <30 s → que actúe el ErrorBoundary
+  sessionStorage.setItem(KEY, String(Date.now()));
+  event.preventDefault();
+  window.location.reload();
+});
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />
