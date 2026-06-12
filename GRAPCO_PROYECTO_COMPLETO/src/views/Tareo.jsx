@@ -6,6 +6,7 @@ import { hoy, fmtFecha } from '../utils/helpers';
 import DateInput from '../components/DateInput';
 import VistaHeader from '../components/VistaHeader';
 import { crearResolverNombre } from '../utils/nombresCanonicos';
+import { generarPDFTareo } from '../components/TareoPDF';
 
 export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobile, showToast }) {
   // Resolver de nombres compartido — el MISMO obrero escrito distinto cuenta
@@ -189,6 +190,33 @@ export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobi
       showToast(`✅ Tareo diario exportado — ${Object.keys(grupos).length} hojas`, 'success');
     } catch (err) {
       console.error('[exportarTareoDiario]', err);
+      showToast(`Error: ${err.message}`, 'error');
+    }
+  };
+
+  // ✅ EXPORTAR PDF TAREO (formato profesional GRAPCO - una página por día/capataz)
+  const exportarTareoPDF = async () => {
+    try {
+      if (!tareoRegistros.length) return showToast('No hay registros en el rango', 'warning');
+
+      // Agrupar por fecha + capataz
+      const registrosPorDia = {};
+      tareoRegistros.forEach(r => {
+        const key = `${r.fecha}__${r.capataz}`;
+        if (!registrosPorDia[key]) registrosPorDia[key] = [];
+        registrosPorDia[key].push(r);
+      });
+
+      const blob = await generarPDFTareo(registrosPorDia, personalDB, '20203071702', 'GRAPCO');
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Tareo_PDF_${tareoFechaIni}_a_${tareoFechaFin}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast(`✅ PDF de tareo generado — ${Object.keys(registrosPorDia).length} páginas`, 'success');
+    } catch (err) {
+      console.error('[exportarTareoPDF]', err);
       showToast(`Error: ${err.message}`, 'error');
     }
   };
@@ -391,12 +419,18 @@ export default function Tareo({ historial, personalDB, cuadrillasActivas, isMobi
       </div>
 
       {/* Botones de exportación */}
-      <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr',gap:'12px'}}>
+      <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'repeat(3,1fr)',gap:'12px'}}>
+        <button onClick={exportarTareoPDF} disabled={!tareoStats.registros}
+          style={{padding:'18px',background:tareoStats.registros?'#3B82F6':'#cbd5e1',color:'#fff',border:'none',borderRadius:'12px',fontWeight:'800',cursor:tareoStats.registros?'pointer':'not-allowed',fontSize:'14px',boxShadow:tareoStats.registros?'0 4px 12px rgba(59,130,246,0.3)':'none',display:'flex',flexDirection:'column',alignItems:'center',gap:'4px'}}>
+          <span style={{fontSize:'24px'}}>📄</span>
+          <span>DESCARGAR PDF</span>
+          <span style={{fontSize:'11px',fontWeight:'500',opacity:0.9}}>A4 Landscape listo para firmar e imprimir</span>
+        </button>
         <button onClick={exportarTareoDiario} disabled={!tareoStats.registros}
           style={{padding:'18px',background:tareoStats.registros?BASE.green:'#cbd5e1',color:'#fff',border:'none',borderRadius:'12px',fontWeight:'800',cursor:tareoStats.registros?'pointer':'not-allowed',fontSize:'14px',boxShadow:tareoStats.registros?'0 4px 12px rgba(22,163,74,0.3)':'none',display:'flex',flexDirection:'column',alignItems:'center',gap:'4px'}}>
           <span style={{fontSize:'24px'}}>📋</span>
           <span>TAREO DIARIO</span>
-          <span style={{fontSize:'11px',fontWeight:'500',opacity:0.9}}>Formato GRAPCO original (1 hoja por día/cuadrilla)</span>
+          <span style={{fontSize:'11px',fontWeight:'500',opacity:0.9}}>Formato GRAPCO original (Excel)</span>
         </button>
         <button onClick={exportarTareoAdmin} disabled={!tareoStats.registros}
           style={{padding:'18px',background:tareoStats.registros?BASE.orange:'#cbd5e1',color:'#fff',border:'none',borderRadius:'12px',fontWeight:'800',cursor:tareoStats.registros?'pointer':'not-allowed',fontSize:'14px',boxShadow:tareoStats.registros?'0 4px 12px rgba(234,88,12,0.3)':'none',display:'flex',flexDirection:'column',alignItems:'center',gap:'4px'}}>
