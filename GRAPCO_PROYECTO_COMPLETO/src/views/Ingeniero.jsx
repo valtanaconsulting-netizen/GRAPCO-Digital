@@ -814,87 +814,104 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
         </div>
       </div>
 
-      {/* === FILTROS (colapsable) — panel GRAPCO: claro, llamativo y al grano === */}
+      {/* === FILTROS (colapsable) — panel formal GRAPCO: tipografía sobria, acento dorado === */}
       {filtrosAbiertos && (() => {
-        // Chips de filtros activos (cada uno se quita con su ✕)
+        // Resumen de filtros activos (cada uno se retira con su ×)
         const chips = [
-          fPartida    && { lbl: `📂 ${fPartida}`,            clear: () => { setFPartida(''); setFSubpartida(''); setFActividad(''); } },
-          fSubpartida && { lbl: `🧱 ${fSubpartida}`,         clear: () => { setFSubpartida(''); setFActividad(''); } },
-          fActividad  && { lbl: `🔨 ${fActividad}`,          clear: () => setFActividad('') },
-          fSemana     && { lbl: `📅 Semana ${fSemana}`,      clear: () => setFSemana('') },
-          fCapataz    && { lbl: `👷 ${fCapataz.split(' ').slice(0, 2).join(' ')}`, clear: () => setFCapataz('') },
-          fDesde      && { lbl: `🗓️ Desde ${fDesde}`,        clear: () => setFDesde('') },
-          fHasta      && { lbl: `🗓️ Hasta ${fHasta}`,        clear: () => setFHasta('') },
+          fPartida    && { lbl: `Partida: ${fPartida}`,      clear: () => { setFPartida(''); setFSubpartida(''); setFActividad(''); } },
+          fSubpartida && { lbl: `Subpartida: ${fSubpartida}`, clear: () => { setFSubpartida(''); setFActividad(''); } },
+          fActividad  && { lbl: `Actividad: ${fActividad}`,  clear: () => setFActividad('') },
+          fSemana     && { lbl: `Semana ${fSemana}`,         clear: () => setFSemana('') },
+          fCapataz    && { lbl: `Capataz: ${fCapataz.split(' ').slice(0, 2).join(' ')}`, clear: () => setFCapataz('') },
+          fDesde      && { lbl: `Desde ${fDesde}`,           clear: () => setFDesde('') },
+          fHasta      && { lbl: `Hasta ${fHasta}`,           clear: () => setFHasta('') },
         ].filter(Boolean);
 
-        // Select que se "enciende" en gold cuando está filtrando
+        // Campo activo: borde dorado fino + texto navy en negrita (sobrio)
         const selEstilo = (activo) => ({
-          width: '100%', padding: '10px 12px', borderRadius: '10px', boxSizing: 'border-box',
-          fontSize: '13px', fontWeight: activo ? '800' : '600', cursor: 'pointer',
-          color: activo ? BASE.goldDark : BASE.text,
-          background: activo ? BASE.goldSoft : '#f8fafc',
-          border: activo ? `2px solid ${BASE.gold}` : `1.5px solid ${BASE.border}`,
+          width: '100%', padding: '10px 12px', borderRadius: '8px', boxSizing: 'border-box',
+          fontSize: '13px', fontWeight: activo ? '700' : '500', cursor: 'pointer',
+          color: BASE.text,
+          background: BASE.white,
+          border: activo ? `1.5px solid ${BASE.gold}` : `1.5px solid ${BASE.border}`,
+          boxShadow: activo ? `0 0 0 3px ${BASE.gold}1f` : 'none',
           outline: 'none', transition: 'all 0.15s ease',
         });
 
+        const labelEstilo = (activo) => ({
+          fontSize: '10.5px', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase',
+          color: activo ? BASE.goldDark : BASE.muted,
+          display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px',
+        });
+        const puntoActivo = <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: BASE.gold, display: 'inline-block' }} />;
+
         return (
         <div style={{
-          background: BASE.white, borderRadius: '14px',
-          border: `1px solid ${tieneFiltrosActivos ? BASE.gold : BASE.border}`,
-          borderTop: `4px solid ${tieneFiltrosActivos ? BASE.gold : BASE.navy}`,
-          padding: '16px 18px', marginBottom: '12px',
-          boxShadow: tieneFiltrosActivos ? `0 4px 16px ${BASE.gold}22` : '0 2px 8px rgba(15,23,42,0.04)',
+          background: BASE.white, borderRadius: '12px',
+          border: `1px solid ${BASE.border}`,
+          borderTop: `3px solid ${tieneFiltrosActivos ? BASE.gold : BASE.navy}`,
+          padding: '18px 20px', marginBottom: '12px',
+          boxShadow: BASE.shadowMd,
           animation: 'slideDown 0.2s ease-out',
         }}>
-          {/* Encabezado: título + segmented SEMANAL/ACUMULADO */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '14px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.4px' }}>🔍 FILTRA LO QUE QUIERES VER</span>
-              <span style={{
-                fontSize: '11px', fontWeight: '800', padding: '3px 12px', borderRadius: '999px',
-                background: tieneFiltrosActivos ? BASE.navy : BASE.navySoft,
-                color: tieneFiltrosActivos ? BASE.gold : BASE.navy,
-                fontFamily: 'var(--grapco-font-mono, monospace)',
-              }}>
-                {filtrados.length} registro{filtrados.length !== 1 ? 's' : ''}
+          {/* Encabezado: título + conteo + segmented SEMANAL/ACUMULADO */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', fontWeight: '800', color: BASE.navy, letterSpacing: '1.2px' }}>
+                <Icon name="filter" size={14} color={BASE.navy} strokeWidth={2.2} />
+                FILTROS DEL DASHBOARD
+              </span>
+              <span style={{ width: '1px', height: '16px', background: BASE.border }} />
+              <span style={{ fontSize: '11.5px', fontWeight: '700', color: BASE.muted, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: tieneFiltrosActivos ? BASE.gold : BASE.green }} />
+                <span style={{ fontFamily: 'var(--grapco-font-mono, monospace)', color: BASE.navy, fontWeight: '800' }}>{filtrados.length}</span>
+                registro{filtrados.length !== 1 ? 's' : ''} en vista
               </span>
             </div>
-            <div style={{ display: 'inline-flex', background: BASE.navySoft, borderRadius: '10px', padding: '3px', gap: '2px' }}>
+            <div style={{ display: 'inline-flex', background: BASE.bgSoft, border: `1px solid ${BASE.border}`, borderRadius: '9px', padding: '3px', gap: '2px' }}>
               {[['SEMANAL', false], ['ACUMULADO', true]].map(([lbl, val]) => (
                 <button key={lbl} onClick={() => setModoAcum(val)} style={{
-                  padding: '6px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer',
-                  fontSize: '11px', fontWeight: '800', letterSpacing: '0.4px', transition: 'all 0.15s ease',
+                  padding: '6px 16px', borderRadius: '7px', border: 'none', cursor: 'pointer',
+                  fontSize: '10.5px', fontWeight: '800', letterSpacing: '0.8px', transition: 'all 0.15s ease',
                   background: modoAcum === val ? BASE.navy : 'transparent',
-                  color: modoAcum === val ? BASE.gold : BASE.navy,
+                  color: modoAcum === val ? '#fff' : BASE.muted,
                 }}>{lbl}</button>
               ))}
             </div>
           </div>
 
-          {/* Chips de filtros activos */}
+          {/* Resumen de filtros activos */}
           {chips.length > 0 && (
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
+            <div style={{
+              display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center',
+              padding: '10px 12px', marginBottom: '14px',
+              background: BASE.bgSoft, border: `1px solid ${BASE.borderSoft}`, borderRadius: '8px',
+            }}>
+              <span style={{ fontSize: '10px', fontWeight: '800', color: BASE.mutedSoft, letterSpacing: '1px', marginRight: '4px' }}>ACTIVOS</span>
               {chips.map((ch, i) => (
                 <span key={i} style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '7px',
-                  background: BASE.navy, color: '#fff', borderRadius: '999px',
-                  padding: '5px 6px 5px 12px', fontSize: '11.5px', fontWeight: '700',
-                  maxWidth: '260px',
+                  display: 'inline-flex', alignItems: 'center', gap: '8px',
+                  background: BASE.white, color: BASE.navy, borderRadius: '6px',
+                  border: `1px solid ${BASE.navy}2e`, borderLeft: `3px solid ${BASE.gold}`,
+                  padding: '4px 8px 4px 10px', fontSize: '11.5px', fontWeight: '600',
+                  maxWidth: '280px',
                 }}>
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ch.lbl}</span>
                   <button onClick={ch.clear} aria-label="Quitar filtro" style={{
-                    width: '18px', height: '18px', borderRadius: '50%', border: 'none', cursor: 'pointer',
-                    background: BASE.gold, color: BASE.navy, fontSize: '11px', fontWeight: '900',
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, flexShrink: 0,
-                  }}>×</button>
+                    border: 'none', background: 'transparent', cursor: 'pointer', padding: 0,
+                    color: BASE.mutedSoft, fontSize: '14px', fontWeight: '700', lineHeight: 1, flexShrink: 0,
+                  }}
+                    onMouseEnter={e => { e.currentTarget.style.color = BASE.red; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = BASE.mutedSoft; }}>×</button>
                 </span>
               ))}
               <button onClick={() => { setFPartida(''); setFSubpartida(''); setFActividad(''); setFSemana(''); setFDesde(''); setFHasta(''); setFCapataz(''); }}
                 style={{
-                  padding: '5px 14px', background: BASE.redLight, color: BASE.red, border: 'none',
-                  borderRadius: '999px', fontSize: '11.5px', fontWeight: '800', cursor: 'pointer',
+                  marginLeft: 'auto', padding: '5px 12px', background: 'transparent', color: BASE.red,
+                  border: `1px solid ${BASE.red}40`, borderRadius: '6px',
+                  fontSize: '11px', fontWeight: '700', cursor: 'pointer', letterSpacing: '0.3px', whiteSpace: 'nowrap',
                 }}>
-                ✕ Limpiar todo
+                Limpiar todo
               </button>
             </div>
           )}
@@ -902,16 +919,14 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
           {/* Selects principales */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: '12px' }}>
             {[
-              { icono: '📂', label: 'PARTIDA',    val: fPartida,    set: v => { setFPartida(v); setFSubpartida(''); setFActividad(''); }, opts: Object.keys(catWbs).map(p => ({ v: p, l: p })) },
-              { icono: '🧱', label: 'SUBPARTIDA', val: fSubpartida, set: v => { setFSubpartida(v); setFActividad(''); }, opts: fPartida ? Object.keys(catWbs[fPartida] || {}).map(s => ({ v: s, l: s })) : [] },
-              { icono: '🔨', label: 'ACTIVIDAD',  val: fActividad,  set: setFActividad, opts: fPartida && fSubpartida ? (catWbs[fPartida]?.[fSubpartida]?.map(a => ({ v: a, l: a })) || []) : [] },
-              { icono: '📅', label: 'SEMANA',     val: fSemana,     set: setFSemana,    opts: semanasFiltro.map(n => ({ v: n, l: `Semana ${n}` })) },
-              { icono: '👷', label: 'CAPATAZ',    val: fCapataz,    set: setFCapataz,   opts: Object.keys(cuadrillasActivas).map(c => ({ v: c, l: c })) },
+              { label: 'Partida',    val: fPartida,    set: v => { setFPartida(v); setFSubpartida(''); setFActividad(''); }, opts: Object.keys(catWbs).map(p => ({ v: p, l: p })) },
+              { label: 'Subpartida', val: fSubpartida, set: v => { setFSubpartida(v); setFActividad(''); }, opts: fPartida ? Object.keys(catWbs[fPartida] || {}).map(s => ({ v: s, l: s })) : [] },
+              { label: 'Actividad',  val: fActividad,  set: setFActividad, opts: fPartida && fSubpartida ? (catWbs[fPartida]?.[fSubpartida]?.map(a => ({ v: a, l: a })) || []) : [] },
+              { label: 'Semana',     val: fSemana,     set: setFSemana,    opts: semanasFiltro.map(n => ({ v: n, l: `Semana ${n}` })) },
+              { label: 'Capataz',    val: fCapataz,    set: setFCapataz,   opts: Object.keys(cuadrillasActivas).map(c => ({ v: c, l: c })) },
             ].map((f, i) => (
               <div key={i} style={{ minWidth: 0 }}>
-                <label style={{ fontSize: '11px', fontWeight: '800', color: f.val ? BASE.goldDark : BASE.navy, letterSpacing: '0.6px', display: 'block', marginBottom: '5px' }}>
-                  {f.icono} {f.label}{f.val && ' ✓'}
-                </label>
+                <label style={labelEstilo(!!f.val)}>{f.label}{f.val && puntoActivo}</label>
                 <select value={f.val} onChange={e => f.set(e.target.value)} style={selEstilo(!!f.val)}>
                   <option value="">Todos</option>
                   {f.opts.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
@@ -920,38 +935,38 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
             ))}
           </div>
 
-          {/* Rango de fechas: atajos + desde/hasta */}
+          {/* Período: atajos + desde/hasta */}
           <div style={{
             display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end',
-            marginTop: '14px', paddingTop: '12px', borderTop: `1px dashed ${BASE.border}`,
+            marginTop: '16px', paddingTop: '14px', borderTop: `1px solid ${BASE.borderSoft}`,
           }}>
-            <div style={{ flex: '1 1 280px', minWidth: 0 }}>
-              <label style={{ fontSize: '11px', fontWeight: '800', color: BASE.navy, letterSpacing: '0.6px', display: 'block', marginBottom: '5px' }}>⚡ RANGO RÁPIDO</label>
+            <div style={{ flex: '1 1 300px', minWidth: 0 }}>
+              <label style={labelEstilo(false)}>Período</label>
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                 {[['Hoy', 'hoy'], ['Esta semana', 'semana'], ['Últimos 7 días', '7dias'], ['Este mes', 'mes']].map(([lbl, key]) => (
                   <button key={key} onClick={() => aplicarRangoRapido(key)} style={{
-                    padding: '8px 14px', borderRadius: '999px', cursor: 'pointer',
+                    padding: '9px 16px', borderRadius: '8px', cursor: 'pointer',
                     background: BASE.white, color: BASE.navy,
-                    border: `1.5px solid ${BASE.navyLight}55`,
-                    fontSize: '12px', fontWeight: '700', transition: 'all 0.15s ease',
+                    border: `1.5px solid ${BASE.border}`,
+                    fontSize: '12px', fontWeight: '600', transition: 'all 0.15s ease',
                   }}
-                    onMouseEnter={e => { e.currentTarget.style.background = BASE.navy; e.currentTarget.style.color = BASE.gold; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = BASE.white; e.currentTarget.style.color = BASE.navy; }}>
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = BASE.navy; e.currentTarget.style.background = BASE.navySoft; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = BASE.border; e.currentTarget.style.background = BASE.white; }}>
                     {lbl}
                   </button>
                 ))}
               </div>
             </div>
-            {[['🗓️ DESDE', fDesde, setFDesde], ['🗓️ HASTA', fHasta, setFHasta]].map(([lab, val, set], i) => (
+            {[['Desde', fDesde, setFDesde], ['Hasta', fHasta, setFHasta]].map(([lab, val, set], i) => (
               <div key={i} style={{ flex: '0 1 170px', minWidth: '150px' }}>
-                <label style={{ fontSize: '11px', fontWeight: '800', color: val ? BASE.goldDark : BASE.navy, letterSpacing: '0.6px', display: 'block', marginBottom: '5px' }}>{lab}{val && ' ✓'}</label>
+                <label style={labelEstilo(!!val)}>{lab}{val && puntoActivo}</label>
                 <input type="date" value={val} onChange={e => set(e.target.value)} style={selEstilo(!!val)} />
               </div>
             ))}
           </div>
 
-          <p style={{ fontSize: '10.5px', color: BASE.mutedSoft, lineHeight: 1.4, marginTop: '10px' }}>
-            💡 Estos filtros mandan en TODO: dashboard, gráficos y las exportaciones del Tareo (PDF y Excel).
+          <p style={{ fontSize: '10.5px', color: BASE.mutedSoft, lineHeight: 1.5, marginTop: '12px', borderTop: `1px solid ${BASE.borderSoft}`, paddingTop: '10px' }}>
+            Los filtros se aplican a todo el dashboard, los gráficos y las exportaciones del Tareo (PDF y Excel).
           </p>
         </div>
         );
