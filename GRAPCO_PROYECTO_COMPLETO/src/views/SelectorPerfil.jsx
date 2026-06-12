@@ -648,13 +648,27 @@ export default function SelectorPerfil() {
               }}>
                 Entrar
               </span>
-              <span style={{
-                width: '26px', height: '26px', borderRadius: '999px',
-                background: `linear-gradient(145deg, ${acento}, ${acento}cc)`,
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                color: '#fff', fontSize: '13px', fontWeight: 900,
-                boxShadow: `0 4px 10px -3px ${acento}88`,
-              }}>→</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                {/* Abrir esta área en OTRA pestaña → multi-pestaña (ej. Calidad + Planeamiento) */}
+                <span
+                  role="button" tabIndex={0}
+                  title="Abrir esta área en una pestaña nueva"
+                  onClick={(e) => { e.stopPropagation(); window.open(`${window.location.pathname}#/${p.rol}`, '_blank'); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); window.open(`${window.location.pathname}#/${p.rol}`, '_blank'); } }}
+                  style={{
+                    width: '26px', height: '26px', borderRadius: '999px',
+                    border: `1.5px solid ${acento}55`, background: '#fff',
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    color: acento, fontSize: '12px', fontWeight: 900, cursor: 'alias',
+                  }}>⧉</span>
+                <span style={{
+                  width: '26px', height: '26px', borderRadius: '999px',
+                  background: `linear-gradient(145deg, ${acento}, ${acento}cc)`,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#fff', fontSize: '13px', fontWeight: 900,
+                  boxShadow: `0 4px 10px -3px ${acento}88`,
+                }}>→</span>
+              </span>
             </div>
           </button>
           );

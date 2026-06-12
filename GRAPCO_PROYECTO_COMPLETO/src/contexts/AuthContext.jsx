@@ -16,6 +16,7 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, addDoc, collection, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../firebaseConfig';
+import { leerRutaHash, escribirRutaHash, limpiarRutaHash } from '../utils/urlNav';
 
 const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
@@ -220,11 +221,25 @@ export function AuthProvider({ children }) {
         // el SelectorPerfil ("después de ingresar me aparezca las opciones de qué área").
         let rolPersistido = null;
         try { rolPersistido = sessionStorage.getItem('grapco_rol_activo'); } catch (_) {}
+        // Deep-link: si la URL trae un área (#/calidad, #/ingeniero/...), MANDA
+        // sobre sessionStorage → permite varias pestañas en áreas DISTINTAS a
+        // la vez (cada pestaña conserva su propia ruta).
+        const areaHash = leerRutaHash()?.area || null;
         // Roles de área única: entran directo a su panel (sin selector, sin escalar).
         const areaAuto = AUTO_AREA[perfil.rol];
         if (areaAuto) {
           setRol(areaAuto);
           try { sessionStorage.setItem('grapco_rol_activo', areaAuto); } catch (_) {}
+        } else if (areaHash === 'elegir') {
+          // "#/elegir" = forzar el SelectorPerfil (botón "Nueva pestaña" del
+          // navbar: la pestaña nueva hereda el sessionStorage en Chrome, así
+          // que sin esto entraría a la misma área en vez de dejar elegir otra)
+          try { sessionStorage.removeItem('grapco_rol_activo'); } catch (_) {}
+          limpiarRutaHash();
+          setRol(null);
+        } else if (areaHash && rolEsValido(perfil.rol, areaHash)) {
+          setRol(areaHash);
+          try { sessionStorage.setItem('grapco_rol_activo', areaHash); } catch (_) {}
         } else {
           // Solo restaurar el rol persistido si es válido para el rolPermitido.
           const valido = rolPersistido && rolEsValido(perfil.rol, rolPersistido);
@@ -378,6 +393,7 @@ export function AuthProvider({ children }) {
       return;
     }
     try { sessionStorage.setItem('grapco_rol_activo', rolElegido || ''); } catch (_) {}
+    if (rolElegido) escribirRutaHash(rolElegido);
     setRol(rolElegido);
   };
 
@@ -387,6 +403,7 @@ export function AuthProvider({ children }) {
     const areaAuto = AUTO_AREA[rolPermitido];
     if (areaAuto) { setRol(areaAuto); return; }
     try { sessionStorage.removeItem('grapco_rol_activo'); } catch (_) {}
+    limpiarRutaHash();
     setRol(null);
   };
 

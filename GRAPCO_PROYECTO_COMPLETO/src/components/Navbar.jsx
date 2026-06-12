@@ -248,6 +248,45 @@ export default function Navbar({ rol, isMobile, onSalir, onCambiarArea, onMenu }
         {!isMobile && 'Cambiar de área'}
       </button>
 
+      {/* NUEVA PESTAÑA — abre el selector de áreas en otra pestaña SIN salir de
+          esta: permite trabajar Calidad y Planeamiento a la vez (multi-pestaña) */}
+      <button
+        onClick={() => window.open(`${window.location.pathname}#/elegir`, '_blank')}
+        className="btn-feedback"
+        title="Abrir otra área en una pestaña nueva (esta se queda como está)"
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: '6px', flexShrink: 0,
+          height: '30px', padding: isMobile ? '0 9px' : '0 12px', boxSizing: 'border-box',
+          background: 'transparent',
+          color: '#FCEFC9',
+          border: `1px solid rgba(229,168,47,0.45)`,
+          borderRadius: '8px',
+          fontSize: '11px',
+          fontWeight: '600',
+          cursor: 'pointer',
+          whiteSpace: 'nowrap',
+          letterSpacing: '0.2px',
+          transition: 'all 0.15s ease',
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.background = 'rgba(229,168,47,0.12)';
+          e.currentTarget.style.color = '#fff';
+          e.currentTarget.style.borderColor = 'rgba(229,168,47,0.80)';
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.background = 'transparent';
+          e.currentTarget.style.color = '#FCEFC9';
+          e.currentTarget.style.borderColor = 'rgba(229,168,47,0.45)';
+        }}
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+          <path d="M15 3h6v6"/>
+          <path d="M10 14L21 3"/>
+        </svg>
+        {!isMobile && 'Nueva pestaña'}
+      </button>
+
       {/* MENÚ DE PERFIL — avatar + dropdown completo (también incluye "Cerrar sesión") */}
       <UserProfileMenu rol={rol} onSalir={onSalir} />
     </nav>

@@ -5,6 +5,7 @@ import { ProyectoActivoProvider, useProyectoActivo } from './contexts/ProyectoAc
 import { CUADRILLAS_MAESTRAS as CUADRILLAS_DEFAULT } from './utils/constants';
 import { BASE, LOGO } from './utils/styles';
 import { hoy } from './utils/helpers';
+import { leerRutaHash, escribirRutaHash } from './utils/urlNav';
 
 import ErrorBoundary from './components/ErrorBoundary';
 import Navbar from './components/Navbar';
@@ -173,7 +174,9 @@ function AppInner() {
   }, [rol]);
   const { notify } = useNotifications();
 
-  const [moduloIngeniero, setModuloIngeniero] = useState('dashboard');
+  // Deep-link: el módulo inicial puede venir en la URL (#/area/modulo) —
+  // así una pestaña nueva abre DIRECTO donde se le pidió (multi-pestaña).
+  const [moduloIngeniero, setModuloIngeniero] = useState(() => leerRutaHash()?.modulo || 'dashboard');
   const [drawerOpen, setDrawerOpen] = useState(false); // menú móvil (hamburguesa)
 
   // Si el módulo activo no está permitido para el área actual, salta al primero permitido.
@@ -183,6 +186,12 @@ function AppInner() {
     if (keys && keys.length && !keys.includes(moduloIngeniero)) {
       setModuloIngeniero(keys[0]);
     }
+  }, [rol, moduloIngeniero]);
+
+  // La URL refleja SIEMPRE el área y módulo activos → refrescar/duplicar la
+  // pestaña conserva el lugar, y dos pestañas pueden vivir en áreas distintas.
+  useEffect(() => {
+    if (rol) escribirRutaHash(rol, moduloIngeniero);
   }, [rol, moduloIngeniero]);
 
   // Sidebar colapsado (solo iconos) — persistido en localStorage para que el usuario
