@@ -188,6 +188,7 @@ export default function Login() {
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
+  const [videoListo, setVideoListo] = useState(false);
   const esEscritorio = anchoPantalla >= 1024;
 
   return (
@@ -202,20 +203,47 @@ export default function Login() {
       overflow: 'hidden',
       background: '#0a1628',
     }}>
-      {/* Video de obra a pantalla completa — el protagonista */}
+      {/* ── ESCENA PREMIUM 100% CSS (base, SIEMPRE visible → cero lag) ──
+          Gradiente navy + grilla blueprint + auroras doradas que derivan +
+          haz de luz diagonal. Nunca muestra una imagen oscura genérica. */}
+      <div aria-hidden="true" style={{
+        position: 'absolute', inset: 0, zIndex: 0,
+        background: 'radial-gradient(125% 100% at 78% 18%, #1a3c63 0%, #0d2748 42%, #060f1f 100%)',
+      }} />
+      {/* Grilla blueprint */}
+      <div aria-hidden="true" style={{
+        position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: 0.55,
+        backgroundImage: `linear-gradient(rgba(229,168,47,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(229,168,47,0.06) 1px, transparent 1px)`,
+        backgroundSize: '48px 48px',
+        maskImage: 'radial-gradient(circle at 30% 45%, #000 0%, transparent 78%)',
+        WebkitMaskImage: 'radial-gradient(circle at 30% 45%, #000 0%, transparent 78%)',
+      }} />
+      {/* Auroras doradas / navy que derivan lento */}
+      <div aria-hidden="true" style={{ position: 'absolute', zIndex: 0, width: 600, height: 600, top: '-14%', left: '-10%', borderRadius: '50%', pointerEvents: 'none',
+        background: `radial-gradient(circle, ${BASE.gold}22 0%, transparent 60%)`, filter: 'blur(26px)', animation: 'grapco-aur1 16s ease-in-out infinite' }} />
+      <div aria-hidden="true" style={{ position: 'absolute', zIndex: 0, width: 520, height: 520, bottom: '-16%', right: '12%', borderRadius: '50%', pointerEvents: 'none',
+        background: 'radial-gradient(circle, rgba(30,70,116,0.40) 0%, transparent 62%)', filter: 'blur(28px)', animation: 'grapco-aur2 20s ease-in-out infinite' }} />
+      {/* Haz de luz diagonal sutil */}
+      <div aria-hidden="true" style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
+        background: `linear-gradient(115deg, transparent 40%, ${BASE.gold}0e 50%, transparent 60%)` }} />
+
+      {/* Video de obra — capa opcional: aparece SUAVE solo cuando puede
+          reproducir (sin poster → nunca muestra imagen oscura si laguea). */}
       <video
         className="grapco-hero-video"
         autoPlay muted loop playsInline preload="auto"
-        poster="/hero.png"
+        onCanPlay={(e) => { setVideoListo(true); e.currentTarget.play?.().catch(() => {}); }}
+        onPlaying={() => setVideoListo(true)}
         aria-hidden="true"
+        style={{ opacity: videoListo ? 0.5 : 0, transition: 'opacity 1.1s ease' }}
       >
         <source src="/grapco-bg.mp4" type="video/mp4" />
       </video>
-      {/* Overlay sobrio: legibilidad sin matar el video */}
+      {/* Overlay sobrio: legibilidad sin matar la escena */}
       <div aria-hidden="true" style={{
         position: 'absolute', inset: 0, zIndex: 1,
         background: esEscritorio
-          ? 'linear-gradient(90deg, rgba(8,18,34,0.78) 0%, rgba(8,18,34,0.35) 52%, rgba(8,18,34,0.45) 100%)'
+          ? 'linear-gradient(90deg, rgba(8,18,34,0.82) 0%, rgba(8,18,34,0.42) 52%, rgba(8,18,34,0.50) 100%)'
           : 'radial-gradient(circle at center, rgba(15,23,42,0.45) 0%, rgba(10,22,40,0.85) 78%)',
       }} />
       {/* Firma dorada superior */}
@@ -736,6 +764,12 @@ export default function Login() {
           object-fit: cover;
           z-index: 0;
           pointer-events: none;
+        }
+        /* Auroras de la escena premium (derivan lento, sin lag) */
+        @keyframes grapco-aur1 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(46px,32px); } }
+        @keyframes grapco-aur2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-40px,-28px); } }
+        @media (prefers-reduced-motion: reduce) {
+          [style*="grapco-aur"] { animation: none !important; }
         }
         /* Overlay oscuro y dorado tenue para legibilidad del card */
         .grapco-hero-overlay {
