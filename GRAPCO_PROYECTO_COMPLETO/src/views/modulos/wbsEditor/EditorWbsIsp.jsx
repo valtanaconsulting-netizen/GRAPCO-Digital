@@ -6,7 +6,7 @@
 // El resultado alimenta el ISP / Análisis de Desempeño (CPI).
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
 import { BASE } from '../../../utils/styles';
 import { CATALOGO_MASTER, INFO_MAP } from '../../../utils/constants';
@@ -17,12 +17,19 @@ import {
   normalizarActividad, FRENTE_BASE, COLUMNAS_PLANTILLA, filasAArbol, arbolAFilas,
 } from '../../../utils/catalogoWbs';
 import { PRESUPUESTO_CREDITEX } from '../../../data/presupuestoCreditex';
+import { generarCronogramaDesdeCatalogo } from '../../../utils/autoprograma';
 
 const clonar = (x) => JSON.parse(JSON.stringify(x || []));
 const fmt = (n, dec = 2) => num(n).toLocaleString('es-PE', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+// Proyectos legacy que usan el catálogo CREDITEX hardcoded (sin doc en Catalogo_WBS).
+const LEGACY_IDS = ['creditex-ptar', 'default-ptari'];
+const isoLocal = (d) => (d instanceof Date && !isNaN(d))
+  ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : '';
+const lblModal = { display: 'block', fontSize: '11px', fontWeight: 800, color: BASE.navy, marginBottom: '4px' };
+const inputModal = { width: '100%', border: `1px solid ${BASE.border}`, borderRadius: '8px', padding: '8px 10px', fontSize: '12px', boxSizing: 'border-box' };
 
 export default function EditorWbsIsp({ showToast }) {
-  const { proyectoActivoId, proyectos, frentes } = useProyectoActivo();
+  const { proyectoActivoId, proyectos, frentes, fechaInicioProyecto } = useProyectoActivo();
   const { loading, arbol: arbolRemoto, existe } = useCatalogoWBS(proyectoActivoId);
 
   const [arbol, setArbol]   = useState([]);
@@ -30,6 +37,15 @@ export default function EditorWbsIsp({ showToast }) {
   const [guardando, setGuardando] = useState(false);
   const [cargado, setCargado]     = useState(false);
   const fileRef = useRef(null);
+
+  // Importar de otro proyecto + Generar programación
+  const [modal, setModal]       = useState(null);   // 'importar' | 'programa'
+  const [origenSel, setOrigenSel] = useState('');
+  const [resetMet, setResetMet] = useState(true);
+  const [progFecha, setProgFecha] = useState('');
+  const [progHoras, setProgHoras] = useState(8);
+  const [progCrew, setProgCrew]   = useState(4);
+  const [trabajando, setTrabajando] = useState(false);
 
   const proyectoNombre = useMemo(
     () => (proyectos || []).find(p => p.id === proyectoActivoId)?.nombre || 'proyecto activo',
@@ -198,6 +214,91 @@ export default function EditorWbsIsp({ showToast }) {
     } finally { if (fileRef.current) fileRef.current.value = ''; }
   };
 
+  // ── Importar catálogo de OTRO proyecto (plantilla) ───────────────
+  // Proyectos de origen disponibles (otros, + CREDITEX como plantilla siempre).
+  const fuentes = useMemo(() => {
+    const list = (proyectos || [])
+      .filter(p => p.id && p.id !== proyectoActivoId)
+      .map(p => ({ id: p.id, nombre: p.nombre || p.codigo || p.id }));
+    if (proyectoActivoId !== 'creditex-ptar' && !list.some(x => LEGACY_IDS.includes(x.id))) {
+      list.unshift({ id: 'creditex-ptar', nombre: 'CREDITEX PTAR (plantilla)' });
+    }
+    return list;
+  }, [proyectos, proyectoActivoId]);
+
+  const abrirImportar = () => { setOrigenSel(fuentes[0]?.id || ''); setResetMet(true); setModal('importar'); };
+  const abrirPrograma = () => {
+    if (!arbol.length) return toast('Primero carga/importa el catálogo y captura metrados', 'warning');
+    setProgFecha(isoLocal(fechaInicioProyecto) || isoLocal(new Date()));
+    setProgHoras(8); setProgCrew(4); setModal('programa');
+  };
+
+  const importarDeProyecto = async () => {
+    if (!origenSel || origenSel === proyectoActivoId) return toast('Elige un proyecto de origen válido', 'warning');
+    setTrabajando(true);
+    try {
+      let arbolFuente = null;
+      const snap = await getDoc(doc(db, 'Catalogo_WBS', origenSel));
+      if (snap.exists() && Array.isArray(snap.data().arbol) && snap.data().arbol.length) {
+        arbolFuente = snap.data().arbol;
+      } else if (LEGACY_IDS.includes(origenSel)) {
+        arbolFuente = PRESUPUESTO_CREDITEX;
+      }
+      if (!arbolFuente || !arbolFuente.length) { toast('Ese proyecto no tiene catálogo WBS para importar', 'warning'); return; }
+
+      const destFrente = columnas[0]?.id || FRENTE_BASE;
+      const nuevo = clonar(arbolFuente).map(p => ({
+        nombre: p.nombre,
+        subpartidas: (p.subpartidas || []).map(s => ({
+          nombre: s.nombre,
+          actividades: (s.actividades || []).map(a => {
+            if (!resetMet) return normalizarActividad(a);
+            // Conserva el RENDIMIENTO (IP) pero resetea los metrados a 0.
+            const c = calcActividad(a);
+            // Primera oferta con IP > 0 (no la primera a secas, que podría ser 0 y perder el rendimiento).
+            const ipOferta = Object.values(a.ofertas || {}).map(o => num(o?.ip)).find(v => v > 0) || 0;
+            const ipRep = c.contractualIP || ipOferta || num(a.ipMeta) || 0;
+            return {
+              nombre: a.nombre, un: a.un || 'UND',
+              ofertas: { [destFrente]: { met: 0, ip: ipRep } },
+              adicional: { met: 0, ip: 0 },
+              ipMeta: num(a.ipMeta) || ipRep || 0,
+            };
+          }),
+        })),
+      }));
+      setArbol(nuevo); setDirty(true); setModal(null);
+      const t = totalesArbol(nuevo);
+      toast(`Importado de plantilla: ${t.partidas} partidas · ${t.actividades} actividades (rendimientos conservados). Captura metrados y Guarda.`, 'success');
+    } catch (e) {
+      console.error('[importarDeProyecto]', e);
+      toast('Error al importar: ' + e.message, 'error');
+    } finally { setTrabajando(false); }
+  };
+
+  // ── Generar programación automática (tren de actividades) ────────
+  const generarPrograma = async () => {
+    if (!proyectoActivoId) return toast('No hay proyecto activo', 'warning');
+    const fechaIso = progFecha || isoLocal(fechaInicioProyecto) || isoLocal(new Date());
+    setTrabajando(true);
+    try {
+      const { tareas, resumen } = generarCronogramaDesdeCatalogo(arbol, {
+        horasDia: Math.min(24, Math.max(1, num(progHoras) || 8)),
+        cuadrillaDefault: Math.max(1, num(progCrew) || 4),
+      });
+      if (!tareas.length) { toast('No hay actividades con HH > 0. Captura metrados primero.', 'warning'); return; }
+      await setDoc(doc(db, 'Cronogramas', proyectoActivoId), {
+        proyectoId: proyectoActivoId, fechaInicio: fechaIso, tareas, baseline: null,
+        actualizadoEn: serverTimestamp(), origen: 'auto-WBS',
+      });
+      setModal(null);
+      toast(`✅ Cronograma generado: ${resumen.actividades} actividades · ${resumen.hhTotal.toLocaleString('es-PE')} HH. Ábrelo en Planeamiento → Cronograma de Obra (el Last Planner armará el LAP).`, 'success');
+    } catch (e) {
+      console.error('[generarPrograma]', e);
+      toast('Error al generar el cronograma: ' + e.message, 'error');
+    } finally { setTrabajando(false); }
+  };
+
   // Subtotal HH de un conjunto de actividades, por columna
   const sumar = (acts) => {
     const ofe = {}; columnas.forEach(c => { ofe[c.id] = 0; });
@@ -223,6 +324,67 @@ export default function EditorWbsIsp({ showToast }) {
       <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }}
         onChange={e => importarExcel(e.target.files?.[0])} />
 
+      {modal === 'importar' && (
+        <Modal title="📦 Importar catálogo de otro proyecto" onClose={() => !trabajando && setModal(null)}>
+          <p style={{ fontSize: '12px', color: BASE.muted, lineHeight: 1.6, marginBottom: '14px' }}>
+            Copia las <b>actividades y rendimientos (IP)</b> del proyecto que elijas a <b>{proyectoNombre}</b>.
+            Luego capturas los metrados y el <b>HH se calcula solo</b> (HH = metrado × IP).
+          </p>
+          <label style={lblModal}>Proyecto de origen (plantilla)</label>
+          <select value={origenSel} onChange={e => setOrigenSel(e.target.value)} style={inputModal}>
+            <option value="">— Elige un proyecto —</option>
+            {fuentes.map(f => <option key={f.id} value={f.id}>{f.nombre}</option>)}
+          </select>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '14px', fontSize: '12px', fontWeight: 700, color: BASE.navy, cursor: 'pointer' }}>
+            <input type="checkbox" checked={resetMet} onChange={e => setResetMet(e.target.checked)} />
+            Resetear metrados a 0 y conservar rendimientos (recomendado)
+          </label>
+          <p style={{ fontSize: '10.5px', color: BASE.muted, marginTop: '4px', lineHeight: 1.5 }}>
+            Si lo desmarcas, también copia los metrados del proyecto origen tal cual.
+          </p>
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '20px' }}>
+            <Btn onClick={() => setModal(null)} bg={BASE.white} color={BASE.navy} border>Cancelar</Btn>
+            <Btn onClick={importarDeProyecto} bg={BASE.navy} color="#fff" disabled={trabajando || !origenSel}>
+              {trabajando ? 'Importando…' : 'Importar catálogo'}
+            </Btn>
+          </div>
+        </Modal>
+      )}
+
+      {modal === 'programa' && (
+        <Modal title="📅 Generar programación (tren de actividades)" onClose={() => !trabajando && setModal(null)}>
+          <p style={{ fontSize: '12px', color: BASE.muted, lineHeight: 1.6, marginBottom: '14px' }}>
+            Convierte el catálogo (HH = metrado × IP) en un <b>cronograma</b>: la duración de cada actividad
+            = HH ÷ (cuadrilla × jornada), encadenadas como <b>tren de actividades</b> (flujo continuo).
+            Luego se calculan la <b>ruta crítica</b> y la <b>Curva S</b>, y el Last Planner arma el LAP.
+          </p>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{ flex: '1 1 180px' }}>
+              <label style={lblModal}>Fecha de inicio</label>
+              <input type="date" value={progFecha} onChange={e => setProgFecha(e.target.value)} style={inputModal} />
+            </div>
+            <div style={{ flex: '1 1 120px' }}>
+              <label style={lblModal}>Jornada (horas/día)</label>
+              <input type="number" min="1" max="12" value={progHoras} onChange={e => setProgHoras(e.target.value)} style={inputModal} />
+            </div>
+          </div>
+          <div style={{ marginTop: '12px' }}>
+            <label style={lblModal}>Cuadrilla por defecto (obreros) — para actividades sin cuadrilla conocida</label>
+            <input type="number" min="1" max="50" value={progCrew} onChange={e => setProgCrew(e.target.value)} style={inputModal} />
+          </div>
+          <p style={{ fontSize: '10.5px', color: BASE.muted, marginTop: '10px', lineHeight: 1.5 }}>
+            Las actividades estructurales de CREDITEX (excavación, encofrado, concreto…) usan su <b>cuadrilla real</b>;
+            el resto, una cuadrilla típica por tipo de trabajo. Todo es editable luego en el cronograma.
+          </p>
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '20px' }}>
+            <Btn onClick={() => setModal(null)} bg={BASE.white} color={BASE.navy} border>Cancelar</Btn>
+            <Btn onClick={generarPrograma} bg="#15708A" color="#fff" disabled={trabajando}>
+              {trabajando ? 'Generando…' : 'Generar cronograma'}
+            </Btn>
+          </div>
+        </Modal>
+      )}
+
       {/* Cabecera */}
       <div style={{
         background: BASE.white, border: `1px solid ${BASE.border}`,
@@ -240,12 +402,14 @@ export default function EditorWbsIsp({ showToast }) {
           <Btn onClick={cargarCreditex} bg={BASE.gold} color={BASE.navy}>
             {existe ? '🔄 Recargar guardado' : '📋 Presupuesto CREDITEX'}
           </Btn>
+          <Btn onClick={abrirImportar} bg={BASE.white} color={BASE.navy} border>📦 Importar de proyecto…</Btn>
           <Btn onClick={aplicarCorreccionesISP} bg={BASE.white} color={BASE.navy} border>🔧 Aplicar correcciones ISP</Btn>
           <Btn onClick={descargarPlantilla} bg={BASE.white} color={BASE.navy} border>📥 Plantilla Excel</Btn>
           <Btn onClick={() => fileRef.current?.click()} bg={BASE.white} color={BASE.navy} border>📤 Importar Excel</Btn>
           <Btn onClick={guardar} bg={dirty ? BASE.navy : '#cbd5e1'} color="#fff" disabled={guardando || !dirty}>
             {guardando ? 'Guardando…' : dirty ? '💾 Guardar cambios' : '✓ Guardado'}
           </Btn>
+          <Btn onClick={abrirPrograma} bg="#15708A" color="#fff">📅 Generar programación</Btn>
         </div>
       </div>
 
@@ -257,7 +421,8 @@ export default function EditorWbsIsp({ showToast }) {
             Carga el catálogo base, importa tu Excel de presupuesto (con columna Frente), o empieza desde cero.
           </p>
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Btn onClick={cargarCreditex} bg={BASE.gold} color={BASE.navy}>📋 Cargar presupuesto CREDITEX</Btn>
+            <Btn onClick={abrirImportar} bg={BASE.gold} color={BASE.navy}>📦 Importar de otro proyecto</Btn>
+            <Btn onClick={cargarCreditex} bg={BASE.white} color={BASE.navy} border>📋 Presupuesto CREDITEX</Btn>
             <Btn onClick={() => fileRef.current?.click()} bg={BASE.white} color={BASE.navy} border>📤 Importar Excel</Btn>
             <Btn onClick={addPartida} bg={BASE.white} color={BASE.navy} border>➕ Crear primera partida</Btn>
           </div>
@@ -445,6 +610,16 @@ function FilaSuma({ cols, datos, label, tono = 'subtotal', sticky = false }) {
       <td style={{ ...celda, ...dim }}></td>
       <td style={{ ...celda, ...dim }}></td>
     </tr>
+  );
+}
+function Modal({ title, children, onClose }) {
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(15,42,71,0.55)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: BASE.white, borderRadius: '14px', width: 'min(560px, 96vw)', maxHeight: '90vh', overflow: 'auto', boxShadow: '0 24px 60px -20px rgba(8,26,46,0.6)' }}>
+        <div style={{ background: '#0F2A47', color: '#fff', padding: '14px 18px', borderTopLeftRadius: '14px', borderTopRightRadius: '14px', borderBottom: `3px solid ${BASE.gold}`, fontWeight: 900, fontSize: '14px' }}>{title}</div>
+        <div style={{ padding: '18px' }}>{children}</div>
+      </div>
+    </div>
   );
 }
 function Btn({ children, onClick, bg, color, border, sm, disabled }) {
