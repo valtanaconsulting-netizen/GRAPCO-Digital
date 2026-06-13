@@ -23,7 +23,7 @@ import {
 } from 'recharts';
 import { BASE } from '../../../utils/styles';
 import { EJE, GRILLA, TOOLTIP_STYLE, LEYENDA } from '../../../utils/chartKit';
-import { fmtCPIPct, fmt1, getEstado, COSTO_HORA_DEFAULT } from '../../../utils/helpers';
+import { fmtCPIPct, fmt1, getEstado, COSTO_HORA_PROMEDIO } from '../../../utils/helpers';
 import Icon from '../../../components/Icon';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -126,18 +126,9 @@ export default function DashboardEjecutivo({ showToast, isMobile }) {
     }, (e) => console.warn('[DashEjec layout]', e));
   }, []);
 
-  // ── Costo S/./HH representativo (promedio de los 4 cargos) ──
-  const costoHH = useMemo(() => {
-    const map = { ...COSTO_HORA_DEFAULT };
-    const tarifas = configuracion?.tarifas || {};
-    Object.entries(tarifas).forEach(([cargo, val]) => {
-      const n = parseFloat(val);
-      if (!isNaN(n) && n > 0) map[cargo] = n;
-    });
-    const cargos = ['Capataz', 'Operario', 'Oficial', 'Ayudante'];
-    const vals = cargos.map((c) => parseFloat(map[c]) || 0).filter((v) => v > 0);
-    return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : 14;
-  }, [configuracion]);
+  // ── Costo S/./HH: ÚNICO oficial (S/25.50/h), igual que ControlGerencial, Cockpit
+  // y el CR/RO. Sin tarifas por cargo (decisión de proyecto) → todas las vistas cuadran. ──
+  const costoHH = COSTO_HORA_PROMEDIO;
 
   // ── Historial del proyecto activo, enriquecido con IP meta del catálogo ──
   const historialEnriquecido = useMemo(() => {
