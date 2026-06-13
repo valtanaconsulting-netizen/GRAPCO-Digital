@@ -12,12 +12,14 @@ import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { BASE } from '../utils/styles';
 import EmptyState from '../components/EmptyState';
+import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 import {
   optimizarCuadrilla, parejasProductivas, rankingHistorico,
   clasificarLUF,
 } from '../utils/cartaBalanceAnalytics';
 
 export default function OptimizadorCuadrillas({ showToast, actividadInicial = '', tamanoInicial = 4, onCuadrillaSeleccionada = null }) {
+  const { proyectoActivoId } = useProyectoActivo();
   const [cartas, setCartas] = useState([]);
   const [personalDB, setPersonalDB] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,7 +40,8 @@ export default function OptimizadorCuadrillas({ showToast, actividadInicial = ''
     const unsub1 = onSnapshot(
       query(collection(db, 'Cartas_Balance'), orderBy('fecha', 'desc')),
       (snap) => {
-        setCartas(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        // Aislamiento: solo las Cartas Balance del proyecto activo.
+        setCartas(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.proyectoId === proyectoActivoId));
         setLoading(false);
       }
     );
@@ -77,6 +80,15 @@ export default function OptimizadorCuadrillas({ showToast, actividadInicial = ''
   };
 
   if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: BASE.muted }}>⏳ Cargando datos...</div>;
+
+  // Sin historial de Cartas Balance no hay de dónde aprender → estado guía (no un form muerto).
+  if (!cartas.length) return (
+    <EmptyState
+      icono="🤖"
+      titulo="Optimizador de Cuadrillas"
+      descripcion="Aún no hay Cartas Balance registradas en este proyecto. El optimizador aprende de la productividad real (LUF) de tus cuadrillas: registra al menos una Carta Balance en Producción › Carta Balance y vuelve aquí para generar la cuadrilla óptima."
+    />
+  );
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>

@@ -1,9 +1,11 @@
 // src/views/ingeniero/BIM.jsx
-// Módulo BIM — Fase 1: Vinculación WBS ↔ Modelo BIM (manual)
-//             Fase 2: Visor 3D embebido (Forge Viewer / placeholder)
+// Módulo BIM — IMPLEMENTADO con 3 usos (tabs): Costo (incluye metrado) ·
+// Sectorización (zonas 3D) · Plazos 4D, vía los módulos Nexus (BimNexusModulos)
+// + visor 3D embebido (BimViewerAPS, Autodesk Platform Services) + carga de
+// modelos (BimUploader). Cada Nexus maneja el caso "sin modelos/sin partes" con guía.
 //
-// Datos en Firestore: colección `BIM_Vinculos`
-//   { id, partida, subpartida, actividad, bimGuids: [string], comentario, fechas }
+// Datos en Firestore: colecciones `BIM_Vinculos`, `BIM_Modelos`, `LPS_Plazos`.
+//   BIM_Vinculos: { id, partida, subpartida, actividad, bimGuids: [string], comentario, fechas }
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { db } from '../firebaseConfig';
