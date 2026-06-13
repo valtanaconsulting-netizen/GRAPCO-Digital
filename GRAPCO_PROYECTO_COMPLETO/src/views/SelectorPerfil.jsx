@@ -280,27 +280,29 @@ export default function SelectorPerfil() {
       overflow: 'hidden',
     }}>
       {/* === VIDEO DE FONDO === */}
-      {/* Video hero CREDITEX PTARI a pantalla completa (como en el Login).
-          Si el archivo no existe en /public, queda el mesh animado debajo. */}
+      {/* Video hero a pantalla completa, en alta nitidez (grapco-bg.mp4). Sin
+          poster oscuro: aparece con fundido suave solo cuando puede reproducir,
+          así nunca se ve una imagen borrosa o lageada. */}
       <video
         ref={videoRef}
         autoPlay loop muted playsInline preload="auto"
-        poster="/hero.png"
+        onCanPlay={(e) => { e.currentTarget.style.opacity = '0.82'; e.currentTarget.play?.().catch(() => {}); }}
         onError={() => { if (videoRef.current) videoRef.current.style.display = 'none'; }}
         aria-hidden="true"
         style={{
           position: 'fixed', inset: 0,
           width: '100%', height: '100%',
           objectFit: 'cover',
-          opacity: 0.72,
-          // Desaturar + enfriar para eliminar el tinte verde-amarillo del agua y
-          // que todo se unifique bajo el navy de la marca (sigue visible como textura).
-          filter: 'saturate(0.45) brightness(0.8) contrast(1.05)',
+          opacity: 0,
+          // Nítido y vívido (sin apagar el color): el navy overlay de abajo
+          // mantiene la cohesión y la legibilidad de las tarjetas.
+          filter: 'saturate(1) brightness(0.9) contrast(1.06)',
+          transition: 'opacity 1.1s ease',
           zIndex: 0,
           pointerEvents: 'none',
         }}
       >
-        <source src="/creditex-ptari.mp4" type="video/mp4" />
+        <source src="/grapco-bg.mp4" type="video/mp4" />
       </video>
       {/* Lavado NAVY cohesivo (sin dorado) — unifica el fondo con la marca y hace
           resaltar las tarjetas. Sustituye al overlay que mezclaba dorado+verde. */}
