@@ -37,15 +37,18 @@ export function ProyectoActivoProvider({ children }) {
   // Trade-off intencional: cambiar de proyecto recarga la página (UX un instante de blanco)
   // pero garantiza estabilidad para roles que pasan entre proyectos (admins).
   const setProyectoActivoId = useCallback((id) => {
-    // Si el nuevo id es el mismo que el actual, no hacer nada (evita reload innecesario)
+    if (!id) return;
     let actual = null;
     try { actual = localStorage.getItem(KEY_PROY); } catch (e) {}
-    if (actual === id) return;
+    if (actual === id) return; // mismo proyecto → nada que hacer
     try { localStorage.setItem(KEY_PROY, id || ''); } catch (e) {}
     try { localStorage.setItem(KEY_FRENTE, FRENTE_TODOS); } catch (e) {}
-    // Reload completo para reiniciar todos los hooks con el nuevo contexto.
-    // Evita Error #300 / #310 al cambiar entre proyectos.
-    window.location.reload();
+    // Cambio INSTANTÁNEO (sin recargar la página): actualizamos el estado y el
+    // árbol autenticado se remonta vía key={proyectoActivoId} en App → cada
+    // hook se reinicia limpio con el nuevo proyecto, igual que un reload pero
+    // sin re-descargar/re-parsear el bundle ni la red. (Antes: location.reload)
+    setFrenteActivoIdRaw(FRENTE_TODOS);
+    setProyectoActivoIdRaw(id);
   }, []);
 
   const setFrenteActivoId = useCallback((id) => {

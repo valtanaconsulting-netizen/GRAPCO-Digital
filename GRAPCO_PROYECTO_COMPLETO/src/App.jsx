@@ -142,7 +142,7 @@ export default function App() {
         <ThemeProvider>
           <NotificationProvider>
           <ErrorBoundary>
-            <AppInner />
+            <AppInnerKeyed />
             <PwaInstallPrompt />
           </ErrorBoundary>
         </NotificationProvider>
@@ -150,6 +150,13 @@ export default function App() {
       </ProyectoActivoProvider>
     </AuthProvider>
   );
+}
+
+// Remonta TODO el árbol autenticado cuando cambia el proyecto activo → cambio
+// de proyecto instantáneo (sin recargar la página) con estado/hooks limpios.
+function AppInnerKeyed() {
+  const { proyectoActivoId } = useProyectoActivo();
+  return <AppInner key={proyectoActivoId || 'default'} />;
 }
 
 function AppInner() {
