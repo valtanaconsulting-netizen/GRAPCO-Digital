@@ -52,16 +52,16 @@ export default function DashboardMateriales() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       {/* KPIs principales */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(216px, 1fr))', gap: '10px' }}>
-        <KPI label="VALOR INVENTARIO" valor={fmtSoles(valorTotal)} color="#7c3aed" desc="Total stock actual" icono="💰" />
+        <KPI label="VALOR INVENTARIO" valor={fmtSoles(valorTotal)} color={BASE.gold} desc="Total stock actual" icono="💰" />
         <KPI label="MATERIALES EN CATALOGO" valor={totalMateriales} color={BASE.navy} desc={`${materiales.filter(m => m.activo !== false).length} activos`} icono="📋" />
-        <KPI label="ALMACENES" valor={totalAlmacenes} color="#0d9488" desc="Almacenes registrados" icono="🏬" />
-        <KPI label="MOVIMIENTOS DEL MES" valor={movsMes} color="#2563eb" desc="Entradas + salidas + ajustes" icono="📈" />
+        <KPI label="ALMACENES" valor={totalAlmacenes} color={BASE.navy} desc="Almacenes registrados" icono="🏬" />
+        <KPI label="MOVIMIENTOS DEL MES" valor={movsMes} color={BASE.navyLight} desc="Entradas + salidas + ajustes" icono="📈" />
         <KPI label="ALERTAS STOCK BAJO" valor={alertas.length} color={alertas.length > 0 ? BASE.red : BASE.green} desc={alertas.length > 0 ? 'Requieren atencion' : 'Todo OK'} icono="🚨" />
       </div>
 
       {/* ALERTAS */}
       {alertas.length > 0 && (
-        <Seccion titulo="ALERTAS DE STOCK" icono="🚨">
+        <Seccion titulo="ALERTAS DE STOCK">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {alertas.slice(0, 8).map(a => (
               <div key={a.materialId} style={{
@@ -97,7 +97,7 @@ export default function DashboardMateriales() {
 
       {/* ANALISIS ABC */}
       {abc.length > 0 && (
-        <Seccion titulo="TOP 10 MATERIALES POR VALOR (ABC)" icono="📊">
+        <Seccion titulo="TOP 10 MATERIALES POR VALOR (ABC)">
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
               <thead>
@@ -140,13 +140,13 @@ export default function DashboardMateriales() {
             </table>
           </div>
           <p style={{ fontSize: '10.5px', color: BASE.muted, marginTop: '8px', fontStyle: 'italic' }}>
-            📌 Clase A: top 80% del valor (controlar muy de cerca) · Clase B: siguiente 15% · Clase C: resto.
+            Clase A: top 80% del valor (controlar muy de cerca) · Clase B: siguiente 15% · Clase C: resto.
           </p>
         </Seccion>
       )}
 
       {/* FLUJO MENSUAL */}
-      <Seccion titulo="FLUJO MENSUAL (ULTIMOS 6 MESES)" icono="📈">
+      <Seccion titulo="FLUJO MENSUAL (ULTIMOS 6 MESES)">
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
             <thead>
@@ -222,7 +222,7 @@ function Seccion({ titulo, icono, extra, children }) {
         gap: '8px', marginBottom: '12px',
       }}>
         <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.5px' }}>
-          {icono} {titulo}
+          {icono ? `${icono} ` : ''}{titulo}
         </p>
         {extra && (
           <span style={{ fontSize: '10px', color: BASE.muted, fontWeight: '700' }}>{extra}</span>

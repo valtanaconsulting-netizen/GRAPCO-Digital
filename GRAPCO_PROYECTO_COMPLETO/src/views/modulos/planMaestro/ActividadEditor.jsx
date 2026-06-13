@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
-import { BASE } from '../../../utils/styles';
+import { BASE, CHART_PALETTE } from '../../../utils/styles';
 import { useAuth } from '../../../contexts/AuthContext';
 import { ESTADOS_ACTIVIDAD, fmtSoles } from '../../../utils/planMaestroAnalytics';
 
@@ -128,17 +128,17 @@ export default function ActividadEditor({ actividad, onClose, showToast }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
         <div>
           <p style={{ fontSize: '10px', fontWeight: '900', color: BASE.muted, letterSpacing: '1px' }}>
-            📐 PLAN MAESTRO · ACTIVIDAD WBS
+            PLAN MAESTRO · ACTIVIDAD WBS
           </p>
           <h3 style={{ fontSize: '20px', fontWeight: '900', color: BASE.navy, marginTop: '4px' }}>
-            {esNuevo ? '➕ Nueva Actividad' : `✏️ ${form.codigo}`}
+            {esNuevo ? 'Nueva Actividad' : form.codigo}
           </h3>
         </div>
         <button onClick={onClose} style={btnGhost}>← Volver</button>
       </div>
 
       {/* SECCIÓN 1: Identificación */}
-      <Seccion titulo="📋 IDENTIFICACIÓN" color={BASE.navy}>
+      <Seccion titulo="IDENTIFICACIÓN" color={BASE.navy}>
         <Grid cols="1fr 3fr 1fr">
           <Field label="Código WBS *" hint="Ej: 02.01.003">
             <input type="text" value={form.codigo}
@@ -160,7 +160,7 @@ export default function ActividadEditor({ actividad, onClose, showToast }) {
       </Seccion>
 
       {/* SECCIÓN 2: Presupuesto */}
-      <Seccion titulo="💰 PRESUPUESTO" color="#7c3aed">
+      <Seccion titulo="PRESUPUESTO" color={CHART_PALETTE[3]}>
         <Grid cols="1fr 1fr 1fr">
           <Field label="Metrado contractual">
             <input type="number" step="0.01" value={form.metradoContractual}
@@ -178,7 +178,7 @@ export default function ActividadEditor({ actividad, onClose, showToast }) {
       </Seccion>
 
       {/* SECCIÓN 3: Productividad */}
-      <Seccion titulo="👷 PRODUCTIVIDAD" color="#0d9488">
+      <Seccion titulo="PRODUCTIVIDAD" color={CHART_PALETTE[2]}>
         <Grid cols="1fr 1fr 2fr">
           <Field label="HH presupuestadas">
             <input type="number" step="0.01" value={form.hhTotalPresupuestado}
@@ -197,7 +197,7 @@ export default function ActividadEditor({ actividad, onClose, showToast }) {
       </Seccion>
 
       {/* SECCIÓN 4: Programación (Master Schedule LCI) */}
-      <Seccion titulo="📅 PROGRAMACIÓN (MASTER SCHEDULE)" color={BASE.gold}>
+      <Seccion titulo="PROGRAMACIÓN (MASTER SCHEDULE)" color={BASE.gold}>
         <Grid cols="1fr 1fr 1fr 1fr">
           <Field label="Inicio programada">
             <input type="date" value={form.fechaInicioProgramada}
@@ -222,7 +222,7 @@ export default function ActividadEditor({ actividad, onClose, showToast }) {
       </Seccion>
 
       {/* SECCIÓN 5: Vinculaciones */}
-      <Seccion titulo="🔗 VINCULACIONES (APU + PET + PROTOCOLO)" color="#ec4899">
+      <Seccion titulo="VINCULACIONES (APU + PET + PROTOCOLO)" color={CHART_PALETTE[8]}>
         <Grid cols="1fr 1fr 1fr">
           <Field label="APU vinculado" hint="Para reconciliación">
             <select value={form.apuId} onChange={e => setForm({...form, apuId: e.target.value})} style={selS}>

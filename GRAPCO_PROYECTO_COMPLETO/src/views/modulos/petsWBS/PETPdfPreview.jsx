@@ -3,7 +3,7 @@
 // Disparar window.print() desde aquí genera el PDF tal cual los originales SGC-CAL-PETS-XXX.
 
 import React, { useState } from 'react';
-import { LOGO } from '../../../utils/styles';
+import { LOGO, BASE } from '../../../utils/styles';
 import { descargarPETPdf } from '../../../utils/descargarPETPdf';
 
 const A4_STYLE = `
@@ -140,7 +140,7 @@ ul.pet-list li, ol.pet-list li { margin-bottom: 3px; }
 .pet-toolbar {
   position: sticky;
   top: 0;
-  background: #1e3a5f;
+  background: ${BASE.navy};
   color: #fff;
   padding: 10px 14px;
   display: flex;
@@ -150,8 +150,8 @@ ul.pet-list li, ol.pet-list li { margin-bottom: 3px; }
   z-index: 10;
 }
 .pet-toolbar button {
-  background: #f59e0b;
-  color: #0f1a2e;
+  background: ${BASE.gold};
+  color: ${BASE.navyDark};
   border: none;
   padding: 8px 16px;
   border-radius: 6px;
@@ -234,7 +234,7 @@ export default function PETPdfPreview({ pet, onClose }) {
       {/* Toolbar — solo en pantalla, no se imprime */}
       <div className="pet-toolbar pet-no-print">
         <span style={{ fontWeight: 800, fontSize: 13 }}>
-          📄 Vista PDF · {pet.codigo} · {pet.titulo}
+          Vista PDF · {pet.codigo} · {pet.titulo}
         </span>
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={() => window.print()}>🖨️ Imprimir / Guardar PDF</button>

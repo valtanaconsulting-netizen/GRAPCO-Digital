@@ -57,12 +57,12 @@ export default function RadarProduccion({ isMobile }) {
   // Datos del gráfico: CPI histórico + proyección a 4 semanas + umbral.
   const chart = useMemo(() => {
     const ultSem = serie.length ? serie[serie.length - 1].x : 0;
-    const data = serie.map((s) => ({ sem: `S${s.x}`, CPI: +(s.y * 100).toFixed(0), Proyección: null }));
+    const data = serie.map((s) => ({ sem: `S${s.x}`, CPI: Math.round(s.y * 100), Proyección: null }));
     if (proyeccionCpi && data.length) {
       data[data.length - 1].Proyección = data[data.length - 1].CPI; // conectar
       for (let i = 1; i <= 4; i++) {
         const y = clamp(proyeccionCpi.cpiHoy + proyeccionCpi.pendSemana * i, 0.2, 2);
-        data.push({ sem: `S${ultSem + i}`, CPI: null, Proyección: +(y * 100).toFixed(0) });
+        data.push({ sem: `S${ultSem + i}`, CPI: null, Proyección: Math.round(y * 100) });
       }
     }
     return data;

@@ -57,13 +57,13 @@ export default function DashboardOT() {
       {/* KPIs financieros */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(216px, 1fr))', gap: '10px' }}>
         <KPI label="PRESUPUESTO CONTRACTUAL" valor={fmtSoles(stats.presupuestoContractual)}
-          color="#6366f1" sub={`${stats.totalPartidas} partidas`} icono="📋" />
+          color={BASE.navy} sub={`${stats.totalPartidas} partidas`} icono="📋" />
         <KPI label="VALORIZADO ACUMULADO" valor={fmtSoles(stats.totalValorizado)}
-          color="#f59e0b" sub={`${fmtNumero(stats.pctEjecutado, 1)}% del contrato`} icono="💰" />
+          color={BASE.gold} sub={`${fmtNumero(stats.pctEjecutado, 1)}% del contrato`} icono="💰" />
         <KPI label="COBRADO" valor={fmtSoles(stats.totalCobrado)}
           color={BASE.green} sub={`${stats.totalValorizaciones} valorizaciones`} icono="✅" />
         <KPI label="VALORIZACIONES PENDIENTES" valor={stats.valorizacionesPendientes}
-          color={stats.valorizacionesPendientes > 0 ? '#f59e0b' : BASE.green}
+          color={stats.valorizacionesPendientes > 0 ? BASE.gold : BASE.green}
           sub="Borrador o enviadas" icono="📤" />
       </div>
 
@@ -79,7 +79,7 @@ export default function DashboardOT() {
         </div>
         <div style={{ background: BASE.bgSoft, height: '14px', borderRadius: '8px', overflow: 'hidden' }}>
           <div style={{
-            background: `linear-gradient(90deg, #6366f1, #4338ca)`,
+            background: `linear-gradient(90deg, ${BASE.navy}, ${BASE.navyDark})`,
             height: '100%', width: `${Math.min(100, stats.pctEjecutado)}%`,
             transition: 'width 0.6s ease',
             borderRadius: '8px',
@@ -183,7 +183,7 @@ function KPI({ label, valor, color, sub, icono }) {
   );
 }
 
-function Seccion({ titulo, icono, extra, children }) {
+function Seccion({ titulo, extra, children }) {
   return (
     <div style={{
       background: BASE.white, border: `1px solid ${BASE.border}`,
@@ -194,7 +194,7 @@ function Seccion({ titulo, icono, extra, children }) {
         gap: '8px', marginBottom: '12px',
       }}>
         <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.5px' }}>
-          {icono} {titulo}
+          {titulo}
         </p>
         {extra && (
           <span style={{ fontSize: '10px', color: BASE.muted, fontWeight: '700' }}>{extra}</span>

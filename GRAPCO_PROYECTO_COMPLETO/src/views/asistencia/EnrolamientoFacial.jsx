@@ -6,7 +6,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../firebaseConfig';
-import { BASE, RADIUS, SPACING } from '../../utils/styles';
+import { BASE, RADIUS, SPACING, CHART_PALETTE } from '../../utils/styles';
 import { usePersonal } from '../../hooks/useFirebaseData';
 import { cargarModelos, obtenerDescriptor, descriptorToArray, promediarDescriptores } from '../../utils/faceapi';
 import { CARGOS_STAFF } from '../../utils/styles';
@@ -188,10 +188,10 @@ export default function EnrolamientoFacial({ showToast }) {
           </div>
         ) : (
           <>
-            <GrupoEnrol titulo="👷 OBREROS · cuadrillas" descripcion="Capataz, Operario, Oficial, Ayudante"
-              items={grupos.obreros} onPick={(p) => { setSeleccionado(p); abrirCamara(); }} acentoColor="#1e3a5f" />
-            <GrupoEnrol titulo="👔 STAFF TÉCNICO · ingenieros" descripcion="Residente, Oficina Técnica, Producción, Calidad"
-              items={grupos.staff} onPick={(p) => { setSeleccionado(p); abrirCamara(); }} acentoColor="#7c3aed" />
+            <GrupoEnrol titulo="OBREROS · cuadrillas" descripcion="Capataz, Operario, Oficial, Ayudante"
+              items={grupos.obreros} onPick={(p) => { setSeleccionado(p); abrirCamara(); }} acentoColor={BASE.navy} />
+            <GrupoEnrol titulo="STAFF TÉCNICO · ingenieros" descripcion="Residente, Oficina Técnica, Producción, Calidad"
+              items={grupos.staff} onPick={(p) => { setSeleccionado(p); abrirCamara(); }} acentoColor={CHART_PALETTE[3]} />
           </>
         )
       )}

@@ -127,7 +127,7 @@ export default function PortfolioDashboard() {
 
       {/* ── HERO slim ── */}
       <div style={{
-        background: 'linear-gradient(135deg, #0f1a2e, #1e3a5f)',
+        background: `linear-gradient(135deg, ${BASE.navyDark}, ${BASE.navyLight})`,
         borderRadius: '12px', padding: '14px 20px', color: '#fff',
         borderLeft: `5px solid ${BASE.gold}`,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -135,7 +135,7 @@ export default function PortfolioDashboard() {
       }}>
         <div>
           <p style={{ fontSize: '9.5px', fontWeight: '900', color: BASE.gold, letterSpacing: '1.6px' }}>
-            🌎 PORTFOLIO EJECUTIVO · DIRECCIÓN GENERAL
+            PORTFOLIO EJECUTIVO · DIRECCIÓN GENERAL
           </p>
           <h2 style={{ fontSize: '19px', fontWeight: '900', marginTop: '3px', letterSpacing: '-0.3px' }}>
             {proyectos.length} {proyectos.length === 1 ? 'proyecto' : 'proyectos'} en cartera
@@ -167,7 +167,7 @@ export default function PortfolioDashboard() {
       )}
 
       {/* ── Estado de la cartera — barra apilada + leyenda ── */}
-      <Seccion titulo="ESTADO DE LA CARTERA" icono="📊"
+      <Seccion titulo="ESTADO DE LA CARTERA"
         extra={`${proyectos.length} proyectos`}>
         <div style={{
           display: 'flex', height: '16px', borderRadius: '8px',
@@ -207,7 +207,7 @@ export default function PortfolioDashboard() {
       <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', overflow: 'hidden' }}>
         <div style={{ padding: '12px 16px', borderBottom: `1px solid ${BASE.border}`, background: BASE.bgSoft }}>
           <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.5px' }}>
-            🏆 RANKING DE PROYECTOS POR RENTABILIDAD (CPI / MARGEN REAL)
+            RANKING DE PROYECTOS POR RENTABILIDAD (CPI / MARGEN REAL)
           </p>
         </div>
         <div style={{ overflowX: 'auto' }}>
@@ -288,7 +288,7 @@ export default function PortfolioDashboard() {
         <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', overflow: 'hidden' }}>
           <div style={{ padding: '12px 16px', borderBottom: `1px solid ${BASE.border}`, background: '#fee2e2', borderLeft: `4px solid ${BASE.red}` }}>
             <p style={{ fontSize: '11px', fontWeight: '900', color: '#991b1b', letterSpacing: '0.5px' }}>
-              🚨 ALERTAS DE PORTFOLIO ({alertas.length})
+              ALERTAS DE PORTFOLIO ({alertas.length})
             </p>
           </div>
           <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '7px' }}>
@@ -347,7 +347,7 @@ function KPI({ label, valor, color, sub, icono }) {
   );
 }
 
-function Seccion({ titulo, icono, extra, children }) {
+function Seccion({ titulo, extra, children }) {
   return (
     <div style={{
       background: BASE.white, border: `1px solid ${BASE.border}`,
@@ -358,7 +358,7 @@ function Seccion({ titulo, icono, extra, children }) {
         gap: '8px', marginBottom: '12px',
       }}>
         <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.5px' }}>
-          {icono} {titulo}
+          {titulo}
         </p>
         {extra && <span style={{ fontSize: '10px', color: BASE.muted, fontWeight: '700' }}>{extra}</span>}
       </div>

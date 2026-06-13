@@ -1,14 +1,14 @@
 // src/views/modulos/portfolio/PortfolioPanel.jsx — Wrapper Portfolio (B24)
 
 import React, { useState } from 'react';
-import { BASE } from '../../../utils/styles';
+import { BASE, CHART_PALETTE } from '../../../utils/styles';
 import RoleGuard from '../../../components/RoleGuard';
 import PortfolioDashboard from './PortfolioDashboard';
 import MapaProyectosPeru from './MapaProyectosPeru';
 
 const TABS = [
-  { id: 'dashboard', l: 'Dashboard',  icono: '📊', desc: 'KPIs ejecutivos',     color: '#0f1a2e' },
-  { id: 'mapa',      l: 'Mapa Perú',  icono: '🗺️', desc: 'Pins geográficos',    color: '#0d9488' },
+  { id: 'dashboard', l: 'Dashboard',  icono: '📊', desc: 'KPIs ejecutivos',     color: BASE.navy },
+  { id: 'mapa',      l: 'Mapa Perú',  icono: '🗺️', desc: 'Pins geográficos',    color: CHART_PALETTE[2] },
 ];
 
 export default function PortfolioPanel({ showToast }) {

@@ -19,9 +19,9 @@ import { fmtSoles } from '../../utils/materialesAnalytics';
 import { obtenerTCDelDia, MONEDAS, fmtMoneda, convertirAPEN } from '../../utils/tipoCambioClient';
 
 const MODOS = [
-  { id: 'MANUAL', label: '✏️ Manual', desc: 'Escribir items uno por uno', color: '#16a34a' },
-  { id: 'OC',     label: '🛒 Desde OC', desc: 'Jalar Orden de Compra', color: '#2563eb' },
-  { id: 'OS',     label: '🔧 Desde OS', desc: 'Jalar Orden de Servicio', color: '#f59e0b' },
+  { id: 'MANUAL', label: '✏️ Manual', desc: 'Escribir items uno por uno', color: BASE.navy },
+  { id: 'OC',     label: '🛒 Desde OC', desc: 'Jalar Orden de Compra', color: BASE.navyLight },
+  { id: 'OS',     label: '🔧 Desde OS', desc: 'Jalar Orden de Servicio', color: BASE.gold },
 ];
 
 export default function EntradaMaterial({ showToast, onSaved }) {
@@ -312,7 +312,7 @@ export default function EntradaMaterial({ showToast, onSaved }) {
       borderLeft: `5px solid ${BASE.green}`,
     }}>
       <h3 style={{ fontSize: '18px', fontWeight: '900', color: BASE.navy, marginBottom: '4px' }}>
-        ⬇️ REGISTRAR ENTRADA · {proyectoActivo?.nombre || proyectoActivoId}
+        REGISTRAR ENTRADA · {proyectoActivo?.nombre || proyectoActivoId}
       </h3>
       <p style={{ fontSize: '12px', color: BASE.muted, marginBottom: '14px' }}>
         Recepcion de proveedor. Multimoneda PEN/USD. Soporta jalar OC/OS y descarga directa a partida.
@@ -339,9 +339,9 @@ export default function EntradaMaterial({ showToast, onSaved }) {
 
       {/* Selector de orden si modo != MANUAL */}
       {modo !== 'MANUAL' && (
-        <div style={{ background: '#dbeafe', padding: '14px', borderRadius: '10px', marginBottom: '14px', border: `1px solid #93c5fd` }}>
-          <p style={{ fontSize: '11px', fontWeight: '900', color: '#1e40af', letterSpacing: '0.5px', marginBottom: '8px' }}>
-            🔗 SELECCIONA {modo === 'OS' ? 'ORDEN DE SERVICIO' : 'ORDEN DE COMPRA'}
+        <div style={{ background: BASE.navySoft, padding: '14px', borderRadius: '10px', marginBottom: '14px', border: `1px solid ${BASE.navyLight}` }}>
+          <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.5px', marginBottom: '8px' }}>
+            SELECCIONA {modo === 'OS' ? 'ORDEN DE SERVICIO' : 'ORDEN DE COMPRA'}
           </p>
           <select value={ordenSeleccionadaId} onChange={e => setOrdenSeleccionadaId(e.target.value)} style={selS}>
             <option value="">— {ordenesDisponibles.length} pendientes en este proyecto —</option>
@@ -355,7 +355,7 @@ export default function EntradaMaterial({ showToast, onSaved }) {
             })}
           </select>
           {ordenSeleccionada && (
-            <p style={{ fontSize: '11px', color: '#1e40af', marginTop: '8px' }}>
+            <p style={{ fontSize: '11px', color: BASE.navy, marginTop: '8px' }}>
               ✓ Cargados {items.length} items pendientes de la {modo}. Puedes ajustar cantidades para recepcion parcial.
             </p>
           )}
@@ -364,7 +364,7 @@ export default function EntradaMaterial({ showToast, onSaved }) {
 
       {/* Datos generales */}
       <div style={{ background: BASE.bgSoft, padding: '16px', borderRadius: '12px', marginBottom: '14px' }}>
-        <p style={lblSec}>📋 DATOS GENERALES</p>
+        <p style={lblSec}>DATOS GENERALES</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px' }}>
           <Field label="Almacen destino *">
             <select value={almacenId} onChange={e => setAlmacenId(e.target.value)} style={selS}>
@@ -395,7 +395,7 @@ export default function EntradaMaterial({ showToast, onSaved }) {
           {moneda === 'USD' && (
             <Field label="Tipo cambio">
               <input type="number" step="0.001" value={tipoCambio} onChange={e => setTipoCambio(parseFloat(e.target.value) || 0)}
-                style={{ ...inpS, fontWeight: '800', color: '#2563eb' }} disabled={!!ordenSeleccionada} />
+                style={{ ...inpS, fontWeight: '800', color: BASE.navy }} disabled={!!ordenSeleccionada} />
             </Field>
           )}
         </div>
@@ -404,7 +404,7 @@ export default function EntradaMaterial({ showToast, onSaved }) {
       {/* Items */}
       <div style={{ background: BASE.bgSoft, padding: '16px', borderRadius: '12px', marginBottom: '14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <p style={lblSec}>📦 ITEMS DE LA ENTRADA</p>
+          <p style={lblSec}>ITEMS DE LA ENTRADA</p>
           {modo === 'MANUAL' && (
             <button onClick={agregarItem} style={{
               padding: '6px 14px', borderRadius: '6px', background: BASE.green, color: '#fff',
@@ -506,7 +506,7 @@ export default function EntradaMaterial({ showToast, onSaved }) {
 
       {/* Foto y observaciones */}
       <div style={{ background: BASE.bgSoft, padding: '16px', borderRadius: '12px', marginBottom: '20px' }}>
-        <p style={lblSec}>📸 EVIDENCIA Y OBSERVACIONES</p>
+        <p style={lblSec}>EVIDENCIA Y OBSERVACIONES</p>
         <Field label="Foto de la guia de remision">
           <input type="file" accept="image/*" onChange={handleFoto} style={{ ...inpS, padding: '6px', cursor: 'pointer' }} />
           {fotoPreview && (

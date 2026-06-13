@@ -23,8 +23,8 @@ export default function Auditoria({ filtrados, eliminar, hhPorSemana = [], hhTot
     switch (fuente) {
       case 'registro':            return { icon: '✓', color: BASE.green,  title: 'IP del registro' };
       case 'catalogo':            return { icon: '📚', color: BASE.navy,   title: 'IP del catálogo' };
-      case 'promedio_historico':  return { icon: '📊', color: '#7c3aed',  title: 'IP calculado del promedio histórico' };
-      case 'auto_real':           return { icon: '⚙️', color: '#d97706',  title: 'IP autoinferido del propio registro' };
+      case 'promedio_historico':  return { icon: '📊', color: BASE.navyLight,  title: 'IP calculado del promedio histórico' };
+      case 'auto_real':           return { icon: '⚙️', color: BASE.gold,  title: 'IP autoinferido del propio registro' };
       case 'metrado_cero':        return { icon: '∅',  color: BASE.muted, title: 'Metrado = 0, IP no aplica' };
       default:                    return { icon: '?',  color: BASE.muted, title: 'Sin datos' };
     }
@@ -36,8 +36,8 @@ export default function Auditoria({ filtrados, eliminar, hhPorSemana = [], hhTot
       {/* TABLA AUDITORÍA — overflow:visible: el scroll lo maneja el contenedor único de
           Ingeniero, así el encabezado sticky se ancla a ÉL y queda fijo arriba al bajar. */}
       <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,overflow:'visible',boxShadow:BASE.shadowMd}}>
-        <div style={{padding:'10px 14px',display:'flex',justifyContent:'space-between',alignItems:'center',borderBottom:`1px solid ${BASE.border}`,background:'#f8fafc'}}>
-          <span style={{fontSize:'12px',fontWeight:'700',color:BASE.navy}}>📋 REGISTROS — Más reciente arriba</span>
+        <div style={{padding:'10px 14px',display:'flex',justifyContent:'space-between',alignItems:'center',borderBottom:`1px solid ${BASE.border}`,background:BASE.bgSoft}}>
+          <span style={{fontSize:'12px',fontWeight:'700',color:BASE.navy}}>REGISTROS — Más reciente arriba</span>
           <span style={{fontSize:'10px',color:BASE.muted}}>{filtrados.length} registros</span>
         </div>
         {/* overflow:visible (NO 'auto'): un overflow:auto/scroll haría de este div un contenedor
@@ -67,20 +67,20 @@ export default function Auditoria({ filtrados, eliminar, hhPorSemana = [], hhTot
                   const fnt = fuenteIcon(r._ipFuente);
                   const metZero = (parseFloat(r.metrado) || 0) <= 0;
                   return (
-                    <tr key={r.id} style={{background:idx%2===0?BASE.white:'#f8fafc',borderBottom:`1px solid ${BASE.border}`}}>
+                    <tr key={r.id} style={{background:idx%2===0?BASE.white:BASE.bgSoft,borderBottom:`1px solid ${BASE.border}`}}>
                       <td style={{padding:'10px 13px',fontWeight:'700',color:BASE.navy}}>S{r.semana}</td>
                       <td style={{padding:'10px 13px',color:BASE.muted,fontSize:'11px'}}>{r.fecha}</td>
                       <td style={{padding:'10px 13px',fontSize:'10px',color:BASE.muted,maxWidth:'120px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} title={r.partida}>
                         {r._partidaCanonica || r.partida}
                       </td>
                       <td style={{padding:'10px 13px',fontWeight:'600',maxWidth:'200px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} title={r.actividad}>
-                        {fuzzyMatch && (<span style={{fontSize:'9px',color:'#7c3aed',marginRight:'4px'}} title={`Catálogo: ${r._actividadCanonica}`}>≈</span>)}
+                        {fuzzyMatch && (<span style={{fontSize:'9px',color:BASE.navyLight,marginRight:'4px'}} title={`Catálogo: ${r._actividadCanonica}`}>≈</span>)}
                         {r.actividad}
                       </td>
                       <td style={{padding:'10px 13px',textAlign:'center',color:BASE.navy,fontWeight:'700',fontSize:'11px'}}>
-                        <span style={{background:'#eff6ff',padding:'2px 8px',borderRadius:'10px',border:'1px solid #bfdbfe'}}>{r.unidad || '—'}</span>
+                        <span style={{background:BASE.navySoft,padding:'2px 8px',borderRadius:'10px',border:`1px solid ${BASE.border}`}}>{r.unidad || '—'}</span>
                       </td>
-                      <td style={{padding:'10px 13px',textAlign:'center',color:metZero?'#dc2626':BASE.text,fontWeight:metZero?'700':'400'}}>{r.metrado}</td>
+                      <td style={{padding:'10px 13px',textAlign:'center',color:metZero?BASE.red:BASE.text,fontWeight:metZero?'700':'400'}}>{r.metrado}</td>
                       <td style={{padding:'10px 13px',textAlign:'center',color:BASE.text}}>{fmt1(hn)}</td>
                       <td style={{padding:'10px 13px',textAlign:'center',color:he>0?BASE.orange:BASE.muted,fontWeight:he>0?'700':'400'}}>{fmt1(he)}</td>
                       <td style={{padding:'10px 13px',textAlign:'center',fontWeight:'700',color:BASE.navy}}>{fmt1(total)}</td>
@@ -117,11 +117,11 @@ export default function Auditoria({ filtrados, eliminar, hhPorSemana = [], hhTot
             </tbody>
           </table>
         </div>
-        <div style={{padding:'8px 14px',borderTop:`1px solid ${BASE.border}`,background:'#f8fafc',fontSize:'10px',color:BASE.muted,display:'flex',gap:'14px',flexWrap:'wrap'}}>
+        <div style={{padding:'8px 14px',borderTop:`1px solid ${BASE.border}`,background:BASE.bgSoft,fontSize:'10px',color:BASE.muted,display:'flex',gap:'14px',flexWrap:'wrap'}}>
           <span><span style={{color:BASE.green}}>✓</span> Registro</span>
           <span><span style={{color:BASE.navy}}>📚</span> Catálogo</span>
-          <span><span style={{color:'#7c3aed'}}>📊</span> Promedio histórico</span>
-          <span><span style={{color:'#d97706'}}>⚙️</span> Auto inferido</span>
+          <span><span style={{color:BASE.navyLight}}>📊</span> Promedio histórico</span>
+          <span><span style={{color:BASE.gold}}>⚙️</span> Auto inferido</span>
           <span><span style={{color:BASE.muted}}>∅</span> Sin metrado</span>
         </div>
       </div>

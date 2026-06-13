@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { collection, writeBatch, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
-import { BASE } from '../../../utils/styles';
+import { BASE, CHART_PALETTE } from '../../../utils/styles';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
 import { parseCSV, mapearWBS } from '../../../utils/import/csvParser';
@@ -123,12 +123,12 @@ export default function ImportadorPlanMaestro({ showToast }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       <div style={{
-        background: 'linear-gradient(135deg, #16a34a, #15803d)',
+        background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
         borderRadius: '14px', padding: '20px 26px', color: '#fff',
         borderLeft: `5px solid ${BASE.gold}`,
       }}>
         <p style={{ fontSize: '10px', fontWeight: '900', color: BASE.gold, letterSpacing: '1.4px' }}>
-          📥 IMPORTADOR · EXCEL / CSV → PLAN MAESTRO
+          IMPORTADOR · EXCEL / CSV → PLAN MAESTRO
         </p>
         <h2 style={{ fontSize: '20px', fontWeight: '900', marginTop: '4px' }}>
           Carga Partidas · Subpartidas · Actividades
@@ -185,7 +185,7 @@ export default function ImportadorPlanMaestro({ showToast }) {
           {/* Mapeo de columnas */}
           <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', padding: '16px 20px' }}>
             <p style={{ fontSize: '11.5px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.4px', marginBottom: '10px' }}>
-              🎯 COLUMNAS DETECTADAS AUTOMÁTICAMENTE
+              COLUMNAS DETECTADAS AUTOMÁTICAMENTE
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '8px' }}>
               {[
@@ -219,14 +219,14 @@ export default function ImportadorPlanMaestro({ showToast }) {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
               <Stat label="Filas leídas" valor={parsed.csv.rows.length} color={BASE.navy} />
               <Stat label="Actividades válidas" valor={totales.total} color="#16a34a" />
-              <Stat label="Partidas" valor={totales.partidas} color="#7c3aed" />
+              <Stat label="Partidas" valor={totales.partidas} color={CHART_PALETTE[3]} />
               <Stat label="HH total presup." valor={totales.hhTotal.toLocaleString('es-PE')} color={BASE.gold} chico />
             </div>
           )}
 
           {/* Frente destino */}
           <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', padding: '16px 20px' }}>
-            <label style={lblS}>📍 FRENTE DESTINO *</label>
+            <label style={lblS}>FRENTE DESTINO *</label>
             <select value={frenteDestino} onChange={e => setFrenteDestino(e.target.value)} style={selS}>
               <option value="">— selecciona un frente —</option>
               {frentesDelProyecto.map(f => <option key={f.id} value={f.id}>{f.codigo} · {f.nombre}</option>)}
@@ -241,7 +241,7 @@ export default function ImportadorPlanMaestro({ showToast }) {
             <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', overflow: 'hidden' }}>
               <div style={{ padding: '12px 18px', background: BASE.bgSoft, borderBottom: `1px solid ${BASE.border}` }}>
                 <p style={{ fontSize: '11.5px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.4px' }}>
-                  👁️ VISTA PREVIA (primeras 15 actividades)
+                  VISTA PREVIA (primeras 15 actividades)
                 </p>
               </div>
               <div style={{ overflowX: 'auto', maxHeight: '40vh', overflowY: 'auto' }}>

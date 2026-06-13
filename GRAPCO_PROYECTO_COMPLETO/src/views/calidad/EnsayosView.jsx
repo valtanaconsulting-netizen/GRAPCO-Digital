@@ -126,7 +126,7 @@ export default function EnsayosView({ showToast }) {
       <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', padding: '14px 18px' }}>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 200px' }}>
-            <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>🧪 Ensayos de Laboratorio</p>
+            <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>Ensayos de Laboratorio</p>
             <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
               {ensayos.length} total · {ensayos.filter(e => e.cumple === true).length} cumplen · {ensayos.filter(e => e.cumple === false).length} no cumplen
             </p>
@@ -236,7 +236,7 @@ export default function EnsayosView({ showToast }) {
       {editando && (
         <Modal onClose={() => setEditando(null)}>
           <h3 style={{ fontSize: '17px', fontWeight: '900', color: BASE.navy, marginBottom: '14px' }}>
-            {editando === 'NUEVO' ? '➕ Nuevo Ensayo' : '✏️ Editar Ensayo'}
+            {editando === 'NUEVO' ? 'Nuevo Ensayo' : 'Editar Ensayo'}
           </h3>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>

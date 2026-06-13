@@ -194,7 +194,7 @@ export default function EditorMasivoActividades({ showToast }) {
       <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', padding: '14px 18px' }}>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 200px' }}>
-            <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>📝 Editor Masivo (estilo Excel)</p>
+            <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>Editor Masivo (estilo Excel)</p>
             <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
               {filasMostradas.length} actividades visibles · Total: <strong style={{ color: BASE.navy }}>{fmtSoles(totalPresupuesto)}</strong>
             </p>

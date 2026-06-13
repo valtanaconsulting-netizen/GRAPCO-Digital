@@ -84,7 +84,7 @@ const TOGGLES = [
   { id: 'rend', l: 'Rendimiento' },
   { id: 'av',   l: '% Avance' },
 ];
-const BANDS = { P: { l: 'PROGRAMADO', c: '#1e3a5f' }, E: { l: 'EJECUTADO', c: '#15803d' }, C: { l: 'CUMPLIMIENTO', c: '#b45309' } };
+const BANDS = { P: { l: 'PROGRAMADO', c: BASE.navy }, E: { l: 'EJECUTADO', c: '#15803d' }, C: { l: 'CUMPLIMIENTO', c: '#b45309' } };
 
 const num = (v) => parseFloat(v) || 0;
 const hhProg = (it) => +(num(it.metrado) * num(it.ip)).toFixed(2);          // HH programado = metrado × IP
@@ -364,14 +364,14 @@ export default function PlanDiario({ planesDiarios, cuadrillasActivas, cuadrilla
             num(it.metrado), it.und, num(it.ip), hhProg(it),
             num(it.ejHH), num(it.ejPremio), num(it.ejMetrado),
             rendReal(it) ? +rendReal(it).toFixed(4) : '', num(it.rendGrapco) || '',
-            num(it.metrado) > 0 ? `${pctAvance(it).toFixed(0)}%` : '', it.causas || '',
+            num(it.metrado) > 0 ? `${Math.round(pctAvance(it))}%` : '', it.causas || '',
           ]);
         });
       });
 
       aoa.push([]);
       aoa.push(['', '', '', '', '', '', '', '', '', '', '', '', 'HH PROGRAMADAS', stats.hhP, 'HH CONSUMIDAS', stats.hhE]);
-      aoa.push(['', '', '', '', '', '', 'TOTAL OBREROS', stats.totObr, 'ACTIVIDADES', stats.nItems, '% AVANCE', `${stats.avanceGlobal.toFixed(0)}%`]);
+      aoa.push(['', '', '', '', '', '', 'TOTAL OBREROS', stats.totObr, 'ACTIVIDADES', stats.nItems, '% AVANCE', `${Math.round(stats.avanceGlobal)}%`]);
 
       const ws = XLSX.utils.aoa_to_sheet(aoa);
       ws['!cols'] = [{ wch: 6 }, { wch: 13 }, { wch: 12 }, { wch: 16 }, { wch: 30 }, { wch: 11 },
@@ -394,7 +394,7 @@ export default function PlanDiario({ planesDiarios, cuadrillasActivas, cuadrilla
     grupos.forEach(g => {
       rows.push([{ content: g.titulo, colSpan: NCOL, styles: { fillColor: [245, 158, 11], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'left' } }]);
       g.items.forEach((it, ii) => {
-        const av = num(it.metrado) > 0 && num(it.ejMetrado) > 0 ? `${pctAvance(it).toFixed(0)}%` : '';
+        const av = num(it.metrado) > 0 && num(it.ejMetrado) > 0 ? `${Math.round(pctAvance(it))}%` : '';
         rows.push([
           ii + 1, it.zona || '', it.ubicacion || '', it.fases || '', it.actividad || '', it.categoria || '',
           num(it.totalObreros) || '', num(it.obrerosAct) || '', it.horario || '', num(it.hhJornada) || '',
@@ -411,7 +411,7 @@ export default function PlanDiario({ planesDiarios, cuadrillasActivas, cuadrilla
       }]);
     });
     rows.push([{
-      content: `TOTALES — Actividades: ${stats.nItems}  ·  Obreros: ${stats.totObr}  ·  HH Programadas: ${stats.hhP}  ·  HH Consumidas: ${stats.hhE}  ·  % Avance: ${stats.avanceGlobal.toFixed(0)}%`,
+      content: `TOTALES — Actividades: ${stats.nItems}  ·  Obreros: ${stats.totObr}  ·  HH Programadas: ${stats.hhP}  ·  HH Consumidas: ${stats.hhE}  ·  % Avance: ${Math.round(stats.avanceGlobal)}%`,
       colSpan: NCOL, styles: { fillColor: [30, 58, 95], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
     }]);
 
@@ -448,7 +448,7 @@ export default function PlanDiario({ planesDiarios, cuadrillasActivas, cuadrilla
 Obra: ${pdObra}
 Semana ${obtenerSemana(pdFecha)} · ${fmtFecha(pdFecha)}
 Residente: ${pdResidente || '—'}
-HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${stats.avanceGlobal.toFixed(0)}%`;
+HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${Math.round(stats.avanceGlobal)}%`;
     const s = await compartirWhatsApp({ blob: r.blob, nombre: args.nombreArchivo, mensaje });
     if (s.ok) {
       showToast(s.modo === 'share-api' ? '✅ Compartido' : '✅ PDF descargado · WhatsApp Web abierto', 'success');
@@ -473,8 +473,8 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${sta
               ...miniInp(210),
               fontWeight: it.actividad ? '700' : '400',
               color: it.actividad ? BASE.navy : BASE.muted,
-              background: it.actividad ? '#f0f9ff' : '#fff',
-              borderColor: it.actividad ? '#bae6fd' : '#e2e8f0',
+              background: it.actividad ? BASE.navySoft : '#fff',
+              borderColor: it.actividad ? BASE.navyLight : BASE.border,
             }} />
         </td>
       );
@@ -487,10 +487,10 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${sta
           <td style={{ ...celdaP, minWidth: '210px' }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: tr.length ? '4px' : 0 }}>
               {tr.map(n => (
-                <span key={n} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#dbeafe', color: '#1e3a5f', borderRadius: '999px', padding: '2px 6px 2px 8px', fontSize: '9.5px', fontWeight: '700' }}>
+                <span key={n} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: BASE.navySoft, color: BASE.navy, borderRadius: '999px', padding: '2px 6px 2px 8px', fontSize: '9.5px', fontWeight: '700' }}>
                   {n}
                   <button onClick={() => removeTrabajador(gi, ii, n)} title="Quitar"
-                    style={{ border: 'none', background: 'transparent', color: '#1e3a5f', cursor: 'pointer', fontWeight: '900', fontSize: '11px', lineHeight: 1, padding: 0 }}>×</button>
+                    style={{ border: 'none', background: 'transparent', color: BASE.navy, cursor: 'pointer', fontWeight: '900', fontSize: '11px', lineHeight: 1, padding: 0 }}>×</button>
                 </span>
               ))}
             </div>
@@ -526,7 +526,7 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${sta
         const v = hhProg(it);
         return (
           <td style={{ padding: '4px', textAlign: 'center' }}>
-            <span style={{ display: 'inline-block', padding: '5px 10px', background: v > 0 ? '#1e3a5f' : '#eef2f7', color: v > 0 ? '#fff' : BASE.muted, borderRadius: '6px', fontSize: '11px', fontWeight: '900', minWidth: '46px' }}>{v.toFixed(1)}</span>
+            <span style={{ display: 'inline-block', padding: '5px 10px', background: v > 0 ? BASE.navy : BASE.bgSoft, color: v > 0 ? '#fff' : BASE.muted, borderRadius: '6px', fontSize: '11px', fontWeight: '900', minWidth: '46px' }}>{v.toFixed(1)}</span>
           </td>
         );
       }
@@ -539,7 +539,7 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${sta
         const av = pctAvance(it);
         const c = av >= 100 ? '#15803d' : av >= 70 ? '#b45309' : '#b91c1c';
         const bg = av >= 100 ? '#dcfce7' : av >= 70 ? '#fef3c7' : '#fee2e2';
-        return <td style={{ padding: '4px', textAlign: 'center' }}>{num(it.metrado) > 0 && num(it.ejMetrado) > 0 ? <span style={{ display: 'inline-block', padding: '4px 9px', background: bg, color: c, borderRadius: '6px', fontSize: '10px', fontWeight: '800' }}>{av.toFixed(0)}%</span> : <span style={{ color: '#cbd5e1', fontSize: '14px' }}>—</span>}</td>;
+        return <td style={{ padding: '4px', textAlign: 'center' }}>{num(it.metrado) > 0 && num(it.ejMetrado) > 0 ? <span style={{ display: 'inline-block', padding: '4px 9px', background: bg, color: c, borderRadius: '6px', fontSize: '10px', fontWeight: '800' }}>{Math.round(av)}%</span> : <span style={{ color: BASE.mutedSoft, fontSize: '14px' }}>—</span>}</td>;
       }
       case 'causas': return <td style={celdaE}><input value={it.causas || ''} onChange={e => setItem(gi, ii, 'causas', e.target.value)} placeholder="Causas no cumplimiento..." style={miniInp(220)} /></td>;
       case 'del': return <td style={{ padding: '4px', textAlign: 'center' }}><button onClick={() => removeItem(gi, ii)} style={{ padding: '5px 8px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: '700' }}>✕</button></td>;
@@ -580,10 +580,10 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${sta
         </div>
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           {[['GRUPOS', stats.nGrupos], ['ACTIVIDADES', stats.nItems], ['OBREROS', stats.totObr],
-            ['HH PROG.', stats.hhP], ['HH EJEC.', stats.hhE], ['% AVANCE', `${stats.avanceGlobal.toFixed(0)}%`]].map(([l, v]) => (
+            ['HH PROG.', stats.hhP], ['HH EJEC.', stats.hhE], ['% AVANCE', `${Math.round(stats.avanceGlobal)}%`]].map(([l, v]) => (
             <div key={l} style={{
               display: 'inline-flex', alignItems: 'center', gap: '6px',
-              background: '#f1f5f9', padding: '4px 10px', borderRadius: '999px', border: `1px solid ${BASE.border}`,
+              background: BASE.bgSoft, padding: '4px 10px', borderRadius: '999px', border: `1px solid ${BASE.border}`,
             }}>
               <span style={{ fontSize: '9px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.4px' }}>{l}</span>
               <span style={{ fontSize: '12px', fontWeight: '900', color: BASE.navy, fontFamily: 'monospace' }}>{v}</span>
@@ -595,7 +595,7 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${sta
       {/* Cabecera del formato */}
       <div style={{ background: BASE.white, borderRadius: '12px', border: `1px solid ${BASE.border}`, padding: '18px' }}>
         <h4 style={{ fontSize: '13px', fontWeight: '800', color: BASE.navy, borderLeft: `4px solid ${BASE.green}`, paddingLeft: '10px', marginBottom: '14px' }}>
-          📋 CABECERA · PROGRAMACIÓN DIARIA
+          CABECERA · PROGRAMACIÓN DIARIA
         </h4>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: '12px' }}>
           <DateInput label="DÍA DE PROGRAMACIÓN" value={pdFecha} onChange={setPdFecha} getSemana={obtenerSemana} />
@@ -609,7 +609,7 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${sta
       {/* Agregar grupo (RUBRO - RESPONSABLE) */}
       <div style={{ background: BASE.white, borderRadius: '12px', border: `1px solid ${BASE.border}`, padding: '14px 18px' }}>
         <p style={{ fontSize: '11px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', marginBottom: '10px' }}>
-          ➕ TREN DE ACTIVIDADES · agrega un grupo «RUBRO - RESPONSABLE» (ej. «ACERO - SOTO»)
+          TREN DE ACTIVIDADES · agrega un grupo «RUBRO - RESPONSABLE» (ej. «ACERO - SOTO»)
         </p>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
           <input value={nuevoTitulo} onChange={e => setNuevoTitulo(e.target.value)}
@@ -621,7 +621,7 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${sta
           </button>
           {Object.keys(cuadrillasActivas || {}).filter(c => c).slice(0, 8).map(cap => (
             <button key={cap} onClick={() => addGrupo(cap)}
-              style={{ padding: '7px 12px', background: '#eff6ff', color: BASE.navy, border: `1.5px solid ${BASE.navy}33`, borderRadius: '8px', fontWeight: '700', cursor: 'pointer', fontSize: '11.5px' }}>
+              style={{ padding: '7px 12px', background: BASE.navySoft, color: BASE.navy, border: `1.5px solid ${BASE.navy}33`, borderRadius: '8px', fontWeight: '700', cursor: 'pointer', fontSize: '11.5px' }}>
               + {cap}
             </button>
           ))}
@@ -638,7 +638,7 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${sta
         <>
           {/* Mostrar / ocultar columnas (los cálculos siguen actualizándose solos) */}
           <div style={{ background: BASE.white, borderRadius: '10px', border: `1px solid ${BASE.border}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '10.5px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.5px' }}>👁️ COLUMNAS:</span>
+            <span style={{ fontSize: '10.5px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.5px' }}>COLUMNAS:</span>
             {TOGGLES.map(t => {
               const on = cols[t.id];
               return (
@@ -647,7 +647,7 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${sta
                     display: 'inline-flex', alignItems: 'center', gap: '6px',
                     padding: '5px 11px', borderRadius: '999px', cursor: 'pointer',
                     fontSize: '11px', fontWeight: '800',
-                    background: on ? '#eff6ff' : '#f1f5f9',
+                    background: on ? BASE.navySoft : BASE.bgSoft,
                     color: on ? BASE.navy : BASE.muted,
                     border: `1.5px solid ${on ? BASE.navy + '44' : BASE.border}`,
                   }}>
@@ -665,7 +665,7 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${sta
             const gHHe = g.items.reduce((s, it) => s + num(it.ejHH), 0);
             return (
               <div key={gi} style={{ background: BASE.white, borderRadius: '12px', border: `1px solid ${BASE.border}`, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                <div style={{ background: `linear-gradient(90deg, ${BASE.orange}, #f97316)`, padding: '7px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ background: `linear-gradient(90deg, ${BASE.gold}, ${BASE.goldDark})`, padding: '7px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '9px', color: '#fff' }}>
                     <span style={{ fontSize: '14px' }}>👷</span>
                     <p style={{ fontSize: '12.5px', fontWeight: '800', letterSpacing: '0.3px' }}>{g.titulo}</p>
@@ -681,12 +681,12 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${sta
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
                     <thead>
-                      <tr style={{ background: '#eef2f7' }}>
+                      <tr style={{ background: BASE.bgSoft }}>
                         {['P', 'E', 'C'].filter(b => bandSpan(b) > 0).map(b => (
                           <th key={b} colSpan={bandSpan(b)} style={grpTh(BANDS[b].c)}>{BANDS[b].l}</th>
                         ))}
                       </tr>
-                      <tr style={{ background: '#f8fafc' }}>
+                      <tr style={{ background: BASE.bgSoft }}>
                         {colsVis.map(c => (
                           <th key={c.k} style={{ padding: '5px 5px', color: BASE.muted, fontSize: '9px', fontWeight: '800', textAlign: 'center', letterSpacing: '0.2px', borderBottom: `2px solid ${BASE.border}`, whiteSpace: 'nowrap' }}>{c.h}</th>
                         ))}
@@ -694,13 +694,13 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${sta
                     </thead>
                     <tbody>
                       {g.items.map((it, ii) => (
-                        <tr key={ii} style={{ borderBottom: `1px solid ${BASE.border}`, background: ii % 2 ? '#fafbfc' : BASE.white }}>
+                        <tr key={ii} style={{ borderBottom: `1px solid ${BASE.border}`, background: ii % 2 ? BASE.bgSoft : BASE.white }}>
                           {colsVis.map(c => <React.Fragment key={c.k}>{renderCelda(c.k, it, gi, ii)}</React.Fragment>)}
                         </tr>
                       ))}
                     </tbody>
                     <tfoot>
-                      <tr style={{ background: '#1e3a5f', color: '#fff' }}>
+                      <tr style={{ background: BASE.navy, color: '#fff' }}>
                         <td colSpan={colsVis.length} style={{ padding: '8px 14px', fontSize: '10.5px', fontWeight: '800' }}>
                           <span style={{ display: 'inline-flex', gap: '18px', flexWrap: 'wrap', letterSpacing: '0.3px' }}>
                             <span>SUBTOTAL «{g.titulo}»</span>
@@ -724,7 +724,7 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${sta
       {grupos.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
           <button onClick={guardarPlan} disabled={pdGuardando}
-            style={{ flex: '2 1 200px', padding: '13px', background: pdGuardando ? '#94a3b8' : pdEditingId ? '#1d4ed8' : BASE.green, color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '800', cursor: pdGuardando ? 'not-allowed' : 'pointer', fontSize: '13.5px' }}>
+            style={{ flex: '2 1 200px', padding: '13px', background: pdGuardando ? BASE.mutedSoft : pdEditingId ? BASE.navyLight : BASE.green, color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '800', cursor: pdGuardando ? 'not-allowed' : 'pointer', fontSize: '13.5px' }}>
             {pdGuardando ? '⏳ Guardando...' : pdEditingId ? '✏️ ACTUALIZAR PLAN' : '💾 GUARDAR PLAN'}
           </button>
           <button onClick={autocompletarEjecutado}

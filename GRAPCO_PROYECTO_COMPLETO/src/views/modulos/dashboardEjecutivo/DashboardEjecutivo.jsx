@@ -21,7 +21,7 @@ import {
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts';
-import { BASE } from '../../../utils/styles';
+import { BASE, CHART_PALETTE } from '../../../utils/styles';
 import { EJE, GRILLA, TOOLTIP_STYLE, LEYENDA } from '../../../utils/chartKit';
 import { fmtCPIPct, fmt1, getEstado, COSTO_HORA_PROMEDIO } from '../../../utils/helpers';
 import Icon from '../../../components/Icon';
@@ -48,11 +48,11 @@ const BLOQUES_META = [
     { id: 'obreros', nombre: 'Obreros presentes' },
     { id: 'asist', nombre: 'HH asistencia hoy' },
   ] },
-  { id: 'cal', titulo: 'Gestión de Calidad', color: '#ec4899', cards: [
+  { id: 'cal', titulo: 'Gestión de Calidad', color: CHART_PALETTE[3], cards: [
     { id: 'protlib', nombre: 'Protocolos liberados' },
     { id: 'ncs', nombre: 'NCs abiertas' },
   ] },
-  { id: 'plan', titulo: 'Planeamiento y seguridad', color: '#7c3aed', cards: [
+  { id: 'plan', titulo: 'Planeamiento y seguridad', color: CHART_PALETTE[10], cards: [
     { id: 'ppc', nombre: 'PPC acumulado' },
     { id: 'ssoma', nombre: 'Hallazgos SSOMA hoy' },
   ] },
@@ -285,8 +285,8 @@ export default function DashboardEjecutivo({ showToast, isMobile }) {
   const serie = useMemo(
     () => snapshots.slice(-30).map((s) => ({
       fecha: ddmm(s.fecha),
-      CPI: s.cpi != null ? +(s.cpi * 100).toFixed(0) : null,
-      'Avance %': s.avancePct != null ? +s.avancePct.toFixed(0) : null,
+      CPI: s.cpi != null ? Math.round(s.cpi * 100) : null,
+      'Avance %': s.avancePct != null ? Math.round(s.avancePct) : null,
       PPC: s.ppcPct != null ? s.ppcPct : null,
     })),
     [snapshots],
@@ -316,7 +316,7 @@ export default function DashboardEjecutivo({ showToast, isMobile }) {
               {proyectoActivo?.nombre || 'Proyecto activo'}
             </p>
             <p style={{ fontSize: '11px', opacity: 0.85, marginTop: '2px' }}>
-              📅 {fecha}{yaGuardadoHoy && ' · cierre ya guardado hoy'}
+              {fecha}{yaGuardadoHoy && ' · cierre ya guardado hoy'}
             </p>
           </div>
         </div>
@@ -422,7 +422,7 @@ export default function DashboardEjecutivo({ showToast, isMobile }) {
               <Legend {...LEYENDA} />
               <Line type="monotone" dataKey="CPI" stroke={BASE.navy} strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} connectNulls />
               <Line type="monotone" dataKey="Avance %" stroke={BASE.gold} strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} connectNulls />
-              <Line type="monotone" dataKey="PPC" stroke="#7c3aed" strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} connectNulls />
+              <Line type="monotone" dataKey="PPC" stroke={CHART_PALETTE[3]} strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} connectNulls />
             </LineChart>
           </ResponsiveContainer>
         )}
@@ -432,7 +432,7 @@ export default function DashboardEjecutivo({ showToast, isMobile }) {
       {snapshots.length > 0 && (
         <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '14px', overflow: 'hidden', boxShadow: BASE.shadowSm }}>
           <div style={{ padding: '12px 18px', borderBottom: `1px solid ${BASE.border}`, background: BASE.bgSoft }}>
-            <p style={{ fontSize: '12px', fontWeight: 900, color: BASE.navy }}>🗂️ CIERRES GUARDADOS ({snapshots.length})</p>
+            <p style={{ fontSize: '12px', fontWeight: 900, color: BASE.navy }}>CIERRES GUARDADOS ({snapshots.length})</p>
           </div>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>

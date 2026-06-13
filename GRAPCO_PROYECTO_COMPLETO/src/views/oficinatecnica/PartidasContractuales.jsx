@@ -81,7 +81,7 @@ export default function PartidasContractuales({ showToast }) {
       <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', padding: '14px 18px' }}>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 200px' }}>
-            <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>📋 Partidas Contractuales</p>
+            <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>Partidas Contractuales</p>
             <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
               {partidas.length} partidas · Presupuesto: <strong>{fmtSoles(totalContractual)}</strong>
             </p>
@@ -90,10 +90,10 @@ export default function PartidasContractuales({ showToast }) {
             placeholder="🔍 Buscar..." style={{ ...inpS, minWidth: '180px' }} />
           <button onClick={() => { setForm(FORM_INICIAL); setEditando('NUEVO'); }} style={{
             padding: '10px 20px', borderRadius: '8px',
-            background: `linear-gradient(135deg, #7c3aed, #5b21b6)`,
+            background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
             color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900',
             cursor: 'pointer', letterSpacing: '0.5px',
-            boxShadow: '0 4px 12px rgba(124,58,237,0.35)',
+            boxShadow: '0 4px 12px rgba(15,42,71,0.35)',
           }}>➕ NUEVA PARTIDA</button>
         </div>
       </div>
@@ -156,7 +156,7 @@ export default function PartidasContractuales({ showToast }) {
       {editando && (
         <Modal onClose={() => setEditando(null)}>
           <h3 style={{ fontSize: '17px', fontWeight: '900', color: BASE.navy, marginBottom: '14px' }}>
-            {editando === 'NUEVO' ? '➕ Nueva Partida Contractual' : '✏️ Editar Partida'}
+            {editando === 'NUEVO' ? 'Nueva Partida Contractual' : 'Editar Partida'}
           </h3>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px' }}>
@@ -188,12 +188,12 @@ export default function PartidasContractuales({ showToast }) {
 
           {/* Subtotal en vivo */}
           <div style={{
-            background: '#dbeafe', border: '1px solid #2563eb55',
-            borderLeft: '4px solid #2563eb', borderRadius: '10px',
+            background: BASE.navySoft, border: `1px solid ${BASE.navyLight}55`,
+            borderLeft: `4px solid ${BASE.navy}`, borderRadius: '10px',
             padding: '12px 16px', marginBottom: '12px',
           }}>
-            <p style={{ fontSize: '11px', fontWeight: '900', color: '#1e40af', letterSpacing: '0.5px' }}>SUBTOTAL DE LA PARTIDA</p>
-            <p style={{ fontSize: '20px', fontWeight: '900', color: '#1e3a8a', marginTop: '4px' }}>
+            <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.navyLight, letterSpacing: '0.5px' }}>SUBTOTAL DE LA PARTIDA</p>
+            <p style={{ fontSize: '20px', fontWeight: '900', color: BASE.navy, marginTop: '4px' }}>
               {fmtSoles((parseFloat(form.metradoContractual) || 0) * (parseFloat(form.precioUnitario) || 0))}
             </p>
           </div>
@@ -233,6 +233,6 @@ const lblS = { fontSize: '9.5px', fontWeight: '900', color: BASE.muted, letterSp
 const inpS = { width: '100%', padding: '9px 12px', borderRadius: '8px', border: `1.5px solid ${BASE.border}`, fontSize: '12.5px', fontWeight: '600', background: '#fff' };
 const selS = { ...inpS, cursor: 'pointer', fontWeight: '700' };
 const btnCancel = { padding: '11px 22px', borderRadius: '8px', background: BASE.bgSoft, color: BASE.muted, border: 'none', fontSize: '12px', fontWeight: '800', cursor: 'pointer' };
-const btnSave = { padding: '11px 22px', borderRadius: '8px', background: 'linear-gradient(135deg, #7c3aed, #5b21b6)', color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900', cursor: 'pointer', letterSpacing: '0.4px', boxShadow: '0 4px 12px rgba(124,58,237,0.35)' };
+const btnSave = { padding: '11px 22px', borderRadius: '8px', background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900', cursor: 'pointer', letterSpacing: '0.4px', boxShadow: '0 4px 12px rgba(15,42,71,0.35)' };
 const th = (extra = {}) => ({ padding: '11px 14px', textAlign: 'left', fontSize: '10.5px', fontWeight: '900', letterSpacing: '0.4px', whiteSpace: 'nowrap', ...extra });
 const td = (extra = {}) => ({ padding: '10px 14px', fontSize: '12px', color: BASE.text, verticalAlign: 'top', ...extra });

@@ -145,8 +145,8 @@ export default function SustentoMetrados({ showToast }) {
         boxShadow: '0 2px 6px rgba(15,23,42,0.04)',
       }}>
         <div>
-          <p style={{ fontSize: '12px', fontWeight: '900', color: BASE.green, letterSpacing: '0.5px' }}>
-            📸 SUSTENTO DE METRADOS
+          <p style={{ fontSize: '12px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.5px' }}>
+            SUSTENTO DE METRADOS
           </p>
           <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
             Vincula cada partida valorizada con su evidencia fotográfica de campo. Por partida y por valorización (PQ-XX).
@@ -166,9 +166,9 @@ export default function SustentoMetrados({ showToast }) {
             cursor: 'pointer',
           }}>🖨️ Imprimir informe</button>
           <button onClick={abrirNuevo} style={{
-            background: BASE.green, color: '#fff', border: 'none',
+            background: BASE.gold, color: '#fff', border: 'none',
             padding: '10px 18px', borderRadius: '10px', fontWeight: 800, fontSize: '12px',
-            cursor: 'pointer', boxShadow: `0 4px 14px ${BASE.green}55`,
+            cursor: 'pointer', boxShadow: `0 4px 14px ${BASE.gold}55`,
           }}>+ Nuevo sustento</button>
         </div>
       </div>
@@ -194,7 +194,7 @@ export default function SustentoMetrados({ showToast }) {
               display: 'flex', flexDirection: 'column',
             }}>
               <div style={{
-                aspectRatio: '4/3', background: '#f1f5f9',
+                aspectRatio: '4/3', background: BASE.bgSoft,
                 position: 'relative', overflow: 'hidden',
               }}>
                 {it.fotos?.length > 0 ? (
@@ -229,8 +229,8 @@ export default function SustentoMetrados({ showToast }) {
                   {Number(it.metrado).toLocaleString('es-PE')} {it.unidad}
                 </p>
                 <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
-                  <button onClick={() => setVerDetalle(it)} style={btnSm('#0ea5e9')}>Ver</button>
-                  <button onClick={() => abrirEdicion(it)} style={btnSm('#a855f7')}>Editar</button>
+                  <button onClick={() => setVerDetalle(it)} style={btnSm(BASE.navyLight)}>Ver</button>
+                  <button onClick={() => abrirEdicion(it)} style={btnSm(BASE.gold)}>Editar</button>
                   <button onClick={() => eliminar(it)}    style={btnSm(BASE.red)}>Eliminar</button>
                 </div>
               </div>
@@ -298,8 +298,8 @@ export default function SustentoMetrados({ showToast }) {
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '16px' }}>
-            <button onClick={cerrar} disabled={guardando} style={btnLg('#94a3b8')}>Cancelar</button>
-            <button onClick={guardar} disabled={guardando} style={btnLg(BASE.green)}>
+            <button onClick={cerrar} disabled={guardando} style={btnLg(BASE.muted)}>Cancelar</button>
+            <button onClick={guardar} disabled={guardando} style={btnLg(BASE.navy)}>
               {guardando ? 'Guardando…' : (editando ? 'Actualizar' : 'Crear')}
             </button>
           </div>
@@ -317,7 +317,7 @@ export default function SustentoMetrados({ showToast }) {
             </div>
             <div>
               <p style={{ fontSize: '10.5px', fontWeight: 800, color: BASE.muted, letterSpacing: '0.4px', marginBottom: '4px' }}>DESCRIPCIÓN</p>
-              <p style={{ fontSize: '12.5px', color: BASE.navy, lineHeight: 1.5, background: '#f8fafc', padding: '10px', borderRadius: '8px' }}>
+              <p style={{ fontSize: '12.5px', color: BASE.navy, lineHeight: 1.5, background: BASE.bgSoft, padding: '10px', borderRadius: '8px' }}>
                 {verDetalle.descripcion || '—'}
               </p>
             </div>
@@ -363,7 +363,7 @@ function Campo({ label, children }) {
 
 function Info({ label, value }) {
   return (
-    <div style={{ background: '#f8fafc', padding: '8px 10px', borderRadius: '8px' }}>
+    <div style={{ background: BASE.bgSoft, padding: '8px 10px', borderRadius: '8px' }}>
       <p style={{ fontSize: '10px', fontWeight: 800, color: BASE.muted, letterSpacing: '0.4px' }}>{label}</p>
       <p style={{ fontSize: '12.5px', fontWeight: 700, color: BASE.navy }}>{value}</p>
     </div>

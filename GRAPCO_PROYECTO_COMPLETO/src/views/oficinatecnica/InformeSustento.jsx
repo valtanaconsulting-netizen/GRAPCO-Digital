@@ -75,8 +75,8 @@ export default function InformeSustento() {
         gap: '12px', flexWrap: 'wrap',
       }}>
         <div>
-          <p style={{ fontSize: '12px', fontWeight: '900', color: BASE.green, letterSpacing: '0.5px' }}>
-            📑 INFORME DE SUSTENTO
+          <p style={{ fontSize: '12px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.5px' }}>
+            INFORME DE SUSTENTO
           </p>
           <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
             Genera el documento de respaldo (PDF/print) para una valorización. Incluye portada GRAPCO,
@@ -157,7 +157,7 @@ export default function InformeSustento() {
                 const unidades = [...new Set(regs.map(r => r.unidad).filter(Boolean))].join(' / ');
                 const fotos = regs.reduce((a, r) => a + (r.fotos?.length || 0), 0);
                 return (
-                  <tr key={part} style={{ background: i % 2 === 0 ? '#fff' : '#f8fafc', borderBottom: `1px solid ${BASE.border}` }}>
+                  <tr key={part} style={{ background: i % 2 === 0 ? '#fff' : BASE.bgSoft, borderBottom: `1px solid ${BASE.border}` }}>
                     <td style={{ padding: '10px 8px', fontWeight: 700, color: BASE.navy }}>{part}</td>
                     <td style={{ padding: '10px 8px', textAlign: 'right' }}>{regs.length}</td>
                     <td style={{ padding: '10px 8px', textAlign: 'right' }}>{metradoTotal.toLocaleString('es-PE')} {unidades}</td>
@@ -187,7 +187,7 @@ export default function InformeSustento() {
                 <Bloque label="Metrado" value={`${Number(r.metrado).toLocaleString('es-PE')} ${r.unidad || ''}`} />
                 <Bloque label="Ubicación" value={r.ubicacion || '—'} />
               </div>
-              <p style={{ fontSize: '11.5px', color: BASE.muted, lineHeight: 1.5, marginBottom: '10px', background: '#f8fafc', padding: '8px 10px', borderRadius: '6px' }}>
+              <p style={{ fontSize: '11.5px', color: BASE.muted, lineHeight: 1.5, marginBottom: '10px', background: BASE.bgSoft, padding: '8px 10px', borderRadius: '6px' }}>
                 {r.descripcion || 'Sin descripción.'}
               </p>
               {r.fotos?.length > 0 && (
@@ -236,7 +236,7 @@ function Linea({ label, value }) {
 
 function Bloque({ label, value }) {
   return (
-    <div style={{ background: '#f8fafc', padding: '8px 10px', borderRadius: '6px' }}>
+    <div style={{ background: BASE.bgSoft, padding: '8px 10px', borderRadius: '6px' }}>
       <p style={{ fontSize: '9.5px', fontWeight: 800, color: BASE.muted, letterSpacing: '0.4px' }}>{label.toUpperCase()}</p>
       <p style={{ fontSize: '12px', fontWeight: 700, color: BASE.navy, marginTop: '2px' }}>{value}</p>
     </div>

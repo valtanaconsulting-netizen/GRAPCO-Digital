@@ -234,9 +234,9 @@ export default function Personal({ cuadrillasDB, personalDB, configuracion, show
 
       {/* MODAL TARIFAS POR CARGO */}
       {modalTarifas && (
-        <Modal title="💰 Configurar Tarifas por Cargo (S/. por hora)" onClose={()=>setModalTarifas(false)} maxW="520px">
+        <Modal title="Configurar Tarifas por Cargo (S/. por hora)" onClose={()=>setModalTarifas(false)} maxW="520px">
           <div style={{display:'flex',flexDirection:'column',gap:'14px'}}>
-            <div style={{background:'#eff6ff',borderRadius:'8px',padding:'12px 14px',border:'1px solid #bfdbfe'}}>
+            <div style={{background:BASE.navySoft,borderRadius:'8px',padding:'12px 14px',border:`1px solid ${BASE.border}`}}>
               <p style={{fontSize:'12px',color:BASE.navy,fontWeight:'600',lineHeight:1.5}}>
                 Estas tarifas aplican a todos los trabajadores en los cálculos de costos del Excel
                 (HN, HE 60%, HE 100%). Si un trabajador tiene una tarifa individual configurada
@@ -251,12 +251,12 @@ export default function Personal({ cuadrillasDB, personalDB, configuracion, show
                 const valorActual = formTarifas[cargo] ?? valorDefault;
                 const esCustom = (configuracion?.tarifas?.[cargo] != null);
                 return (
-                  <div key={cargo} style={{display:'grid',gridTemplateColumns:'1fr 130px',gap:'10px',alignItems:'center',padding:'10px 12px',background:'#f8fafc',borderRadius:'8px',border:'1px solid #e2e8f0'}}>
+                  <div key={cargo} style={{display:'grid',gridTemplateColumns:'1fr 130px',gap:'10px',alignItems:'center',padding:'10px 12px',background:BASE.bgSoft,borderRadius:'8px',border:`1px solid ${BASE.border}`}}>
                     <div>
                       <p style={{fontSize:'13px',fontWeight:'700',color:BASE.navy}}>{cargo}</p>
                       <p style={{fontSize:'10px',color:BASE.muted,marginTop:'2px'}}>
                         {numTrabs} trabajador{numTrabs!==1?'es':''}
-                        {!esCustom && <span style={{marginLeft:'6px',color:'#94a3b8'}}>· default S/ {valorDefault.toFixed(2)}</span>}
+                        {!esCustom && <span style={{marginLeft:'6px',color:BASE.mutedSoft}}>· default S/ {valorDefault.toFixed(2)}</span>}
                         {esCustom && <span style={{marginLeft:'6px',color:BASE.green,fontWeight:'700'}}>✓ personalizado</span>}
                       </p>
                     </div>
@@ -276,10 +276,10 @@ export default function Personal({ cuadrillasDB, personalDB, configuracion, show
 
             <div style={{display:'flex',gap:'10px'}}>
               <button onClick={guardarTarifas} disabled={savingTarifas}
-                style={{flex:2,padding:'14px',background:savingTarifas?'#94a3b8':BASE.navy,color:'#fff',border:'none',borderRadius:'10px',fontWeight:'700',cursor:savingTarifas?'not-allowed':'pointer',fontSize:'14px'}}>
+                style={{flex:2,padding:'14px',background:savingTarifas?BASE.mutedSoft:BASE.navy,color:'#fff',border:'none',borderRadius:'10px',fontWeight:'700',cursor:savingTarifas?'not-allowed':'pointer',fontSize:'14px'}}>
                 {savingTarifas ? '⏳ Guardando...' : '💾 Guardar Tarifas'}
               </button>
-              <button onClick={()=>setModalTarifas(false)} style={{flex:1,padding:'14px',background:'#f1f5f9',color:BASE.muted,border:'none',borderRadius:'10px',fontWeight:'700',cursor:'pointer',fontSize:'14px'}}>Cancelar</button>
+              <button onClick={()=>setModalTarifas(false)} style={{flex:1,padding:'14px',background:BASE.bgSoft,color:BASE.muted,border:'none',borderRadius:'10px',fontWeight:'700',cursor:'pointer',fontSize:'14px'}}>Cancelar</button>
             </div>
           </div>
         </Modal>
@@ -291,7 +291,7 @@ export default function Personal({ cuadrillasDB, personalDB, configuracion, show
           <div style={{display:'flex',flexDirection:'column',gap:'14px'}}>
             <div>
               <label style={{fontSize:'10px',fontWeight:'700',color:BASE.muted,letterSpacing:'0.6px',display:'block',marginBottom:'5px'}}>
-                CAPATAZ <span style={{color:'#94a3b8',fontWeight:'400'}}>(solo trabajadores con cargo Capataz)</span>
+                CAPATAZ <span style={{color:BASE.mutedSoft,fontWeight:'400'}}>(solo trabajadores con cargo Capataz)</span>
               </label>
               {personalDB.filter(p=>p.cargo==='Capataz').length===0 ? (
                 <div style={{background:'#fef2f2',border:'1px solid #fca5a5',borderRadius:'8px',padding:'10px 14px'}}>
@@ -315,16 +315,16 @@ export default function Personal({ cuadrillasDB, personalDB, configuracion, show
             </div>
 
             {/* Miembros actuales */}
-            <div style={{background:'#f8fafc',borderRadius:'10px',border:'1px solid #e2e8f0',padding:'14px'}}>
+            <div style={{background:BASE.bgSoft,borderRadius:'10px',border:`1px solid ${BASE.border}`,padding:'14px'}}>
               <p style={{fontSize:'11px',fontWeight:'700',color:BASE.navy,marginBottom:'10px',letterSpacing:'0.5px'}}>👷 MIEMBROS ({formCuadrilla.miembros.length})</p>
               {formCuadrilla.miembros.length === 0 ? (
-                <p style={{fontSize:'11px',color:'#94a3b8',fontStyle:'italic'}}>Aún no hay miembros. Selecciónalos abajo.</p>
+                <p style={{fontSize:'11px',color:BASE.mutedSoft,fontStyle:'italic'}}>Aún no hay miembros. Selecciónalos abajo.</p>
               ) : (
                 formCuadrilla.miembros.map((m,i)=>(
-                  <div key={i} style={{display:'flex',alignItems:'center',gap:'8px',padding:'6px 0',borderBottom:'1px solid #f1f5f9'}}>
+                  <div key={i} style={{display:'flex',alignItems:'center',gap:'8px',padding:'6px 0',borderBottom:`1px solid ${BASE.borderSoft}`}}>
                     <span style={{width:'24px',height:'24px',borderRadius:'50%',background:BASE.navy,color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'11px',fontWeight:'800',flexShrink:0}}>{LETRAS[i]||i+1}</span>
                     <span style={{flex:1,fontSize:'12px',fontWeight:'600',color:BASE.text}}>{m.nombre}</span>
-                    <span style={{fontSize:'11px',color:BASE.muted,background:'#e2e8f0',padding:'2px 8px',borderRadius:'20px'}}>{CARGOS_CORTO[m.cargo]||m.cargo}</span>
+                    <span style={{fontSize:'11px',color:BASE.muted,background:BASE.border,padding:'2px 8px',borderRadius:'20px'}}>{CARGOS_CORTO[m.cargo]||m.cargo}</span>
                     <button onClick={()=>setFormCuadrilla(p=>({...p,miembros:p.miembros.filter((_,j)=>j!==i)}))}
                       style={{background:'#fee2e2',color:'#dc2626',border:'none',borderRadius:'6px',padding:'3px 8px',cursor:'pointer',fontSize:'12px',fontWeight:'700'}}>✕</button>
                   </div>
@@ -333,14 +333,14 @@ export default function Personal({ cuadrillasDB, personalDB, configuracion, show
             </div>
 
             {/* Disponibles para agregar */}
-            <div style={{background:'#eff6ff',borderRadius:'10px',border:'1px solid #bfdbfe',padding:'14px'}}>
+            <div style={{background:BASE.navySoft,borderRadius:'10px',border:`1px solid ${BASE.border}`,padding:'14px'}}>
               <p style={{fontSize:'11px',fontWeight:'700',color:BASE.navy,marginBottom:'10px',letterSpacing:'0.5px'}}>➕ AGREGAR TRABAJADORES</p>
               <div style={{display:'flex',gap:'8px',marginBottom:'10px',flexWrap:'wrap'}}>
                 <input type="text" value={busqCuadModal} onChange={e=>setBusqCuadModal(e.target.value)}
                   placeholder="🔍 Buscar..."
-                  style={{flex:2,minWidth:'140px',padding:'8px 10px',borderRadius:'7px',border:'1px solid #bfdbfe',fontSize:'12px',outline:'none',background:'#fff'}}/>
+                  style={{flex:2,minWidth:'140px',padding:'8px 10px',borderRadius:'7px',border:`1px solid ${BASE.border}`,fontSize:'12px',outline:'none',background:'#fff'}}/>
                 <select value={filtroCargo} onChange={e=>setFiltroCargo(e.target.value)}
-                  style={{flex:1,minWidth:'130px',padding:'8px 10px',borderRadius:'7px',border:'1px solid #bfdbfe',fontSize:'12px',fontWeight:'700',outline:'none',background:'#fff',color:BASE.navy}}>
+                  style={{flex:1,minWidth:'130px',padding:'8px 10px',borderRadius:'7px',border:`1px solid ${BASE.border}`,fontSize:'12px',fontWeight:'700',outline:'none',background:'#fff',color:BASE.navy}}>
                   <option value="">Todos los cargos</option>
                   {CARGOS.filter(c=>c!=='Capataz').map(c=>(
                     <option key={c} value={c}>{c} ({personalDB.filter(p=>p.cargo===c&&!formCuadrilla.miembros.find(m=>m.nombre===p.nombre)).length})</option>
@@ -353,10 +353,10 @@ export default function Personal({ cuadrillasDB, personalDB, configuracion, show
                 ) : (
                   disponibles.map(p => (
                     <div key={p.id} onClick={()=>setFormCuadrilla(prev=>({...prev,miembros:[...prev.miembros,{nombre:p.nombre,cargo:p.cargo}]}))}
-                      style={{display:'flex',alignItems:'center',gap:'8px',padding:'9px 12px',background:'#fff',borderRadius:'7px',marginBottom:'5px',cursor:'pointer',border:'1px solid #e2e8f0',transition:'0.15s'}}>
+                      style={{display:'flex',alignItems:'center',gap:'8px',padding:'9px 12px',background:'#fff',borderRadius:'7px',marginBottom:'5px',cursor:'pointer',border:`1px solid ${BASE.border}`,transition:'0.15s'}}>
                       <span style={{flex:1,fontSize:'12px',fontWeight:'600',color:BASE.text}}>{p.nombre}</span>
                       {p.dni && <span style={{fontSize:'10px',color:BASE.muted,fontFamily:'monospace'}}>{p.dni}</span>}
-                      <span style={{fontSize:'10px',color:BASE.muted,background:'#f1f5f9',padding:'2px 7px',borderRadius:'20px'}}>{CARGOS_CORTO[p.cargo]||p.cargo}</span>
+                      <span style={{fontSize:'10px',color:BASE.muted,background:BASE.bgSoft,padding:'2px 7px',borderRadius:'20px'}}>{CARGOS_CORTO[p.cargo]||p.cargo}</span>
                       <span style={{fontSize:'14px',color:BASE.green,fontWeight:'800'}}>+</span>
                     </div>
                   ))
@@ -368,7 +368,7 @@ export default function Personal({ cuadrillasDB, personalDB, configuracion, show
               <button onClick={guardarCuadrilla} style={{flex:2,padding:'14px',background:BASE.navy,color:'#fff',border:'none',borderRadius:'10px',fontWeight:'700',cursor:'pointer',fontSize:'14px'}}>
                 💾 {modalCuadrilla==='nuevo'?'Crear Cuadrilla':'Guardar Cambios'}
               </button>
-              <button onClick={()=>setModalCuadrilla(null)} style={{flex:1,padding:'14px',background:'#f1f5f9',color:BASE.muted,border:'none',borderRadius:'10px',fontWeight:'700',cursor:'pointer',fontSize:'14px'}}>Cancelar</button>
+              <button onClick={()=>setModalCuadrilla(null)} style={{flex:1,padding:'14px',background:BASE.bgSoft,color:BASE.muted,border:'none',borderRadius:'10px',fontWeight:'700',cursor:'pointer',fontSize:'14px'}}>Cancelar</button>
             </div>
           </div>
         </Modal>
@@ -398,8 +398,8 @@ export default function Personal({ cuadrillasDB, personalDB, configuracion, show
                 const el=document.getElementById('fechaNacInput');
                 if(el){el.focus();try{el.showPicker();}catch(e){}}
               }}>
-                <div style={{background:'#f8fafc',border:`1.5px solid ${formTrabajador.fechaNac?BASE.navy:BASE.border}`,borderRadius:'10px',padding:'12px 16px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                  <p style={{fontSize:'15px',fontWeight:'700',color:formTrabajador.fechaNac?BASE.navy:'#94a3b8'}}>
+                <div style={{background:BASE.bgSoft,border:`1.5px solid ${formTrabajador.fechaNac?BASE.navy:BASE.border}`,borderRadius:'10px',padding:'12px 16px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                  <p style={{fontSize:'15px',fontWeight:'700',color:formTrabajador.fechaNac?BASE.navy:BASE.mutedSoft}}>
                     {formTrabajador.fechaNac ? (() => {
                       const [y,m,d]=formTrabajador.fechaNac.split('-');
                       const MESES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -449,9 +449,9 @@ export default function Personal({ cuadrillasDB, personalDB, configuracion, show
 
             {/* NUEVO: Selector de cuadrilla — solo si cargo NO es Capataz */}
             {formTrabajador.cargo !== 'Capataz' && (
-              <div style={{background:'#eff6ff',borderRadius:'10px',border:'1px solid #bfdbfe',padding:'14px'}}>
+              <div style={{background:BASE.navySoft,borderRadius:'10px',border:`1px solid ${BASE.border}`,padding:'14px'}}>
                 <label style={{fontSize:'10px',fontWeight:'700',color:BASE.navy,letterSpacing:'0.6px',display:'block',marginBottom:'6px'}}>
-                  👥 ASIGNAR A CUADRILLA <span style={{color:'#94a3b8',fontWeight:'400'}}>(opcional)</span>
+                  👥 ASIGNAR A CUADRILLA <span style={{color:BASE.mutedSoft,fontWeight:'400'}}>(opcional)</span>
                 </label>
                 <select value={formTrabajador.cuadrillaId} onChange={e=>setFormTrabajador(p=>({...p,cuadrillaId:e.target.value}))}
                   style={{...inp({fontSize:'13px'}),background:'#fff'}}>
@@ -477,7 +477,7 @@ export default function Personal({ cuadrillasDB, personalDB, configuracion, show
               <button onClick={guardarTrabajador} style={{flex:2,padding:'14px',background:BASE.navy,color:'#fff',border:'none',borderRadius:'10px',fontWeight:'700',cursor:'pointer',fontSize:'14px'}}>
                 💾 {modalTrabajador==='nuevo'?'Registrar':'Guardar'}
               </button>
-              <button onClick={()=>setModalTrabajador(null)} style={{flex:1,padding:'14px',background:'#f1f5f9',color:BASE.muted,border:'none',borderRadius:'10px',fontWeight:'700',cursor:'pointer',fontSize:'14px'}}>Cancelar</button>
+              <button onClick={()=>setModalTrabajador(null)} style={{flex:1,padding:'14px',background:BASE.bgSoft,color:BASE.muted,border:'none',borderRadius:'10px',fontWeight:'700',cursor:'pointer',fontSize:'14px'}}>Cancelar</button>
             </div>
           </div>
         </Modal>
@@ -488,7 +488,7 @@ export default function Personal({ cuadrillasDB, personalDB, configuracion, show
         {[{id:'trabajadores',l:'🪪 Trabajadores'},{id:'cuadrillas',l:'👷 Cuadrillas'}].map(t=>(
           <button key={t.id} onClick={()=>setGTab(t.id)} style={{
             padding:'10px 20px',borderRadius:'8px',border:'none',
-            background:gTab===t.id?BASE.orange:'#e2e8f0',
+            background:gTab===t.id?BASE.gold:BASE.bgSoft,
             color:gTab===t.id?'#fff':BASE.muted,
             fontSize:'13px',fontWeight:'700',cursor:'pointer'
           }}>{t.l}</button>
@@ -532,10 +532,10 @@ export default function Personal({ cuadrillasDB, personalDB, configuracion, show
           <div style={{display:'flex',gap:'10px',marginBottom:'12px',flexWrap:'wrap'}}>
             <input type="text" value={busqTrab} onChange={e=>setBusqTrab(e.target.value)}
               placeholder="🔍 Buscar por nombre o DNI..."
-              style={{flex:2,minWidth:'200px',padding:'9px 14px',borderRadius:'8px',border:'1px solid #e2e8f0',fontSize:'12px',outline:'none'}}
+              style={{flex:2,minWidth:'200px',padding:'9px 14px',borderRadius:'8px',border:`1px solid ${BASE.border}`,fontSize:'12px',outline:'none'}}
             />
             <select value={filtroCargTrab} onChange={e=>setFiltroCargTrab(e.target.value)}
-              style={{flex:1,minWidth:'140px',padding:'9px 12px',borderRadius:'8px',border:'1px solid #e2e8f0',fontSize:'12px',outline:'none',fontWeight:'600'}}>
+              style={{flex:1,minWidth:'140px',padding:'9px 12px',borderRadius:'8px',border:`1px solid ${BASE.border}`,fontSize:'12px',outline:'none',fontWeight:'600'}}>
               <option value="">Todos los cargos</option>
               <optgroup label="Mano de obra">
                 {CARGOS.map(c=><option key={c} value={c}>{c} ({personalDB.filter(p=>p.cargo===c).length})</option>)}
@@ -574,21 +574,21 @@ export default function Personal({ cuadrillasDB, personalDB, configuracion, show
                       const edad = p.fechaNac ? Math.floor((new Date()-new Date(p.fechaNac))/31557600000) : null;
                       const esStaff = tipoDeCargo(p.cargo)==='staff';
                       return (
-                        <tr key={p.id} style={{background:idx%2===0?BASE.white:'#f8fafc',borderBottom:`1px solid ${BASE.border}`}}>
+                        <tr key={p.id} style={{background:idx%2===0?BASE.white:BASE.bgSoft,borderBottom:`1px solid ${BASE.border}`}}>
                           <td style={{padding:'10px 12px',fontWeight:'600',color:BASE.text}}>{p.nombre}</td>
                           <td style={{padding:'10px 12px',color:BASE.muted,fontFamily:'monospace'}}>{p.dni||'—'}</td>
                           <td style={{padding:'10px 12px'}}>
-                            <span style={{background:'#e2e8f0',color:BASE.text,padding:'2px 8px',borderRadius:'20px',fontSize:'11px',fontWeight:'700'}}>{CARGOS_CORTO[p.cargo]||p.cargo}</span>
-                            <span style={{marginLeft:'6px',background:esStaff?BASE.navy+'18':BASE.orange+'18',color:esStaff?BASE.navy:BASE.orange,padding:'2px 8px',borderRadius:'20px',fontSize:'10px',fontWeight:'700'}}>{esStaff?'Staff':'Obrero'}</span>
+                            <span style={{background:BASE.border,color:BASE.text,padding:'2px 8px',borderRadius:'20px',fontSize:'11px',fontWeight:'700'}}>{CARGOS_CORTO[p.cargo]||p.cargo}</span>
+                            <span style={{marginLeft:'6px',background:esStaff?BASE.navy+'18':BASE.gold+'18',color:esStaff?BASE.navy:BASE.gold,padding:'2px 8px',borderRadius:'20px',fontSize:'10px',fontWeight:'700'}}>{esStaff?'Staff':'Obrero'}</span>
                           </td>
                           <td style={{padding:'10px 12px',color:cuad?BASE.navy:BASE.muted,fontSize:'11px',fontWeight:cuad?'600':'400'}}>
-                            {cuad ? `${cuad.capataz} (${cuad.especialidad||'General'})` : <span style={{color:'#cbd5e1'}}>Sin cuadrilla</span>}
+                            {cuad ? `${cuad.capataz} (${cuad.especialidad||'General'})` : <span style={{color:BASE.mutedSoft}}>Sin cuadrilla</span>}
                           </td>
                           <td style={{padding:'10px 12px',color:BASE.muted,fontSize:'11px'}}>
-                            {p.fechaNac||'—'}{edad?<span style={{marginLeft:'6px',color:'#94a3b8'}}>({edad} años)</span>:''}
+                            {p.fechaNac||'—'}{edad?<span style={{marginLeft:'6px',color:BASE.mutedSoft}}>({edad} años)</span>:''}
                           </td>
                           <td style={{padding:'10px 12px',display:'flex',gap:'6px'}}>
-                            <button onClick={()=>abrirModalTrabajador({id:p.id,...p})} style={{padding:'4px 10px',background:'#eff6ff',color:BASE.navy,border:'none',borderRadius:'6px',cursor:'pointer',fontSize:'11px',fontWeight:'700'}}>✏️</button>
+                            <button onClick={()=>abrirModalTrabajador({id:p.id,...p})} style={{padding:'4px 10px',background:BASE.navySoft,color:BASE.navy,border:'none',borderRadius:'6px',cursor:'pointer',fontSize:'11px',fontWeight:'700'}}>✏️</button>
                             <button onClick={()=>eliminarTrabajador(p.id)} style={{padding:'4px 10px',background:'#fee2e2',color:'#dc2626',border:'none',borderRadius:'6px',cursor:'pointer',fontSize:'11px',fontWeight:'700'}}>✕</button>
                           </td>
                         </tr>
@@ -638,18 +638,18 @@ export default function Personal({ cuadrillasDB, personalDB, configuracion, show
                       </span>
                     </div>
                     <div style={{display:'flex',gap:'6px'}}>
-                      <button onClick={()=>abrirModalCuadrilla({id,...c})} style={{padding:'6px 12px',background:'#eff6ff',color:BASE.navy,border:'none',borderRadius:'7px',cursor:'pointer',fontSize:'12px',fontWeight:'700'}}>✏️ Editar</button>
+                      <button onClick={()=>abrirModalCuadrilla({id,...c})} style={{padding:'6px 12px',background:BASE.navySoft,color:BASE.navy,border:'none',borderRadius:'7px',cursor:'pointer',fontSize:'12px',fontWeight:'700'}}>✏️ Editar</button>
                       <button onClick={()=>eliminarCuadrilla(id)} style={{padding:'6px 12px',background:'#fee2e2',color:'#dc2626',border:'none',borderRadius:'7px',cursor:'pointer',fontSize:'12px',fontWeight:'700'}}>🗑️</button>
                     </div>
                   </div>
                   <div style={{display:'flex',flexDirection:'column',gap:'4px'}}>
                     {(c.miembros||[]).length===0
-                      ? <p style={{fontSize:'12px',color:'#94a3b8',fontStyle:'italic'}}>Sin miembros asignados</p>
+                      ? <p style={{fontSize:'12px',color:BASE.mutedSoft,fontStyle:'italic'}}>Sin miembros asignados</p>
                       : (c.miembros||[]).map((m,i)=>(
-                        <div key={i} style={{display:'flex',alignItems:'center',gap:'8px',padding:'6px 10px',background:'#f8fafc',borderRadius:'7px'}}>
+                        <div key={i} style={{display:'flex',alignItems:'center',gap:'8px',padding:'6px 10px',background:BASE.bgSoft,borderRadius:'7px'}}>
                           <span style={{width:'20px',height:'20px',borderRadius:'50%',background:BASE.navy,color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'10px',fontWeight:'800',flexShrink:0}}>{LETRAS[i]||i+1}</span>
                           <span style={{flex:1,fontSize:'12px',fontWeight:'600',color:BASE.text}}>{m.nombre}</span>
-                          <span style={{fontSize:'10px',color:BASE.muted,background:'#e2e8f0',padding:'2px 7px',borderRadius:'20px'}}>{CARGOS_CORTO[m.cargo]||m.cargo}</span>
+                          <span style={{fontSize:'10px',color:BASE.muted,background:BASE.border,padding:'2px 7px',borderRadius:'20px'}}>{CARGOS_CORTO[m.cargo]||m.cargo}</span>
                         </div>
                       ))}
                   </div>

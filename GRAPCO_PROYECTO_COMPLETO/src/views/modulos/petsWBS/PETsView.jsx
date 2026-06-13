@@ -187,13 +187,13 @@ export default function PETsView({ showToast }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         {/* HEADER */}
         <div style={{
-          background: 'linear-gradient(135deg, #ec4899, #be185d)',
+          background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
           borderRadius: '14px', padding: '20px 26px', color: '#fff',
           borderLeft: `5px solid ${BASE.gold}`,
-          boxShadow: '0 4px 20px rgba(236,72,153,0.25)',
+          boxShadow: BASE.shadowLg,
         }}>
           <p style={{ fontSize: '10px', fontWeight: '900', color: BASE.gold, letterSpacing: '1.6px' }}>
-            📜 PETs · PROCEDIMIENTOS ESCRITOS DE TRABAJO SEGURO · VINCULADOS AL WBS
+            PETs · PROCEDIMIENTOS ESCRITOS DE TRABAJO SEGURO · VINCULADOS AL WBS
           </p>
           <h2 style={{ fontSize: '22px', fontWeight: '900', marginTop: '4px' }}>
             Cada actividad WBS tiene su PET asociado
@@ -206,7 +206,7 @@ export default function PETsView({ showToast }) {
         <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', padding: '14px 18px' }}>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
             <div style={{ flex: '1 1 200px' }}>
-              <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>📜 PETs registrados</p>
+              <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>PETs registrados</p>
               <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
                 {pets.length} PETs · {pets.reduce((s, p) => s + (p.firmasOperarios?.length || 0), 0)} firmas totales
               </p>
@@ -217,7 +217,7 @@ export default function PETsView({ showToast }) {
               <>
                 <button onClick={importarPETsBase} disabled={importando} style={{
                   padding: '10px 18px', borderRadius: '8px',
-                  background: importando ? '#94a3b8' : BASE.gold,
+                  background: importando ? BASE.mutedSoft : BASE.gold,
                   color: BASE.navy, border: 'none', fontSize: '12px', fontWeight: '900',
                   cursor: importando ? 'wait' : 'pointer', letterSpacing: '0.5px',
                   boxShadow: '0 3px 10px rgba(245,158,11,0.45)',
@@ -227,10 +227,10 @@ export default function PETsView({ showToast }) {
                 </button>
                 <button onClick={() => setEditando('NUEVO')} style={{
                   padding: '10px 20px', borderRadius: '8px',
-                  background: 'linear-gradient(135deg, #ec4899, #be185d)',
+                  background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
                   color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900',
                   cursor: 'pointer', letterSpacing: '0.5px',
-                  boxShadow: '0 4px 12px rgba(236,72,153,0.4)',
+                  boxShadow: BASE.shadowMd,
                 }}>➕ NUEVO PET</button>
               </>
             )}
@@ -250,13 +250,13 @@ export default function PETsView({ showToast }) {
               return (
                 <div key={p.id} style={{
                   background: BASE.white, border: `1px solid ${BASE.border}`,
-                  borderLeft: `5px solid #ec4899`,
+                  borderLeft: `5px solid ${BASE.navy}`,
                   borderRadius: '14px', padding: '16px 20px',
                   boxShadow: '0 2px 6px rgba(15,23,42,0.04)',
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: '11px', fontWeight: '900', color: '#ec4899', fontFamily: 'monospace' }}>
+                      <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.navy, fontFamily: 'monospace' }}>
                         {p.codigo} · v{p.version || 1}
                       </p>
                       <p style={{ fontSize: '14px', fontWeight: '900', color: BASE.navy, marginTop: '4px', lineHeight: 1.3 }}>
@@ -274,7 +274,7 @@ export default function PETsView({ showToast }) {
                   {/* Actividades vinculadas */}
                   <div style={{ marginTop: '10px' }}>
                     <p style={{ fontSize: '10px', fontWeight: '900', color: BASE.muted, letterSpacing: '0.5px' }}>
-                      📋 APLICA A {actividadesAplica.length} ACTIVIDAD(ES) WBS
+                      APLICA A {actividadesAplica.length} ACTIVIDAD(ES) WBS
                     </p>
                     {actividadesAplica.length === 0 ? (
                       <p style={{ fontSize: '11px', color: BASE.red, marginTop: '4px', fontStyle: 'italic' }}>
@@ -302,12 +302,12 @@ export default function PETsView({ showToast }) {
                   {/* Acciones */}
                   <div style={{ display: 'flex', gap: '6px', marginTop: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
                     <span style={{
-                      background: '#dbeafe', color: '#1e40af',
+                      background: BASE.navySoft, color: BASE.navy,
                       padding: '5px 10px', borderRadius: '8px',
                       fontSize: '10px', fontWeight: '900', letterSpacing: '0.4px',
                     }}>✍️ {firmas} firmas</span>
 
-                    <button onClick={() => setVerPdf(p)} style={btnAct('#dc2626')}>
+                    <button onClick={() => setVerPdf(p)} style={btnAct(BASE.gold)}>
                       📄 PDF
                     </button>
 
@@ -326,7 +326,7 @@ export default function PETsView({ showToast }) {
 
                     {(rol === 'admin' || rol === 'ingeniero' || rol === 'calidad') && (
                       <>
-                        <button onClick={() => setEditando(p.id)} style={btnAct('#ec4899')}>EDITAR</button>
+                        <button onClick={() => setEditando(p.id)} style={btnAct(BASE.navy)}>EDITAR</button>
                         <button onClick={() => eliminar(p.id, p.codigo)} style={btnAct(BASE.red)}>×</button>
                       </>
                     )}
@@ -353,7 +353,7 @@ export default function PETsView({ showToast }) {
         {verFirmas && (
           <Modal onClose={() => setVerFirmas(null)} maxWidth="600px">
             <h3 style={{ fontSize: '17px', fontWeight: '900', color: BASE.navy, marginBottom: '14px' }}>
-              📜 {verFirmas.codigo} · {verFirmas.titulo}
+              {verFirmas.codigo} · {verFirmas.titulo}
             </h3>
 
             {verFirmas.alcance && <Detail label="Alcance" texto={verFirmas.alcance} />}
@@ -363,7 +363,7 @@ export default function PETsView({ showToast }) {
 
             <div style={{ marginTop: '16px' }}>
               <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.muted, letterSpacing: '0.5px' }}>
-                ✍️ FIRMAS DE OPERARIOS ({verFirmas.firmasOperarios?.length || 0})
+                FIRMAS DE OPERARIOS ({verFirmas.firmasOperarios?.length || 0})
               </p>
               {(verFirmas.firmasOperarios || []).length === 0 ? (
                 <p style={{ fontSize: '11.5px', color: BASE.muted, fontStyle: 'italic', marginTop: '6px' }}>
@@ -428,7 +428,7 @@ const lblS = { fontSize: '9.5px', fontWeight: '900', color: BASE.muted, letterSp
 const inpS = { width: '100%', padding: '9px 12px', borderRadius: '8px', border: `1.5px solid ${BASE.border}`, fontSize: '12.5px', fontWeight: '600', background: '#fff' };
 const selS = { ...inpS, cursor: 'pointer', fontWeight: '700' };
 const btnCancel = { padding: '11px 22px', borderRadius: '8px', background: BASE.bgSoft, color: BASE.muted, border: 'none', fontSize: '12px', fontWeight: '800', cursor: 'pointer' };
-const btnSave = { padding: '11px 22px', borderRadius: '8px', background: 'linear-gradient(135deg, #ec4899, #be185d)', color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900', cursor: 'pointer', letterSpacing: '0.4px', boxShadow: '0 4px 12px rgba(236,72,153,0.4)' };
+const btnSave = { padding: '11px 22px', borderRadius: '8px', background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900', cursor: 'pointer', letterSpacing: '0.4px', boxShadow: BASE.shadowMd };
 const btnAct = (color) => ({
   padding: '5px 11px', borderRadius: '6px', background: color, color: '#fff',
   border: 'none', fontSize: '10px', fontWeight: '900', cursor: 'pointer', letterSpacing: '0.4px',

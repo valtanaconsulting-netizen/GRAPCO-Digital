@@ -244,13 +244,13 @@ export default function ProtocoloEditor({ protocoloId, showToast, onClose }) {
 
       {/* Indicador de siguiente accion */}
       <div style={{
-        background: '#dbeafe',
-        border: `1px solid #2563eb55`,
-        borderLeft: `4px solid #2563eb`,
+        background: BASE.navySoft,
+        border: `1px solid ${BASE.navy}55`,
+        borderLeft: `4px solid ${BASE.navy}`,
         borderRadius: '12px', padding: '12px 18px',
       }}>
-        <p style={{ fontSize: '11px', fontWeight: '900', color: '#1e40af', letterSpacing: '0.5px' }}>
-          📍 SIGUIENTE ACCION
+        <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.5px' }}>
+          SIGUIENTE ACCION
         </p>
         <p style={{ fontSize: '13px', color: BASE.text, marginTop: '4px' }}>{estadoCalc.siguienteAccion}</p>
       </div>
@@ -267,7 +267,7 @@ export default function ProtocoloEditor({ protocoloId, showToast, onClose }) {
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         }}>
           <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.5px' }}>
-            📋 CHECKLIST ({protocolo.checklist?.length || 0} items)
+            CHECKLIST ({protocolo.checklist?.length || 0} items)
           </p>
           <button onClick={guardarChecklist} disabled={guardando} style={{
             padding: '8px 18px', borderRadius: '8px',
@@ -347,7 +347,7 @@ export default function ProtocoloEditor({ protocoloId, showToast, onClose }) {
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.5px' }}>
-            📸 EVIDENCIA FOTOGRÁFICA ({protocolo.fotos?.length || 0})
+            EVIDENCIA FOTOGRÁFICA ({protocolo.fotos?.length || 0})
           </p>
           <button onClick={guardarChecklist} disabled={guardando} style={{
             padding: '6px 14px', borderRadius: '8px',
@@ -371,11 +371,11 @@ export default function ProtocoloEditor({ protocoloId, showToast, onClose }) {
       <div style={{
         background: BASE.white, border: `1px solid ${BASE.border}`,
         borderRadius: '14px', padding: '18px 22px',
-        borderLeft: `5px solid #7c3aed`,
+        borderLeft: `5px solid ${BASE.navy}`,
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.5px' }}>
-            ✍️ FIRMA DEL RESIDENTE / INGENIERO
+            FIRMA DEL RESIDENTE / INGENIERO
           </p>
           {protocolo.firmaResidente?.uid ? (
             <span style={{
@@ -423,7 +423,7 @@ export default function ProtocoloEditor({ protocoloId, showToast, onClose }) {
               }} />
             <button onClick={firmarResidente} disabled={guardando} style={{
               marginTop: '10px', padding: '11px 22px', borderRadius: '8px',
-              background: `linear-gradient(135deg, #7c3aed, #5b21b6)`,
+              background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
               color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900',
               cursor: guardando ? 'not-allowed' : 'pointer', letterSpacing: '0.5px',
               opacity: guardando ? 0.5 : 1,
@@ -442,7 +442,7 @@ export default function ProtocoloEditor({ protocoloId, showToast, onClose }) {
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.5px' }}>
-            👁️ FIRMA DEL SUPERVISOR DEL CLIENTE
+            FIRMA DEL SUPERVISOR DEL CLIENTE
           </p>
           {protocolo.firmaSupervisor?.uid ? (
             <span style={{

@@ -69,10 +69,10 @@ export default function TipoCambioView({ showToast }) {
       <div style={{
         background: BASE.white, border: `1px solid ${BASE.border}`,
         borderRadius: '14px', padding: '18px 22px',
-        borderLeft: `5px solid #2563eb`,
+        borderLeft: `5px solid ${BASE.navy}`,
       }}>
-        <p style={{ fontSize: '11px', fontWeight: '900', color: '#2563eb', letterSpacing: '0.6px' }}>
-          💱 TIPO DE CAMBIO · SUNAT (PEN / USD)
+        <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.6px' }}>
+          TIPO DE CAMBIO · SUNAT (PEN / USD)
         </p>
         <h3 style={{ fontSize: '17px', fontWeight: '900', color: BASE.navy, marginTop: '4px' }}>
           Paridad Soles / Dolares
@@ -86,7 +86,7 @@ export default function TipoCambioView({ showToast }) {
           <input type="date" value={fechaConsulta} onChange={e => setFechaConsulta(e.target.value)} style={inpS} />
           <button onClick={fetchTC} disabled={busy} style={{
             padding: '9px 18px', borderRadius: '8px',
-            background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+            background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
             color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900',
             cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? 0.5 : 1,
           }}>
@@ -152,8 +152,8 @@ export default function TipoCambioView({ showToast }) {
                     <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace', fontWeight: '800', color: '#dc2626' }}>{tc.venta?.toFixed(4)}</td>
                     <td style={td()}>
                       <span style={{
-                        background: tc.fuente === 'SUNAT' ? '#dbeafe' : '#fef3c7',
-                        color: tc.fuente === 'SUNAT' ? '#1e40af' : '#92400e',
+                        background: tc.fuente === 'SUNAT' ? BASE.navySoft : BASE.goldLight,
+                        color: tc.fuente === 'SUNAT' ? BASE.navy : BASE.goldDark,
                         padding: '3px 9px', borderRadius: '10px',
                         fontSize: '10px', fontWeight: '900',
                       }}>{tc.fuente}</span>

@@ -10,7 +10,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { collection, onSnapshot, query, orderBy, addDoc, updateDoc, doc, serverTimestamp, deleteDoc, writeBatch, getDocs } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
-import { BASE } from '../../../utils/styles';
+import { BASE, CHART_PALETTE } from '../../../utils/styles';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
 import { calcularCostoAPU, fmtSoles, fmtPct } from '../../../utils/planMaestroAnalytics';
@@ -187,7 +187,7 @@ export default function APUsList({ showToast, onEdit, onNuevo }) {
     const costo = calcularCostoAPU(a);
     const scope = a.scope || (a.proyectoId ? SCOPE_PROYECTO : SCOPE_EMPRESA);
     const esEmpresa = scope === SCOPE_EMPRESA;
-    const cScope = esEmpresa ? BASE.gold : '#7c3aed';
+    const cScope = esEmpresa ? BASE.gold : CHART_PALETTE[3];
     return (
       <div key={a.id} style={{
         background: BASE.white, border: `1px solid ${BASE.border}`,
@@ -235,7 +235,7 @@ export default function APUsList({ showToast, onEdit, onNuevo }) {
                 S10: <strong style={{ color: BASE.navy }}>{fmtSoles(ref)}</strong>
               </span>
               <span style={{ fontSize: '10.5px', fontWeight: '900', color: col, fontFamily: 'monospace' }}>
-                {ico} {desvPct >= 0 ? '+' : ''}{desvPct.toFixed(1)}%
+                {ico} {desvPct >= 0 ? '+' : ''}{Math.round(desvPct)}%
               </span>
             </div>
           );
@@ -246,7 +246,7 @@ export default function APUsList({ showToast, onEdit, onNuevo }) {
             <button onClick={() => onEdit?.(a)} style={btnAct(BASE.navy)}>✏️ Editar</button>
           )}
           {esEmpresa && proyectoActivoId && (
-            <button onClick={() => copiarAlProyecto(a)} style={btnAct('#7c3aed')}>📋 Copiar</button>
+            <button onClick={() => copiarAlProyecto(a)} style={btnAct(CHART_PALETTE[3])}>📋 Copiar</button>
           )}
           {!esEmpresa && rol === 'admin' && (
             <button onClick={() => promoverAEmpresa(a)} style={btnAct(BASE.gold)}>🌎 Promover</button>
@@ -266,10 +266,10 @@ export default function APUsList({ showToast, onEdit, onNuevo }) {
       <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '10px', padding: '10px 14px' }}>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 180px' }}>
-            <p style={{ fontSize: '12px', fontWeight: '900', color: BASE.navy }}>💰 Catálogo APUs</p>
+            <p style={{ fontSize: '12px', fontWeight: '900', color: BASE.navy }}>Catálogo APUs</p>
             <p style={{ fontSize: '10px', color: BASE.muted, marginTop: '1px' }}>
               <span style={{ color: BASE.gold, fontWeight: '900' }}>🌎 {conteoEmpresa} empresa</span> ·
-              <span style={{ color: '#7c3aed', fontWeight: '900', marginLeft: '5px' }}>🏗️ {conteoProyecto} proyecto</span>
+              <span style={{ color: CHART_PALETTE[3], fontWeight: '900', marginLeft: '5px' }}>🏗️ {conteoProyecto} proyecto</span>
               {proyectoActivo && <span style={{ color: BASE.muted, marginLeft: '5px' }}>· {proyectoActivo.nombre}</span>}
             </p>
           </div>
@@ -278,7 +278,7 @@ export default function APUsList({ showToast, onEdit, onNuevo }) {
             {[
               { id: 'todos',         l: 'Todos',         c: BASE.navy },
               { id: SCOPE_EMPRESA,   l: '🌎 Empresa',    c: BASE.gold },
-              { id: SCOPE_PROYECTO,  l: '🏗️ Proyecto',   c: '#7c3aed' },
+              { id: SCOPE_PROYECTO,  l: '🏗️ Proyecto',   c: CHART_PALETTE[3] },
             ].map(t => {
               const activo = filtroScope === t.id;
               return (
@@ -385,10 +385,10 @@ function Mini({ label, valor, color, chico }) {
 const inpS = { padding: '7px 10px', borderRadius: '8px', border: `1.5px solid ${BASE.border}`, fontSize: '12px', fontWeight: '600', background: '#fff' };
 const btnNuevo = {
   padding: '8px 14px', borderRadius: '8px',
-  background: 'linear-gradient(135deg, #6366f1, #4338ca)',
+  background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
   color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900',
   cursor: 'pointer', letterSpacing: '0.3px', whiteSpace: 'nowrap',
-  boxShadow: '0 3px 10px rgba(99,102,241,0.35)',
+  boxShadow: BASE.shadowSm,
 };
 const btnAct = (color) => ({
   padding: '5px 10px', borderRadius: '6px', background: color, color: '#fff',

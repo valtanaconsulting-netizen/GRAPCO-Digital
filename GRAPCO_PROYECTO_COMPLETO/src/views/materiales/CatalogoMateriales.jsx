@@ -120,7 +120,7 @@ export default function CatalogoMateriales({ showToast }) {
         display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap',
       }}>
         <div style={{ flex: '1 1 200px' }}>
-          <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>📋 Catalogo de Materiales</p>
+          <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>Catalogo de Materiales</p>
           <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
             {materiales.length} en total · {filtrados.length} mostrados
             {sinS10 > 0 && (
@@ -144,10 +144,10 @@ export default function CatalogoMateriales({ showToast }) {
         </select>
         <button onClick={abrirNuevo} style={{
           padding: '10px 20px', borderRadius: '8px',
-          background: `linear-gradient(135deg, #7c3aed, #5b21b6)`,
+          background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
           color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900',
           cursor: 'pointer', letterSpacing: '0.5px',
-          boxShadow: '0 4px 12px rgba(124,58,237,0.35)',
+          boxShadow: '0 4px 12px rgba(15,42,71,0.35)',
         }}>
           ➕ NUEVO MATERIAL
         </button>
@@ -180,7 +180,7 @@ export default function CatalogoMateriales({ showToast }) {
                   return (
                     <tr key={m.id} style={{ background: i % 2 === 0 ? BASE.white : BASE.bgSoft, borderBottom: `1px solid ${BASE.border}` }}>
                       <td style={{ ...td(), fontFamily: 'monospace', fontSize: '11px', fontWeight: '800', color: BASE.navy }}>{m.codigo}</td>
-                      <td style={{ ...td(), fontFamily: 'monospace', fontSize: '11px', fontWeight: '700', color: m.codigoS10 ? '#7c3aed' : '#dc2626' }}>
+                      <td style={{ ...td(), fontFamily: 'monospace', fontSize: '11px', fontWeight: '700', color: m.codigoS10 ? BASE.navy : '#dc2626' }}>
                         {m.codigoS10 || '⚠ FALTA'}
                       </td>
                       <td style={{ ...td(), fontWeight: '700' }}>{m.nombre}</td>
@@ -215,7 +215,7 @@ export default function CatalogoMateriales({ showToast }) {
       {editando && (
         <Modal onClose={() => setEditando(null)}>
           <h3 style={{ fontSize: '17px', fontWeight: '900', color: BASE.navy, marginBottom: '14px' }}>
-            {editando === 'NUEVO' ? '➕ Nuevo Material' : '✏️ Editar Material'}
+            {editando === 'NUEVO' ? 'Nuevo Material' : 'Editar Material'}
           </h3>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '12px' }}>
@@ -240,7 +240,7 @@ export default function CatalogoMateriales({ showToast }) {
 
           <div style={{ background: BASE.bgSoft, padding: '12px 14px', borderRadius: '10px', marginTop: '14px' }}>
             <p style={{ fontSize: '11px', fontWeight: '800', color: BASE.navy, marginBottom: '8px', letterSpacing: '0.4px' }}>
-              📐 VINCULO CON APU (PARA RECONCILIACION)
+              VINCULO CON APU (PARA RECONCILIACION)
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', gap: '10px' }}>
               <Input label="Partida APU" value={form.partidaAPU} onChange={v => setForm({...form, partidaAPU: v})} placeholder="Ej: CONCRETO" />
@@ -283,10 +283,10 @@ export default function CatalogoMateriales({ showToast }) {
             }}>Cancelar</button>
             <button onClick={guardar} disabled={guardando} style={{
               padding: '11px 22px', borderRadius: '8px',
-              background: `linear-gradient(135deg, #7c3aed, #5b21b6)`,
+              background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
               color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900',
               cursor: guardando ? 'not-allowed' : 'pointer', opacity: guardando ? 0.5 : 1,
-              letterSpacing: '0.4px', boxShadow: '0 4px 12px rgba(124,58,237,0.35)',
+              letterSpacing: '0.4px', boxShadow: '0 4px 12px rgba(15,42,71,0.35)',
             }}>
               {guardando ? '⏳ Guardando...' : '💾 GUARDAR'}
             </button>
@@ -331,7 +331,7 @@ function Select({ label, value, onChange, options }) {
 function Toggle({ label, checked, onChange }) {
   return (
     <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: '700', color: BASE.text }}>
-      <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} style={{ width: '17px', height: '17px', accentColor: '#7c3aed', cursor: 'pointer' }} />
+      <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} style={{ width: '17px', height: '17px', accentColor: BASE.navy, cursor: 'pointer' }} />
       {label}
     </label>
   );

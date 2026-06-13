@@ -4,7 +4,7 @@
 // y consultar el historial de sus reportes/inspecciones.
 
 import React, { useState } from 'react';
-import { BASE } from '../../utils/styles';
+import { BASE, CHART_PALETTE } from '../../utils/styles';
 import ReporteIncidencia from '../capataz/ReporteIncidencia';
 import InspeccionSeguridad from './InspeccionSeguridad';
 import HistorialSeguridad from './HistorialSeguridad';
@@ -14,9 +14,9 @@ import ATSGaleria from './ATSGaleria';
 const TABS = [
   { id: 'dashboard',   l: 'Dashboard',         icono: '📊', desc: 'KPIs SSOMA · tendencias',         color: BASE.navy },
   { id: 'reportar',    l: 'Reportar',          icono: '🚨', desc: 'Incidencia inmediata + fotos',    color: BASE.red },
-  { id: 'inspeccion',  l: 'Inspección diaria', icono: '✅', desc: 'Checklist EPP · accesos · andamios', color: '#0ea5e9' },
-  { id: 'ats',         l: 'ATS',               icono: '📋', desc: 'Análisis de trabajo seguro diario', color: '#0d9488' },
-  { id: 'historial',   l: 'Mi historial',      icono: '🗂️', desc: 'Reportes e inspecciones',         color: '#7c3aed' },
+  { id: 'inspeccion',  l: 'Inspección diaria', icono: '✅', desc: 'Checklist EPP · accesos · andamios', color: BASE.navyLight },
+  { id: 'ats',         l: 'ATS',               icono: '📋', desc: 'Análisis de trabajo seguro diario', color: CHART_PALETTE[2] },
+  { id: 'historial',   l: 'Mi historial',      icono: '🗂️', desc: 'Reportes e inspecciones',         color: BASE.gold },
 ];
 
 export default function SeguridadPanel({ showToast }) {
@@ -34,7 +34,7 @@ export default function SeguridadPanel({ showToast }) {
         boxShadow: `0 4px 20px ${BASE.red}55`,
       }}>
         <p style={{ fontSize: '10px', fontWeight: '900', color: BASE.gold, letterSpacing: '1.6px' }}>
-          ⚠️ SSOMA · SEGURIDAD · SALUD · MEDIO AMBIENTE
+          SSOMA · SEGURIDAD · SALUD · MEDIO AMBIENTE
         </p>
         <h2 style={{ fontSize: '22px', fontWeight: '900', marginTop: '4px' }}>
           Inspecciones y reporte de incidencias

@@ -5,7 +5,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { collection, addDoc, updateDoc, doc, onSnapshot, serverTimestamp, query, orderBy } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../firebaseConfig';
-import { BASE } from '../../utils/styles';
+import { BASE, CHART_PALETTE } from '../../utils/styles';
 import { useAuth } from '../../contexts/AuthContext';
 import { autogenerarRDOdesdeProduccion, fmtNumero } from '../../utils/calidadOTAnalytics';
 import Modal from '../../components/Modal';
@@ -152,24 +152,24 @@ export default function RDOView({ showToast }) {
       <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', padding: '14px 18px' }}>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 200px' }}>
-            <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>📅 Reportes Diarios de Obra</p>
+            <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>Reportes Diarios de Obra</p>
             <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
               {rdos.length} RDOs · {rdos.filter(r => r.estado === 'firmado').length} firmados
             </p>
           </div>
           <button onClick={generarRDOHoy} disabled={generando} style={{
             padding: '10px 20px', borderRadius: '8px',
-            background: `linear-gradient(135deg, #0d9488, #0f766e)`,
+            background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
             color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900',
             cursor: generando ? 'not-allowed' : 'pointer', letterSpacing: '0.5px',
             opacity: generando ? 0.5 : 1,
-            boxShadow: '0 4px 12px rgba(13,148,136,0.4)',
+            boxShadow: '0 4px 12px rgba(15,42,71,0.4)',
           }}>
             {generando ? '⏳ Generando...' : '🤖 GENERAR RDO HOY'}
           </button>
         </div>
         <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '8px', fontStyle: 'italic' }}>
-          🤖 La autogeneracion toma datos de Tareos + LPS + Cuadrillas del dia. Solo necesitas revisar y firmar.
+          La autogeneracion toma datos de Tareos + LPS + Cuadrillas del dia. Solo necesitas revisar y firmar.
         </p>
       </div>
 
@@ -210,7 +210,7 @@ export default function RDOView({ showToast }) {
                   </p>
                 )}
                 {r.autogenerado && (
-                  <p style={{ fontSize: '9.5px', color: '#0d9488', fontWeight: '900', marginTop: '4px', letterSpacing: '0.5px' }}>
+                  <p style={{ fontSize: '9.5px', color: CHART_PALETTE[2], fontWeight: '900', marginTop: '4px', letterSpacing: '0.5px' }}>
                     🤖 AUTOGENERADO
                   </p>
                 )}
@@ -224,12 +224,12 @@ export default function RDOView({ showToast }) {
       {editando && (
         <Modal onClose={() => setEditando(null)} maxWidth="700px">
           <h3 style={{ fontSize: '17px', fontWeight: '900', color: BASE.navy, marginBottom: '14px' }}>
-            📅 RDO {editando.numero}
+            RDO {editando.numero}
           </h3>
 
           {/* Personal */}
           <div style={{ background: BASE.bgSoft, padding: '14px', borderRadius: '10px', marginBottom: '12px' }}>
-            <p style={lblSec}>👷 PERSONAL EN OBRA</p>
+            <p style={lblSec}>PERSONAL EN OBRA</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '10px' }}>
               <Field label="Obreros">
                 <input type="number" value={editando.personal?.obreros || 0}
@@ -254,7 +254,7 @@ export default function RDOView({ showToast }) {
 
           {/* Clima */}
           <div style={{ background: BASE.bgSoft, padding: '14px', borderRadius: '10px', marginBottom: '12px' }}>
-            <p style={lblSec}>🌤️ CLIMA</p>
+            <p style={lblSec}>CLIMA</p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <Field label="Mañana">
                 <input type="text" value={editando.clima?.manana || ''}
@@ -271,7 +271,7 @@ export default function RDOView({ showToast }) {
 
           {/* Actividades ejecutadas */}
           <div style={{ background: BASE.bgSoft, padding: '14px', borderRadius: '10px', marginBottom: '12px' }}>
-            <p style={lblSec}>📋 ACTIVIDADES EJECUTADAS ({editando.actividadesEjecutadas?.length || 0})</p>
+            <p style={lblSec}>ACTIVIDADES EJECUTADAS ({editando.actividadesEjecutadas?.length || 0})</p>
             {(editando.actividadesEjecutadas || []).map((a, i) => (
               <div key={i} style={{
                 background: BASE.white, padding: '10px 14px', borderRadius: '8px',
@@ -291,7 +291,7 @@ export default function RDOView({ showToast }) {
           </div>
 
           {/* Observaciones */}
-          <Field label="📝 Observaciones">
+          <Field label="Observaciones">
             <textarea value={editando.observaciones || ''}
               onChange={e => setEditando({...editando, observaciones: e.target.value})}
               rows={3} placeholder="Eventos del dia, cambios, atrasos, decisiones..."
@@ -312,7 +312,7 @@ export default function RDOView({ showToast }) {
           ) : (
             <div style={{ background: BASE.bgSoft, padding: '14px', borderRadius: '10px', marginBottom: '12px' }}>
               <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.5px', marginBottom: '6px' }}>
-                ✍️ FIRMA DEL RESIDENTE
+                FIRMA DEL RESIDENTE
               </p>
               <canvas ref={canvasFirmaRef} width={500} height={100}
                 onMouseDown={startDraw} onMouseMove={draw}

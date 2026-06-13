@@ -98,7 +98,7 @@ export default function ConfigSistema({ showToast }) {
 
       {/* Sección: Costos por Cargo — tarifas individuales por categoría laboral */}
       <Seccion
-        titulo={`💰 COSTOS POR CARGO (${config.monedaSimbolo}/hora)`}
+        titulo={`COSTOS POR CARGO (${config.monedaSimbolo}/hora)`}
         descripcion="Tarifa horaria por categoría. Estos valores se usan para calcular el costo real de HH (Hora Normal + HE) y el valor gastado total por trabajador."
       >
         {CARGOS_ORDEN.map(cargo => (
@@ -120,7 +120,7 @@ export default function ConfigSistema({ showToast }) {
 
       {/* Sección: Recargos de Horas Extras (regla Perú escalonada) */}
       <Seccion
-        titulo="⚡ RECARGOS DE HORAS EXTRAS"
+        titulo="RECARGOS DE HORAS EXTRAS"
         descripcion="El costo de cada HE se calcula sobre la tarifa del CARGO (no un valor único). Regla Perú: las primeras 2 horas extras pagan 60% más, desde la 3ra se paga el 100% más.">
         <Campo label="Factor HE 1ra y 2da" tipo="number" step="0.05"
           value={config.factorHE_1_2}
@@ -142,7 +142,7 @@ export default function ConfigSistema({ showToast }) {
           fontSize: '11px', lineHeight: 1.6, color: BASE.text,
         }}>
           <p style={{ fontSize: '10px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.5px', marginBottom: '6px' }}>
-            🧮 EJEMPLO PARA UN OPERARIO (tarifa {config.monedaSimbolo}{(config.tarifas?.Operario ?? COSTO_HORA_DEFAULT.Operario).toFixed(2)}/h)
+            EJEMPLO PARA UN OPERARIO (tarifa {config.monedaSimbolo}{(config.tarifas?.Operario ?? COSTO_HORA_DEFAULT.Operario).toFixed(2)}/h)
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '12px' }}>
             <div>
@@ -168,7 +168,7 @@ export default function ConfigSistema({ showToast }) {
       </Seccion>
 
       {/* Sección: Metas */}
-      <Seccion titulo="🎯 METAS DE PRODUCTIVIDAD" descripcion="Umbrales para alertas y semáforos del dashboard.">
+      <Seccion titulo="METAS DE PRODUCTIVIDAD" descripcion="Umbrales para alertas y semáforos del dashboard.">
         <Campo label="Meta CPI" tipo="number" step="0.01"
           value={config.metaCPI} onChange={v => setConfig({ ...config, metaCPI: parseFloat(v) || 1 })}
           ayuda="Cost Performance Index objetivo (1.0 = bajo presupuesto)" />
@@ -179,7 +179,7 @@ export default function ConfigSistema({ showToast }) {
 
       {/* Sección: Jornada — diferenciada L-V y Sábado */}
       <Seccion
-        titulo="⏰ JORNADA LABORAL"
+        titulo="JORNADA LABORAL"
         descripcion="Horas trabajadas según el día. En Perú típicamente 8.5h L-V + 5.5h sábado (jornada corta 7:30-13:00).">
         <Campo label="Horas jornada Lun-Vie" tipo="number" step="0.5"
           value={config.horasJornadaLV}
@@ -205,7 +205,7 @@ export default function ConfigSistema({ showToast }) {
 
       {/* Sección: Feriados pagados */}
       <Seccion
-        titulo="🎉 FERIADOS PAGADOS"
+        titulo="FERIADOS PAGADOS"
         descripcion="Feriados nacionales o de obra que se pagan aunque no se trabaje. Se contabilizan como HH efectivas en el cálculo de costo total.">
         {/* Form para añadir uno nuevo */}
         <div style={{
@@ -303,7 +303,7 @@ export default function ConfigSistema({ showToast }) {
       </Seccion>
 
       {/* Sección: Proyecto */}
-      <Seccion titulo="🏗️ PROYECTO ACTIVO" descripcion="Identificación del proyecto en curso.">
+      <Seccion titulo="PROYECTO ACTIVO" descripcion="Identificación del proyecto en curso.">
         <Campo label="Nombre del proyecto" value={config.proyecto}
           onChange={v => setConfig({ ...config, proyecto: v })}
           ayuda="Aparece en reportes y exports (ej. PTARI, PTAR-Norte, etc.)" />

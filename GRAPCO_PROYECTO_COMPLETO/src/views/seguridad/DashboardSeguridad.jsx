@@ -109,7 +109,7 @@ export default function DashboardSeguridad() {
           valor={ncs.filter(n => n.severidad === 'critica' && n.estado !== 'cerrada' && n.estado !== 'verificada').length}
           subtitulo="requieren acción inmediata" color={BASE.red} icono="🔴" />
         <KPI titulo="Inspecciones" valor={inspecciones.length}
-          subtitulo="últimas registradas" color="#0ea5e9" icono="✅" />
+          subtitulo="últimas registradas" color={BASE.navyLight} icono="✅" />
         <KPI titulo="Días s/ alta-crítica"
           valor={stats.diasSinCritica < 999 ? stats.diasSinCritica : '—'}
           subtitulo="récord actual" color={BASE.green} icono="🛡️" />
@@ -310,7 +310,7 @@ function KPI({ titulo, valor, subtitulo, color, icono }) {
   );
 }
 
-function Seccion({ titulo, icono, extra, children }) {
+function Seccion({ titulo, extra, children }) {
   return (
     <div style={{
       background: BASE.white, border: `1px solid ${BASE.border}`,
@@ -321,7 +321,7 @@ function Seccion({ titulo, icono, extra, children }) {
         gap: '8px', marginBottom: '12px',
       }}>
         <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.5px' }}>
-          {icono} {titulo}
+          {titulo}
         </p>
         {extra && (
           <span style={{ fontSize: '10px', color: BASE.muted, fontWeight: '700' }}>{extra}</span>

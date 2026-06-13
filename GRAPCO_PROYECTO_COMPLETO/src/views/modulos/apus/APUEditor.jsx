@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
-import { BASE } from '../../../utils/styles';
+import { BASE, CHART_PALETTE } from '../../../utils/styles';
 import { useAuth } from '../../../contexts/AuthContext';
 import {
   CATEGORIAS_MO, FACTOR_APORTES_PE, calcularCostoAPU,
@@ -118,10 +118,10 @@ export default function APUEditor({ apu, onClose, showToast }) {
   };
 
   return (
-    <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '14px', padding: '22px 26px', borderLeft: '5px solid #6366f1' }}>
+    <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '14px', padding: '22px 26px', borderLeft: `5px solid ${BASE.navy}` }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
         <div>
-          <p style={{ fontSize: '10px', fontWeight: '900', color: BASE.muted, letterSpacing: '1px' }}>💰 ANÁLISIS DE PRECIOS UNITARIOS</p>
+          <p style={{ fontSize: '10px', fontWeight: '900', color: BASE.muted, letterSpacing: '1px' }}>ANÁLISIS DE PRECIOS UNITARIOS</p>
           <h3 style={{ fontSize: '20px', fontWeight: '900', color: BASE.navy, marginTop: '4px' }}>
             {esNuevo ? '➕ Nuevo APU' : `✏️ ${form.codigo}`}
           </h3>
@@ -130,7 +130,7 @@ export default function APUEditor({ apu, onClose, showToast }) {
       </div>
 
       {/* Identificación */}
-      <Sec titulo="📋 IDENTIFICACIÓN" color={BASE.navy}>
+      <Sec titulo="IDENTIFICACIÓN" color={BASE.navy}>
         <Grid cols="1fr 3fr 80px 100px">
           <Field label="Código *" hint="Ej: APU-02.01.003">
             <input type="text" value={form.codigo} onChange={e => setForm({...form, codigo: e.target.value})}
@@ -153,7 +153,7 @@ export default function APUEditor({ apu, onClose, showToast }) {
       </Sec>
 
       {/* MO */}
-      <Sec titulo="👷 MANO DE OBRA" color="#7c3aed">
+      <Sec titulo="MANO DE OBRA" color={CHART_PALETTE[3]}>
         {form.manoDeObra.length === 0 && <p style={{ fontSize: '11px', color: BASE.muted, fontStyle: 'italic' }}>Sin mano de obra. Agrega categorías abajo.</p>}
         {form.manoDeObra.map((m, idx) => (
           <Grid key={idx} cols="1fr 80px 90px 80px 100px 40px">
@@ -171,14 +171,14 @@ export default function APUEditor({ apu, onClose, showToast }) {
             <button onClick={() => delItem('manoDeObra', idx)} style={btnDel}>×</button>
           </Grid>
         ))}
-        <button onClick={() => addItem('manoDeObra', { categoria: '', cantidad: 1, salarioHH: 15, aportes: FACTOR_APORTES_PE })} style={btnAdd('#7c3aed')}>
+        <button onClick={() => addItem('manoDeObra', { categoria: '', cantidad: 1, salarioHH: 15, aportes: FACTOR_APORTES_PE })} style={btnAdd(CHART_PALETTE[3])}>
           ➕ Agregar MO
         </button>
-        <p style={subtotalRow}>SUBTOTAL MO: <strong style={{ color: '#7c3aed' }}>{fmtSoles(costo.subtotalMO)}</strong> ({fmtPct(costo.incidenciaMO, 1)})</p>
+        <p style={subtotalRow}>SUBTOTAL MO: <strong style={{ color: CHART_PALETTE[3] }}>{fmtSoles(costo.subtotalMO)}</strong> ({fmtPct(costo.incidenciaMO, 1)})</p>
       </Sec>
 
       {/* Materiales */}
-      <Sec titulo="📦 MATERIALES" color={BASE.gold}>
+      <Sec titulo="MATERIALES" color={BASE.gold}>
         {form.materiales.length === 0 && <p style={{ fontSize: '11px', color: BASE.muted, fontStyle: 'italic' }}>Sin materiales.</p>}
         {form.materiales.map((m, idx) => (
           <Grid key={idx} cols="2fr 80px 60px 90px 100px 40px">
@@ -201,7 +201,7 @@ export default function APUEditor({ apu, onClose, showToast }) {
       </Sec>
 
       {/* Equipos */}
-      <Sec titulo="🚜 EQUIPOS" color="#0d9488">
+      <Sec titulo="EQUIPOS" color={CHART_PALETTE[2]}>
         {form.equipos.length === 0 && <p style={{ fontSize: '11px', color: BASE.muted, fontStyle: 'italic' }}>Sin equipos.</p>}
         {form.equipos.map((e, idx) => (
           <Grid key={idx} cols="2fr 80px 100px 100px 40px">
@@ -215,14 +215,14 @@ export default function APUEditor({ apu, onClose, showToast }) {
             <button onClick={() => delItem('equipos', idx)} style={btnDel}>×</button>
           </Grid>
         ))}
-        <button onClick={() => addItem('equipos', { descripcion: '', hm: 1, tarifa: 0 })} style={btnAdd('#0d9488')}>
+        <button onClick={() => addItem('equipos', { descripcion: '', hm: 1, tarifa: 0 })} style={btnAdd(CHART_PALETTE[2])}>
           ➕ Agregar Equipo
         </button>
-        <p style={subtotalRow}>SUBTOTAL EQ: <strong style={{ color: '#0d9488' }}>{fmtSoles(costo.subtotalEq)}</strong> ({fmtPct(costo.incidenciaEq, 1)})</p>
+        <p style={subtotalRow}>SUBTOTAL EQ: <strong style={{ color: CHART_PALETTE[2] }}>{fmtSoles(costo.subtotalEq)}</strong> ({fmtPct(costo.incidenciaEq, 1)})</p>
       </Sec>
 
       {/* Subcontratos */}
-      <Sec titulo="🤝 SUBCONTRATOS" color={BASE.red}>
+      <Sec titulo="SUBCONTRATOS" color={BASE.red}>
         {form.subcontratos.length === 0 && <p style={{ fontSize: '11px', color: BASE.muted, fontStyle: 'italic' }}>Sin subcontratos.</p>}
         {form.subcontratos.map((s, idx) => (
           <Grid key={idx} cols="3fr 100px 40px">
@@ -241,13 +241,13 @@ export default function APUEditor({ apu, onClose, showToast }) {
 
       {/* Total */}
       <div style={{
-        background: 'linear-gradient(135deg, #6366f1, #4338ca)',
+        background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
         color: '#fff', borderRadius: '14px',
         padding: '20px 24px', marginTop: '14px',
         borderLeft: `5px solid ${BASE.gold}`,
       }}>
         <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.gold, letterSpacing: '1.4px' }}>
-          💰 COSTO UNITARIO TOTAL APU
+          COSTO UNITARIO TOTAL APU
         </p>
         <p style={{ fontSize: '32px', fontWeight: '900', marginTop: '6px', letterSpacing: '-0.5px' }}>
           {fmtSoles(costo.costoUnitarioTotal)} <span style={{ fontSize: '18px', opacity: 0.7 }}>/ {form.unidad}</span>
@@ -295,5 +295,5 @@ const btnAdd = (c) => ({ padding: '6px 14px', borderRadius: '6px', background: c
 const btnDel = { width: '32px', height: '32px', borderRadius: '6px', background: '#fee2e2', color: '#991b1b', border: 'none', fontSize: '16px', fontWeight: '900', cursor: 'pointer' };
 const btnGhost = { padding: '8px 14px', borderRadius: '8px', background: 'transparent', color: BASE.navy, border: `1.5px solid ${BASE.border}`, fontSize: '11.5px', fontWeight: '900', cursor: 'pointer' };
 const btnCancel = { padding: '11px 22px', borderRadius: '8px', background: BASE.bgSoft, color: BASE.muted, border: 'none', fontSize: '12px', fontWeight: '800', cursor: 'pointer' };
-const btnSave = { padding: '11px 22px', borderRadius: '8px', background: 'linear-gradient(135deg, #6366f1, #4338ca)', color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900', cursor: 'pointer', letterSpacing: '0.4px', boxShadow: '0 4px 12px rgba(99,102,241,0.4)' };
+const btnSave = { padding: '11px 22px', borderRadius: '8px', background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900', cursor: 'pointer', letterSpacing: '0.4px', boxShadow: BASE.shadowMd };
 const btnDelete = { padding: '11px 18px', borderRadius: '8px', background: '#fee2e2', color: '#991b1b', border: '1.5px solid #fecaca', fontSize: '11.5px', fontWeight: '900', cursor: 'pointer', letterSpacing: '0.4px' };

@@ -89,14 +89,14 @@ export default function AlmacenesView({ showToast }) {
         </div>
         <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: '700', color: BASE.muted, cursor: 'pointer' }}>
           <input type="checkbox" checked={verTodosProyectos} onChange={e => setVerTodosProyectos(e.target.checked)}
-            style={{ width: '14px', height: '14px', accentColor: '#0d9488' }} />
+            style={{ width: '14px', height: '14px', accentColor: BASE.navy }} />
           Ver todos los proyectos
         </label>
         <button onClick={() => { setForm({ ...FORM_INICIAL, proyectoId: proyectoActivoId }); setEditando('NUEVO'); }} style={{
           padding: '10px 20px', borderRadius: '8px',
-          background: `linear-gradient(135deg, #0d9488, #0f766e)`,
+          background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
           color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900', cursor: 'pointer',
-          boxShadow: '0 4px 12px rgba(13,148,136,0.35)',
+          boxShadow: '0 4px 12px rgba(15,42,71,0.35)',
         }}>➕ NUEVO ALMACEN</button>
       </div>
 
@@ -108,23 +108,23 @@ export default function AlmacenesView({ showToast }) {
             <div key={a.id} style={{
               background: BASE.white, border: `1px solid ${BASE.border}`,
               borderRadius: '14px', padding: '18px 20px',
-              borderLeft: `5px solid ${a.tipo === 'central' ? '#7c3aed' : '#0d9488'}`,
+              borderLeft: `5px solid ${a.tipo === 'central' ? BASE.navy : BASE.gold}`,
               boxShadow: '0 2px 6px rgba(15,23,42,0.04)',
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                     <span style={{
-                      background: a.tipo === 'central' ? '#ede9fe' : '#ccfbf1',
-                      color: a.tipo === 'central' ? '#5b21b6' : '#0f766e',
+                      background: a.tipo === 'central' ? BASE.navySoft : BASE.goldLight,
+                      color: a.tipo === 'central' ? BASE.navy : BASE.goldDark,
                       padding: '3px 10px', borderRadius: '12px',
                       fontSize: '9.5px', fontWeight: '900', letterSpacing: '0.6px',
                     }}>
                       {a.tipo === 'central' ? '🏛️ CENTRAL' : '🏗️ OBRA'}
                     </span>
                     <span style={{
-                      background: a.tipoInventario === 'SERVICIOS' ? '#fef3c7' : '#dbeafe',
-                      color: a.tipoInventario === 'SERVICIOS' ? '#92400e' : '#1e40af',
+                      background: a.tipoInventario === 'SERVICIOS' ? BASE.goldLight : BASE.navySoft,
+                      color: a.tipoInventario === 'SERVICIOS' ? BASE.goldDark : BASE.navy,
                       padding: '3px 10px', borderRadius: '12px',
                       fontSize: '9.5px', fontWeight: '900', letterSpacing: '0.6px',
                     }}>
@@ -137,7 +137,7 @@ export default function AlmacenesView({ showToast }) {
                 {a.activo === false && <span style={{ fontSize: '20px' }}>❌</span>}
               </div>
               {a.proyectoId && (
-                <p style={{ fontSize: '10.5px', color: '#7c3aed', fontWeight: '800', marginTop: '8px', letterSpacing: '0.4px' }}>
+                <p style={{ fontSize: '10.5px', color: BASE.navyLight, fontWeight: '800', marginTop: '8px', letterSpacing: '0.4px' }}>
                   🏢 {proyectos.find(p => p.id === a.proyectoId)?.nombre || a.proyectoId}
                 </p>
               )}
@@ -156,7 +156,7 @@ export default function AlmacenesView({ showToast }) {
       {editando && (
         <Modal onClose={() => setEditando(null)}>
           <h3 style={{ fontSize: '17px', fontWeight: '900', color: BASE.navy, marginBottom: '14px' }}>
-            {editando === 'NUEVO' ? '➕ Nuevo Almacen' : '✏️ Editar Almacen'}
+            {editando === 'NUEVO' ? 'Nuevo Almacen' : 'Editar Almacen'}
           </h3>
           <Inp label="Codigo *" value={form.codigo} onChange={v => setForm({...form, codigo: v.toUpperCase()})} />
           <Inp label="Nombre *" value={form.nombre} onChange={v => setForm({...form, nombre: v})} />
@@ -189,7 +189,7 @@ export default function AlmacenesView({ showToast }) {
           <Inp label="Email del responsable" type="email" value={form.responsableEmail} onChange={v => setForm({...form, responsableEmail: v})} />
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '14px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>
             <input type="checkbox" checked={form.activo} onChange={e => setForm({...form, activo: e.target.checked})}
-              style={{ width: '17px', height: '17px', accentColor: '#0d9488' }} />
+              style={{ width: '17px', height: '17px', accentColor: BASE.navy }} />
             Almacen activo
           </label>
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '20px' }}>
@@ -217,4 +217,4 @@ const lblS = { fontSize: '10px', fontWeight: '900', color: BASE.muted, letterSpa
 const inpS = { width: '100%', padding: '9px 12px', borderRadius: '8px', border: `1.5px solid ${BASE.border}`, fontSize: '13px', fontWeight: '600', background: '#fff' };
 const selS = { ...inpS, cursor: 'pointer', fontWeight: '700' };
 const btnCancel = { padding: '11px 22px', borderRadius: '8px', background: BASE.bgSoft, color: BASE.muted, border: 'none', fontSize: '12px', fontWeight: '800', cursor: 'pointer' };
-const btnSave = { padding: '11px 22px', borderRadius: '8px', background: 'linear-gradient(135deg, #0d9488, #0f766e)', color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900', cursor: 'pointer', letterSpacing: '0.4px', boxShadow: '0 4px 12px rgba(13,148,136,0.35)' };
+const btnSave = { padding: '11px 22px', borderRadius: '8px', background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900', cursor: 'pointer', letterSpacing: '0.4px', boxShadow: '0 4px 12px rgba(15,42,71,0.35)' };

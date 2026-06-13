@@ -6,7 +6,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
-import { BASE } from '../../../utils/styles';
+import { BASE, CHART_PALETTE } from '../../../utils/styles';
 import {
   obtenerActividadesHoja, ESTADOS_ACTIVIDAD,
   fmtSoles, fmtNumero, fmtPct,
@@ -169,13 +169,13 @@ export default function DashboardPlanMaestro() {
         <KPI icono="📋" color={BASE.navy} label="ACTIVIDADES"
           valor={fmtNumero(stats.totalActividades, 0)}
           sub={`${stats.totalHojas} ejecutables en obra`} />
-        <KPI icono="💰" color="#7c3aed" label="PRESUPUESTO META"
+        <KPI icono="💰" color={CHART_PALETTE[3]} label="PRESUPUESTO META"
           valor={fmtSoles(stats.presupuestoTotal)}
           sub="Costo directo · metrado × P.U." />
         <KPI icono="✅" color={BASE.gold} label="VALOR EJECUTADO"
           valor={fmtSoles(stats.valorEjecutado)}
           sub={`${fmtPct(stats.pctAvance)} de avance valorizado`} />
-        <KPI icono="👷" color="#0d9488" label="HORAS-HOMBRE META"
+        <KPI icono="👷" color={CHART_PALETTE[2]} label="HORAS-HOMBRE META"
           valor={fmtNumero(stats.hhPresupuesto, 0) + ' HH'}
           sub={`${fmtNumero(stats.hhReal, 0)} HH consumidas`} />
       </div>
@@ -184,7 +184,7 @@ export default function DashboardPlanMaestro() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(330px, 1fr))', gap: '12px' }}>
 
         {/* Avance físico vs cronograma */}
-        <Seccion titulo="AVANCE DEL PROYECTO" icono="📈">
+        <Seccion titulo="AVANCE DEL PROYECTO">
           <Barra
             etiqueta="Avance físico (valorizado)"
             pct={stats.pctAvance}
@@ -216,7 +216,7 @@ export default function DashboardPlanMaestro() {
         </Seccion>
 
         {/* Estado de actividades — barra apilada + leyenda */}
-        <Seccion titulo="ESTADO DE LAS ACTIVIDADES" icono="📊"
+        <Seccion titulo="ESTADO DE LAS ACTIVIDADES"
           extra={`${stats.totalHojas} ejecutables`}>
           <div style={{
             display: 'flex', height: '16px', borderRadius: '8px',
@@ -261,7 +261,7 @@ export default function DashboardPlanMaestro() {
 
       {/* ── Concentración del presupuesto — Pareto ── */}
       {stats.partidas.length > 0 && (
-        <Seccion titulo="CONCENTRACIÓN DEL PRESUPUESTO" icono="🏗️"
+        <Seccion titulo="CONCENTRACIÓN DEL PRESUPUESTO"
           extra="¿Dónde está el costo? — partidas nivel 1">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '2px' }}>
             {stats.partidas.slice(0, 7).map((p, i) => {
@@ -336,7 +336,7 @@ function KPI({ label, valor, color, sub, icono }) {
   );
 }
 
-function Seccion({ titulo, icono, extra, children }) {
+function Seccion({ titulo, extra, children }) {
   return (
     <div style={{
       background: BASE.white, border: `1px solid ${BASE.border}`,
@@ -347,7 +347,7 @@ function Seccion({ titulo, icono, extra, children }) {
         gap: '8px', marginBottom: '12px',
       }}>
         <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.5px' }}>
-          {icono} {titulo}
+          {titulo}
         </p>
         {extra && (
           <span style={{ fontSize: '10px', color: BASE.muted, fontWeight: '700' }}>{extra}</span>

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
-import { BASE } from '../../../utils/styles';
+import { BASE, CHART_PALETTE } from '../../../utils/styles';
 import {
   construirArbolWBS, ESTADOS_ACTIVIDAD,
   fmtSoles, fmtNumero, fmtPct,
@@ -63,7 +63,7 @@ export default function WBSExplorer({ showToast, onEdit, onNuevo }) {
       }}>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 200px' }}>
-            <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>🌳 Estructura WBS del Plan Maestro</p>
+            <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>Estructura WBS del Plan Maestro</p>
             <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
               {actividades.length} actividades · Niveles: Partida → Sub-Partida → Actividad
             </p>
@@ -137,7 +137,7 @@ function NodoArbol({ nodo, nivel, expandidos, toggleExpand, onEdit, filtro }) {
     ? ((nodo.avanceMetradoAcum || 0) / nodo.metradoContractual) * 100
     : 0;
 
-  const colorNivel = ['#1e3a5f', '#7c3aed', '#6366f1', '#0d9488'][Math.min(nivel, 3)];
+  const colorNivel = [BASE.navy, CHART_PALETTE[3], CHART_PALETTE[5], CHART_PALETTE[2]][Math.min(nivel, 3)];
   const estado = ESTADOS_ACTIVIDAD[nodo.estado || 'no_iniciada'];
 
   return (
@@ -149,7 +149,7 @@ function NodoArbol({ nodo, nivel, expandidos, toggleExpand, onEdit, filtro }) {
           display: 'grid',
           gridTemplateColumns: '60px 2fr 80px 100px 110px 120px 110px 100px',
           gap: '8px', alignItems: 'center',
-          background: nivel === 0 ? '#f1f5f9' : nivel === 1 ? '#f8fafc' : BASE.white,
+          background: nivel === 0 ? BASE.navySoft : nivel === 1 ? BASE.bgSoft : BASE.white,
           fontSize: nivel <= 1 ? '12.5px' : '12px',
           fontWeight: nivel === 0 ? '900' : nivel === 1 ? '700' : '500',
         }}>

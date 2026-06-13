@@ -164,14 +164,14 @@ export default function BIM({ historialEnriquecido = [], showToast }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {/* Header BIM — compacto */}
       <div style={{
-        background: `linear-gradient(135deg, #6366f1, #4338ca)`,
+        background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
         borderRadius: '12px',
         borderLeft: `4px solid ${BASE.gold}`,
         padding: '12px 18px', color: '#fff',
         display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap',
-        boxShadow: '0 2px 10px rgba(99,102,241,0.2)',
+        boxShadow: BASE.shadowMd,
       }}>
-        <h2 style={{ fontSize: '15px', fontWeight: '900' }}>🏗️ Módulo BIM</h2>
+        <h2 style={{ fontSize: '15px', fontWeight: '900' }}>Módulo BIM</h2>
         <p style={{ fontSize: '11px', opacity: 0.85 }}>
           3 usos: <strong>Costo</strong> (incluye metrado) · <strong>Sectorización</strong> · <strong>Plazos (4D)</strong>
         </p>

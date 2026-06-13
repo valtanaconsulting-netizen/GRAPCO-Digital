@@ -78,7 +78,7 @@ export default function DashboardCalidad() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '12px' }}>
 
         {/* Protocolos pendientes */}
-        <Seccion titulo="PROTOCOLOS PENDIENTES (TOP 8)" icono="📋">
+        <Seccion titulo="PROTOCOLOS PENDIENTES (TOP 8)">
           {protocolosPendientes.length === 0 ? (
             <p style={{ padding: '12px 0', textAlign: 'center', color: BASE.muted, fontSize: '12px' }}>
               ✅ No hay protocolos pendientes
@@ -116,7 +116,7 @@ export default function DashboardCalidad() {
         </Seccion>
 
         {/* NCs recientes */}
-        <Seccion titulo="NO CONFORMIDADES ACTIVAS" icono="🚨">
+        <Seccion titulo="NO CONFORMIDADES ACTIVAS">
           {ncsRecientes.length === 0 ? (
             <p style={{ padding: '12px 0', textAlign: 'center', color: BASE.green, fontSize: '12px', fontWeight: '700' }}>
               ✅ Sin NCs abiertas. ¡Excelente!
@@ -155,13 +155,13 @@ export default function DashboardCalidad() {
       </div>
 
       {/* ── Resumen ejecutivo ── */}
-      <Seccion titulo="RESUMEN EJECUTIVO" icono="📊">
+      <Seccion titulo="RESUMEN EJECUTIVO">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
 
           {/* Protocolos por estado — barra apilada + leyenda */}
           <div>
             <p style={{ fontSize: '10px', fontWeight: '900', color: BASE.muted, letterSpacing: '0.5px', marginBottom: '8px' }}>
-              📋 PROTOCOLOS POR ESTADO
+              PROTOCOLOS POR ESTADO
             </p>
             <div style={{
               display: 'flex', height: '14px', borderRadius: '7px',
@@ -202,7 +202,7 @@ export default function DashboardCalidad() {
           {/* NCs por severidad */}
           <div>
             <p style={{ fontSize: '10px', fontWeight: '900', color: BASE.muted, letterSpacing: '0.5px', marginBottom: '8px' }}>
-              🚨 NCs POR SEVERIDAD
+              NCs POR SEVERIDAD
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
               {Object.entries(SEVERIDADES_NC).map(([key, sev]) => {
@@ -226,7 +226,7 @@ export default function DashboardCalidad() {
           {/* Ensayos del mes */}
           <div>
             <p style={{ fontSize: '10px', fontWeight: '900', color: BASE.muted, letterSpacing: '0.5px', marginBottom: '8px' }}>
-              🧪 ENSAYOS DEL MES
+              ENSAYOS DEL MES
             </p>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span style={{ fontSize: '22px', fontWeight: '900', color: BASE.navy, lineHeight: 1.2 }}>
@@ -280,7 +280,7 @@ function Seccion({ titulo, icono, extra, children }) {
         gap: '8px', marginBottom: '12px',
       }}>
         <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.5px' }}>
-          {icono} {titulo}
+          {icono ? `${icono} ` : ''}{titulo}
         </p>
         {extra && (
           <span style={{ fontSize: '10px', color: BASE.muted, fontWeight: '700' }}>{extra}</span>

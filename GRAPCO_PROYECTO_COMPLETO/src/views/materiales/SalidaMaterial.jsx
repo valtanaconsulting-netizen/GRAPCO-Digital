@@ -215,7 +215,7 @@ export default function SalidaMaterial({ showToast, onSaved }) {
       borderLeft: `5px solid ${BASE.red}`,
     }}>
       <h3 style={{ fontSize: '18px', fontWeight: '900', color: BASE.navy, marginBottom: '4px' }}>
-        ⬆️ REGISTRAR SALIDA DE MATERIAL (VALE DIGITAL)
+        REGISTRAR SALIDA DE MATERIAL (VALE DIGITAL)
       </h3>
       <p style={{ fontSize: '12px', color: BASE.muted, marginBottom: '20px' }}>
         Reemplazo digital del vale en papel. Vincula la salida con la actividad del LPS para reconciliacion APU.
@@ -223,7 +223,7 @@ export default function SalidaMaterial({ showToast, onSaved }) {
 
       {/* Datos del vale */}
       <div style={{ background: BASE.bgSoft, padding: '16px', borderRadius: '12px', marginBottom: '14px' }}>
-        <p style={lblSec}>📋 DATOS DEL VALE</p>
+        <p style={lblSec}>DATOS DEL VALE</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
           <Field label="Almacen origen *">
             <select value={almacenId} onChange={e => setAlmacenId(e.target.value)} style={selS}>
@@ -269,7 +269,7 @@ export default function SalidaMaterial({ showToast, onSaved }) {
       {/* Items con stock disponible */}
       <div style={{ background: BASE.bgSoft, padding: '16px', borderRadius: '12px', marginBottom: '14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <p style={lblSec}>📦 ITEMS A RETIRAR</p>
+          <p style={lblSec}>ITEMS A RETIRAR</p>
           <button onClick={agregarItem} style={{
             padding: '6px 14px', borderRadius: '6px', background: BASE.red, color: '#fff',
             border: 'none', fontSize: '11px', fontWeight: '900', cursor: 'pointer',
@@ -342,7 +342,7 @@ export default function SalidaMaterial({ showToast, onSaved }) {
       {/* Firma digital */}
       <div style={{ background: BASE.bgSoft, padding: '16px', borderRadius: '12px', marginBottom: '14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <p style={lblSec}>✍️ FIRMA DIGITAL DE QUIEN RETIRA</p>
+          <p style={lblSec}>FIRMA DIGITAL DE QUIEN RETIRA</p>
           <button onClick={limpiarFirma} style={{
             padding: '4px 12px', borderRadius: '6px', background: BASE.bgSoft, color: BASE.muted,
             border: `1px solid ${BASE.border}`, fontSize: '10.5px', fontWeight: '800', cursor: 'pointer',
@@ -369,7 +369,7 @@ export default function SalidaMaterial({ showToast, onSaved }) {
       <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
         <button onClick={guardar} disabled={guardando} style={{
           padding: '13px 26px', borderRadius: '10px',
-          background: `linear-gradient(135deg, ${BASE.red}, #b91c1c)`,
+          background: `linear-gradient(135deg, ${BASE.red}, ${BASE.redDark})`,
           color: '#fff', border: 'none', fontSize: '13px', fontWeight: '900',
           cursor: guardando ? 'not-allowed' : 'pointer', opacity: guardando ? 0.5 : 1,
           letterSpacing: '0.5px', boxShadow: `0 6px 18px ${BASE.red}55`,

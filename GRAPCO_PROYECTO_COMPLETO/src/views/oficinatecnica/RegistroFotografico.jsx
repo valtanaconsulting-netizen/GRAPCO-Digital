@@ -121,7 +121,7 @@ export default function RegistroFotografico() {
       {/* FILTROS */}
       <div style={{ ...card, padding: '14px 16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
-          <p style={{ fontSize: '14px', fontWeight: '800', color: BASE.navy }}>📸 REGISTRO FOTOGRÁFICO · Filtros</p>
+          <p style={{ fontSize: '14px', fontWeight: '800', color: BASE.navy }}>REGISTRO FOTOGRÁFICO · Filtros</p>
           <span style={{ fontSize: '11px', color: BASE.muted, fontWeight: '700' }}>
             {filtradas.length} de {fotos.length} foto{fotos.length === 1 ? '' : 's'}
           </span>
@@ -171,7 +171,7 @@ export default function RegistroFotografico() {
         {filtrosActivos && (
           <button onClick={limpiar}
             style={{
-              marginTop: '12px', padding: '7px 14px', background: '#fee2e2', color: '#dc2626',
+              marginTop: '12px', padding: '7px 14px', background: BASE.redLight, color: BASE.red,
               border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer',
             }}>
             ✕ Limpiar filtros
@@ -237,7 +237,7 @@ export default function RegistroFotografico() {
 
       {/* MODAL DE PREVIEW */}
       {preview && (
-        <Modal title={`📸 ${fmtFechaCorta(preview.fecha)} · Semana ${preview.semana}`} onClose={() => setPreview(null)} maxW="900px">
+        <Modal title={`${fmtFechaCorta(preview.fecha)} · Semana ${preview.semana}`} onClose={() => setPreview(null)} maxW="900px">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <img src={preview.url} alt=""
               style={{ width: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: '10px', background: BASE.bgSoft }} />

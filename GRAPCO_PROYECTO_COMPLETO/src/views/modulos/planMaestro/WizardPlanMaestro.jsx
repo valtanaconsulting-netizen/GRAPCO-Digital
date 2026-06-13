@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { collection, writeBatch, doc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
-import { BASE } from '../../../utils/styles';
+import { BASE, CHART_PALETTE } from '../../../utils/styles';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
 import { PLANTILLAS, aplicarPlantilla } from '../../../utils/plantillas/plantillasPlanMaestro';
@@ -137,7 +137,7 @@ export default function WizardPlanMaestro({ onClose, showToast }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
         <div>
           <p style={{ fontSize: '10px', fontWeight: '900', color: BASE.muted, letterSpacing: '1px' }}>
-            🚀 WIZARD · CARGA MASIVA DE PLAN MAESTRO
+            WIZARD · CARGA MASIVA DE PLAN MAESTRO
           </p>
           <h3 style={{ fontSize: '20px', fontWeight: '900', color: BASE.navy, marginTop: '4px' }}>
             Crea {actividadesPreview.length || '50+'} actividades en 1 click
@@ -177,7 +177,7 @@ export default function WizardPlanMaestro({ onClose, showToast }) {
       {/* PASO 1 - SELECCIÓN DE PLANTILLA */}
       {paso === 1 && (
         <div>
-          <h4 style={titH4}>📋 Elige una plantilla según el tipo de obra</h4>
+          <h4 style={titH4}>Elige una plantilla según el tipo de obra</h4>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '12px' }}>
             {PLANTILLAS.map(p => {
               const sel = plantillaId === p.id;
@@ -207,7 +207,7 @@ export default function WizardPlanMaestro({ onClose, showToast }) {
                   </p>
                   {p.duracionEstimadaMeses > 0 && (
                     <p style={{ fontSize: '10.5px', opacity: sel ? 0.85 : 0.6, marginTop: '8px', fontWeight: '700' }}>
-                      ⏱️ Duración estimada: {p.duracionEstimadaMeses} meses
+                      Duración estimada: {p.duracionEstimadaMeses} meses
                     </p>
                   )}
                 </button>
@@ -220,10 +220,10 @@ export default function WizardPlanMaestro({ onClose, showToast }) {
       {/* PASO 2 - CONFIGURAR */}
       {paso === 2 && (
         <div>
-          <h4 style={titH4}>⚙️ Configurar la carga</h4>
+          <h4 style={titH4}>Configurar la carga</h4>
 
           <div style={secS}>
-            <Field label="📍 Frente destino *" hint="Las actividades se crearán dentro de este frente">
+            <Field label="Frente destino *" hint="Las actividades se crearán dentro de este frente">
               <select value={frenteDestino} onChange={e => setFrenteDestino(e.target.value)} style={selS}>
                 <option value="">— selecciona un frente —</option>
                 {frentesDelProyecto.map(f => (
@@ -232,11 +232,11 @@ export default function WizardPlanMaestro({ onClose, showToast }) {
               </select>
             </Field>
 
-            <Field label="📅 Fecha de inicio del proyecto" hint="Las fechas de las actividades se distribuyen automáticamente">
+            <Field label="Fecha de inicio del proyecto" hint="Las fechas de las actividades se distribuyen automáticamente">
               <input type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} style={inpS} />
             </Field>
 
-            <Field label="📊 Escala del presupuesto" hint="Multiplica los metrados de la plantilla. 1.0 = sin cambio. 0.5 = la mitad. 2.0 = el doble.">
+            <Field label="Escala del presupuesto" hint="Multiplica los metrados de la plantilla. 1.0 = sin cambio. 0.5 = la mitad. 2.0 = el doble.">
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <input type="range" min="0.25" max="3" step="0.25" value={escala}
                   onChange={e => setEscala(parseFloat(e.target.value))}
@@ -271,13 +271,13 @@ export default function WizardPlanMaestro({ onClose, showToast }) {
       {/* PASO 3 - VISTA PREVIA */}
       {paso === 3 && (
         <div>
-          <h4 style={titH4}>👁️ Vista previa de actividades a crear</h4>
+          <h4 style={titH4}>Vista previa de actividades a crear</h4>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px', marginBottom: '14px' }}>
             <Stat label="Total actividades" valor={resumen.total} color={BASE.navy} />
-            <Stat label="Actividades hoja" valor={resumen.hojas} color="#7c3aed" />
+            <Stat label="Actividades hoja" valor={resumen.hojas} color={CHART_PALETTE[3]} />
             <Stat label="Presupuesto total" valor={fmtSoles(resumen.presupuesto)} color={BASE.gold} chico />
-            <Stat label="HH presupuestadas" valor={fmtNumero(resumen.hhTotal, 0)} color="#0d9488" />
+            <Stat label="HH presupuestadas" valor={fmtNumero(resumen.hhTotal, 0)} color={CHART_PALETTE[2]} />
           </div>
 
           <div style={{
@@ -302,7 +302,7 @@ export default function WizardPlanMaestro({ onClose, showToast }) {
                   const esPadre = !a.metradoContractual;
                   return (
                     <tr key={i} style={{
-                      background: esPadre ? '#f1f5f9' : (i % 2 === 0 ? BASE.white : BASE.bgSoft),
+                      background: esPadre ? BASE.navySoft : (i % 2 === 0 ? BASE.white : BASE.bgSoft),
                       borderBottom: `1px solid ${BASE.border}`,
                     }}>
                       <td style={{ ...td, fontFamily: 'monospace', fontWeight: '900', color: plantillaSel?.color || BASE.navy, paddingLeft: `${10 + (nivel - 1) * 14}px` }}>
@@ -334,7 +334,7 @@ export default function WizardPlanMaestro({ onClose, showToast }) {
             borderLeft: `5px solid ${BASE.gold}`,
           }}>
             <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.gold, letterSpacing: '1.4px' }}>
-              🚀 LISTO PARA EJECUTAR
+              LISTO PARA EJECUTAR
             </p>
             <h3 style={{ fontSize: '24px', fontWeight: '900', marginTop: '6px' }}>
               Confirma la carga del Plan Maestro

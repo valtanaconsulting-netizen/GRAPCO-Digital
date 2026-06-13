@@ -3,7 +3,7 @@
 // Tabs: Ordenes Compra · Ordenes Servicio · Partidas · Tipo Cambio
 
 import React, { useState } from 'react';
-import { BASE } from '../utils/styles';
+import { BASE, CHART_PALETTE } from '../utils/styles';
 import RoleGuard from '../components/RoleGuard';
 import OrdenesListView from './compras/OrdenesListView';
 import PartidasView from './compras/PartidasView';
@@ -11,11 +11,11 @@ import CotizacionesView from './compras/CotizacionesView';
 import TipoCambioView from './materiales/TipoCambioView';
 
 const TABS = [
-  { id: 'cotiz',     l: 'Cotizaciones',     icono: '🔎', desc: 'Precios de mercado',         color: '#0ea5e9' },
-  { id: 'oc',        l: 'Ordenes Compra',   icono: '🛒', desc: 'OC a proveedores',           color: '#2563eb' },
-  { id: 'os',        l: 'Ordenes Servicio', icono: '🔧', desc: 'OS de servicios',            color: '#f59e0b' },
-  { id: 'partidas',  l: 'Partidas',         icono: '📑', desc: 'Presupuesto por partidas',   color: '#7c3aed' },
-  { id: 'tc',        l: 'Tipo Cambio',      icono: '💱', desc: 'TC SUNAT diario',            color: '#0d9488' },
+  { id: 'cotiz',     l: 'Cotizaciones',     icono: '🔎', desc: 'Precios de mercado',         color: CHART_PALETTE[2] },
+  { id: 'oc',        l: 'Ordenes Compra',   icono: '🛒', desc: 'OC a proveedores',           color: BASE.navy },
+  { id: 'os',        l: 'Ordenes Servicio', icono: '🔧', desc: 'OS de servicios',            color: BASE.gold },
+  { id: 'partidas',  l: 'Partidas',         icono: '📑', desc: 'Presupuesto por partidas',   color: CHART_PALETTE[3] },
+  { id: 'tc',        l: 'Tipo Cambio',      icono: '💱', desc: 'TC SUNAT diario',            color: CHART_PALETTE[8] },
 ];
 
 export default function ComprasPanel({ showToast }) {
@@ -25,13 +25,13 @@ export default function ComprasPanel({ showToast }) {
     <RoleGuard rolesPermitidos={['admin', 'ingeniero', 'almacenero', 'logistica']}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         <div style={{
-          background: `linear-gradient(135deg, #2563eb, #1d4ed8)`,
+          background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
           borderRadius: '14px', padding: '20px 26px', color: '#fff',
           borderLeft: `5px solid ${BASE.gold}`,
-          boxShadow: '0 4px 20px rgba(37, 99, 235, 0.25)',
+          boxShadow: BASE.shadowMd,
         }}>
           <p style={{ fontSize: '10px', fontWeight: '900', color: BASE.gold, letterSpacing: '1.6px' }}>
-            🛒 MODULO COMPRAS · WORKFLOW S10
+            MODULO COMPRAS · WORKFLOW S10
           </p>
           <h2 style={{ fontSize: '22px', fontWeight: '900', marginTop: '4px' }}>
             Ordenes de Compra y Servicio

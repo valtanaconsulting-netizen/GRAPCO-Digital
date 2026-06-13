@@ -920,15 +920,17 @@ export const calcularImpactoMedible = (historialEnriquecido) => {
 // RNC = Razones de No Cumplimiento (8 categorías estándar)
 // ──────────────────────────────────────────────────────────────
 
+// Colores CATEGÓRICOS de GRAPCO (paleta CHART: tonos profundos armonizados, no
+// arcoíris tailwind). Los íconos se mantienen como indicador funcional de categoría.
 export const RNC_CATEGORIAS = [
-  { id: 'materiales',    label: 'Materiales',         icon: '📦', color: '#dc2626' },
-  { id: 'equipos',       label: 'Equipos',            icon: '🔧', color: '#ea580c' },
-  { id: 'mano_obra',     label: 'Mano de obra',       icon: '👷', color: '#d97706' },
-  { id: 'informacion',   label: 'Información',        icon: '📋', color: '#2563eb' },
-  { id: 'prerequisitos', label: 'Prerrequisitos',     icon: '🔗', color: '#7c3aed' },
-  { id: 'clima',         label: 'Clima',              icon: '🌧️', color: '#0891b2' },
-  { id: 'externos',      label: 'Cliente / Externos', icon: '🏢', color: '#64748b' },
-  { id: 'reprocesos',    label: 'Reprocesos',         icon: '🔄', color: '#be185d' },
+  { id: 'materiales',    label: 'Materiales',         icon: '📦', color: '#B45309' },
+  { id: 'equipos',       label: 'Equipos',            icon: '🔧', color: '#475569' },
+  { id: 'mano_obra',     label: 'Mano de obra',       icon: '👷', color: '#E5A82F' },
+  { id: 'informacion',   label: 'Información',        icon: '📋', color: '#1D4ED8' },
+  { id: 'prerequisitos', label: 'Prerrequisitos',     icon: '🔗', color: '#7E22CE' },
+  { id: 'clima',         label: 'Clima',              icon: '🌧️', color: '#0E7490' },
+  { id: 'externos',      label: 'Cliente / Externos', icon: '🏢', color: '#0F2A47' },
+  { id: 'reprocesos',    label: 'Reprocesos',         icon: '🔄', color: '#BE123C' },
 ];
 
 export const RNC_LABELS = RNC_CATEGORIAS.reduce((m, c) => { m[c.id] = c.label; return m; }, {});

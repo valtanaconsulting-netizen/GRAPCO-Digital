@@ -51,7 +51,7 @@ export default function HistorialSeguridad() {
         {[
           { id: 'todos',        l: 'Todos',         color: BASE.navy },
           { id: 'reportes',     l: 'Reportes/NC',   color: BASE.red },
-          { id: 'inspecciones', l: 'Inspecciones',  color: '#0ea5e9' },
+          { id: 'inspecciones', l: 'Inspecciones',  color: BASE.navyLight },
         ].map(f => (
           <button key={f.id} onClick={() => setFiltro(f.id)} style={{
             padding: '8px 14px', borderRadius: '10px',
@@ -90,10 +90,10 @@ export default function HistorialSeguridad() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '4px', flexWrap: 'wrap' }}>
                     <span style={{
-                      background: esReporte ? BASE.red : '#0ea5e9', color: '#fff',
+                      background: esReporte ? BASE.red : BASE.navyLight, color: '#fff',
                       padding: '2px 8px', borderRadius: '999px',
                       fontSize: '10px', fontWeight: 800, letterSpacing: '0.4px',
-                    }}>{esReporte ? '🚨 REPORTE' : '✅ INSPECCIÓN'}</span>
+                    }}>{esReporte ? 'REPORTE' : 'INSPECCIÓN'}</span>
                     <span style={{ fontSize: '10px', color: BASE.muted, fontWeight: 700 }}>{fecha}</span>
                     {esReporte && (
                       <span style={{ marginLeft: 'auto', fontSize: '10px', fontWeight: 800,

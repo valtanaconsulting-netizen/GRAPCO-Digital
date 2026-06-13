@@ -83,7 +83,7 @@ export default function OrdenesListView({ tipoOrden = 'OC', showToast }) {
     );
   }
 
-  const colorAcento = tipoOrden === 'OS' ? '#f59e0b' : '#2563eb';
+  const colorAcento = tipoOrden === 'OS' ? BASE.gold : BASE.navy;
   const titulo = tipoOrden === 'OS' ? 'Ordenes de Servicio' : 'Ordenes de Compra';
 
   return (
@@ -95,7 +95,7 @@ export default function OrdenesListView({ tipoOrden = 'OC', showToast }) {
       }}>
         <div style={{ flex: '1 1 200px' }}>
           <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>
-            {tipoOrden === 'OS' ? '🔧' : '🛒'} {titulo}
+            {titulo}
           </p>
           <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
             {filtradas.length} de {ordenes.length} · Proyecto: {proyectoActivo?.nombre || '—'}
@@ -123,7 +123,7 @@ export default function OrdenesListView({ tipoOrden = 'OC', showToast }) {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
-        <Stat label="EMITIDAS" valor={stats.emitida} color="#1e40af" icono="📤" />
+        <Stat label="EMITIDAS" valor={stats.emitida} color={BASE.navy} icono="📤" />
         <Stat label="PARCIALES" valor={stats.parcial} color="#92400e" icono="📦" />
         <Stat label="RECIBIDAS" valor={stats.recibida} color="#065f46" icono="✅" />
         <Stat label="ANULADAS" valor={stats.anulada} color="#991b1b" icono="❌" />

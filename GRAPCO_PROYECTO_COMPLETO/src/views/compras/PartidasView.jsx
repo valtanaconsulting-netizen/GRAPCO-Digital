@@ -92,7 +92,7 @@ export default function PartidasView({ showToast }) {
         display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap',
       }}>
         <div style={{ flex: '1 1 200px' }}>
-          <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>📑 Partidas Presupuestales</p>
+          <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>Partidas Presupuestales</p>
           <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
             {filtradas.length} de {partidasProyecto.length} en este proyecto
           </p>
@@ -102,7 +102,7 @@ export default function PartidasView({ showToast }) {
           style={{ padding: '9px 14px', borderRadius: '8px', border: `1.5px solid ${BASE.border}`, fontSize: '12.5px', minWidth: '180px' }} />
         <button onClick={() => { setForm({ ...FORM_INICIAL, proyectoId: proyectoActivoId }); setEditando('NUEVO'); }} style={{
           padding: '10px 20px', borderRadius: '8px',
-          background: 'linear-gradient(135deg, #7c3aed, #5b21b6)',
+          background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
           color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900', cursor: 'pointer',
         }}>➕ NUEVA PARTIDA</button>
       </div>
@@ -196,6 +196,6 @@ const lblS = { fontSize: '10px', fontWeight: '900', color: BASE.muted, letterSpa
 const inpS = { width: '100%', padding: '9px 12px', borderRadius: '8px', border: `1.5px solid ${BASE.border}`, fontSize: '13px', fontWeight: '600', background: '#fff' };
 const selS = { ...inpS, cursor: 'pointer', fontWeight: '700' };
 const btnCancel = { padding: '11px 22px', borderRadius: '8px', background: BASE.bgSoft, color: BASE.muted, border: 'none', fontSize: '12px', fontWeight: '800', cursor: 'pointer' };
-const btnSave = { padding: '11px 22px', borderRadius: '8px', background: 'linear-gradient(135deg, #7c3aed, #5b21b6)', color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900', cursor: 'pointer' };
+const btnSave = { padding: '11px 22px', borderRadius: '8px', background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900', cursor: 'pointer' };
 const th = (extra = {}) => ({ padding: '11px 14px', textAlign: 'left', fontSize: '10.5px', fontWeight: '900', letterSpacing: '0.4px', whiteSpace: 'nowrap', ...extra });
 const td = (extra = {}) => ({ padding: '10px 14px', fontSize: '12px', color: BASE.text, ...extra });

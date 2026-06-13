@@ -60,9 +60,9 @@ const buildGrafData = (records) => {
 
 // === Paleta semántica unificada (mismas claves que CpiEac.jsx) ===
 const PAL = {
-  real:     { stroke: '#0f1f3a', fill: '#0f1f3a', name: 'REAL' },         // navy
+  real:     { stroke: BASE.navy, fill: BASE.navy, name: 'REAL' },         // navy
   meta:     { stroke: '#10b981', fill: '#10b981', name: 'META' },          // verde
-  ppt:      { stroke: '#f59e0b', fill: '#f59e0b', name: 'PRESUPUESTO' },   // ámbar
+  ppt:      { stroke: BASE.gold, fill: BASE.gold, name: 'PRESUPUESTO' },   // ámbar
   cpi:      { stroke: '#4F46E5', fill: '#4F46E5', name: 'CPI' },           // indigo (marca)
   forecast: { stroke: '#0E7490', fill: '#0E7490', name: 'FORECAST' },      // cyan profundo (marca)
   // Bandas de estado (para CPI)
@@ -96,7 +96,7 @@ const Tip = ({ active, payload, label }) => {
       overflow:'hidden',
     }}>
       <div style={{
-        background:'#0f1f3a',
+        background:BASE.navy,
         color:'#fff',
         padding:'8px 14px',
         fontSize:'11px',
@@ -136,14 +136,14 @@ const TablaDatos = ({ data, cols }) => {
       <div style={{
         fontSize: '10px', fontWeight: '800', color: BASE.muted,
         letterSpacing: '0.6px', marginBottom: '6px',
-      }}>📋 DATOS DEL GRÁFICO</div>
+      }}>DATOS DEL GRÁFICO</div>
       <div style={{ overflowX: 'auto', maxHeight: '320px', overflowY: 'auto', border: `1px solid ${BASE.border}`, borderRadius: '8px' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', minWidth: '320px' }}>
           <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
             <tr>
               {cols.map(c => (
                 <th key={c.key} style={{
-                  padding: '8px 10px', background: '#f1f5f9', color: BASE.navy,
+                  padding: '8px 10px', background: BASE.bgSoft, color: BASE.navy,
                   fontSize: '10px', fontWeight: '800', letterSpacing: '0.4px',
                   textAlign: c.align || 'right', borderBottom: `1.5px solid ${BASE.border}`,
                   whiteSpace: 'nowrap',
@@ -239,16 +239,16 @@ const renderLegend = (hidden, setHidden) => ({ payload }) => (
           }}
           style={{
             display:'inline-flex',alignItems:'center',gap:'6px',
-            fontSize:'11px',fontWeight:700,color: isOff ? '#cbd5e1' : '#334155',
+            fontSize:'11px',fontWeight:700,color: isOff ? BASE.mutedSoft : BASE.text,
             cursor:'pointer',userSelect:'none',
             padding:'4px 10px',borderRadius:'6px',
-            background: isOff ? 'transparent' : '#f8fafc',
-            border:`1px solid ${isOff ? '#e2e8f0' : entry.color + '44'}`,
+            background: isOff ? 'transparent' : BASE.bgSoft,
+            border:`1px solid ${isOff ? BASE.border : entry.color + '44'}`,
             transition:'all 0.15s',
           }}>
           <span style={{
             width:'10px',height:'10px',borderRadius:'2px',
-            background: isOff ? '#cbd5e1' : entry.color,
+            background: isOff ? BASE.mutedSoft : entry.color,
             opacity: isOff ? 0.4 : 1,
           }}/>
           <span style={{textDecoration: isOff ? 'line-through' : 'none'}}>{entry.value}</span>
@@ -389,12 +389,12 @@ export default function Graficos({ grafData: grafDataOriginal, filtrados = [], w
           FILTRAR GRÁFICOS:
         </span>
         <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
-          <span style={{fontSize:'10px',fontWeight:'700',color:'#475569'}}>Partida</span>
+          <span style={{fontSize:'10px',fontWeight:'700',color:BASE.muted}}>Partida</span>
           <select value={fPartida} onChange={e=>onPartidaChange(e.target.value)} style={{
             padding:'7px 12px',borderRadius:'8px',
-            border:`1.5px solid ${fPartida ? '#93c5fd' : BASE.border}`,
-            background: fPartida ? '#eff6ff' : '#fff',
-            color: fPartida ? BASE.navy : '#475569',
+            border:`1.5px solid ${fPartida ? BASE.navyLight : BASE.border}`,
+            background: fPartida ? BASE.navySoft : '#fff',
+            color: fPartida ? BASE.navy : BASE.muted,
             fontSize:'11.5px',fontWeight:'700',cursor:'pointer',outline:'none',
             minWidth:'180px',
           }}>
@@ -403,12 +403,12 @@ export default function Graficos({ grafData: grafDataOriginal, filtrados = [], w
           </select>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
-          <span style={{fontSize:'10px',fontWeight:'700',color:'#475569'}}>Actividad</span>
+          <span style={{fontSize:'10px',fontWeight:'700',color:BASE.muted}}>Actividad</span>
           <select value={fActividad} onChange={e=>setFActividad(e.target.value)} style={{
             padding:'7px 12px',borderRadius:'8px',
-            border:`1.5px solid ${fActividad ? '#86efac' : BASE.border}`,
-            background: fActividad ? '#f0fdf4' : '#fff',
-            color: fActividad ? '#15803d' : '#475569',
+            border:`1.5px solid ${fActividad ? BASE.gold : BASE.border}`,
+            background: fActividad ? BASE.goldLight : '#fff',
+            color: fActividad ? BASE.goldDark : BASE.muted,
             fontSize:'11.5px',fontWeight:'700',cursor:'pointer',outline:'none',
             minWidth:'240px',maxWidth:'380px',
           }}>
@@ -429,9 +429,9 @@ export default function Graficos({ grafData: grafDataOriginal, filtrados = [], w
         {(fPartida || fActividad) && (
           <span style={{
             fontSize:'10.5px',fontWeight:'700',
-            color:'#1e40af',background:'#dbeafe',
+            color:BASE.navy,background:BASE.navySoft,
             padding:'5px 10px',borderRadius:'999px',
-            border:'1px solid #93c5fd',
+            border:`1px solid ${BASE.border}`,
           }}>
             {registrosFiltrados.length} registros · {grafData.semanas?.length || 0} semanas
           </span>

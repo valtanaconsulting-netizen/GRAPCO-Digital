@@ -299,7 +299,7 @@ export default function MarcadorAsistencia({ showToast }) {
         {/* CÁMARA — área grande (≈2.2× el panel); se apila debajo del panel en pantallas angostas */}
         <div style={{
           flex: '2.2 1 460px', minWidth: 0,
-          background: 'linear-gradient(160deg, #0F2A47 0%, #081A2E 100%)',
+          background: `linear-gradient(160deg, ${BASE.navy} 0%, ${BASE.navyDark} 100%)`,
           borderRadius: '18px', padding: '12px', position: 'relative',
           border: '1px solid rgba(255,255,255,0.08)',
           boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 22px 48px -24px rgba(0,0,0,0.7)',
@@ -314,7 +314,7 @@ export default function MarcadorAsistencia({ showToast }) {
                 <p style={{ fontSize: '14px', opacity: 0.8 }}>Cámara apagada</p>
                 <button onClick={abrirCamara} disabled={!modelosOK || personalEnrolado.length === 0}
                   style={{
-                    padding: '14px 28px', background: `linear-gradient(135deg, ${BASE.gold}, #d4941f)`,
+                    padding: '14px 28px', background: `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`,
                     color: BASE.navy, border: 'none', borderRadius: '12px', fontWeight: 900,
                     fontSize: '15px', cursor: 'pointer', boxShadow: `0 8px 20px ${BASE.gold}55`,
                     opacity: (!modelosOK || personalEnrolado.length === 0) ? 0.5 : 1,
@@ -452,7 +452,7 @@ export default function MarcadorAsistencia({ showToast }) {
             }).map(p => {
               const r = hoy[p.id];
               const st = !r?.entrada ? 'pend' : r.salida ? 'fin' : 'pres';
-              const col = st === 'pres' ? '#15803d' : st === 'fin' ? BASE.muted : '#94a3b8';
+              const col = st === 'pres' ? '#15803d' : st === 'fin' ? BASE.muted : BASE.mutedSoft;
               const bg = st === 'pres' ? '#dcfce7' : st === 'fin' ? '#f1f5f9' : BASE.bgSoft;
               return (
                 <div key={p.id} style={{
@@ -474,7 +474,7 @@ export default function MarcadorAsistencia({ showToast }) {
                     </span>
                   )}
                   {!r?.entrada && (
-                    <span style={{ fontSize: '10px', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.5px' }}>PENDIENTE</span>
+                    <span style={{ fontSize: '10px', fontWeight: 800, color: BASE.mutedSoft, letterSpacing: '0.5px' }}>PENDIENTE</span>
                   )}
                 </div>
               );

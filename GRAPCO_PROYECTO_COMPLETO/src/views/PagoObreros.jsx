@@ -3,7 +3,7 @@
 // Aplica la fórmula HN + HE60(×1.60) + HE100(×2.00) usando tarifa por trabajador/cargo.
 
 import React, { useState, useMemo } from 'react';
-import { BASE } from '../utils/styles';
+import { BASE, CHART_PALETTE } from '../utils/styles';
 import { FECHA_INICIO_PROYECTO } from '../utils/constants';
 import {
   fmt1, fmtMoney, hoy, obtenerSemana,
@@ -174,7 +174,7 @@ export default function PagoObreros({ historial = [], cuadrillasActivas = {}, co
       {/* FILTROS */}
       <div style={{ ...card, padding: '14px 16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
-          <p style={{ fontSize: '14px', fontWeight: '800', color: BASE.navy }}>💰 PAGO A OBREROS · Período</p>
+          <p style={{ fontSize: '14px', fontWeight: '800', color: BASE.navy }}>PAGO A OBREROS · Período</p>
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
             {[
               ['hoy', 'Hoy'], ['7d', 'Últimos 7 días'],
@@ -251,8 +251,8 @@ export default function PagoObreros({ historial = [], cuadrillasActivas = {}, co
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
         {[
           { l: 'COSTO TOTAL',  v: fmtMoney(granTotal.costoTotal), c: BASE.navy,    sub: 'A pagar' },
-          { l: 'TRABAJADORES', v: granTotal.personas,             c: '#7c3aed' },
-          { l: 'HH TOTAL',     v: fmt1(granTotal.totalHH),        c: '#0891b2',    sub: `${fmt1(granTotal.hn)} HN + ${fmt1(granTotal.he60 + granTotal.he100)} HE` },
+          { l: 'TRABAJADORES', v: granTotal.personas,             c: CHART_PALETTE[3] },
+          { l: 'HH TOTAL',     v: fmt1(granTotal.totalHH),        c: CHART_PALETTE[11],    sub: `${fmt1(granTotal.hn)} HN + ${fmt1(granTotal.he60 + granTotal.he100)} HE` },
           { l: 'COSTO HE',     v: fmtMoney(granTotal.costoHE60 + granTotal.costoHE100), c: '#d97706', sub: `60%: ${fmtMoney(granTotal.costoHE60)} · 100%: ${fmtMoney(granTotal.costoHE100)}` },
         ].map(k => (
           <div key={k.l} style={{ ...card, padding: '10px 14px' }}>

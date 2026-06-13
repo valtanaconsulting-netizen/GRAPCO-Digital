@@ -113,17 +113,17 @@ export default function ProtocolosView({ showToast, onEdit }) {
       }}>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 200px' }}>
-            <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>📋 Protocolos</p>
+            <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>Protocolos</p>
             <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
               {protocolos.length} total · {filtrados.length} mostrados
             </p>
           </div>
           <button onClick={() => setCreando(true)} style={{
             padding: '10px 20px', borderRadius: '8px',
-            background: `linear-gradient(135deg, #7c3aed, #5b21b6)`,
+            background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
             color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900',
             cursor: 'pointer', letterSpacing: '0.5px',
-            boxShadow: '0 4px 12px rgba(124,58,237,0.35)',
+            boxShadow: '0 4px 12px rgba(15,42,71,0.35)',
           }}>
             ➕ NUEVO PROTOCOLO
           </button>
@@ -244,7 +244,7 @@ export default function ProtocolosView({ showToast, onEdit }) {
       {creando && (
         <Modal onClose={() => setCreando(false)}>
           <h3 style={{ fontSize: '17px', fontWeight: '900', color: BASE.navy, marginBottom: '14px' }}>
-            ➕ Nuevo Protocolo de Calidad
+            Nuevo Protocolo de Calidad
           </h3>
           <p style={{ fontSize: '12px', color: BASE.muted, marginBottom: '16px' }}>
             La plataforma genera automaticamente el checklist segun el tipo seleccionado.
@@ -323,4 +323,4 @@ const lblS = { fontSize: '9.5px', fontWeight: '900', color: BASE.muted, letterSp
 const inpS = { width: '100%', padding: '9px 12px', borderRadius: '8px', border: `1.5px solid ${BASE.border}`, fontSize: '12.5px', fontWeight: '600', background: '#fff' };
 const selS = { ...inpS, cursor: 'pointer', fontWeight: '700' };
 const btnCancel = { padding: '11px 22px', borderRadius: '8px', background: BASE.bgSoft, color: BASE.muted, border: 'none', fontSize: '12px', fontWeight: '800', cursor: 'pointer' };
-const btnSave = { padding: '11px 22px', borderRadius: '8px', background: 'linear-gradient(135deg, #7c3aed, #5b21b6)', color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900', cursor: 'pointer', letterSpacing: '0.4px', boxShadow: '0 4px 12px rgba(124,58,237,0.35)' };
+const btnSave = { padding: '11px 22px', borderRadius: '8px', background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900', cursor: 'pointer', letterSpacing: '0.4px', boxShadow: '0 4px 12px rgba(15,42,71,0.35)' };

@@ -9,7 +9,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { useAuth } from '../../contexts/AuthContext';
-import { BASE } from '../../utils/styles';
+import { BASE, CHART_PALETTE } from '../../utils/styles';
 import Modal from '../../components/Modal';
 import EmptyState from '../../components/EmptyState';
 import FotoUploader from '../../components/FotoUploader';
@@ -105,8 +105,8 @@ export default function ATSGaleria({ showToast }) {
         flexWrap: 'wrap', gap: '12px',
       }}>
         <div>
-          <p style={{ fontSize: '12px', fontWeight: 900, color: '#0d9488', letterSpacing: '0.5px' }}>
-            📋 ANÁLISIS DE TRABAJO SEGURO (ATS)
+          <p style={{ fontSize: '12px', fontWeight: 900, color: BASE.navy, letterSpacing: '0.5px' }}>
+            ANÁLISIS DE TRABAJO SEGURO (ATS)
           </p>
           <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
             Registro diario antes de cada actividad: peligros, controles y firmas de la cuadrilla.
@@ -115,8 +115,8 @@ export default function ATSGaleria({ showToast }) {
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <input type="date" value={filtroFecha} onChange={(e) => setFiltroFecha(e.target.value)}
             style={{ padding: '8px 12px', border: `1px solid ${BASE.border}`, borderRadius: '8px', fontSize: '12px' }} />
-          {filtroFecha && <button onClick={() => setFiltroFecha('')} style={btn('#94a3b8')}>Limpiar</button>}
-          <button onClick={abrirNuevo} style={btn('#0d9488')}>+ Nuevo ATS</button>
+          {filtroFecha && <button onClick={() => setFiltroFecha('')} style={btn(BASE.muted)}>Limpiar</button>}
+          <button onClick={abrirNuevo} style={btn(CHART_PALETTE[2])}>+ Nuevo ATS</button>
         </div>
       </div>
 
@@ -132,7 +132,7 @@ export default function ATSGaleria({ showToast }) {
           {filtrados.map(it => (
             <div key={it.id} style={{
               background: BASE.white, border: `1px solid ${BASE.border}`,
-              borderLeft: `5px solid #0d9488`,
+              borderLeft: `5px solid ${CHART_PALETTE[2]}`,
               borderRadius: '14px', overflow: 'hidden',
               display: 'flex', flexDirection: 'column',
             }}>
@@ -159,7 +159,7 @@ export default function ATSGaleria({ showToast }) {
                   {it.fotos?.length > 0 && <Pill icono="📸" valor={it.fotos.length} label="fotos" />}
                 </div>
                 <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
-                  <button onClick={() => abrirEdicion(it)} style={btnSm('#0ea5e9')}>Ver / editar</button>
+                  <button onClick={() => abrirEdicion(it)} style={btnSm(BASE.navyLight)}>Ver / editar</button>
                   <button onClick={() => eliminar(it)} style={btnSm(BASE.red)}>Eliminar</button>
                 </div>
               </div>
@@ -204,8 +204,8 @@ export default function ATSGaleria({ showToast }) {
             max={10} showToast={showToast} permitirBimGuid={false} />
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '14px' }}>
-            <button onClick={() => setModal(null)} disabled={guardando} style={btn('#94a3b8')}>Cancelar</button>
-            <button onClick={guardar} disabled={guardando} style={btn('#0d9488')}>
+            <button onClick={() => setModal(null)} disabled={guardando} style={btn(BASE.muted)}>Cancelar</button>
+            <button onClick={guardar} disabled={guardando} style={btn(CHART_PALETTE[2])}>
               {guardando ? 'Guardando…' : '💾 Guardar ATS'}
             </button>
           </div>
@@ -239,7 +239,7 @@ function Lista({ label, items, onChange, placeholder }) {
 function Pill({ icono, valor, label }) {
   return (
     <span style={{
-      background: '#f8fafc', border: `1px solid ${BASE.border}`,
+      background: BASE.bgSoft, border: `1px solid ${BASE.border}`,
       padding: '3px 8px', borderRadius: '999px',
       fontSize: '10px', fontWeight: 700, color: BASE.muted,
     }}>{icono} {valor} {label}</span>

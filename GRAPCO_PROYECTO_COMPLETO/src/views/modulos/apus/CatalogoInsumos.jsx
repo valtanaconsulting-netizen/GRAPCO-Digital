@@ -91,7 +91,7 @@ export default function CatalogoInsumos({ showToast }) {
       <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', padding: '14px 18px' }}>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 200px' }}>
-            <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>🧱 Maestro de Insumos</p>
+            <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>Maestro de Insumos</p>
             <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
               {insumos.length} insumos · MO, Materiales, Equipos, Subcontratos
             </p>
@@ -105,10 +105,10 @@ export default function CatalogoInsumos({ showToast }) {
           </select>
           <button onClick={() => { setForm(FORM_INICIAL); setEditando('NUEVO'); }} style={{
             padding: '10px 20px', borderRadius: '8px',
-            background: 'linear-gradient(135deg, #0d9488, #0f766e)',
+            background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
             color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900',
             cursor: 'pointer', letterSpacing: '0.5px',
-            boxShadow: '0 4px 12px rgba(13,148,136,0.4)',
+            boxShadow: BASE.shadowMd,
           }}>➕ NUEVO INSUMO</button>
         </div>
       </div>
@@ -166,7 +166,7 @@ export default function CatalogoInsumos({ showToast }) {
       {editando && (
         <Modal onClose={() => setEditando(null)}>
           <h3 style={{ fontSize: '17px', fontWeight: '900', color: BASE.navy, marginBottom: '14px' }}>
-            {editando === 'NUEVO' ? '➕ Nuevo Insumo' : '✏️ Editar Insumo'}
+            {editando === 'NUEVO' ? 'Nuevo Insumo' : 'Editar Insumo'}
           </h3>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px' }}>
@@ -227,7 +227,7 @@ const lblS = { fontSize: '9.5px', fontWeight: '900', color: BASE.muted, letterSp
 const inpS = { width: '100%', padding: '9px 12px', borderRadius: '8px', border: `1.5px solid ${BASE.border}`, fontSize: '12.5px', fontWeight: '600', background: '#fff' };
 const selS = { ...inpS, cursor: 'pointer', fontWeight: '700' };
 const btnCancel = { padding: '11px 22px', borderRadius: '8px', background: BASE.bgSoft, color: BASE.muted, border: 'none', fontSize: '12px', fontWeight: '800', cursor: 'pointer' };
-const btnSave = { padding: '11px 22px', borderRadius: '8px', background: 'linear-gradient(135deg, #0d9488, #0f766e)', color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900', cursor: 'pointer', letterSpacing: '0.4px', boxShadow: '0 4px 12px rgba(13,148,136,0.4)' };
+const btnSave = { padding: '11px 22px', borderRadius: '8px', background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900', cursor: 'pointer', letterSpacing: '0.4px', boxShadow: BASE.shadowMd };
 const btnAct = { padding: '5px 11px', borderRadius: '6px', color: '#fff', border: 'none', fontSize: '10px', fontWeight: '900', cursor: 'pointer', letterSpacing: '0.4px' };
 const th = { padding: '12px 14px', textAlign: 'left', fontSize: '10.5px', fontWeight: '900', letterSpacing: '0.4px', whiteSpace: 'nowrap' };
 const td = { padding: '10px 14px', fontSize: '12px', color: BASE.text, verticalAlign: 'top' };

@@ -228,7 +228,7 @@ export default function WarRoomCuadrillas({ historial = [] }) {
             color: '#fff',
           }}>
             <h3 style={{ fontSize: '13px', fontWeight: '900', letterSpacing: '0.4px' }}>
-              🚨 ALERTAS ACTIVAS · {alertas.length}
+              ALERTAS ACTIVAS · {alertas.length}
             </h3>
             <p style={{ fontSize: '11px', opacity: 0.9, marginTop: '2px' }}>
               Detectadas automáticamente analizando los KPIs de cada cuadrilla en la ventana seleccionada.
@@ -442,7 +442,7 @@ function ModalDrillDown({ grupo, onClose }) {
           {personasRanking.length > 0 && (
             <div>
               <h3 style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy, marginBottom: '8px' }}>
-                👥 PERSONAS DE LA CUADRILLA (ordenadas por LUF individual)
+                PERSONAS DE LA CUADRILLA (ordenadas por LUF individual)
               </h3>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                 <thead>
@@ -482,7 +482,7 @@ function ModalDrillDown({ grupo, onClose }) {
           {grupo.criticas.length > 0 && (
             <div>
               <h3 style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy, marginBottom: '8px' }}>
-                📊 CAUSAS CRÍTICAS DE TNC (acumulan ≥70%)
+                CAUSAS CRÍTICAS DE TNC (acumulan ≥70%)
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {grupo.criticas.map(c => (
@@ -514,7 +514,7 @@ function ModalDrillDown({ grupo, onClose }) {
           {recomendaciones.length > 0 && (
             <div>
               <h3 style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy, marginBottom: '8px' }}>
-                💡 ACCIONES RECOMENDADAS
+                ACCIONES RECOMENDADAS
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {recomendaciones.map((r, i) => (
@@ -615,7 +615,7 @@ function PanelRestricciones({ historial = [] }) {
   if (!data) {
     return (
       <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', padding: '16px 18px' }}>
-        <p style={{ fontSize: '12px', fontWeight: 900, color: BASE.navy, letterSpacing: '0.5px' }}>⚠️ RESTRICCIONES / CAUSAS REGISTRADAS</p>
+        <p style={{ fontSize: '12px', fontWeight: 900, color: BASE.navy, letterSpacing: '0.5px' }}>RESTRICCIONES / CAUSAS REGISTRADAS</p>
         <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '6px' }}>Aún no hay observaciones registradas por los capataces en el Registro de Producción.</p>
       </div>
     );
@@ -625,7 +625,7 @@ function PanelRestricciones({ historial = [] }) {
     <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', overflow: 'hidden' }}>
       <div style={{ padding: '14px 18px', borderBottom: `1px solid ${BASE.border}`, background: '#fffbeb', borderLeft: `4px solid #f59e0b` }}>
         <p style={{ fontSize: '12px', fontWeight: 900, color: '#b45309', letterSpacing: '0.5px' }}>
-          ⚠️ RESTRICCIONES / CAUSAS REGISTRADAS · BALANCE
+          RESTRICCIONES / CAUSAS REGISTRADAS · BALANCE
         </p>
         <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '4px' }}>
           Observaciones que los capataces dejaron al cargar producción. Click en una partida para ver el detalle.
@@ -643,7 +643,7 @@ function PanelRestricciones({ historial = [] }) {
       {data.topCausas.length > 0 && (
         <div style={{ padding: '12px 18px', borderBottom: `1px solid ${BASE.border}`, background: '#fafbfc' }}>
           <p style={{ fontSize: '10.5px', fontWeight: 900, color: BASE.muted, letterSpacing: '0.7px', marginBottom: '8px' }}>
-            🏆 TOP 5 CAUSAS MÁS FRECUENTES
+            TOP 5 CAUSAS MÁS FRECUENTES
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
             {data.topCausas.map((c, i) => (
@@ -660,7 +660,7 @@ function PanelRestricciones({ historial = [] }) {
       {/* Partidas con observaciones */}
       <div style={{ padding: '12px 18px' }}>
         <p style={{ fontSize: '10.5px', fontWeight: 900, color: BASE.muted, letterSpacing: '0.7px', marginBottom: '8px' }}>
-          📋 PARTIDAS CON RESTRICCIONES
+          PARTIDAS CON RESTRICCIONES
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           {data.partidas.map(p => {

@@ -420,7 +420,7 @@ export default function ProtocoloPreVaciadoEditor({ protocoloId, showToast, onCl
       {/* ── Próximo paso ── */}
       <div style={nextStepBox}>
         <p style={{ fontSize: 11, fontWeight: 900, color: BASE.gold, letterSpacing: 1, marginBottom: 4 }}>
-          ➡️ FLUJO HOLD POINT
+          FLUJO HOLD POINT
         </p>
         <p style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>
           1) Generar PDF · 2) Imprimir · 3) 5 firmas físicas · 4) Escanear · 5) Subir aquí abajo

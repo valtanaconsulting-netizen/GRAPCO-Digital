@@ -12,7 +12,7 @@ import {
 } from 'recharts';
 import { db } from '../firebaseConfig';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
-import { BASE, CB_COL } from '../utils/styles';
+import { BASE, CB_COL, CHART_PALETTE } from '../utils/styles';
 import { EJE, GRILLA, TOOLTIP_STYLE, BARRA } from '../utils/chartKit';
 import EmptyState from '../components/EmptyState';
 import { optimizarCuadrilla } from '../utils/cartaBalanceAnalytics';
@@ -37,7 +37,7 @@ const corta = (s, n = 10) => (s && s.length > n ? `${s.slice(0, n - 1)}…` : s)
 // ── Cargos ── normaliza códigos (CAP/OP/OFI/AY) y nombres a etiqueta + color ──
 const CARGO_LABEL = { CAP: 'Capataz', OP: 'Operario', OF: 'Oficial', OFI: 'Oficial', AY: 'Ayudante', PE: 'Ayudante' };
 const CARGO_ABBR = { Capataz: 'CAP', Operario: 'OP', Oficial: 'OFI', Ayudante: 'AY', 'Sin cargo': '—' };
-const CARGO_COLOR = { Capataz: '#7c3aed', Operario: '#0ea5e9', Oficial: '#16a34a', Ayudante: '#f59e0b', 'Sin cargo': '#94a3b8' };
+const CARGO_COLOR = { Capataz: CHART_PALETTE[3], Operario: CHART_PALETTE[5], Oficial: CHART_PALETTE[4], Ayudante: BASE.gold, 'Sin cargo': BASE.mutedSoft };
 const CARGO_ORDEN = ['Capataz', 'Operario', 'Oficial', 'Ayudante', 'Sin cargo'];
 const cargoNorm = (c) => {
   const s = String(c || '').trim();

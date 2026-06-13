@@ -60,12 +60,12 @@ export default function ValidacionOptimizador() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {/* HEADER */}
       <div style={{
-        background: `linear-gradient(135deg, #7c3aed, #5b21b6)`,
+        background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
         color: '#fff', borderRadius: '14px', padding: '20px 24px',
         borderLeft: `5px solid ${BASE.gold}`,
       }}>
         <p style={{ fontSize: '10px', fontWeight: '900', color: BASE.gold, letterSpacing: '1.6px' }}>
-          🧪 VALIDACIÓN ACADÉMICA DEL MODELO
+          VALIDACIÓN ACADÉMICA DEL MODELO
         </p>
         <h2 style={{ fontSize: '22px', fontWeight: '900', marginTop: '4px' }}>
           ¿Qué tan preciso es el optimizador?
@@ -82,7 +82,7 @@ export default function ValidacionOptimizador() {
         display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap',
       }}>
         <span style={{ fontSize: '11px', fontWeight: '900', color: BASE.muted, letterSpacing: '0.5px' }}>
-          🔍 FILTRAR POR ACTIVIDAD:
+          FILTRAR POR ACTIVIDAD:
         </span>
         <input
           type="text"
@@ -219,7 +219,7 @@ function TablaValidaciones({ validaciones }) {
     }}>
       <div style={{ padding: '14px 20px', background: BASE.bgSoft, borderBottom: `1px solid ${BASE.border}` }}>
         <h3 style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.4px' }}>
-          📋 DETALLE DE VALIDACIONES
+          DETALLE DE VALIDACIONES
         </h3>
         <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
           Cada fila representa un experimento de "leave-one-out": se sacó esa carta, se predijo con el resto, se comparó con su valor real.
@@ -314,7 +314,7 @@ function Interpretacion({ metricas }) {
       padding: '20px 24px',
     }}>
       <p style={{ fontSize: '13px', fontWeight: '900', color: cls.color, letterSpacing: '0.4px', marginBottom: '8px' }}>
-        🎓 INTERPRETACIÓN ACADÉMICA
+        INTERPRETACIÓN ACADÉMICA
       </p>
       <p style={{ fontSize: '14px', color: BASE.text, lineHeight: 1.6, marginBottom: '14px' }}>
         {mensaje}
@@ -322,7 +322,7 @@ function Interpretacion({ metricas }) {
       {recomendaciones.length > 0 && (
         <div style={{ background: BASE.white, borderRadius: '10px', padding: '12px 16px' }}>
           <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.muted, letterSpacing: '0.4px', marginBottom: '8px' }}>
-            📌 RECOMENDACIONES PARA MEJORAR EL MODELO:
+            RECOMENDACIONES PARA MEJORAR EL MODELO:
           </p>
           <ul style={{ marginLeft: '20px' }}>
             {recomendaciones.map((r, i) => (

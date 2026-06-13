@@ -8,7 +8,7 @@ import React, { useState, useEffect } from 'react';
 import { addDoc, updateDoc, doc, getDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
 import { useAuth } from '../../../contexts/AuthContext';
-import { BASE, LOGO } from '../../../utils/styles';
+import { BASE, LOGO, CHART_PALETTE } from '../../../utils/styles';
 import Modal from '../../../components/Modal';
 
 const APROBACIONES_DEFAULT = [
@@ -133,7 +133,7 @@ export default function PETEditor({ petId, onClose, showToast }) {
       <div style={{
         display: 'flex', gap: '4px', flexWrap: 'wrap',
         marginBottom: '14px', padding: '4px',
-        background: '#f8fafc', borderRadius: '10px',
+        background: BASE.bgSoft, borderRadius: '10px',
       }}>
         {SECCIONES.map(s => (
           <button key={s.id} onClick={() => setSeccion(s.id)} style={{
@@ -170,9 +170,9 @@ export default function PETEditor({ petId, onClose, showToast }) {
 
       {/* Acciones */}
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginTop: '16px', borderTop: `1px solid ${BASE.border}`, paddingTop: '14px' }}>
-        <button onClick={imprimir} style={btn('#0ea5e9')}>🖨️ Imprimir / PDF</button>
+        <button onClick={imprimir} style={btn(CHART_PALETTE[2])}>🖨️ Imprimir / PDF</button>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={onClose} disabled={guardando} style={btn('#94a3b8')}>Cancelar</button>
+          <button onClick={onClose} disabled={guardando} style={btn(BASE.muted)}>Cancelar</button>
           <button onClick={guardar} disabled={guardando} style={btn(BASE.navy)}>
             {guardando ? 'Guardando…' : '💾 Guardar PET'}
           </button>
@@ -213,7 +213,7 @@ function Cabecera({ form, setForm }) {
           <div key={i} style={{
             display: 'grid', gridTemplateColumns: '90px 1fr 1fr 130px',
             gap: '8px', padding: '8px 10px',
-            background: i % 2 === 0 ? '#fff' : '#f8fafc',
+            background: i % 2 === 0 ? '#fff' : BASE.bgSoft,
             borderBottom: i < form.aprobaciones.length - 1 ? `1px solid ${BASE.border}` : 'none',
             alignItems: 'center',
           }}>

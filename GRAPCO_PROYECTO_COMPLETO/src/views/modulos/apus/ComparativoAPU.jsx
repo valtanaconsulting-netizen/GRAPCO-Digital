@@ -92,13 +92,13 @@ export default function ComparativoAPU() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       <div style={{
-        background: 'linear-gradient(135deg, #f59e0b22, #d9770622)',
-        border: '1px solid #f59e0b55',
+        background: `linear-gradient(135deg, ${BASE.gold}22, ${BASE.goldDark}22)`,
+        border: `1px solid ${BASE.gold}55`,
         borderLeft: `4px solid ${BASE.gold}`,
         borderRadius: '12px', padding: '14px 18px',
       }}>
         <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.goldDark, letterSpacing: '0.5px' }}>
-          ⚖️ ANÁLISIS DE DESVIACIONES APU TEÓRICO vs REAL
+          ANÁLISIS DE DESVIACIONES APU TEÓRICO vs REAL
         </p>
         <p style={{ fontSize: '12px', color: BASE.text, marginTop: '4px', lineHeight: 1.5 }}>
           La plataforma recalcula los APUs usando precios reales del Kardex y rendimientos reales de Tareos. <strong>Verde:</strong> dentro de tolerancia (±5%). <strong>Naranja:</strong> desviación media (5-10%). <strong>Rojo:</strong> sobrecosto crítico (&gt;10%).
@@ -130,7 +130,7 @@ export default function ComparativoAPU() {
                                  real.severidad === 'media' ? '⚠️ Media' : '🔴 Alta';
                 return (
                   <tr key={apu.id} style={{ background: i % 2 === 0 ? BASE.white : BASE.bgSoft, borderBottom: `1px solid ${BASE.border}` }}>
-                    <td style={{ ...td, fontFamily: 'monospace', fontWeight: '900', color: '#6366f1' }}>{apu.codigo}</td>
+                    <td style={{ ...td, fontFamily: 'monospace', fontWeight: '900', color: BASE.navy }}>{apu.codigo}</td>
                     <td style={td}>{apu.descripcion}</td>
                     <td style={{ ...td, textAlign: 'right', fontFamily: 'monospace' }}>{fmtSoles(apu.costoUnitarioTotal)}</td>
                     <td style={{ ...td, textAlign: 'right', fontFamily: 'monospace', fontWeight: '900' }}>

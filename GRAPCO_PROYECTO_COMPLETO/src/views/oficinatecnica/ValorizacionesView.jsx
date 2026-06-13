@@ -108,7 +108,7 @@ export default function ValorizacionesView({ showToast }) {
       <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', padding: '14px 18px' }}>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 200px' }}>
-            <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>💰 Valorizaciones Contractuales</p>
+            <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>Valorizaciones Contractuales</p>
             <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
               {valorizaciones.length} emitidas · Total: <strong>{fmtSoles(valorizaciones.reduce((s, v) => s + (v.total || 0), 0))}</strong>
             </p>
@@ -135,7 +135,7 @@ export default function ValorizacionesView({ showToast }) {
           </button>
         </div>
         <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '8px', fontStyle: 'italic' }}>
-          🤖 La valorizacion se calcula AUTOMATICAMENTE desde Producción × Precio Unitario contractual.
+          La valorizacion se calcula AUTOMATICAMENTE desde Producción × Precio Unitario contractual.
         </p>
       </div>
 
@@ -209,7 +209,7 @@ export default function ValorizacionesView({ showToast }) {
       {creando && (
         <Modal onClose={() => setCreando(false)}>
           <h3 style={{ fontSize: '17px', fontWeight: '900', color: BASE.navy, marginBottom: '14px' }}>
-            🤖 Nueva Valorizacion V-{proximoNumero}
+            Nueva Valorizacion V-{proximoNumero}
           </h3>
           <p style={{ fontSize: '12.5px', color: BASE.muted, marginBottom: '16px' }}>
             La plataforma calculara automaticamente avance × precio unitario contractual × reajuste, descontara adelanto y aplicara IGV.
@@ -234,11 +234,11 @@ export default function ValorizacionesView({ showToast }) {
           </div>
 
           <div style={{
-            background: '#dbeafe', border: '1px solid #2563eb55',
-            borderLeft: '4px solid #2563eb', borderRadius: '10px',
+            background: BASE.navySoft, border: `1px solid ${BASE.navyLight}55`,
+            borderLeft: `4px solid ${BASE.navy}`, borderRadius: '10px',
             padding: '12px 16px', marginBottom: '12px',
           }}>
-            <p style={{ fontSize: '11px', color: '#1e40af', fontWeight: '700', lineHeight: 1.5 }}>
+            <p style={{ fontSize: '11px', color: BASE.navyLight, fontWeight: '700', lineHeight: 1.5 }}>
               💡 Formula: <code>(Avance del periodo × Precio Unitario × Factor Reajuste) − Adelanto + IGV</code>
             </p>
           </div>
@@ -263,7 +263,7 @@ export default function ValorizacionesView({ showToast }) {
       {editando && (
         <Modal onClose={() => setEditando(null)} maxWidth="800px">
           <h3 style={{ fontSize: '17px', fontWeight: '900', color: BASE.navy, marginBottom: '14px' }}>
-            💰 Valorizacion V-{editando.numeroValorizacion}
+            Valorizacion V-{editando.numeroValorizacion}
           </h3>
 
           {/* Resumen */}
@@ -277,7 +277,7 @@ export default function ValorizacionesView({ showToast }) {
           </div>
 
           {/* Tabla de partidas */}
-          <p style={lblSec}>📋 PARTIDAS VALORIZADAS ({editando.partidasValorizadas?.length || 0})</p>
+          <p style={lblSec}>PARTIDAS VALORIZADAS ({editando.partidasValorizadas?.length || 0})</p>
           <div style={{ overflowX: 'auto', marginBottom: '14px' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', minWidth: '700px' }}>
               <thead>

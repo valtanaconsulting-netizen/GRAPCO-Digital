@@ -40,7 +40,7 @@ const SectionTitle = ({ icon, title, subtitle, color = BASE.green }) => (
   <div style={{marginBottom:'14px'}}>
     <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'4px'}}>
       <div style={{width:'4px',height:'18px',background:color,borderRadius:'2px'}}/>
-      <h3 style={{fontSize:'13px',fontWeight:'800',color:BASE.navy,letterSpacing:'-0.2px'}}>{icon} {title}</h3>
+      <h3 style={{fontSize:'13px',fontWeight:'800',color:BASE.navy,letterSpacing:'-0.2px'}}>{icon ? `${icon} ` : ''}{title}</h3>
     </div>
     <p style={{fontSize:'11px',color:BASE.muted,marginLeft:'14px'}}>{subtitle}</p>
   </div>
@@ -248,7 +248,7 @@ export default function Tendencias({ filtrados, historial, wbs }) {
       return {
         semana: `S${s.semana}`,
         'CPI acum': accR > 0 ? parseFloat((accM / accR).toFixed(3)) : null,
-        '% Avance': parseFloat(Math.min(100, (accM / cierre.hhMetaTotalPresup) * 100).toFixed(1)),
+        '% Avance': Math.round(Math.min(100, (accM / cierre.hhMetaTotalPresup) * 100)),
       };
     });
   }, [filtrados, cierre]);
@@ -397,23 +397,23 @@ export default function Tendencias({ filtrados, historial, wbs }) {
         <Kpi icon="📊" titulo="CPI PROMEDIO" color={getEstado(cpiPromedio).color}
           valor={fmtCPIPct(cpiPromedio)} sub={`${serieSemanal.datos.length} semanas`}/>
         <Kpi icon="📈" titulo="PENDIENTE" color={serieSemanal.tendencia?.pendiente >= 0 ? BASE.green : '#dc2626'}
-          valor={serieSemanal.tendencia?.valido ? `${serieSemanal.tendencia.pendiente >= 0 ? '+' : ''}${(serieSemanal.tendencia.pendiente * 100).toFixed(1)}%` : '—'}
+          valor={serieSemanal.tendencia?.valido ? `${serieSemanal.tendencia.pendiente >= 0 ? '+' : ''}${Math.round(serieSemanal.tendencia.pendiente * 100)}%` : '—'}
           sub="Δ CPI por semana"/>
-        <Kpi icon="🎲" titulo="CONFIANZA (R²)" color="#7c3aed"
+        <Kpi icon="🎲" titulo="CONFIANZA (R²)" color={BASE.navyLight}
           valor={serieSemanal.tendencia?.valido ? serieSemanal.tendencia.r2.toFixed(2) : '—'}
           sub={serieSemanal.tendencia?.r2 >= 0.7 ? 'Alta confianza' : serieSemanal.tendencia?.r2 >= 0.4 ? 'Confianza media' : 'Baja confianza'}/>
       </div>
 
       {/* PROYECCIÓN DE CIERRE DE OBRA */}
       {cierre && (
-        <Card full color="#0d9488">
-          <SectionTitle icon="🏁" title="PROYECCIÓN DE CIERRE DE OBRA"
+        <Card full color={BASE.navy}>
+          <SectionTitle title="PROYECCIÓN DE CIERRE DE OBRA"
             subtitle={`A este ritmo${confiable ? ' (tendencia reciente)' : ' (CPI acumulado — tendencia poco fiable)'}: HH y semana estimadas de término`}
-            color="#0d9488"/>
+            color={BASE.navy}/>
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(216px,1fr))',gap:'10px',marginBottom:'14px'}}>
             <Kpi icon="📐" titulo="AVANCE FÍSICO" color={BASE.navy}
-              valor={`${cierre.avancePct.toFixed(1)}%`} sub="ponderado por HH-meta"/>
-            <Kpi icon="🗓️" titulo="SEMANA FIN EST." color="#7c3aed"
+              valor={`${Math.round(cierre.avancePct)}%`} sub="ponderado por HH-meta"/>
+            <Kpi icon="🗓️" titulo="SEMANA FIN EST." color={BASE.navyLight}
               valor={cierre.semanaFin != null ? `S${cierre.semanaFin}` : '—'}
               sub={cierre.semanasRestantes != null ? `faltan ~${cierre.semanasRestantes} sem` : 'sin velocidad'}/>
             <Kpi icon="⏱️" titulo="HH TOTAL PROYECTADAS" color={BASE.navy}
@@ -422,13 +422,13 @@ export default function Tendencias({ filtrados, historial, wbs }) {
               titulo={cierre.sobrecostoFinal > 0 ? 'SOBRECOSTO FINAL' : 'AHORRO FINAL'}
               color={cierre.sobrecostoFinal > 0 ? '#dc2626' : BASE.green}
               valor={`${fmt1(Math.abs(cierre.sobrecostoFinal))} HH`}
-              sub={`${((Math.abs(cierre.sobrecostoFinal)/cierre.hhMetaTotalPresup)*100).toFixed(1)}% vs presupuesto`}/>
+              sub={`${Math.round((Math.abs(cierre.sobrecostoFinal)/cierre.hhMetaTotalPresup)*100)}% vs presupuesto`}/>
             <Kpi icon="🎯" titulo="CPI FINAL ESPERADO" color={getEstado(cierre.cpiFinalProy).color}
               valor={fmtCPIPct(cierre.cpiFinalProy)} sub={`ritmo ${cierre.velHHMetaSem ? fmt1(cierre.velHHMetaSem)+' HH-meta/sem' : '—'}`}/>
           </div>
           {/* Barra de avance físico */}
-          <div style={{background:'#f1f5f9',borderRadius:'8px',height:'14px',overflow:'hidden',position:'relative'}}>
-            <div style={{width:`${cierre.avancePct}%`,height:'100%',background:`linear-gradient(90deg, ${BASE.navy}, #0d9488)`,borderRadius:'8px',transition:'width 0.4s'}}/>
+          <div style={{background:BASE.bgSoft,borderRadius:'8px',height:'14px',overflow:'hidden',position:'relative'}}>
+            <div style={{width:`${cierre.avancePct}%`,height:'100%',background:`linear-gradient(90deg, ${BASE.navy}, ${BASE.navyLight})`,borderRadius:'8px',transition:'width 0.4s'}}/>
           </div>
           <p style={{fontSize:'10.5px',color:BASE.muted,marginTop:'8px',fontStyle:'italic'}}>
             Cálculo: HH-meta restantes ÷ CPI de referencia ({fmtCPI(cierre.cpiRef)}) = HH reales para terminar; semana fin = ritmo de HH-meta ganadas/semana (últimas 4).
@@ -437,20 +437,20 @@ export default function Tendencias({ filtrados, historial, wbs }) {
       )}
 
       {/* GRÁFICO ÚNICO — EVOLUCIÓN + TENDENCIA + PROYECCIÓN (consolidado) */}
-      <Card full color="#7c3aed">
+      <Card full color={BASE.gold}>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'12px',flexWrap:'wrap',gap:'10px'}}>
-          <SectionTitle icon="📈" title="EVOLUCIÓN Y PROYECCIÓN DEL CPI"
-            subtitle="CPI semanal · media móvil · tendencia · proyección punteada ±1σ" color="#7c3aed"/>
+          <SectionTitle title="EVOLUCIÓN Y PROYECCIÓN DEL CPI"
+            subtitle="CPI semanal · media móvil · tendencia · proyección punteada ±1σ" color={BASE.gold}/>
           <div style={{display:'flex',alignItems:'center',gap:'12px',flexWrap:'wrap'}}>
             <button onClick={()=>setPonderar(p=>!p)} title="Da más peso a las semanas recientes para que un mal arranque no contamine la proyección"
-              style={{display:'inline-flex',alignItems:'center',gap:'6px',padding:'5px 10px',background:ponderar?'#0d9488':'#f1f5f9',color:ponderar?'#fff':BASE.muted,border:'none',borderRadius:'6px',fontSize:'11px',fontWeight:'700',cursor:'pointer'}}>
+              style={{display:'inline-flex',alignItems:'center',gap:'6px',padding:'5px 10px',background:ponderar?BASE.navy:BASE.bgSoft,color:ponderar?'#fff':BASE.muted,border:'none',borderRadius:'6px',fontSize:'11px',fontWeight:'700',cursor:'pointer'}}>
               {ponderar ? '⚖️ Ponderado' : '➖ OLS'}
             </button>
             <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
               <small style={{fontSize:'11px',color:BASE.muted,fontWeight:'600'}}>Horizonte:</small>
               {[2, 4, 6, 8].map(n => (
                 <button key={n} onClick={()=>setHorizonteProy(n)}
-                  style={{padding:'5px 9px',background:horizonteProy===n?'#7c3aed':'#f1f5f9',color:horizonteProy===n?'#fff':BASE.muted,border:'none',borderRadius:'6px',fontSize:'11px',fontWeight:'700',cursor:'pointer'}}>
+                  style={{padding:'5px 9px',background:horizonteProy===n?BASE.gold:BASE.bgSoft,color:horizonteProy===n?'#fff':BASE.muted,border:'none',borderRadius:'6px',fontSize:'11px',fontWeight:'700',cursor:'pointer'}}>
                   {n}s
                 </button>
               ))}
@@ -485,18 +485,18 @@ export default function Tendencias({ filtrados, historial, wbs }) {
       {/* RANKING ACTIVIDADES */}
       {rankingActividades.length > 0 && (
         <Card>
-          <SectionTitle icon="🏆" title="RANKING POR CPI" subtitle="Actividades de peor a mejor — foco en las primeras (top 10)" color="#dc2626"/>
+          <SectionTitle title="RANKING POR CPI" subtitle="Actividades de peor a mejor — foco en las primeras (top 10)" color="#dc2626"/>
           <div style={{display:'flex',flexDirection:'column',gap:'6px'}}>
             {rankingActividades.slice(0, 10).map((a, i) => {
               const cc = getEstado(a.cpi);
               return (
                 <div key={a.actividad} onClick={() => setActSel(a.actividad)}
-                  style={{display:'flex',alignItems:'center',gap:'10px',padding:'10px 12px',background:i % 2 === 0 ? '#f8fafc' : BASE.white,borderRadius:'8px',cursor:'pointer',border:actSel === a.actividad ? `2px solid ${BASE.navy}` : `1px solid ${BASE.border}`,transition:'0.2s'}}>
+                  style={{display:'flex',alignItems:'center',gap:'10px',padding:'10px 12px',background:i % 2 === 0 ? BASE.bgSoft : BASE.white,borderRadius:'8px',cursor:'pointer',border:actSel === a.actividad ? `2px solid ${BASE.navy}` : `1px solid ${BASE.border}`,transition:'0.2s'}}>
                   <span style={{fontSize:'13px',fontWeight:'800',color:BASE.muted,minWidth:'28px'}}>#{i + 1}</span>
                   <span style={{flex:1,fontSize:'12px',fontWeight:'600',color:BASE.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} title={a.actividad}>{a.nombre}</span>
                   <span style={{fontSize:'10px',color:BASE.muted,whiteSpace:'nowrap'}}>{a.count} reg.</span>
                   <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
-                    <div style={{width:'70px',height:'6px',background:'#e2e8f0',borderRadius:'3px',overflow:'hidden'}}>
+                    <div style={{width:'70px',height:'6px',background:BASE.border,borderRadius:'3px',overflow:'hidden'}}>
                       <div style={{width:`${Math.min(100, (a.cpi / 1.5) * 100)}%`,height:'100%',background:cc.color,borderRadius:'3px'}}/>
                     </div>
                     <span style={{fontSize:'13px',fontWeight:'800',color:cc.color,minWidth:'42px',textAlign:'right'}}>{fmtCPIPct(a.cpi)}</span>
@@ -514,9 +514,9 @@ export default function Tendencias({ filtrados, historial, wbs }) {
       {/* EVOLUCIÓN POR ACTIVIDAD */}
       <Card full>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'12px',flexWrap:'wrap',marginBottom:'14px'}}>
-          <SectionTitle icon="🔍" title="EVOLUCIÓN POR ACTIVIDAD" subtitle="IP Real vs IP Meta a lo largo del tiempo" color="#7c3aed"/>
+          <SectionTitle title="EVOLUCIÓN POR ACTIVIDAD" subtitle="IP Real vs IP Meta a lo largo del tiempo" color={BASE.gold}/>
           <select value={actSel} onChange={e => setActSel(e.target.value)}
-            style={{padding:'10px 14px',borderRadius:'8px',border:`1.5px solid ${BASE.border}`,fontSize:'12px',background:'#f8fafc',minWidth:'220px',maxWidth:'360px',fontWeight:'600'}}>
+            style={{padding:'10px 14px',borderRadius:'8px',border:`1.5px solid ${BASE.border}`,fontSize:'12px',background:BASE.bgSoft,minWidth:'220px',maxWidth:'360px',fontWeight:'600'}}>
             <option value="">— Selecciona una actividad —</option>
             {actividadesDisponibles.map(a => <option key={a} value={a}>{a}</option>)}
           </select>

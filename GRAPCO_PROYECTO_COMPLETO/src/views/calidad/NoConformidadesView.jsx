@@ -116,7 +116,7 @@ export default function NoConformidadesView({ showToast }) {
       }}>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 200px' }}>
-            <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>🚨 No Conformidades</p>
+            <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>No Conformidades</p>
             <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
               {ncs.length} total · {filtradas.length} mostradas
             </p>
@@ -224,7 +224,7 @@ export default function NoConformidadesView({ showToast }) {
                     </button>
                   )}
                   {n.estado === 'tratamiento' && (
-                    <button onClick={() => cambiarEstado(n.id, 'cerrada')} style={btnAction('#2563eb')}>
+                    <button onClick={() => cambiarEstado(n.id, 'cerrada')} style={btnAction(BASE.navy)}>
                       ✓ Cerrar
                     </button>
                   )}
@@ -243,7 +243,7 @@ export default function NoConformidadesView({ showToast }) {
       {editando && (
         <Modal onClose={() => setEditando(null)}>
           <h3 style={{ fontSize: '17px', fontWeight: '900', color: BASE.navy, marginBottom: '14px' }}>
-            {editando === 'NUEVO' ? '➕ Nueva No Conformidad' : '✏️ Editar NC'}
+            {editando === 'NUEVO' ? 'Nueva No Conformidad' : 'Editar NC'}
           </h3>
 
           <Field label="Titulo *">

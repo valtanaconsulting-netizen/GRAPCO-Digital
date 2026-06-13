@@ -1,7 +1,7 @@
 // src/views/modulos/planMaestro/PlanMaestroPanel.jsx — Wrapper Plan Maestro (B21)
 
 import React, { useState, Suspense, lazy } from 'react';
-import { BASE } from '../../../utils/styles';
+import { BASE, CHART_PALETTE } from '../../../utils/styles';
 import RoleGuard from '../../../components/RoleGuard';
 import WBSExplorer from './WBSExplorer';
 import ActividadEditor from './ActividadEditor';
@@ -13,11 +13,11 @@ const ImportadorPlanMaestro = lazy(() => import('./ImportadorPlanMaestro'));
 // Plan Maestro = gestor del WBS. El Gantt vive en «Cronograma de Obra» y el Pull
 // Planning en su propio módulo (se quitaron de aquí para no duplicar — paleta GRAPCO).
 const TABS = [
-  { id: 'dashboard', l: 'Dashboard',     icono: '📊', desc: 'KPIs del plan',           color: '#0F2A47' },
-  { id: 'wbs',       l: 'Estructura WBS', icono: '🌳', desc: 'Árbol jerárquico',        color: '#7E22CE' },
-  { id: 'masivo',    l: 'Editor Masivo',  icono: '📝', desc: 'CRUD tipo Excel',         color: '#047857' },
-  { id: 'wizard',    l: 'Wizard',         icono: '🚀', desc: 'Plantillas predefinidas', color: '#E5A82F' },
-  { id: 'importar',  l: 'Importar Excel', icono: '📥', desc: 'CSV/Excel/S10',           color: '#0E7490' },
+  { id: 'dashboard', l: 'Dashboard',     icono: '📊', desc: 'KPIs del plan',           color: BASE.navy },
+  { id: 'wbs',       l: 'Estructura WBS', icono: '🌳', desc: 'Árbol jerárquico',        color: CHART_PALETTE[3] },
+  { id: 'masivo',    l: 'Editor Masivo',  icono: '📝', desc: 'CRUD tipo Excel',         color: CHART_PALETTE[4] },
+  { id: 'wizard',    l: 'Wizard',         icono: '🚀', desc: 'Plantillas predefinidas', color: BASE.gold },
+  { id: 'importar',  l: 'Importar Excel', icono: '📥', desc: 'CSV/Excel/S10',           color: CHART_PALETTE[2] },
 ];
 
 export default function PlanMaestroPanel({ showToast }) {

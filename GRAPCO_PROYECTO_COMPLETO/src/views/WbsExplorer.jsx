@@ -130,7 +130,7 @@ export default function WbsExplorer({ onClose, onSelect, isMobile }) {
         }}>
           <div>
             <p style={{ fontSize: '14px', fontWeight: '800', color: '#fff', margin: 0 }}>
-              📚 CATÁLOGO DE PARTIDAS WBS
+              CATÁLOGO DE PARTIDAS WBS
             </p>
             <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)', margin: '2px 0 0' }}>
               {totalActividades} actividades · click para seleccionar
@@ -157,7 +157,7 @@ export default function WbsExplorer({ onClose, onSelect, isMobile }) {
               border: `1.5px solid ${BASE.border}`,
               borderRadius: '10px', fontSize: '13px',
               outline: 'none', boxSizing: 'border-box',
-              background: '#f8fafc', fontFamily: BASE.font,
+              background: BASE.bgSoft, fontFamily: BASE.font,
             }}
           />
         </div>
@@ -168,7 +168,7 @@ export default function WbsExplorer({ onClose, onSelect, isMobile }) {
             padding: '8px 14px',
             display: 'flex', gap: '8px', alignItems: 'center',
             borderBottom: `1px solid ${BASE.border}`,
-            flexShrink: 0, background: '#f8fafc',
+            flexShrink: 0, background: BASE.bgSoft,
           }}>
             <button type="button" onClick={expandirTodo} style={{
               padding: '6px 12px', fontSize: '11px', fontWeight: '700',
@@ -242,23 +242,23 @@ export default function WbsExplorer({ onClose, onSelect, isMobile }) {
                           onClick={() => { if (!query.trim()) toggle(keySP); }}
                           style={{
                             padding: '9px 16px 9px 28px',
-                            background: '#dbeafe', cursor: 'pointer',
+                            background: BASE.navySoft, cursor: 'pointer',
                             display: 'flex', alignItems: 'center', gap: '8px',
-                            userSelect: 'none', borderBottom: '1px solid #bfdbfe',
+                            userSelect: 'none', borderBottom: `1px solid ${BASE.border}`,
                           }}
                         >
-                          <span style={{ fontSize: '11px', color: '#1d4ed8', flexShrink: 0 }}>
+                          <span style={{ fontSize: '11px', color: BASE.navyLight, flexShrink: 0 }}>
                             {openSP ? '▼' : '▶'}
                           </span>
                           <span style={{
-                            fontSize: '10px', fontWeight: '700', color: '#1d4ed8',
-                            fontFamily: 'monospace', background: '#bfdbfe',
+                            fontSize: '10px', fontWeight: '700', color: BASE.navy,
+                            fontFamily: 'monospace', background: BASE.white,
                             padding: '1px 6px', borderRadius: '3px', flexShrink: 0,
                           }}>{sp.codigo}</span>
-                          <span style={{ fontSize: '12px', fontWeight: '700', color: '#1e3a5f', flex: 1 }}>
+                          <span style={{ fontSize: '12px', fontWeight: '700', color: BASE.navy, flex: 1 }}>
                             {sp.subpartida}
                           </span>
-                          <span style={{ fontSize: '10px', color: '#64748b', flexShrink: 0 }}>
+                          <span style={{ fontSize: '10px', color: BASE.muted, flexShrink: 0 }}>
                             {sp.actividades.length}
                           </span>
                         </div>
@@ -274,15 +274,15 @@ export default function WbsExplorer({ onClose, onSelect, isMobile }) {
                                 subpartida: sp.subpartida,
                                 actividad: a.actividad,
                               })}
-                              onMouseEnter={e => e.currentTarget.style.background = '#eff6ff'}
+                              onMouseEnter={e => e.currentTarget.style.background = BASE.navySoft}
                               onMouseLeave={e => {
                                 e.currentTarget.style.background = highlighted
-                                  ? '#fffbeb'
-                                  : ai % 2 === 0 ? '#fff' : '#f8fafc';
+                                  ? BASE.goldSoft
+                                  : ai % 2 === 0 ? '#fff' : BASE.bgSoft;
                               }}
                               style={{
                                 padding: '10px 16px 10px 48px',
-                                background: highlighted ? '#fffbeb' : ai % 2 === 0 ? '#fff' : '#f8fafc',
+                                background: highlighted ? BASE.goldSoft : ai % 2 === 0 ? '#fff' : BASE.bgSoft,
                                 cursor: 'pointer',
                                 display: 'flex', alignItems: 'center', gap: '8px',
                                 borderBottom: `1px solid ${BASE.border}`,
@@ -300,7 +300,7 @@ export default function WbsExplorer({ onClose, onSelect, isMobile }) {
                                 <span style={{
                                   fontSize: '10px', fontWeight: '700',
                                   padding: '2px 7px', borderRadius: '4px',
-                                  background: '#f0fdf4', color: '#16a34a', flexShrink: 0,
+                                  background: BASE.navySoft, color: BASE.navy, flexShrink: 0,
                                 }}>{a.unidad}</span>
                               )}
                               {a.ipMeta && (
@@ -310,7 +310,7 @@ export default function WbsExplorer({ onClose, onSelect, isMobile }) {
                                   background: '#f1f5f9', color: BASE.muted, flexShrink: 0,
                                 }}>IP {a.ipMeta.toFixed(2)}</span>
                               )}
-                              <span style={{ fontSize: '14px', color: BASE.green, flexShrink: 0 }}>→</span>
+                              <span style={{ fontSize: '14px', color: BASE.gold, flexShrink: 0 }}>→</span>
                             </div>
                           );
                         })}
@@ -325,7 +325,7 @@ export default function WbsExplorer({ onClose, onSelect, isMobile }) {
 
         {/* FOOTER */}
         <div style={{
-          padding: '10px 14px', background: '#f8fafc',
+          padding: '10px 14px', background: BASE.bgSoft,
           borderTop: `1px solid ${BASE.border}`,
           fontSize: '10px', color: BASE.muted, lineHeight: 1.5, flexShrink: 0,
         }}>

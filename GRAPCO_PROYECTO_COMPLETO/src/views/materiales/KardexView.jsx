@@ -74,7 +74,7 @@ export default function KardexView() {
         borderRadius: '12px', padding: '14px 18px',
       }}>
         <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.muted, letterSpacing: '0.5px', marginBottom: '10px' }}>
-          🔍 FILTROS
+          FILTROS
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
           <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)} style={selS}>

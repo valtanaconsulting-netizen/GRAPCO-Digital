@@ -125,14 +125,14 @@ export default function ProtocoloCALFOR({ showToast }) {
         flexWrap: 'wrap', gap: '12px',
       }}>
         <div>
-          <p style={{ fontSize: '12px', fontWeight: '900', color: '#7c3aed', letterSpacing: '0.5px' }}>
-            📋 PROTOCOLOS CAL-FOR (formato GRAPCO)
+          <p style={{ fontSize: '12px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.5px' }}>
+            PROTOCOLOS CAL-FOR (formato GRAPCO)
           </p>
           <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
             Replica el formato oficial: cabecera, equipos, mediciones plano vs campo, observaciones y 5 firmas.
           </p>
         </div>
-        <button onClick={() => abrir()} style={btn('#7c3aed')}>+ Nuevo CAL-FOR</button>
+        <button onClick={() => abrir()} style={btn(BASE.navy)}>+ Nuevo CAL-FOR</button>
       </div>
 
       {!items.length ? (
@@ -143,12 +143,12 @@ export default function ProtocoloCALFOR({ showToast }) {
           {items.map(it => (
             <div key={it.id} style={{
               background: BASE.white, border: `1px solid ${BASE.border}`,
-              borderLeft: `5px solid #7c3aed`,
+              borderLeft: `5px solid ${BASE.navy}`,
               borderRadius: '14px', padding: '14px 16px',
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
                 <div>
-                  <p style={{ fontSize: '11px', fontWeight: '900', color: '#7c3aed', fontFamily: 'monospace' }}>
+                  <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.navy, fontFamily: 'monospace' }}>
                     {it.codigoProtocolo} · v{it.versionProtocolo || 1}
                   </p>
                   <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy, marginTop: '4px', lineHeight: 1.3 }}>
@@ -167,7 +167,7 @@ export default function ProtocoloCALFOR({ showToast }) {
                 {it.cliente} · {it.estructuraElemento || '—'} · {(it.mediciones?.length || 0)} medición(es)
               </p>
               <div style={{ display: 'flex', gap: '6px', marginTop: '10px' }}>
-                <button onClick={() => abrir(it)} style={btnSm('#0ea5e9')}>Editar</button>
+                <button onClick={() => abrir(it)} style={btnSm(BASE.navy)}>Editar</button>
                 <button onClick={() => eliminar(it)} style={btnSm(BASE.red)}>Eliminar</button>
               </div>
             </div>
@@ -313,9 +313,9 @@ export default function ProtocoloCALFOR({ showToast }) {
 
           {/* Acciones */}
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginTop: '14px', borderTop: `1px solid ${BASE.border}`, paddingTop: '12px' }}>
-            <button onClick={imprimir} style={btn('#0ea5e9')}>🖨️ Imprimir / PDF</button>
+            <button onClick={imprimir} style={btn(BASE.navy)}>🖨️ Imprimir / PDF</button>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={cerrar} disabled={guardando} style={btn('#94a3b8')}>Cancelar</button>
+              <button onClick={cerrar} disabled={guardando} style={btn(BASE.muted)}>Cancelar</button>
               <button onClick={guardar} disabled={guardando} style={btn(BASE.navy)}>
                 {guardando ? 'Guardando…' : '💾 Guardar protocolo'}
               </button>

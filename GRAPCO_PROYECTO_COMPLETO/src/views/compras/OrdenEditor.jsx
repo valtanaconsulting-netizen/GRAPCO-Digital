@@ -206,7 +206,7 @@ export default function OrdenEditor({ tipoOrden = 'OC', ordenExistente = null, s
   };
 
   const titulo = tipoOrden === 'OS' ? 'Orden de Servicio' : 'Orden de Compra';
-  const colorAcento = tipoOrden === 'OS' ? '#f59e0b' : '#2563eb';
+  const colorAcento = tipoOrden === 'OS' ? BASE.gold : BASE.navy;
 
   // Filtrar almacenes por tipoInventario
   const almacenesFiltrados = almacenes.filter(a => {
@@ -224,7 +224,7 @@ export default function OrdenEditor({ tipoOrden = 'OC', ordenExistente = null, s
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
         <div>
           <p style={{ fontSize: '10.5px', fontWeight: '900', color: colorAcento, letterSpacing: '0.6px' }}>
-            {tipoOrden === 'OS' ? '🔧 ORDEN DE SERVICIO' : '🛒 ORDEN DE COMPRA'}
+            {tipoOrden === 'OS' ? 'ORDEN DE SERVICIO' : 'ORDEN DE COMPRA'}
           </p>
           <h3 style={{ fontSize: '18px', fontWeight: '900', color: BASE.navy, marginTop: '4px' }}>
             {ordenExistente?.id ? `Editar ${titulo}` : `Nueva ${titulo}`}
@@ -240,7 +240,7 @@ export default function OrdenEditor({ tipoOrden = 'OC', ordenExistente = null, s
 
       {/* Datos cabecera */}
       <div style={{ background: BASE.bgSoft, padding: '16px', borderRadius: '12px', marginBottom: '14px' }}>
-        <p style={lblSec}>📋 DATOS GENERALES</p>
+        <p style={lblSec}>DATOS GENERALES</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px' }}>
           <Field label="Numero *">
             <input type="text" value={form.numero} onChange={e => setForm({...form, numero: e.target.value})} style={inpS} />
@@ -271,7 +271,7 @@ export default function OrdenEditor({ tipoOrden = 'OC', ordenExistente = null, s
           {form.moneda === 'USD' && (
             <Field label={`Tipo cambio ${tcAuto ? '(SUNAT auto)' : '*'}`}>
               <input type="number" step="0.001" value={form.tipoCambio} onChange={e => setForm({...form, tipoCambio: parseFloat(e.target.value) || 0})}
-                style={{ ...inpS, fontWeight: '800', color: '#2563eb' }} />
+                style={{ ...inpS, fontWeight: '800', color: BASE.navy }} />
             </Field>
           )}
           <Field label="Estado">
@@ -288,7 +288,7 @@ export default function OrdenEditor({ tipoOrden = 'OC', ordenExistente = null, s
       {/* Items */}
       <div style={{ background: BASE.bgSoft, padding: '16px', borderRadius: '12px', marginBottom: '14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <p style={lblSec}>{tipoOrden === 'OS' ? '🔧 SERVICIOS' : '📦 ITEMS / MATERIALES'}</p>
+          <p style={lblSec}>{tipoOrden === 'OS' ? 'SERVICIOS' : 'ITEMS / MATERIALES'}</p>
           <button onClick={agregarItem} style={{
             padding: '6px 14px', borderRadius: '6px', background: colorAcento, color: '#fff',
             border: 'none', fontSize: '11px', fontWeight: '900', cursor: 'pointer',
@@ -301,7 +301,7 @@ export default function OrdenEditor({ tipoOrden = 'OC', ordenExistente = null, s
           return (
             <div key={i} style={{
               background: BASE.white, padding: '12px', borderRadius: '10px',
-              border: it.esDescargaDirecta ? `2px solid #f59e0b` : `1px solid ${BASE.border}`,
+              border: it.esDescargaDirecta ? `2px solid ${BASE.gold}` : `1px solid ${BASE.border}`,
               marginBottom: '8px',
             }}>
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr auto', gap: '8px', alignItems: 'flex-end' }}>
@@ -343,7 +343,7 @@ export default function OrdenEditor({ tipoOrden = 'OC', ordenExistente = null, s
               <div style={{ display: 'flex', gap: '14px', marginTop: '8px', flexWrap: 'wrap' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}>
                   <input type="checkbox" checked={!!it.esDescargaDirecta} onChange={e => actualizarItem(i, 'esDescargaDirecta', e.target.checked)}
-                    style={{ width: '14px', height: '14px', accentColor: '#f59e0b' }} />
+                    style={{ width: '14px', height: '14px', accentColor: BASE.gold }} />
                   ⚡ Descarga directa a partida
                   <span style={{ fontSize: '10px', color: BASE.muted, fontWeight: '600' }}>(no pasa por stock)</span>
                 </label>

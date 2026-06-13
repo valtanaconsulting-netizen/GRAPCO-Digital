@@ -81,12 +81,12 @@ export default function MapaProyectosPeru({ onSelectProyecto }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       <div style={{
-        background: 'linear-gradient(135deg, #0d9488, #0f766e)',
+        background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
         borderRadius: '14px', padding: '20px 26px', color: '#fff',
         borderLeft: `5px solid ${BASE.gold}`,
       }}>
         <p style={{ fontSize: '10px', fontWeight: '900', color: BASE.gold, letterSpacing: '1.4px' }}>
-          🗺️ MAPA DE PORTFOLIO · GRAPCO PERÚ
+          MAPA DE PORTFOLIO · GRAPCO PERÚ
         </p>
         <h2 style={{ fontSize: '22px', fontWeight: '900', marginTop: '4px' }}>
           {proyectosConCoords.length} de {proyectos.length} proyectos en el mapa
@@ -103,7 +103,7 @@ export default function MapaProyectosPeru({ onSelectProyecto }) {
       }}>
         {/* MAPA SVG */}
         <div style={{
-          background: 'linear-gradient(180deg, #dbeafe, #f0fdfa)',
+          background: `linear-gradient(180deg, ${BASE.navySoft}, ${BASE.bgSoft})`,
           borderRadius: '12px', padding: '12px', border: `1px solid ${BASE.border}`,
         }}>
           <svg viewBox="0 0 800 1000" style={{ width: '100%', height: 'auto', display: 'block', maxHeight: '70vh' }}>
@@ -111,7 +111,7 @@ export default function MapaProyectosPeru({ onSelectProyecto }) {
             <path d={PERU_PATH} fill="rgba(15,23,42,0.08)" transform="translate(6 6)" />
             {/* Silueta del Perú */}
             <path d={PERU_PATH}
-              fill="#fef3c7"
+              fill={BASE.goldLight}
               stroke={BASE.navy} strokeWidth="2.5" strokeLinejoin="round" />
 
             {/* Líneas de cuadrícula sutiles (paralelos cada 5°) */}
@@ -119,8 +119,8 @@ export default function MapaProyectosPeru({ onSelectProyecto }) {
               const { y } = latLngToXY(lat, 0);
               return (
                 <g key={lat}>
-                  <line x1={0} y1={y} x2={800} y2={y} stroke="#94a3b8" strokeWidth="0.5" strokeDasharray="3 3" opacity="0.4" />
-                  <text x={6} y={y - 4} fontSize="10" fill="#64748b">{lat}°</text>
+                  <line x1={0} y1={y} x2={800} y2={y} stroke={BASE.mutedSoft} strokeWidth="0.5" strokeDasharray="3 3" opacity="0.4" />
+                  <text x={6} y={y - 4} fontSize="10" fill={BASE.muted}>{lat}°</text>
                 </g>
               );
             })}
@@ -130,8 +130,8 @@ export default function MapaProyectosPeru({ onSelectProyecto }) {
               const xy = latLngToXY(c.lat, c.lng);
               return (
                 <g key={c.nombre}>
-                  <circle cx={xy.x} cy={xy.y} r="3" fill="#94a3b8" stroke="#fff" strokeWidth="1" />
-                  <text x={xy.x + 6} y={xy.y + 4} fontSize="9" fill="#64748b" fontWeight="600">{c.nombre}</text>
+                  <circle cx={xy.x} cy={xy.y} r="3" fill={BASE.mutedSoft} stroke="#fff" strokeWidth="1" />
+                  <text x={xy.x + 6} y={xy.y + 4} fontSize="9" fill={BASE.muted} fontWeight="600">{c.nombre}</text>
                 </g>
               );
             })}
@@ -192,7 +192,7 @@ export default function MapaProyectosPeru({ onSelectProyecto }) {
         {/* LISTA LATERAL */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '70vh', overflowY: 'auto' }}>
           <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.muted, letterSpacing: '0.5px' }}>
-            📋 PROYECTOS ({proyectosConCoords.length})
+            PROYECTOS ({proyectosConCoords.length})
           </p>
           {proyectosConCoords.map(p => {
             const estado = ESTADOS[p.estado] || ESTADOS.planificado;

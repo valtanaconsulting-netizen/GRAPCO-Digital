@@ -185,7 +185,7 @@ export default function ImpactoTesis({ historialEnriquecido, configuracion }) {
             { l: 'Semanas analizadas', v: semanasTotales },
             { l: 'CPI inicial', v: fmtCPIPct(cpiAntes), c: BASE.muted },
             { l: 'CPI actual', v: fmtCPIPct(cpiAhora), c: cpiAhora >= cpiAntes ? BASE.greenDark : BASE.red },
-            { l: 'Δ Mejora', v: mejoraCpi !== null ? `${mejoraCpi >= 0 ? '+' : ''}${mejoraCpi.toFixed(1)}%` : '—', c: colorMejora },
+            { l: 'Δ Mejora', v: mejoraCpi !== null ? `${mejoraCpi >= 0 ? '+' : ''}${Math.round(mejoraCpi)}%` : '—', c: colorMejora },
           ].map(item => (
             <div key={item.l} style={{ textAlign: 'center' }}>
               <p style={{ fontSize: '9px', fontWeight: '700', color: BASE.muted, letterSpacing: '0.6px' }}>{item.l}</p>
@@ -278,7 +278,7 @@ export default function ImpactoTesis({ historialEnriquecido, configuracion }) {
           borderRadius: '10px',
         }}>
           <p style={{ fontSize: '11px', fontWeight: '800', color: BASE.goldDark, letterSpacing: '0.6px', marginBottom: '6px' }}>
-            📝 CONCLUSIÓN PARA SUSTENTACIÓN
+            CONCLUSIÓN PARA SUSTENTACIÓN
           </p>
           <p style={{ fontSize: '13px', color: BASE.text, lineHeight: 1.6 }}>
             La implementación del sistema GRAPCO Produc-App generó una mejora del{' '}
@@ -300,7 +300,7 @@ export default function ImpactoTesis({ historialEnriquecido, configuracion }) {
         borderRadius: '10px',
         fontSize: '10px', color: BASE.muted, lineHeight: 1.6,
       }}>
-        <strong style={{ color: BASE.navy }}>📚 Nota metodológica:</strong> El análisis compara
+        <strong style={{ color: BASE.navy }}>Nota metodológica:</strong> El análisis compara
         el primer cuarto de semanas registradas con el último cuarto. CPI = HH Meta ÷ HH Real
         (mayor es mejor). Las HH recuperables se calculan asumiendo que el ratio de eficiencia
         actual hubiera sido el de inicio del proyecto. La valorización en soles usa el promedio

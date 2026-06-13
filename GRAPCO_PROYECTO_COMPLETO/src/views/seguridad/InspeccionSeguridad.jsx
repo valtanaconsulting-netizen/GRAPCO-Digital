@@ -85,7 +85,7 @@ const ESTADOS = [
   { id: 'ok',         l: 'OK',            color: BASE.green, icono: '✅' },
   { id: 'observado',  l: 'Observado',     color: BASE.gold,  icono: '⚠️' },
   { id: 'critico',    l: 'Crítico',       color: BASE.red,   icono: '🚨' },
-  { id: 'na',         l: 'N/A',           color: '#94a3b8',  icono: '—' },
+  { id: 'na',         l: 'N/A',           color: BASE.mutedSoft,  icono: '—' },
 ];
 
 export default function InspeccionSeguridad({ showToast }) {
@@ -182,7 +182,7 @@ export default function InspeccionSeguridad({ showToast }) {
         boxShadow: '0 2px 6px rgba(15,23,42,0.04)',
       }}>
         <p style={{ fontSize: '12px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.5px', marginBottom: '4px' }}>
-          ✅ INSPECCIÓN DIARIA DE SEGURIDAD
+          INSPECCIÓN DIARIA DE SEGURIDAD
         </p>
         <p style={{ fontSize: '11px', color: BASE.muted, marginBottom: '14px' }}>
           Recorre el frente y marca cada ítem. Los críticos abren automáticamente una NC para seguimiento.
@@ -215,7 +215,7 @@ export default function InspeccionSeguridad({ showToast }) {
         <Tarjeta titulo="OK"        valor={resumen.ok}   color={BASE.green} />
         <Tarjeta titulo="Observado" valor={resumen.obs}  color={BASE.gold}  />
         <Tarjeta titulo="Crítico"   valor={resumen.crit} color={BASE.red}   />
-        <Tarjeta titulo="N/A"       valor={resumen.na}   color="#94a3b8"     />
+        <Tarjeta titulo="N/A"       valor={resumen.na}   color={BASE.mutedSoft}     />
         <Tarjeta titulo="Avance"    valor={`${resumen.evaluados}/${resumen.total}`} color={BASE.navy} />
       </div>
 
@@ -244,7 +244,7 @@ export default function InspeccionSeguridad({ showToast }) {
                   padding: '10px 16px',
                   borderBottom: idx < g.items.length - 1 ? `1px solid ${BASE.border}` : 'none',
                   display: 'flex', alignItems: 'center', gap: '10px',
-                  background: idx % 2 === 0 ? '#fff' : '#f8fafc',
+                  background: idx % 2 === 0 ? '#fff' : BASE.bgSoft,
                   flexWrap: 'wrap',
                 }}>
                   <span style={{ fontSize: '12.5px', color: BASE.navy, flex: '1 1 280px' }}>

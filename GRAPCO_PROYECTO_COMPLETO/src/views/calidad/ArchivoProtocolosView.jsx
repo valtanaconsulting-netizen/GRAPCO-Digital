@@ -107,7 +107,7 @@ export default function ArchivoProtocolosView({ onEdit }) {
       <div style={toolbarStyle}>
         <div>
           <p style={{ fontSize: 10, fontWeight: 900, color: BASE.gold, letterSpacing: 1.4 }}>
-            📁 ARCHIVO DE PROTOCOLOS FIRMADOS
+            ARCHIVO DE PROTOCOLOS FIRMADOS
           </p>
           <h2 style={{ fontSize: 18, fontWeight: 900, color: BASE.navy, marginTop: 2 }}>
             {proyectoActivo?.nombre || 'Proyecto'} · {items.length} archivado{items.length !== 1 ? 's' : ''}

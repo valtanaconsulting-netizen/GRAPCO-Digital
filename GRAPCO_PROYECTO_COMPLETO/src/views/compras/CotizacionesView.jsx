@@ -141,8 +141,8 @@ export default function CotizacionesView({ showToast }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {/* Aviso de naturaleza referencial */}
       <div style={{
-        background: '#eff6ff', border: '1px solid #bfdbfe', borderLeft: '4px solid #2563eb',
-        borderRadius: '10px', padding: '12px 16px', fontSize: '11.5px', color: '#1e3a5f', lineHeight: 1.55,
+        background: BASE.navySoft, border: `1px solid ${BASE.border}`, borderLeft: `4px solid ${BASE.navy}`,
+        borderRadius: '10px', padding: '12px 16px', fontSize: '11.5px', color: BASE.navy, lineHeight: 1.55,
       }}>
         💡 <strong>Precios de referencia de mercado.</strong> Base curada por tu equipo (almacén/logística).
         Registra el precio real de tus proveedores con su fecha; el sistema te marca cuáles están vigentes
@@ -156,7 +156,7 @@ export default function CotizacionesView({ showToast }) {
         display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap',
       }}>
         <div style={{ flex: '1 1 200px' }}>
-          <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>🔎 Cotizaciones · Precios de Mercado</p>
+          <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>Cotizaciones · Precios de Mercado</p>
           <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
             {grupos.length} material(es) · {precios.length} registros de precio
           </p>
@@ -166,7 +166,7 @@ export default function CotizacionesView({ showToast }) {
           style={{ padding: '9px 14px', borderRadius: '8px', border: `1.5px solid ${BASE.border}`, fontSize: '12.5px', minWidth: '220px', flex: '1 1 220px' }} />
         <button onClick={abrirNuevo} style={{
           padding: '10px 20px', borderRadius: '8px',
-          background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+          background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
           color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900', cursor: 'pointer',
         }}>➕ REGISTRAR PRECIO</button>
       </div>
@@ -189,7 +189,7 @@ export default function CotizacionesView({ showToast }) {
                     {g.material} <span style={{ fontSize: '10.5px', color: BASE.muted, fontWeight: '700' }}>/ {g.unidad}</span>
                   </p>
                   <p style={{ fontSize: '10.5px', color: BASE.muted, marginTop: '2px' }}>
-                    {g.items.length} proveedor(es) · dispersión {g.spreadPct.toFixed(0)}%
+                    {g.items.length} proveedor(es) · dispersión {Math.round(g.spreadPct)}%
                   </p>
                 </div>
                 {g.sugerido && (
@@ -258,7 +258,7 @@ export default function CotizacionesView({ showToast }) {
 
       {/* Modal alta/edición */}
       {editando && (
-        <Modal title={editando === 'NUEVO' ? '➕ Registrar precio de mercado' : '✏️ Editar precio'}
+        <Modal title={editando === 'NUEVO' ? 'Registrar precio de mercado' : 'Editar precio'}
           onClose={() => setEditando(null)} maxW="520px">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <Campo label="Material *">
@@ -327,5 +327,5 @@ const th = { padding: '9px 12px', textAlign: 'left', fontSize: '10px', fontWeigh
 const td = { padding: '8px 12px', fontSize: '11.5px', color: BASE.text };
 const inp = { width: '100%', padding: '9px 12px', borderRadius: '8px', border: `1.5px solid ${BASE.border}`, fontSize: '12.5px', background: '#fff' };
 const accionBtn = { background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '13px', padding: '4px 6px' };
-const btnPrim = { padding: '10px 22px', borderRadius: '8px', background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900', cursor: 'pointer' };
+const btnPrim = { padding: '10px 22px', borderRadius: '8px', background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900', cursor: 'pointer' };
 const btnSec = { padding: '10px 22px', borderRadius: '8px', background: BASE.bgSoft, color: BASE.muted, border: `1.5px solid ${BASE.border}`, fontSize: '12px', fontWeight: '900', cursor: 'pointer' };

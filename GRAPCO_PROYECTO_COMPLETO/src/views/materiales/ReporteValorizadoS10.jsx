@@ -109,10 +109,10 @@ export default function ReporteValorizadoS10({ showToast }) {
       <div style={{
         background: BASE.white, border: `1px solid ${BASE.border}`,
         borderRadius: '14px', padding: '18px 22px',
-        borderLeft: `5px solid #7c3aed`,
+        borderLeft: `5px solid ${BASE.navy}`,
       }}>
-        <p style={{ fontSize: '11px', fontWeight: '900', color: '#7c3aed', letterSpacing: '0.6px' }}>
-          📑 REPORTE S10 · ALMACEN FISICO VALORIZADO
+        <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.6px' }}>
+          REPORTE S10 · ALMACEN FISICO VALORIZADO
         </p>
         <h3 style={{ fontSize: '17px', fontWeight: '900', color: BASE.navy, marginTop: '4px' }}>
           Saldos al {fechaCorte} {fechaDesde && <span style={{ fontSize: '13px', color: BASE.muted }}>(desde {fechaDesde})</span>}
@@ -209,7 +209,7 @@ export default function ReporteValorizadoS10({ showToast }) {
                     borderBottom: `1px solid ${BASE.border}`,
                   }}>
                     <td style={{ ...td(), color: BASE.muted, fontFamily: 'monospace', fontSize: '10.5px' }}>{i + 1}</td>
-                    <td style={{ ...td(), fontFamily: 'monospace', fontWeight: '800', color: f.codigoS10.includes('FALTA') ? '#dc2626' : '#7c3aed' }}>
+                    <td style={{ ...td(), fontFamily: 'monospace', fontWeight: '800', color: f.codigoS10.includes('FALTA') ? '#dc2626' : BASE.navy }}>
                       {f.codigoS10}
                     </td>
                     <td style={{ ...td(), fontFamily: 'monospace', fontSize: '11px', color: BASE.muted }}>{f.codigoInterno}</td>

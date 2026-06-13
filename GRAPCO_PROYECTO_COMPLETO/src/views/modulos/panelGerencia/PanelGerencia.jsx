@@ -12,7 +12,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
-import { BASE } from '../../../utils/styles';
+import { BASE, CHART_PALETTE } from '../../../utils/styles';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
 import RoleGuard from '../../../components/RoleGuard';
 import {
@@ -132,7 +132,7 @@ export default function PanelGerencia({ showToast }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {/* HERO slim */}
         <div style={{
-          background: 'linear-gradient(135deg, #1e3a5f, #0f1a2e)',
+          background: `linear-gradient(135deg, ${BASE.navyLight}, ${BASE.navyDark})`,
           borderRadius: '12px', padding: '14px 20px', color: '#fff',
           borderLeft: `5px solid ${BASE.gold}`,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -140,7 +140,7 @@ export default function PanelGerencia({ showToast }) {
         }}>
           <div>
             <p style={{ fontSize: '9.5px', fontWeight: '900', color: BASE.gold, letterSpacing: '1.6px' }}>
-              🏛️ PANEL EJECUTIVO DE GERENCIA · DIRECTOR DE OPERACIONES
+              PANEL EJECUTIVO DE GERENCIA · DIRECTOR DE OPERACIONES
             </p>
             <h2 style={{ fontSize: '19px', fontWeight: '900', marginTop: '3px', letterSpacing: '-0.3px' }}>
               Vista integral del proyecto en tiempo real
@@ -178,7 +178,7 @@ export default function PanelGerencia({ showToast }) {
         {/* AVANCE FÍSICO + GRÁFICA EVM */}
         {ro && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '14px' }}>
-            <Card titulo="📈 AVANCE FÍSICO DEL PROYECTO" color={BASE.gold}>
+            <Card titulo="AVANCE FÍSICO DEL PROYECTO" color={BASE.gold}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '8px' }}>
                 <span style={{ fontSize: '24px', fontWeight: '900', color: BASE.navy, letterSpacing: '-0.4px' }}>
                   {fmtPct(avanceGlobal.pct)}
@@ -201,7 +201,7 @@ export default function PanelGerencia({ showToast }) {
               </div>
             </Card>
 
-            <Card titulo="📊 EVM · VALORES PRINCIPALES" color={BASE.navy}>
+            <Card titulo="EVM · VALORES PRINCIPALES" color={BASE.navy}>
               <EVMRow label="BAC" valor={fmtSoles(ro.totales.BAC)} desc="Presupuesto contractual" />
               <EVMRow label="PV" valor={fmtSoles(ro.totales.PV)} desc="Valor planificado" />
               <EVMRow label="EV" valor={fmtSoles(ro.totales.EV)} desc="Valor ganado" highlight />
@@ -215,7 +215,7 @@ export default function PanelGerencia({ showToast }) {
 
         {/* INDICADORES POR PILAR (5 columnas: LPS, Materiales, Calidad, OT, BIM) */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
-          <Pillar titulo="🦺 CALIDAD" color="#ec4899">
+          <Pillar titulo="CALIDAD" color={CHART_PALETTE[3]}>
             <PillarKPI label="% Liberación" valor={fmtPct(calidadStats.pctLiberacion, 0)}
               color={calidadStats.pctLiberacion >= 80 ? BASE.green : '#f59e0b'} />
             <PillarKPI label="Protocolos" valor={`${calidadStats.liberados}/${calidadStats.total}`}
@@ -224,7 +224,7 @@ export default function PanelGerencia({ showToast }) {
               color={calidadStats.ncsCriticas > 0 ? BASE.red : calidadStats.ncsAbiertas > 0 ? '#f59e0b' : BASE.green} />
           </Pillar>
 
-          <Pillar titulo="📅 LPS · ÚLTIMOS 30D" color="#7c3aed">
+          <Pillar titulo="LPS · ÚLTIMOS 30D" color={CHART_PALETTE[10]}>
             <PillarKPI label="PPC promedio" valor={lpsStats ? fmtPct(lpsStats.ppc, 0) : '—'}
               color={lpsStats?.ppc >= 70 ? BASE.green : '#f59e0b'} />
             <PillarKPI label="Días registrados" valor={lpsStats?.totalDias || 0}
@@ -233,7 +233,7 @@ export default function PanelGerencia({ showToast }) {
               color={BASE.navy} />
           </Pillar>
 
-          <Pillar titulo="📦 MATERIALES" color="#0d9488">
+          <Pillar titulo="MATERIALES" color={CHART_PALETTE[2]}>
             <PillarKPI label="Movimientos" valor={kardex.length} color={BASE.navy} />
             <PillarKPI label="Salidas hoy"
               valor={kardex.filter(m => {
@@ -247,7 +247,7 @@ export default function PanelGerencia({ showToast }) {
               color={BASE.green} />
           </Pillar>
 
-          <Pillar titulo="📊 OFICINA TÉCNICA" color="#6366f1">
+          <Pillar titulo="OFICINA TÉCNICA" color={CHART_PALETTE[5]}>
             <PillarKPI label="Valorizaciones" valor={valorizaciones.length} color={BASE.navy} />
             <PillarKPI label="Cobrado"
               valor={fmtSoles(valorizaciones.filter(v => v.estado === 'pagada').reduce((s, v) => s + (v.total || 0), 0))}
@@ -257,7 +257,7 @@ export default function PanelGerencia({ showToast }) {
               color="#f59e0b" />
           </Pillar>
 
-          <Pillar titulo="👷 TAREOS · HH" color="#dc2626">
+          <Pillar titulo="TAREOS · HH" color={CHART_PALETTE[7]}>
             <PillarKPI label="HH acumuladas"
               valor={fmtNumero(tareos.reduce((s, t) => s + (t.horasHombre || t.hh || 0), 0), 0)}
               color={BASE.navy} chico />
@@ -270,7 +270,7 @@ export default function PanelGerencia({ showToast }) {
 
         {/* ALERTAS CRÍTICAS */}
         {ro && (ro.partidasCriticas.length > 0 || calidadStats.ncsCriticas > 0) && (
-          <Card titulo={`🚨 ALERTAS CRÍTICAS DEL PROYECTO`} color={BASE.red}>
+          <Card titulo={`ALERTAS CRÍTICAS DEL PROYECTO`} color={BASE.red}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {calidadStats.ncsCriticas > 0 && (
                 <Alerta nivel="CRITICO" tipo="CALIDAD"
@@ -298,7 +298,7 @@ export default function PanelGerencia({ showToast }) {
 
         {/* PARTIDAS ESTRELLA */}
         {ro && ro.partidasEstrella.length > 0 && (
-          <Card titulo={`⭐ PARTIDAS ESTRELLA (Margen sobre meta)`} color={BASE.green}>
+          <Card titulo={`PARTIDAS ESTRELLA (Margen sobre meta)`} color={BASE.green}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '8px' }}>
               {ro.partidasEstrella.slice(0, 6).map(p => (
                 <div key={p.codigo} style={{

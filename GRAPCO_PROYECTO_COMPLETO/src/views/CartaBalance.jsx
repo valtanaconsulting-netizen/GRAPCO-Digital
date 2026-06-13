@@ -244,7 +244,7 @@ export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMob
             </div>
           ))}
           <button onClick={() => assignCell('')}
-            style={{width:'100%',padding:'10px',background:'#f1f5f9',border:'1px solid #cbd5e1',borderRadius:'8px',cursor:'pointer',fontSize:'12px',color:BASE.muted,fontWeight:'600'}}>
+            style={{width:'100%',padding:'10px',background:BASE.bgSoft,border:`1px solid ${BASE.border}`,borderRadius:'8px',cursor:'pointer',fontSize:'12px',color:BASE.muted,fontWeight:'600'}}>
             🗑️ Limpiar celda
           </button>
         </Modal>
@@ -258,8 +258,8 @@ export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMob
           const done = phases.indexOf(cbPhase) > i;
           return (
             <button key={s.id} onClick={() => done ? setCbPhase(s.id) : null}
-              style={{flex:1,padding:'10px 8px',border:'none',borderRadius:'8px',background:active?BASE.orange:done?'#fff7ed':'transparent',color:active?'#fff':done?BASE.orange:BASE.muted,fontWeight:'700',fontSize:'12px',cursor:done?'pointer':'default',display:'flex',alignItems:'center',justifyContent:'center',gap:'6px'}}>
-              <span style={{width:'20px',height:'20px',borderRadius:'50%',background:active?'rgba(255,255,255,0.25)':done?BASE.orange+'33':'#f1f5f9',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'11px',fontWeight:'800',flexShrink:0,color:active?'#fff':done?BASE.orange:BASE.muted}}>{done&&!active?'✓':s.n}</span>
+              style={{flex:1,padding:'10px 8px',border:'none',borderRadius:'8px',background:active?BASE.orange:done?BASE.goldLight:'transparent',color:active?'#fff':done?BASE.orange:BASE.muted,fontWeight:'700',fontSize:'12px',cursor:done?'pointer':'default',display:'flex',alignItems:'center',justifyContent:'center',gap:'6px'}}>
+              <span style={{width:'20px',height:'20px',borderRadius:'50%',background:active?'rgba(255,255,255,0.25)':done?BASE.orange+'33':BASE.bgSoft,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'11px',fontWeight:'800',flexShrink:0,color:active?'#fff':done?BASE.orange:BASE.muted}}>{done&&!active?'✓':s.n}</span>
               {!isMobile && s.l}
             </button>
           );
@@ -271,7 +271,7 @@ export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMob
         <div style={{display:'flex',flexDirection:'column',gap:'14px'}}>
           {/* Info general */}
           <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,padding:'18px'}}>
-            <h3 style={{fontSize:'14px',fontWeight:'800',color:BASE.navy,borderLeft:`4px solid ${BASE.orange}`,paddingLeft:'12px',marginBottom:'16px'}}>📋 INFORMACIÓN GENERAL</h3>
+            <h3 style={{fontSize:'14px',fontWeight:'800',color:BASE.navy,borderLeft:`4px solid ${BASE.orange}`,paddingLeft:'12px',marginBottom:'16px'}}>INFORMACIÓN GENERAL</h3>
             <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
               <div>
                 <label style={{fontSize:'10px',fontWeight:'700',color:BASE.muted,letterSpacing:'0.6px',display:'block',marginBottom:'5px'}}>OBRA</label>
@@ -295,7 +295,7 @@ export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMob
 
           {/* Actividad */}
           <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,padding:'18px'}}>
-            <h3 style={{fontSize:'14px',fontWeight:'800',color:BASE.navy,borderLeft:`4px solid ${BASE.orange}`,paddingLeft:'12px',marginBottom:'16px'}}>🏗️ ACTIVIDAD A MEDIR</h3>
+            <h3 style={{fontSize:'14px',fontWeight:'800',color:BASE.navy,borderLeft:`4px solid ${BASE.orange}`,paddingLeft:'12px',marginBottom:'16px'}}>ACTIVIDAD A MEDIR</h3>
             <div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
               <div>
                 <label style={{fontSize:'10px',fontWeight:'700',color:BASE.muted,letterSpacing:'0.6px',display:'block',marginBottom:'5px'}}>📚 TIPO DE ACTIVIDAD · carga los códigos del catálogo real</label>
@@ -326,7 +326,7 @@ export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMob
                 </div>
               )}
               {(cbActividad || cbActividadTexto) && (
-                <div style={{background:'#fff7ed',border:'1px solid #fed7aa',borderRadius:'8px',padding:'10px 12px'}}>
+                <div style={{background:BASE.goldLight,border:`1px solid ${BASE.gold}55`,borderRadius:'8px',padding:'10px 12px'}}>
                   <p style={{fontSize:'12px',fontWeight:'700',color:BASE.orange}}>✅ {cbActividad || cbActividadTexto}</p>
                 </div>
               )}
@@ -335,7 +335,7 @@ export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMob
 
           {/* Cuadrilla */}
           <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,padding:'18px'}}>
-            <h3 style={{fontSize:'14px',fontWeight:'800',color:BASE.navy,borderLeft:`4px solid ${BASE.orange}`,paddingLeft:'12px',marginBottom:'16px'}}>👷 CUADRILLA</h3>
+            <h3 style={{fontSize:'14px',fontWeight:'800',color:BASE.navy,borderLeft:`4px solid ${BASE.orange}`,paddingLeft:'12px',marginBottom:'16px'}}>CUADRILLA</h3>
             <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr',gap:'12px',marginBottom:'14px'}}>
               <div>
                 <label style={{fontSize:'10px',fontWeight:'700',color:BASE.muted,letterSpacing:'0.6px',display:'block',marginBottom:'5px'}}>N° DE TRABAJADORES</label>
@@ -366,7 +366,7 @@ export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMob
             </div>
             <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr',gap:'8px'}}>
               {LETRAS.slice(0, cbNumTrab).map((letra, i) => (
-                <div key={letra} style={{display:'flex',alignItems:'center',gap:'8px',background:'#f8fafc',borderRadius:'8px',padding:'10px 12px'}}>
+                <div key={letra} style={{display:'flex',alignItems:'center',gap:'8px',background:BASE.bgSoft,borderRadius:'8px',padding:'10px 12px'}}>
                   <span style={{width:'22px',height:'22px',borderRadius:'50%',background:BASE.orange,color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'12px',fontWeight:'800',flexShrink:0}}>{letra}</span>
                   <input type="text" value={cbTrabajadores[i].nombre}
                     list={`personal-list-${i}`}
@@ -383,7 +383,7 @@ export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMob
                       }
                       setCbTrabajadores(n);
                     }}
-                    placeholder="Nombre..." style={{flex:1,padding:'6px 8px',borderRadius:'6px',border:'1px solid #e2e8f0',fontSize:'12px',outline:'none'}}/>
+                    placeholder="Nombre..." style={{flex:1,padding:'6px 8px',borderRadius:'6px',border:`1px solid ${BASE.border}`,fontSize:'12px',outline:'none'}}/>
                   <datalist id={`personal-list-${i}`}>
                     {personalDB.map(p => (
                       <option key={p.id} value={p.nombre}>{p.cargo}</option>
@@ -391,7 +391,7 @@ export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMob
                   </datalist>
                   <select value={cbTrabajadores[i].cargo}
                     onChange={e => { const n = [...cbTrabajadores]; n[i] = {...n[i], cargo:e.target.value}; setCbTrabajadores(n); }}
-                    style={{width:'60px',padding:'6px 4px',borderRadius:'6px',border:'1px solid #e2e8f0',fontSize:'11px',outline:'none'}}>
+                    style={{width:'60px',padding:'6px 4px',borderRadius:'6px',border:`1px solid ${BASE.border}`,fontSize:'11px',outline:'none'}}>
                     {['OP','OF','AY','PE','CAP','TEC'].map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
@@ -430,7 +430,7 @@ export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMob
                 <input type="text" value={newS.desc}
                   onChange={e => setNew(p => ({...p, desc: e.target.value}))}
                   placeholder="Descripción..."
-                  style={{flex:1,padding:'8px 10px',borderRadius:'7px',border:'1px solid #e2e8f0',fontSize:'12px',outline:'none'}}/>
+                  style={{flex:1,padding:'8px 10px',borderRadius:'7px',border:`1px solid ${BASE.border}`,fontSize:'12px',outline:'none'}}/>
                 <button onClick={() => {
                   if (!newS.cod || !newS.desc) return;
                   setList(prev => [...prev, {cod:newS.cod, desc:newS.desc}]);
@@ -499,7 +499,7 @@ export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMob
               {/* CRONÓMETRO */}
               <div style={{
                 display:'flex', flexDirection:'column', alignItems:'center', gap:'6px',
-                background: crono.running ? '#0f172a' : '#1e293b', color:'#fff',
+                background: crono.running ? BASE.navyDark : BASE.navy, color:'#fff',
                 padding:'10px 16px', borderRadius:'12px',
                 boxShadow: crono.running ? `0 0 0 2px ${BASE.orange}55, 0 4px 14px rgba(15,23,42,0.25)` : '0 2px 8px rgba(15,23,42,0.15)',
                 minWidth:'180px',
@@ -542,8 +542,8 @@ export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMob
                 <p style={{fontSize:'11px',color:BASE.muted}}>{cbFilled}/{cbNumMed*cbNumTrab} celdas</p>
               </div>
             </div>
-            <div style={{background:'#f1f5f9',borderRadius:'20px',height:'8px',overflow:'hidden',marginBottom:'10px'}}>
-              <div style={{width:`${cbProgress}%`,height:'100%',background:`linear-gradient(90deg,${BASE.orange},#f97316)`,borderRadius:'20px',transition:'width 0.3s'}}/>
+            <div style={{background:BASE.bgSoft,borderRadius:'20px',height:'8px',overflow:'hidden',marginBottom:'10px'}}>
+              <div style={{width:`${cbProgress}%`,height:'100%',background:`linear-gradient(90deg,${BASE.orange},${BASE.goldDark})`,borderRadius:'20px',transition:'width 0.3s'}}/>
             </div>
             <div style={{display:'flex',gap:'12px',flexWrap:'wrap'}}>
               {[{l:'TP — Productivo',c:CB_COL.TP},{l:'TC — Contributorio',c:CB_COL.TC},{l:'TNC — No Contributorio',c:CB_COL.TNC}].map(x => (
@@ -571,8 +571,8 @@ export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMob
                 </thead>
                 <tbody>
                   {cbMediciones.map((m,ri) => (
-                    <tr key={ri} style={{background:ri%2===0?BASE.white:'#fafafa'}}>
-                      <td style={{padding:'3px 8px',textAlign:'center',fontSize:'11px',fontWeight:'700',color:BASE.muted,borderBottom:`1px solid ${BASE.border}`,position:'sticky',left:0,background:ri%2===0?BASE.white:'#fafafa',zIndex:1}}>{ri+1}</td>
+                    <tr key={ri} style={{background:ri%2===0?BASE.white:BASE.bgSoft}}>
+                      <td style={{padding:'3px 8px',textAlign:'center',fontSize:'11px',fontWeight:'700',color:BASE.muted,borderBottom:`1px solid ${BASE.border}`,position:'sticky',left:0,background:ri%2===0?BASE.white:BASE.bgSoft,zIndex:1}}>{ri+1}</td>
                       {LETRAS.slice(0, cbNumTrab).map((l,ci) => {
                         const cod = m[l] || '';
                         const cs = getCellStyle(cod);
@@ -588,8 +588,8 @@ export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMob
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr style={{background:'#f1f5f9',borderTop:`2px solid ${BASE.border}`}}>
-                    <td style={{padding:'10px 8px',textAlign:'center',fontSize:'10px',fontWeight:'800',color:BASE.navy,position:'sticky',left:0,background:'#f1f5f9'}}>TOTAL</td>
+                  <tr style={{background:BASE.bgSoft,borderTop:`2px solid ${BASE.border}`}}>
+                    <td style={{padding:'10px 8px',textAlign:'center',fontSize:'10px',fontWeight:'800',color:BASE.navy,position:'sticky',left:0,background:BASE.bgSoft}}>TOTAL</td>
                     {LETRAS.slice(0, cbNumTrab).map(l => {
                       const w = cbTotals?.pw[l];
                       if (!w || !w.total) return <td key={l} style={{padding:'10px 8px',textAlign:'center',fontSize:'11px',color:BASE.muted}}>—</td>;
@@ -656,7 +656,7 @@ export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMob
           </div>
 
           <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,padding:'16px'}}>
-            <h3 style={{fontSize:'13px',fontWeight:'700',color:BASE.navy,marginBottom:'14px'}}>📊 RESULTADOS GENERALES</h3>
+            <h3 style={{fontSize:'13px',fontWeight:'700',color:BASE.navy,marginBottom:'14px'}}>RESULTADOS GENERALES</h3>
             <ResponsiveContainer width="100%" height={260}>
               <PieChart>
                 <Pie data={[
@@ -674,7 +674,7 @@ export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMob
           </div>
 
           <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,padding:'16px'}}>
-            <h3 style={{fontSize:'13px',fontWeight:'700',color:BASE.navy,marginBottom:'14px'}}>👥 DISTRIBUCIÓN POR TRABAJADOR</h3>
+            <h3 style={{fontSize:'13px',fontWeight:'700',color:BASE.navy,marginBottom:'14px'}}>DISTRIBUCIÓN POR TRABAJADOR</h3>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={LETRAS.slice(0, cbNumTrab).map((l,i) => {
                 const w = cbTotals.pw[l];
@@ -699,7 +699,7 @@ export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMob
           </div>
 
           <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,padding:'18px'}}>
-            <h3 style={{fontSize:'13px',fontWeight:'700',color:BASE.navy,marginBottom:'10px'}}>📝 OBSERVACIONES AUTOMÁTICAS</h3>
+            <h3 style={{fontSize:'13px',fontWeight:'700',color:BASE.navy,marginBottom:'10px'}}>OBSERVACIONES AUTOMÁTICAS</h3>
             {[
               {label:`1. Trabajo Productivo (TP — ${cbTotals.pctTP}%)`,color:CB_COL.TP,
                text: cbTotals.pctTP >= 60

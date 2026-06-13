@@ -1,7 +1,7 @@
 // src/views/modulos/admin/SeedDemoView.jsx — Cargar datos demo PTARI (B25)
 
 import React, { useEffect, useState } from 'react';
-import { BASE } from '../../../utils/styles';
+import { BASE, CHART_PALETTE } from '../../../utils/styles';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
 import { cargarSeedPTARI, limpiarSeed } from '../../../data/seed/seedPTARI';
@@ -74,12 +74,12 @@ export default function SeedDemoView({ showToast }) {
     <RoleGuard rolesPermitidos={['admin']}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div style={{
-          background: 'linear-gradient(135deg, #0f1a2e, #1e3a5f)',
+          background: `linear-gradient(135deg, ${BASE.navyDark}, ${BASE.navyLight})`,
           borderRadius: '14px', padding: '22px 28px', color: '#fff',
           borderLeft: `5px solid ${BASE.gold}`,
         }}>
           <p style={{ fontSize: '10px', fontWeight: '900', color: BASE.gold, letterSpacing: '1.6px' }}>
-            🛠️ HERRAMIENTAS DE ADMINISTRACIÓN
+            HERRAMIENTAS DE ADMINISTRACIÓN
           </p>
           <h2 style={{ fontSize: '22px', fontWeight: '900', marginTop: '4px' }}>
             Datos Demo · PTARI Lima Sur
@@ -90,12 +90,12 @@ export default function SeedDemoView({ showToast }) {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
-          <Card icono="📦" titulo="1 Proyecto" valor="PTARI Lima Sur" color="#0d9488" />
-          <Card icono="📍" titulo="3 Frentes" valor="Norte · Sur · Central" color="#7c3aed" />
-          <Card icono="📐" titulo="~30 Actividades" valor="Plantilla hidráulica" color="#1e3a5f" />
-          <Card icono="💰" titulo="5 APUs" valor="Empresariales" color="#f59e0b" />
-          <Card icono="🎯" titulo="3 Hitos" valor="Pull Planning" color="#5b21b6" />
-          <Card icono="📋" titulo="14 Tareas Pull" valor="Reverse scheduling" color="#15803d" />
+          <Card icono="📦" titulo="1 Proyecto" valor="PTARI Lima Sur" color={CHART_PALETTE[2]} />
+          <Card icono="📍" titulo="3 Frentes" valor="Norte · Sur · Central" color={CHART_PALETTE[3]} />
+          <Card icono="📐" titulo="~30 Actividades" valor="Plantilla hidráulica" color={BASE.navy} />
+          <Card icono="💰" titulo="5 APUs" valor="Empresariales" color={BASE.gold} />
+          <Card icono="🎯" titulo="3 Hitos" valor="Pull Planning" color={CHART_PALETTE[10]} />
+          <Card icono="📋" titulo="14 Tareas Pull" valor="Reverse scheduling" color={CHART_PALETTE[4]} />
         </div>
 
         <div style={{
@@ -103,7 +103,7 @@ export default function SeedDemoView({ showToast }) {
           borderRadius: '14px', padding: '22px 26px',
         }}>
           <h3 style={{ fontSize: '15px', fontWeight: '900', color: BASE.navy, marginBottom: '8px' }}>
-            🚀 Acciones disponibles
+            Acciones disponibles
           </h3>
           <p style={{ fontSize: '12px', color: BASE.muted, marginBottom: '16px' }}>
             La carga de seed es <strong>idempotente</strong>: limpia los datos demo previos antes de cargar nuevos. No afecta tus proyectos reales.
@@ -134,7 +134,7 @@ export default function SeedDemoView({ showToast }) {
         </div>
 
         <div style={{
-          background: '#fef3c7', borderLeft: `4px solid ${BASE.gold}`,
+          background: BASE.goldLight, borderLeft: `4px solid ${BASE.gold}`,
           borderRadius: '10px', padding: '14px 18px',
         }}>
           <p style={{ fontSize: '12px', fontWeight: '900', color: BASE.goldDark }}>
@@ -147,14 +147,14 @@ export default function SeedDemoView({ showToast }) {
 
         {/* MIGRACION FASE 1 */}
         <div style={{
-          background: BASE.white, border: `2px solid #2563eb`,
+          background: BASE.white, border: `2px solid ${BASE.navy}`,
           borderRadius: '14px', padding: '22px 26px',
         }}>
-          <h3 style={{ fontSize: '15px', fontWeight: '900', color: '#1e40af', marginBottom: '8px' }}>
-            🔧 Migración Fase 1: proyectoId en Almacenes y Kardex
+          <h3 style={{ fontSize: '15px', fontWeight: '900', color: BASE.navy, marginBottom: '8px' }}>
+            Migración Fase 1: proyectoId en Almacenes y Kardex
           </h3>
           <p style={{ fontSize: '12px', color: BASE.muted, marginBottom: '12px' }}>
-            Asigna <code style={{ background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px' }}>proyectoId</code> a documentos antiguos
+            Asigna <code style={{ background: BASE.bgSoft, padding: '2px 6px', borderRadius: '4px' }}>proyectoId</code> a documentos antiguos
             que se crearon antes de la jerarquía Gerencia &gt; Proyecto &gt; Obra &gt; Almacén.
             Idempotente: solo toca documentos sin proyectoId.
           </p>
@@ -170,7 +170,7 @@ export default function SeedDemoView({ showToast }) {
           )}
 
           {progresoMig && (
-            <p style={{ fontSize: '12px', color: '#1e40af', fontWeight: '700', margin: '8px 0' }}>
+            <p style={{ fontSize: '12px', color: BASE.navy, fontWeight: '700', margin: '8px 0' }}>
               ⏳ {progresoMig}
             </p>
           )}
@@ -178,7 +178,7 @@ export default function SeedDemoView({ showToast }) {
           <button onClick={ejecutarMigracion} disabled={migrando || !diagnostico || (diagnostico.almacenes.sinProyecto + diagnostico.kardex.sinProyecto + diagnostico.registrosCampo.sinProyecto === 0)}
             style={{
               padding: '12px 22px', borderRadius: '10px',
-              background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+              background: `linear-gradient(135deg, ${BASE.navyLight}, ${BASE.navy})`,
               color: '#fff', border: 'none',
               fontSize: '12px', fontWeight: '900', cursor: migrando ? 'not-allowed' : 'pointer',
               opacity: migrando ? 0.5 : 1, letterSpacing: '0.4px',

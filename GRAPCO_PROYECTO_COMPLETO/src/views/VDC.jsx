@@ -914,7 +914,7 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
 
       {/* DIAGNÓSTICO DE VÍNCULO AR↔LAP: restricciones que no enlazan con el LAP */}
       {lapNombres.length > 0 && huerfanas.length > 0 && (
-        <div style={{ background: '#fffbeb', border: `1px solid ${BASE.gold}`, borderLeft: `4px solid ${BASE.gold}`, borderRadius: '10px', padding: '10px 14px' }}>
+        <div style={{ background: BASE.goldLight, border: `1px solid ${BASE.gold}`, borderLeft: `4px solid ${BASE.gold}`, borderRadius: '10px', padding: '10px 14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '12px', fontWeight: 900, color: BASE.goldDark }}>🔗 {huerfanas.length} restricción(es) no enlazan con el LAP</span>
             <span style={{ fontSize: '10.5px', color: BASE.muted, flex: 1, minWidth: 0 }}>su nombre de actividad no coincide con ninguna del LAP → no aplican shielding ni badges. Revisa el nombre.</span>
@@ -1032,7 +1032,7 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
           ].map(f => (
             <button key={f.id} onClick={() => setFiltroEstado(f.id)} style={{
               padding: '7px 12px', borderRadius: '8px', border: 'none',
-              background: filtroEstado === f.id ? BASE.navy : '#e2e8f0',
+              background: filtroEstado === f.id ? BASE.navy : BASE.bgSoft,
               color: filtroEstado === f.id ? '#fff' : BASE.muted,
               fontSize: '11px', fontWeight: '700', cursor: 'pointer',
             }}>{f.l}</button>
@@ -1083,7 +1083,7 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
                 {grupos.map(g => (
                   <React.Fragment key={g.act}>
                     <tr>
-                      <td colSpan={11 + semGrid.length} style={{ background: '#fff7e6', borderLeft: `4px solid ${BASE.gold}`, borderTop: `1px solid ${BASE.border}`, borderBottom: `1px solid ${BASE.border}`, padding: '6px 12px', fontWeight: 900, fontSize: '10.5px', color: BASE.navy, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                      <td colSpan={11 + semGrid.length} style={{ background: BASE.goldLight, borderLeft: `4px solid ${BASE.gold}`, borderTop: `1px solid ${BASE.border}`, borderBottom: `1px solid ${BASE.border}`, padding: '6px 12px', fontWeight: 900, fontSize: '10.5px', color: BASE.navy, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
                         {g.act} <span style={{ color: BASE.muted, fontWeight: 700 }}>· {g.items.length} restric.</span>
                       </td>
                     </tr>

@@ -1,7 +1,7 @@
 // src/views/modulos/apus/APUsPanel.jsx — Wrapper APUs (B21)
 
 import React, { useState } from 'react';
-import { BASE } from '../../../utils/styles';
+import { BASE, CHART_PALETTE } from '../../../utils/styles';
 import RoleGuard from '../../../components/RoleGuard';
 import APUsList from './APUsList';
 import APUEditor from './APUEditor';
@@ -9,9 +9,9 @@ import ComparativoAPU from './ComparativoAPU';
 import CatalogoInsumos from './CatalogoInsumos';
 
 const TABS = [
-  { id: 'list',       l: 'Catálogo APUs',       icono: '💰', desc: 'Lista completa',       color: '#6366f1' },
-  { id: 'comparativo',l: 'Teórico vs Real',     icono: '⚖️', desc: 'Análisis desviación',  color: '#f59e0b' },
-  { id: 'insumos',    l: 'Insumos',             icono: '🧱', desc: 'Maestro de recursos',  color: '#0d9488' },
+  { id: 'list',       l: 'Catálogo APUs',       icono: '💰', desc: 'Lista completa',       color: BASE.navy },
+  { id: 'comparativo',l: 'Teórico vs Real',     icono: '⚖️', desc: 'Análisis desviación',  color: BASE.gold },
+  { id: 'insumos',    l: 'Insumos',             icono: '🧱', desc: 'Maestro de recursos',  color: CHART_PALETTE[2] },
 ];
 
 export default function APUsPanel({ showToast }) {
@@ -22,14 +22,14 @@ export default function APUsPanel({ showToast }) {
     <RoleGuard rolesPermitidos={['admin', 'ingeniero']}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         <div style={{
-          background: `linear-gradient(135deg, #6366f1, #4338ca)`,
+          background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
           borderRadius: '12px', padding: '12px 18px', color: '#fff',
           borderLeft: `4px solid ${BASE.gold}`,
-          boxShadow: '0 2px 10px rgba(99, 102, 241, 0.2)',
+          boxShadow: BASE.shadowMd,
           display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap',
         }}>
           <h2 style={{ fontSize: '15px', fontWeight: '900' }}>
-            💰 Análisis de Precios Unitarios
+            Análisis de Precios Unitarios
           </h2>
           <p style={{ fontSize: '11px', opacity: 0.8 }}>
             Teórico vs real · se recalcula con Kardex y rendimientos de Tareos
