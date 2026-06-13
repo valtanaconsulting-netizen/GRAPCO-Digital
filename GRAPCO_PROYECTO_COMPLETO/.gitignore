@@ -34,3 +34,7 @@ dist-ssr
 serviceAccount.json
 serviceAccount*.json
 *serviceAccount*.json
+
+# Respaldos de datos (locales, no versionar)
+scripts/backups/
+*.backup.json
