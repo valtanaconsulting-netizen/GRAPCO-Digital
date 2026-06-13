@@ -323,72 +323,95 @@ function AppInner() {
     return CUADRILLAS_DEFAULT || {};
   }, [cuadrillasDBFiltrado, cuadrillasDB]);
 
-  // ── Pantalla de carga inicial (acabado premium navy) ──
+  // ── Pantalla de carga inicial (acabado ultra-premium navy + oro) ──
   if (loading) {
+    const skyline = [30, 52, 22, 70, 40, 88, 34, 58, 26, 96, 44, 64, 28, 76, 38, 54, 24];
     return (
       <div style={{
         minHeight: '100dvh',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        gap: '22px',
-        background: 'radial-gradient(120% 90% at 50% 28%, #143256 0%, #0B1F39 46%, #061226 100%)',
+        gap: '24px',
+        background: 'radial-gradient(125% 90% at 50% 26%, #163659 0%, #0B1F39 45%, #050F1F 100%)',
         fontFamily: BASE.font, color: '#fff', position: 'relative', overflow: 'hidden',
       }}>
-        {/* Aurora: blobs dorados/navy que derivan lento → profundidad viva */}
-        <div style={{ position: 'absolute', width: 520, height: 520, top: '-12%', left: '-8%', borderRadius: '50%', pointerEvents: 'none',
-          background: `radial-gradient(circle, ${BASE.gold}1f 0%, transparent 62%)`, filter: 'blur(20px)', animation: 'gp-aur1 14s ease-in-out infinite' }} />
-        <div style={{ position: 'absolute', width: 460, height: 460, bottom: '-14%', right: '-6%', borderRadius: '50%', pointerEvents: 'none',
-          background: 'radial-gradient(circle, #1E467433 0%, transparent 60%)', filter: 'blur(22px)', animation: 'gp-aur2 18s ease-in-out infinite' }} />
-        {/* Viñeta para profundidad */}
-        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: 'radial-gradient(130% 110% at 50% 40%, transparent 50%, rgba(3,9,18,0.78) 100%)' }} />
+        {/* Filo dorado superior — firma de marca */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, zIndex: 3,
+          background: `linear-gradient(90deg, transparent, ${BASE.gold}, transparent)` }} />
 
-        {/* Skyline de construcción (identidad GRAPCO) al pie */}
-        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 120, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 3, pointerEvents: 'none', opacity: 0.5, maskImage: 'linear-gradient(to top, #000 30%, transparent)', WebkitMaskImage: 'linear-gradient(to top, #000 30%, transparent)' }}>
-          {[34, 58, 26, 78, 46, 96, 38, 64, 30, 84, 50, 72, 28, 60, 40].map((h, i) => (
-            <span key={i} style={{ width: 22, height: h, background: i % 5 === 2 ? `linear-gradient(180deg, ${BASE.gold}cc, #16335a 70%)` : 'linear-gradient(180deg, #1b3a63, #0c2138)', borderRadius: '2px 2px 0 0', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.04)' }} />
+        {/* Textura blueprint (grilla técnica muy sutil) */}
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.5,
+          backgroundImage: `linear-gradient(rgba(229,168,47,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(229,168,47,0.05) 1px, transparent 1px)`,
+          backgroundSize: '46px 46px',
+          maskImage: 'radial-gradient(circle at 50% 40%, #000 0%, transparent 72%)',
+          WebkitMaskImage: 'radial-gradient(circle at 50% 40%, #000 0%, transparent 72%)' }} />
+
+        {/* Aurora: blobs que derivan lento → profundidad viva */}
+        <div style={{ position: 'absolute', width: 540, height: 540, top: '-12%', left: '-8%', borderRadius: '50%', pointerEvents: 'none',
+          background: `radial-gradient(circle, ${BASE.gold}22 0%, transparent 62%)`, filter: 'blur(22px)', animation: 'gp-aur1 14s ease-in-out infinite' }} />
+        <div style={{ position: 'absolute', width: 480, height: 480, bottom: '-14%', right: '-6%', borderRadius: '50%', pointerEvents: 'none',
+          background: 'radial-gradient(circle, #1E46743a 0%, transparent 60%)', filter: 'blur(24px)', animation: 'gp-aur2 18s ease-in-out infinite' }} />
+        {/* Viñeta */}
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none',
+          background: 'radial-gradient(130% 110% at 50% 40%, transparent 48%, rgba(3,9,18,0.82) 100%)' }} />
+
+        {/* Skyline que "se construye": barras suben escalonadas */}
+        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 130, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 3, pointerEvents: 'none', opacity: 0.55, maskImage: 'linear-gradient(to top, #000 28%, transparent)', WebkitMaskImage: 'linear-gradient(to top, #000 28%, transparent)' }}>
+          {skyline.map((h, i) => (
+            <span key={i} style={{
+              width: 22, height: h, transformOrigin: 'bottom',
+              background: i % 5 === 2 ? `linear-gradient(180deg, ${BASE.gold}cc, #16335a 70%)` : 'linear-gradient(180deg, #1b3a63, #0c2138)',
+              borderRadius: '2px 2px 0 0', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.05)',
+              animation: `gp-build 2.6s ease-in-out ${i * 0.08}s infinite`,
+            }} />
           ))}
         </div>
 
-        {/* Logo con anillos dorados + halo pulsante + flotación */}
-        <div style={{ position: 'relative', width: 108, height: 108, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', zIndex: 1, animation: 'gp-float 4.5s ease-in-out infinite' }}>
-          <span style={{ position: 'absolute', width: 160, height: 160, borderRadius: '50%',
+        {/* Logo: anillo de barrido cónico (radar) + punto orbitando + halo + vidrio */}
+        <div style={{ position: 'relative', width: 120, height: 120, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', zIndex: 1, animation: 'gp-float 4.8s ease-in-out infinite' }}>
+          <span style={{ position: 'absolute', width: 180, height: 180, borderRadius: '50%',
             background: `radial-gradient(circle, ${BASE.gold}33 0%, transparent 66%)`, animation: 'gp-halo 2.8s ease-in-out infinite' }} />
-          <span style={{
-            position: 'absolute', inset: 0, borderRadius: '50%',
-            border: '3px solid transparent', borderTopColor: BASE.gold, borderRightColor: BASE.gold,
-            animation: 'spin 1.05s cubic-bezier(0.5,0.1,0.5,0.9) infinite',
-          }} />
-          <span style={{
-            position: 'absolute', inset: 0, borderRadius: '50%',
-            border: '3px solid transparent',
-            borderBottomColor: 'rgba(229,168,47,0.25)', borderLeftColor: 'rgba(229,168,47,0.25)',
-            animation: 'spin 2.4s linear infinite reverse',
-          }} />
-          <img src={LOGO} alt="GRAPCO" style={{ width: 66, height: 66, borderRadius: 16, background: '#fff', padding: 5, boxShadow: '0 12px 30px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.6)', objectFit: 'contain' }} />
+          {/* Barrido cónico dorado */}
+          <span style={{ position: 'absolute', inset: -3, borderRadius: '50%',
+            background: `conic-gradient(from 0deg, transparent 0deg, ${BASE.gold}00 200deg, ${BASE.gold} 320deg, #fff6e0 350deg, ${BASE.gold} 360deg)`,
+            WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px))',
+            mask: 'radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px))',
+            animation: 'spin 1.5s linear infinite' }} />
+          {/* Aro base tenue */}
+          <span style={{ position: 'absolute', inset: -3, borderRadius: '50%', border: '1.5px solid rgba(229,168,47,0.18)' }} />
+          {/* Punto que orbita */}
+          <span style={{ position: 'absolute', inset: -3, borderRadius: '50%', animation: 'spin 1.5s linear infinite' }}>
+            <span style={{ position: 'absolute', top: -3, left: '50%', width: 6, height: 6, marginLeft: -3, borderRadius: '50%', background: '#fff6e0', boxShadow: `0 0 10px 2px ${BASE.gold}` }} />
+          </span>
+          {/* Logo en tile de vidrio */}
+          <span style={{ width: 74, height: 74, borderRadius: 18, background: 'linear-gradient(160deg, #ffffff, #eef3f9)', padding: 6,
+            boxShadow: `0 14px 36px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.8), 0 0 0 1px ${BASE.gold}55`,
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img src={LOGO} alt="GRAPCO" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          </span>
         </div>
 
         <div style={{ textAlign: 'center', zIndex: 1, animation: 'gp-rise 0.6s ease-out both' }}>
-          <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: 3,
-            background: `linear-gradient(180deg, #fff 40%, ${BASE.gold})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            GRAPCO S.A.C.
+          <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: 4,
+            background: `linear-gradient(180deg, #fff 38%, ${BASE.gold})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            GRAPCO <span style={{ WebkitTextFillColor: BASE.gold }}>S.A.C.</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 9 }}>
-            <span style={{ height: 1, width: 30, background: `linear-gradient(90deg, transparent, ${BASE.gold}aa)` }} />
-            <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: 2.8, color: BASE.gold, textTransform: 'uppercase' }}>
-              Plataforma Integral de Gestión de Obra
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 10 }}>
+            <span style={{ height: 1, width: 34, background: `linear-gradient(90deg, transparent, ${BASE.gold}aa)` }} />
+            <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: 3, color: BASE.gold, textTransform: 'uppercase' }}>
+              Gestión de Proyectos VDC
             </span>
-            <span style={{ height: 1, width: 30, background: `linear-gradient(90deg, ${BASE.gold}aa, transparent)` }} />
+            <span style={{ height: 1, width: 34, background: `linear-gradient(90deg, ${BASE.gold}aa, transparent)` }} />
           </div>
         </div>
 
         {/* Barra de progreso con cometa dorado */}
-        <div style={{ width: 230, height: 3, borderRadius: 999, background: 'rgba(255,255,255,0.10)', overflow: 'hidden', zIndex: 1, boxShadow: `0 0 18px ${BASE.gold}22` }}>
+        <div style={{ width: 240, height: 3, borderRadius: 999, background: 'rgba(255,255,255,0.10)', overflow: 'hidden', zIndex: 1, boxShadow: `0 0 18px ${BASE.gold}22` }}>
           <div style={{ height: '100%', width: '42%', borderRadius: 999,
             background: `linear-gradient(90deg, transparent, ${BASE.gold}, #fff6e0, ${BASE.gold}, transparent)`,
             animation: 'gp-load 1.3s ease-in-out infinite' }} />
         </div>
         <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: 2.5, color: '#8198b3', textTransform: 'uppercase', zIndex: 1 }}>
-          Cargando plataforma…
+          Cargando plataforma<span style={{ animation: 'gp-dots 1.4s steps(4) infinite' }}>…</span>
         </div>
 
         <style>{`
@@ -398,6 +421,9 @@ function AppInner() {
           @keyframes gp-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
           @keyframes gp-aur1 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(40px,30px); } }
           @keyframes gp-aur2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-36px,-26px); } }
+          @keyframes gp-build { 0% { transform: scaleY(0.45); opacity: 0.5; } 50% { transform: scaleY(1); opacity: 1; } 100% { transform: scaleY(0.45); opacity: 0.5; } }
+          @keyframes gp-dots { 0% { opacity: 0.2; } 50% { opacity: 1; } 100% { opacity: 0.2; } }
+          @media (prefers-reduced-motion: reduce) { [style*="gp-"] { animation: none !important; } }
         `}</style>
       </div>
     );
