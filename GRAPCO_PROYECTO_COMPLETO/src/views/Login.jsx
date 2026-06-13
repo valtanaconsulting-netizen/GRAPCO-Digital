@@ -10,6 +10,19 @@ const STORAGE_INTENTOS = 'grapco_login_intentos';
 const MAX_INTENTOS = 5;
 const COOLDOWN_MS = 30 * 1000;  // 30 segundos (antes eran 5 minutos)
 
+// Ícono SVG ver/ocultar contraseña (reemplaza los emojis 🙈/👁️ por algo profesional).
+// off=true → contraseña visible (ojo tachado = "clic para ocultar"); off=false → ojo abierto.
+function IconoOjo({ off = false, size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ display: 'block' }}>
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+      <circle cx="12" cy="12" r="3" />
+      {off && <path d="M3 3l18 18" />}
+    </svg>
+  );
+}
+
 export default function Login() {
   const { login, register, registerAsBootstrapAdmin } = useAuth();
   const [bootstrapDisponible, setBootstrapDisponible] = useState(false);
@@ -364,8 +377,8 @@ export default function Login() {
                 style={inp({ padding: '12px', paddingRight: '40px', width: '100%', boxSizing: 'border-box' })} />
               <button type="button" onClick={() => setVerPassword(v => !v)}
                 title={verPassword ? 'Ocultar' : 'Mostrar'}
-                style={{ position:'absolute', right:'8px', top:'50%', transform:'translateY(-50%)', background:'transparent', border:'none', cursor:'pointer', fontSize:'15px', padding:'4px' }}>
-                {verPassword ? '🙈' : '👁️'}
+                style={{ position:'absolute', right:'8px', top:'50%', transform:'translateY(-50%)', background:'transparent', border:'none', cursor:'pointer', padding:'4px', color: BASE.muted, display:'flex' }}>
+                <IconoOjo off={verPassword} size={16} />
               </button>
             </div>
             {bootstrapError && (
@@ -434,7 +447,7 @@ export default function Login() {
             onMouseEnter={e => { e.currentTarget.style.background = BASE.bgSoft; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
           >
-            {verPassword ? '🙈' : '👁️'}
+            <IconoOjo off={verPassword} size={18} />
           </button>
         </div>
 
