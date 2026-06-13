@@ -157,6 +157,7 @@ export function ProyectoActivoProvider({ children }) {
     proyectoActivoId, setProyectoActivoId,
     frenteActivoId, setFrenteActivoId,
     proyectoActivo, frenteActivo,
+    fechaInicioProyecto,
     modoTodosFrentes, loadingProyectos,
     construirFiltros, filtrarPorContexto,
     PROYECTO_DEFAULT_ID, FRENTE_DEFAULT_ID, FRENTE_TODOS,
@@ -165,6 +166,7 @@ export function ProyectoActivoProvider({ children }) {
     proyectoActivoId, setProyectoActivoId,
     frenteActivoId, setFrenteActivoId,
     proyectoActivo, frenteActivo,
+    fechaInicioProyecto,
     modoTodosFrentes, loadingProyectos,
     construirFiltros, filtrarPorContexto,
   ]);
