@@ -6,6 +6,7 @@ import {
   ReferenceLine, ReferenceArea, Area,
 } from 'recharts';
 import { BASE } from '../utils/styles';
+import { EJE, GRILLA, TOOLTIP_STYLE, LEYENDA, degradado } from '../utils/chartKit';
 import VistaHeader from '../components/VistaHeader';
 import {
   calcularTendencia, calcularTendenciaPond, mediaMovil, fmt1, fmtCPI, fmtCPIPct,
@@ -458,23 +459,24 @@ export default function Tendencias({ filtrados, historial, wbs }) {
         </div>
         <ResponsiveContainer width="100%" height={300}>
           <ComposedChart data={serieConProyeccion} margin={{top:10,right:30,left:10,bottom:10}}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9"/>
-            <XAxis dataKey="semana" tick={{fontSize:11,fill:BASE.muted,fontWeight:600}} tickMargin={8}/>
-            <YAxis domain={[0, 1.8]} tick={{fontSize:11,fill:BASE.muted}} tickMargin={6}
+            <defs>{degradado('grad_bandaSup', '#7c3aed')}</defs>
+            <CartesianGrid {...GRILLA}/>
+            <XAxis {...EJE} dataKey="semana" tickMargin={8}/>
+            <YAxis {...EJE} domain={[0, 1.8]} tickMargin={6}
               tickFormatter={v => `${Math.round(v * 100)}%`}/>
-            <Tooltip content={<Tip/>}/>
-            <Legend wrapperStyle={{fontSize:'12px',paddingTop:'10px'}}/>
+            <Tooltip {...TOOLTIP_STYLE} content={<Tip/>}/>
+            <Legend {...LEYENDA}/>
             <ReferenceLine y={1} stroke={BASE.green} strokeDasharray="5 3" label={{value:'META 100%',fill:BASE.green,fontSize:10,position:'right'}}/>
             <ReferenceLine y={0.85} stroke="#d97706" strokeDasharray="5 3" label={{value:'ALERTA 85%',fill:'#d97706',fontSize:10,position:'right'}}/>
             <ReferenceLine x={`S${serieSemanal.ultimaSemana}`} stroke={BASE.muted} strokeWidth={1.5} label={{value:'AHORA',fill:BASE.muted,fontSize:10,position:'top'}}/>
 
-            <Area type="monotone" dataKey="Banda Sup" stroke="none" fill="#7c3aed" fillOpacity={confiable ? 0.12 : 0.05} legendType="none"/>
+            <Area type="monotone" dataKey="Banda Sup" stroke="none" fill="url(#grad_bandaSup)" fillOpacity={confiable ? 1 : 0.4} legendType="none"/>
             <Area type="monotone" dataKey="Banda Inf" stroke="none" fill="#fff" fillOpacity={1} legendType="none"/>
 
-            <Line type="monotone" dataKey="CPI" stroke={BASE.navy} strokeWidth={3} dot={{r:4,fill:BASE.navy,strokeWidth:2,stroke:'#fff'}} activeDot={{r:7}} connectNulls={false}/>
-            <Line type="monotone" dataKey="Media móvil (3)" stroke="#7c3aed" strokeWidth={2} strokeDasharray="4 4" dot={false}/>
-            <Line type="monotone" dataKey="Tendencia CPI" stroke="#dc2626" strokeWidth={1.5} strokeDasharray="6 3" dot={false}/>
-            <Line type="monotone" dataKey="Proyección CPI" stroke="#7c3aed" strokeWidth={confiable ? 2.5 : 1.5} strokeOpacity={confiable ? 1 : 0.45} strokeDasharray="6 3" dot={confiable ? {r:4,fill:'#7c3aed',strokeWidth:2,stroke:'#fff'} : false} connectNulls={false}/>
+            <Line type="monotone" dataKey="CPI" stroke={BASE.navy} strokeWidth={2.5} dot={{r:3,fill:BASE.navy,strokeWidth:2,stroke:'#fff'}} activeDot={{r:5}} connectNulls={false}/>
+            <Line type="monotone" dataKey="Media móvil (3)" stroke="#7c3aed" strokeWidth={2.5} strokeDasharray="4 4" dot={false} activeDot={{r:5}}/>
+            <Line type="monotone" dataKey="Tendencia CPI" stroke="#dc2626" strokeWidth={2.5} strokeDasharray="6 3" dot={false} activeDot={{r:5}}/>
+            <Line type="monotone" dataKey="Proyección CPI" stroke="#7c3aed" strokeWidth={confiable ? 2.5 : 1.5} strokeOpacity={confiable ? 1 : 0.45} strokeDasharray="6 3" dot={confiable ? {r:3,fill:'#7c3aed',strokeWidth:2,stroke:'#fff'} : false} activeDot={{r:5}} connectNulls={false}/>
           </ComposedChart>
         </ResponsiveContainer>
       </Card>
@@ -531,13 +533,13 @@ export default function Tendencias({ filtrados, historial, wbs }) {
         ) : (
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={evolucionActividad} margin={{top:10,right:30,left:10,bottom:50}}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9"/>
-              <XAxis dataKey="fecha" tick={{fontSize:10,fill:BASE.muted,fontWeight:600}} angle={-30} textAnchor="end" height={50}/>
-              <YAxis tick={{fontSize:11,fill:BASE.muted}} tickMargin={6}/>
-              <Tooltip content={<Tip/>}/>
-              <Legend wrapperStyle={{fontSize:'12px',paddingTop:'10px'}}/>
-              <Line type="monotone" dataKey="IP Real" stroke={BASE.navy} strokeWidth={3} dot={{r:5,fill:BASE.navy,strokeWidth:2,stroke:'#fff'}}/>
-              <Line type="monotone" dataKey="IP Meta" stroke={BASE.green} strokeWidth={2.5} strokeDasharray="5 3" dot={{r:4,fill:BASE.green,strokeWidth:2,stroke:'#fff'}}/>
+              <CartesianGrid {...GRILLA}/>
+              <XAxis {...EJE} dataKey="fecha" angle={-30} textAnchor="end" height={50}/>
+              <YAxis {...EJE} tickMargin={6}/>
+              <Tooltip {...TOOLTIP_STYLE} content={<Tip/>}/>
+              <Legend {...LEYENDA}/>
+              <Line type="monotone" dataKey="IP Real" stroke={BASE.navy} strokeWidth={2.5} dot={{r:3,fill:BASE.navy,strokeWidth:2,stroke:'#fff'}} activeDot={{r:5}}/>
+              <Line type="monotone" dataKey="IP Meta" stroke={BASE.green} strokeWidth={2.5} strokeDasharray="5 3" dot={{r:3,fill:BASE.green,strokeWidth:2,stroke:'#fff'}} activeDot={{r:5}}/>
             </LineChart>
           </ResponsiveContainer>
         )}

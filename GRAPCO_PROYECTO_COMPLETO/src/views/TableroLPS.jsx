@@ -9,6 +9,7 @@ import {
   CartesianGrid, Tooltip, BarChart, Bar, Cell,
 } from 'recharts';
 import { BASE } from '../utils/styles';
+import { EJE, GRILLA, TOOLTIP_STYLE, BARRA } from '../utils/chartKit';
 import { calcularEstadoRestriccion, calcularKPIRestricciones, fmtFechaCorta } from '../utils/helpers';
 
 const panel = {
@@ -294,11 +295,11 @@ export default function TableroLPS({
             <div style={{ flex: 1, minWidth: '200px', height: '120px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={ppcTrend} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={BASE.border} />
-                  <XAxis dataKey="semana" tick={{ fontSize: 10, fill: BASE.muted }} />
-                  <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: BASE.muted }} />
-                  <Tooltip formatter={(v) => [`${v}%`, 'PPC']} contentStyle={{ fontSize: '11px', borderRadius: '8px' }} />
-                  <Line type="monotone" dataKey="ppc" stroke={ppcColor} strokeWidth={2.5} dot={{ r: 3 }} />
+                  <CartesianGrid {...GRILLA} />
+                  <XAxis {...EJE} dataKey="semana" />
+                  <YAxis {...EJE} domain={[0, 100]} />
+                  <Tooltip {...TOOLTIP_STYLE} formatter={(v) => [`${v}%`, 'PPC']} />
+                  <Line type="monotone" dataKey="ppc" stroke={ppcColor} strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -317,10 +318,11 @@ export default function TableroLPS({
             <div style={{ height: `${Math.max(160, cnc.length * 34)}px` }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={cnc} layout="vertical" margin={{ top: 4, right: 24, bottom: 4, left: 8 }}>
-                  <XAxis type="number" tick={{ fontSize: 10, fill: BASE.muted }} />
-                  <YAxis type="category" dataKey="causa" width={130} tick={{ fontSize: 10, fill: BASE.text }} />
-                  <Tooltip contentStyle={{ fontSize: '11px', borderRadius: '8px' }} />
-                  <Bar dataKey="cantidad" radius={[0, 4, 4, 0]} label={{ position: 'right', fontSize: 11, fontWeight: 800 }}>
+                  <CartesianGrid {...GRILLA} horizontal={false} vertical={true} />
+                  <XAxis {...EJE} type="number" />
+                  <YAxis {...EJE} type="category" dataKey="causa" width={130} />
+                  <Tooltip {...TOOLTIP_STYLE} />
+                  <Bar {...BARRA} dataKey="cantidad" radius={[0, 4, 4, 0]} label={{ position: 'right', fontSize: 11, fontWeight: 800 }}>
                     {cnc.map((c, i) => <Cell key={i} fill={c.color} />)}
                   </Bar>
                 </BarChart>

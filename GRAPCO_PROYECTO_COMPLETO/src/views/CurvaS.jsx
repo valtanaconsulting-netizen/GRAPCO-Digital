@@ -5,6 +5,7 @@ import {
   Tooltip, Legend, ResponsiveContainer, ReferenceLine,
 } from 'recharts';
 import { BASE } from '../utils/styles';
+import { EJE, GRILLA, TOOLTIP_STYLE, LEYENDA, degradado } from '../utils/chartKit';
 import { calcularEVM, fmt1, fmtCPIPct, getEstado } from '../utils/helpers';
 
 const Tip = ({ active, payload, label }) => {
@@ -166,45 +167,37 @@ export default function CurvaS({ historialEnriquecido }) {
 
         <ResponsiveContainer width="100%" height={340}>
           <ComposedChart data={puntos} margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
-            <defs>
-              <linearGradient id="evGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={BASE.green} stopOpacity={0.25} />
-                <stop offset="100%" stopColor={BASE.green} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+            <defs>{degradado('grad_ev_curvas', BASE.green)}</defs>
+            <CartesianGrid {...GRILLA} />
             <XAxis
+              {...EJE}
               dataKey="semana"
-              tick={{ fontSize: 11, fill: BASE.muted, fontWeight: 600 }}
               tickFormatter={v => `S${v}`}
             />
             <YAxis
-              tick={{ fontSize: 11, fill: BASE.muted }}
+              {...EJE}
               tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v}
               label={{ value: 'HH acumuladas', angle: -90, position: 'insideLeft', style: { fontSize: 10, fill: BASE.muted } }}
             />
-            <Tooltip content={<Tip />} />
-            <Legend
-              wrapperStyle={{ fontSize: '12px', paddingTop: '10px', fontWeight: 600 }}
-              iconType="line"
-            />
+            <Tooltip {...TOOLTIP_STYLE} content={<Tip />} />
+            <Legend {...LEYENDA} iconType="line" />
             {/* PV - Plan (línea punteada) */}
             <Line
               type="monotone" dataKey="pv" name="PV · Planeado"
-              stroke={BASE.muted} strokeWidth={2} strokeDasharray="6 4"
-              dot={false}
+              stroke={BASE.muted} strokeWidth={2.5} strokeDasharray="6 4"
+              dot={false} activeDot={{ r: 5 }}
             />
             {/* EV - Earned Value (área verde) */}
             <Area
               type="monotone" dataKey="ev" name="EV · Ganado"
-              stroke={BASE.green} fill="url(#evGrad)" strokeWidth={3}
-              dot={{ r: 3, fill: BASE.green, strokeWidth: 0 }}
+              stroke={BASE.green} fill="url(#grad_ev_curvas)" strokeWidth={2.5}
+              dot={{ r: 3, fill: BASE.green, strokeWidth: 0 }} activeDot={{ r: 5 }}
             />
             {/* AC - Actual Cost (línea navy) */}
             <Line
               type="monotone" dataKey="ac" name="AC · Real"
-              stroke={BASE.navy} strokeWidth={3}
-              dot={{ r: 3, fill: BASE.navy, strokeWidth: 0 }}
+              stroke={BASE.navy} strokeWidth={2.5}
+              dot={{ r: 3, fill: BASE.navy, strokeWidth: 0 }} activeDot={{ r: 5 }}
             />
           </ComposedChart>
         </ResponsiveContainer>

@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import { db } from '../firebaseConfig';
 import { BASE, CB_COL } from '../utils/styles';
+import { EJE, GRILLA, TOOLTIP_STYLE, BARRA } from '../utils/chartKit';
 import EmptyState from '../components/EmptyState';
 import { optimizarCuadrilla } from '../utils/cartaBalanceAnalytics';
 import { METAS_CB_DEFAULT } from '../utils/cartaBalanceProductividad';
@@ -83,12 +84,12 @@ function BarApilada({ data, onClick, filtroVal }) {
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={data} stackOffset="expand" margin={{ top: 14, right: 6, left: -20, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke={BASE.border} vertical={false} />
-        <XAxis dataKey="label" tick={{ fontSize: 9.5, fill: BASE.text }} interval={0} />
-        <YAxis tickFormatter={(v) => `${Math.round(v * 100)}%`} tick={{ fontSize: 9, fill: BASE.muted }} domain={[0, 1]} width={32} />
-        <Tooltip formatter={(v, n, p) => [`${Math.round(v / (p.payload.n || 1) * 100)}% (${v})`, n]} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+        <CartesianGrid {...GRILLA} />
+        <XAxis {...EJE} dataKey="label" interval={0} />
+        <YAxis {...EJE} tickFormatter={(v) => `${Math.round(v * 100)}%`} domain={[0, 1]} width={32} />
+        <Tooltip {...TOOLTIP_STYLE} formatter={(v, n, p) => [`${Math.round(v / (p.payload.n || 1) * 100)}% (${v})`, n]} />
         {[['tp', 'Productivo', CB_COL.TP, 'tpPct'], ['tc', 'Contributorio', CB_COL.TC, 'tcPct'], ['tnc', 'No contributorio', CB_COL.TNC, 'tncPct']].map(([key, nm, col, pk], bi) => (
-          <Bar key={key} dataKey={key} stackId="a" name={nm} radius={bi === 2 ? [4, 4, 0, 0] : undefined} cursor="pointer" onClick={(d) => d && onClick && onClick(d.key)}>
+          <Bar key={key} {...BARRA} dataKey={key} stackId="a" name={nm} radius={bi === 2 ? [5, 5, 0, 0] : undefined} cursor="pointer" onClick={(d) => d && onClick && onClick(d.key)}>
             {data.map((e, i) => <Cell key={i} fill={col} opacity={filtroVal && filtroVal !== e.key ? 0.3 : 1} />)}
             <LabelList dataKey={pk} position="center" fill="#fff" fontSize={9} fontWeight={800} formatter={(v) => (v >= 8 ? `${v}%` : '')} />
           </Bar>
@@ -455,7 +456,7 @@ export default function CartaBalanceAnalisis() {
                 <Pie data={donut} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius="70%" outerRadius="96%" paddingAngle={2} cornerRadius={9} stroke="none" onClick={(d) => setF('categoria', d?.cat)} cursor="pointer">
                   {donut.map((d, i) => <Cell key={i} fill={d.color} opacity={filtros.categoria && filtros.categoria !== d.cat ? 0.3 : 1} />)}
                 </Pie>
-                <Tooltip formatter={(v) => `${v}%`} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                <Tooltip {...TOOLTIP_STYLE} formatter={(v) => `${v}%`} />
               </PieChart>
             </ResponsiveContainer>
             <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
@@ -506,19 +507,19 @@ export default function CartaBalanceAnalisis() {
             <div style={{ width: '100%', minWidth: Math.max(0, crew.length * 56), height: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={crew} stackOffset="expand" margin={{ top: 6, right: 6, left: -20, bottom: 2 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={BASE.border} vertical={false} />
-                  <XAxis dataKey="nombre" tick={<TickCrew />} interval={0} height={46} />
-                  <YAxis tickFormatter={(v) => `${Math.round(v * 100)}%`} tick={{ fontSize: 9, fill: BASE.muted }} domain={[0, 1]} width={32} />
-                  <Tooltip formatter={(v, n, p) => [`${Math.round(v / (p.payload.n || 1) * 100)}%`, n]} labelFormatter={(l) => `${nombreCorto(l)} · ${cargoDeTrab[l] || ''}`} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                  <Bar dataKey="tp" stackId="a" name="Productivo" cursor="pointer" onClick={(d) => d && setF('persona', d.nombre)}>
+                  <CartesianGrid {...GRILLA} />
+                  <XAxis {...EJE} dataKey="nombre" tick={<TickCrew />} interval={0} height={46} />
+                  <YAxis {...EJE} tickFormatter={(v) => `${Math.round(v * 100)}%`} domain={[0, 1]} width={32} />
+                  <Tooltip {...TOOLTIP_STYLE} formatter={(v, n, p) => [`${Math.round(v / (p.payload.n || 1) * 100)}%`, n]} labelFormatter={(l) => `${nombreCorto(l)} · ${cargoDeTrab[l] || ''}`} />
+                  <Bar {...BARRA} dataKey="tp" stackId="a" name="Productivo" radius={undefined} cursor="pointer" onClick={(d) => d && setF('persona', d.nombre)}>
                     {crew.map((e, i) => <Cell key={i} fill={CB_COL.TP} opacity={filtros.persona && filtros.persona !== e.nombre ? 0.3 : 1} />)}
                     <LabelList dataKey="tpPct" position="center" fill="#fff" fontSize={9} fontWeight={800} formatter={(v) => (v >= 8 ? `${v}%` : '')} />
                   </Bar>
-                  <Bar dataKey="tc" stackId="a" name="Contributorio" cursor="pointer" onClick={(d) => d && setF('persona', d.nombre)}>
+                  <Bar {...BARRA} dataKey="tc" stackId="a" name="Contributorio" radius={undefined} cursor="pointer" onClick={(d) => d && setF('persona', d.nombre)}>
                     {crew.map((e, i) => <Cell key={i} fill={CB_COL.TC} opacity={filtros.persona && filtros.persona !== e.nombre ? 0.3 : 1} />)}
                     <LabelList dataKey="tcPct" position="center" fill="#fff" fontSize={9} fontWeight={800} formatter={(v) => (v >= 8 ? `${v}%` : '')} />
                   </Bar>
-                  <Bar dataKey="tnc" stackId="a" name="No contributorio" radius={[4, 4, 0, 0]} cursor="pointer" onClick={(d) => d && setF('persona', d.nombre)}>
+                  <Bar {...BARRA} dataKey="tnc" stackId="a" name="No contributorio" radius={[5, 5, 0, 0]} cursor="pointer" onClick={(d) => d && setF('persona', d.nombre)}>
                     {crew.map((e, i) => <Cell key={i} fill={CB_COL.TNC} opacity={filtros.persona && filtros.persona !== e.nombre ? 0.3 : 1} />)}
                     <LabelList dataKey="tncPct" position="center" fill="#fff" fontSize={9} fontWeight={800} formatter={(v) => (v >= 8 ? `${v}%` : '')} />
                   </Bar>
@@ -535,9 +536,9 @@ export default function CartaBalanceAnalisis() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={compTNC} layout="vertical" margin={{ top: 0, right: 34, left: 2, bottom: 0 }}>
                 <XAxis type="number" hide domain={[0, 100]} />
-                <YAxis type="category" dataKey="name" width={96} tick={{ fontSize: 9.5, fill: BASE.text }} />
-                <Tooltip formatter={(v) => `${v}%`} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                <Bar dataKey="value" radius={[0, 5, 5, 0]} cursor="pointer" onClick={(d) => d && setF('codigo', d.codigo)} label={{ position: 'right', fontSize: 9.5, fontWeight: 800, fill: BASE.navy, formatter: (v) => `${v}%` }}>
+                <YAxis {...EJE} type="category" dataKey="name" width={96} />
+                <Tooltip {...TOOLTIP_STYLE} formatter={(v) => `${v}%`} />
+                <Bar {...BARRA} dataKey="value" radius={[0, 5, 5, 0]} cursor="pointer" onClick={(d) => d && setF('codigo', d.codigo)} label={{ position: 'right', fontSize: 9.5, fontWeight: 800, fill: BASE.navy, formatter: (v) => `${v}%` }}>
                   {compTNC.map((e, i) => <Cell key={i} fill={filtros.codigo && filtros.codigo !== e.codigo ? `${CB_COL.TNC}44` : CB_COL.TNC} />)}
                 </Bar>
               </BarChart>

@@ -14,6 +14,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine, LabelList,
 } from 'recharts';
 import { BASE, inp } from '../utils/styles';
+import { EJE, GRILLA, TOOLTIP_STYLE, LEYENDA, BARRA } from '../utils/chartKit';
 import { comprimirImagen, pesoKB } from '../utils/imagen';
 import {
   RNC_CATEGORIAS, RNC_LABELS, RNC_COLORS, RNC_ICONS,
@@ -1806,13 +1807,13 @@ function PlanVsReal({ lapPlan = [], lapProgramado = [], ppcOficial = {}, saludLP
         ) : (
           <ResponsiveContainer width="100%" height={240}>
             <ComposedChart data={datos.filas} margin={{ top: 8, right: 8, bottom: 4, left: -18 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={BASE.border} vertical={false} />
-              <XAxis dataKey="s" tick={{ fontSize: 8, fill: BASE.muted }} interval={Math.ceil(datos.filas.length / 16)} />
-              <YAxis tick={{ fontSize: 9, fill: BASE.muted }} allowDecimals={false} />
-              <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8 }} formatter={(v, n) => [v, n === 'should' ? 'Plan base' : 'Comprometido']} />
-              <Legend wrapperStyle={{ fontSize: 11 }} formatter={(v) => v === 'should' ? 'Plan base (Should)' : 'Comprometido (Will)'} />
-              <Bar dataKey="should" fill={BASE.navyLight} radius={[3, 3, 0, 0]} maxBarSize={20} />
-              <Bar dataKey="will" fill={BASE.gold} radius={[3, 3, 0, 0]} maxBarSize={20} />
+              <CartesianGrid {...GRILLA} />
+              <XAxis {...EJE} dataKey="s" interval={Math.ceil(datos.filas.length / 16)} />
+              <YAxis {...EJE} allowDecimals={false} />
+              <Tooltip {...TOOLTIP_STYLE} formatter={(v, n) => [v, n === 'should' ? 'Plan base' : 'Comprometido']} />
+              <Legend {...LEYENDA} formatter={(v) => v === 'should' ? 'Plan base (Should)' : 'Comprometido (Will)'} />
+              <Bar {...BARRA} dataKey="should" fill={BASE.navyLight} />
+              <Bar {...BARRA} dataKey="will" fill={BASE.gold} />
               <ReferenceLine x={'S' + curWeek} stroke={BASE.red} strokeDasharray="4 4" label={{ value: 'hoy', fontSize: 9, fill: BASE.red, position: 'top' }} />
             </ComposedChart>
           </ResponsiveContainer>
@@ -2885,8 +2886,8 @@ function PPCLap({ semanaActiva, setSemanaActiva, semanasMeta = {}, total, lookup
                       <Pie data={donut} cx="50%" cy="50%" innerRadius={52} outerRadius={78} paddingAngle={2} dataKey="value" stroke="none">
                         {donut.map((d, i) => <Cell key={i} fill={d.color} />)}
                       </Pie>
-                      <Tooltip formatter={(v, n) => [`${v}`, n]} contentStyle={{ fontSize: '11px', borderRadius: '8px' }} />
-                      <Legend wrapperStyle={{ fontSize: '11px' }} />
+                      <Tooltip {...TOOLTIP_STYLE} formatter={(v, n) => [`${v}`, n]} />
+                      <Legend {...LEYENDA} />
                     </PieChart>
                   </ResponsiveContainer>
                   <div style={{ position: 'absolute', top: '42%', left: 0, right: 0, textAlign: 'center', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
@@ -2905,15 +2906,15 @@ function PPCLap({ semanaActiva, setSemanaActiva, semanasMeta = {}, total, lookup
               ) : (
                 <ResponsiveContainer width="100%" height={190}>
                   <ComposedChart data={cncChart} margin={{ top: 8, right: 6, bottom: 4, left: -18 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={BASE.border} vertical={false} />
-                    <XAxis dataKey="causa" tick={{ fontSize: 8, fill: BASE.muted }} interval={0} tickFormatter={(v) => (v || '').slice(0, 9)} />
-                    <YAxis yAxisId="l" tick={{ fontSize: 9, fill: BASE.muted }} allowDecimals={false} />
-                    <YAxis yAxisId="r" orientation="right" domain={[0, 100]} tick={{ fontSize: 9, fill: BASE.muted }} unit="%" />
-                    <Tooltip contentStyle={{ fontSize: '11px', borderRadius: '8px' }} formatter={(v, n) => n === 'acum' ? [`${v}%`, '% acumulado'] : [v, 'Casos']} />
-                    <Bar yAxisId="l" dataKey="n" fill={BASE.red} radius={[3, 3, 0, 0]} maxBarSize={42}>
+                    <CartesianGrid {...GRILLA} />
+                    <XAxis {...EJE} dataKey="causa" interval={0} tickFormatter={(v) => (v || '').slice(0, 9)} />
+                    <YAxis {...EJE} yAxisId="l" allowDecimals={false} />
+                    <YAxis {...EJE} yAxisId="r" orientation="right" domain={[0, 100]} unit="%" />
+                    <Tooltip {...TOOLTIP_STYLE} formatter={(v, n) => n === 'acum' ? [`${v}%`, '% acumulado'] : [v, 'Casos']} />
+                    <Bar {...BARRA} yAxisId="l" dataKey="n" fill={BASE.red}>
                       <LabelList dataKey="n" position="top" style={{ fontSize: 9, fontWeight: 800, fill: BASE.red }} />
                     </Bar>
-                    <Line yAxisId="r" type="monotone" dataKey="acum" stroke={BASE.gold} strokeWidth={2.5} dot={{ r: 3, fill: BASE.gold }} />
+                    <Line yAxisId="r" type="monotone" dataKey="acum" stroke={BASE.gold} strokeWidth={2.5} dot={{ r: 3, fill: BASE.gold }} activeDot={{ r: 5 }} />
                     <ReferenceLine yAxisId="r" y={80} stroke={BASE.navy} strokeDasharray="4 4" />
                   </ComposedChart>
                 </ResponsiveContainer>
@@ -2928,11 +2929,11 @@ function PPCLap({ semanaActiva, setSemanaActiva, semanasMeta = {}, total, lookup
               ) : (
                 <ResponsiveContainer width="100%" height={190}>
                   <ComposedChart data={trend} margin={{ top: 8, right: 6, bottom: 4, left: -18 }} onClick={(e) => { const p = e && e.activePayload && e.activePayload[0]; if (p) setSemanaActiva(p.payload.sem); }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={BASE.border} vertical={false} />
-                    <XAxis dataKey="s" tick={{ fontSize: 8, fill: BASE.muted }} interval={Math.ceil(trend.length / 14)} />
-                    <YAxis domain={[0, 100]} tick={{ fontSize: 9, fill: BASE.muted }} unit="%" />
-                    <Tooltip contentStyle={{ fontSize: '11px', borderRadius: '8px' }} formatter={(v) => [`${v}%`, 'PPC']} />
-                    <Bar dataKey="ppc" radius={[3, 3, 0, 0]} maxBarSize={26}>
+                    <CartesianGrid {...GRILLA} />
+                    <XAxis {...EJE} dataKey="s" interval={Math.ceil(trend.length / 14)} />
+                    <YAxis {...EJE} domain={[0, 100]} unit="%" />
+                    <Tooltip {...TOOLTIP_STYLE} formatter={(v) => [`${v}%`, 'PPC']} />
+                    <Bar {...BARRA} dataKey="ppc">
                       {trend.map((t, i) => <Cell key={i} fill={t.ppc >= 80 ? BASE.greenDark : t.ppc >= 50 ? BASE.gold : BASE.red} />)}
                     </Bar>
                     <ReferenceLine y={80} stroke={BASE.navy} strokeDasharray="4 4" label={{ value: 'meta 80%', fontSize: 8, fill: BASE.navy, position: 'insideTopRight' }} />

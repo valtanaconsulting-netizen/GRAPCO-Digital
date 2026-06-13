@@ -11,6 +11,7 @@ import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine,
 } from 'recharts';
 import { BASE } from '../../../utils/styles';
+import { EJE, GRILLA, TOOLTIP_STYLE, LEYENDA } from '../../../utils/chartKit';
 import { COSTO_HORA_DEFAULT } from '../../../utils/helpers';
 import Icon from '../../../components/Icon';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
@@ -178,7 +179,7 @@ export default function RadarProduccion({ isMobile }) {
       {/* GRÁFICO — CPI histórico + proyección */}
       <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 14, padding: '16px 18px', boxShadow: BASE.shadowSm }}>
         <p style={{ fontSize: 12, fontWeight: 900, color: BASE.navy, letterSpacing: 0.6, marginBottom: 12 }}>
-          📈 TENDENCIA DE CPI Y PROYECCIÓN (próximas 4 semanas)
+          TENDENCIA DE CPI Y PROYECCIÓN (próximas 4 semanas)
         </p>
         {chart.length < 2 ? (
           <p style={{ padding: 24, textAlign: 'center', color: BASE.muted, fontSize: 13 }}>
@@ -187,15 +188,15 @@ export default function RadarProduccion({ isMobile }) {
         ) : (
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={chart} margin={{ top: 6, right: 12, left: -10, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={BASE.border} />
-              <XAxis dataKey="sem" tick={{ fontSize: 11, fill: BASE.muted }} />
-              <YAxis tick={{ fontSize: 11, fill: BASE.muted }} domain={[0, 'auto']} unit="%" />
-              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${BASE.border}` }} formatter={(v) => v == null ? '—' : `${v}%`} />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <CartesianGrid {...GRILLA} />
+              <XAxis {...EJE} dataKey="sem" />
+              <YAxis {...EJE} domain={[0, 'auto']} unit="%" />
+              <Tooltip {...TOOLTIP_STYLE} formatter={(v) => v == null ? '—' : `${v}%`} />
+              <Legend {...LEYENDA} />
               <ReferenceLine y={85} stroke={BASE.red} strokeDasharray="5 4" label={{ value: 'Umbral 85%', fontSize: 10, fill: BASE.red, position: 'insideTopRight' }} />
               <ReferenceLine y={100} stroke={BASE.greenDark} strokeDasharray="2 4" />
-              <Line type="monotone" dataKey="CPI" stroke={BASE.navy} strokeWidth={2.5} dot={{ r: 2 }} connectNulls />
-              <Line type="monotone" dataKey="Proyección" stroke={BASE.gold} strokeWidth={2.5} strokeDasharray="6 5" dot={false} connectNulls />
+              <Line type="monotone" dataKey="CPI" stroke={BASE.navy} strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls />
+              <Line type="monotone" dataKey="Proyección" stroke={BASE.gold} strokeWidth={2.5} strokeDasharray="6 5" dot={false} activeDot={{ r: 5 }} connectNulls />
             </LineChart>
           </ResponsiveContainer>
         )}

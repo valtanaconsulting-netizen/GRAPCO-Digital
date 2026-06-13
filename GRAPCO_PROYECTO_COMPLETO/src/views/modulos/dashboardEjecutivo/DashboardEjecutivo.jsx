@@ -22,6 +22,7 @@ import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts';
 import { BASE } from '../../../utils/styles';
+import { EJE, GRILLA, TOOLTIP_STYLE, LEYENDA } from '../../../utils/chartKit';
 import { fmtCPIPct, fmt1, getEstado, COSTO_HORA_DEFAULT } from '../../../utils/helpers';
 import Icon from '../../../components/Icon';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
@@ -414,7 +415,7 @@ export default function DashboardEjecutivo({ showToast, isMobile }) {
       {/* ── Tendencia histórica (snapshots guardados) ── */}
       <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '14px', padding: '16px 18px', boxShadow: BASE.shadowSm }}>
         <p style={{ fontSize: '12px', fontWeight: 900, color: BASE.navy, letterSpacing: '0.6px', marginBottom: '12px' }}>
-          📈 TENDENCIA DIARIA · CPI, AVANCE Y PPC
+          TENDENCIA DIARIA · CPI, AVANCE Y PPC
         </p>
         {serie.length === 0 ? (
           <p style={{ padding: '28px', textAlign: 'center', color: BASE.muted, fontSize: '13px', fontWeight: 700 }}>
@@ -423,14 +424,14 @@ export default function DashboardEjecutivo({ showToast, isMobile }) {
         ) : (
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={serie} margin={{ top: 6, right: 12, left: -10, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={BASE.border} />
-              <XAxis dataKey="fecha" tick={{ fontSize: 11, fill: BASE.muted }} />
-              <YAxis tick={{ fontSize: 11, fill: BASE.muted }} domain={[0, 'auto']} />
-              <Tooltip contentStyle={{ fontSize: '12px', borderRadius: '8px', border: `1px solid ${BASE.border}` }} />
-              <Legend wrapperStyle={{ fontSize: '11px' }} />
-              <Line type="monotone" dataKey="CPI" stroke={BASE.navy} strokeWidth={2} dot={false} connectNulls />
-              <Line type="monotone" dataKey="Avance %" stroke={BASE.gold} strokeWidth={2} dot={false} connectNulls />
-              <Line type="monotone" dataKey="PPC" stroke="#7c3aed" strokeWidth={2} dot={false} connectNulls />
+              <CartesianGrid {...GRILLA} />
+              <XAxis {...EJE} dataKey="fecha" />
+              <YAxis {...EJE} domain={[0, 'auto']} />
+              <Tooltip {...TOOLTIP_STYLE} />
+              <Legend {...LEYENDA} />
+              <Line type="monotone" dataKey="CPI" stroke={BASE.navy} strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} connectNulls />
+              <Line type="monotone" dataKey="Avance %" stroke={BASE.gold} strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} connectNulls />
+              <Line type="monotone" dataKey="PPC" stroke="#7c3aed" strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} connectNulls />
             </LineChart>
           </ResponsiveContainer>
         )}

@@ -8,6 +8,7 @@ import {
   ReferenceLine, ReferenceArea, AreaChart, Area, ComposedChart, Cell,
 } from 'recharts';
 import { BASE } from '../utils/styles';
+import { EJE, GRILLA, BARRA, degradado } from '../utils/chartKit';
 import VistaHeader from '../components/VistaHeader';
 
 // === Builder de grafData a partir de registros — corre on-the-fly por filtro ===
@@ -257,10 +258,6 @@ const renderLegend = (hidden, setHidden) => ({ payload }) => (
   </ul>
 );
 
-// === Axis style ===
-const axisTick = { fontSize: 10.5, fill: '#64748b', fontWeight: 600 };
-const gridStyle = { stroke: '#eef2f7' };
-
 // === Tick custom: parte el label en HASTA 3 líneas, horizontal, sin solape ===
 // Trunca palabras > 13 chars y centra cada línea bajo el bar.
 const wrapTexto = (txt, maxChars = 13) => {
@@ -497,12 +494,12 @@ export default function Graficos({ grafData: grafDataOriginal, filtrados = [], w
         {!grafData.semanas.length ? noData : (
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={grafData.semanas} margin={{top:10,right:30,left:10,bottom:10}}>
-              <CartesianGrid strokeDasharray="3 3" {...gridStyle}/>
-              <XAxis dataKey="semana" tick={axisTick} tickMargin={8}/>
+              <CartesianGrid {...GRILLA}/>
+              <XAxis {...EJE} dataKey="semana" tickMargin={8}/>
               {fActividad ? (
-                <YAxis tick={axisTick} tickMargin={6} tickFormatter={fmtK}/>
+                <YAxis {...EJE} tickMargin={6} tickFormatter={fmtK}/>
               ) : (
-                <YAxis domain={[0, 1.6]} tick={axisTick} tickMargin={6}
+                <YAxis {...EJE} domain={[0, 1.6]} tickMargin={6}
                   tickFormatter={v => `${Math.round(v * 100)}%`}/>
               )}
               <Tooltip content={<Tip/>} cursor={{stroke:'#cbd5e1',strokeWidth:1,strokeDasharray:'3 3'}}/>
@@ -551,9 +548,9 @@ export default function Graficos({ grafData: grafDataOriginal, filtrados = [], w
         {!grafData.acumulado.length ? noData : (
           <ResponsiveContainer width="100%" height={240}>
             <LineChart data={grafData.acumulado} margin={{top:10,right:30,left:10,bottom:10}}>
-              <CartesianGrid strokeDasharray="3 3" {...gridStyle}/>
-              <XAxis dataKey="semana" tick={axisTick} tickMargin={8}/>
-              <YAxis domain={[0,1.6]} tick={axisTick} tickMargin={6}
+              <CartesianGrid {...GRILLA}/>
+              <XAxis {...EJE} dataKey="semana" tickMargin={8}/>
+              <YAxis {...EJE} domain={[0,1.6]} tickMargin={6}
                 tickFormatter={v => `${Math.round(v * 100)}%`}/>
               <Tooltip content={<Tip/>} cursor={{stroke:'#cbd5e1',strokeWidth:1,strokeDasharray:'3 3'}}/>
               <Legend content={renderLegend(hidCpi, setHidCpi)} verticalAlign="bottom"/>
@@ -595,24 +592,18 @@ export default function Graficos({ grafData: grafDataOriginal, filtrados = [], w
           <ResponsiveContainer width="100%" height={240}>
             <AreaChart data={grafData.acumulado} margin={{top:10,right:30,left:10,bottom:10}}>
               <defs>
-                <linearGradient id="gMeta" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={PAL.meta.stroke} stopOpacity={0.35}/>
-                  <stop offset="95%" stopColor={PAL.meta.stroke} stopOpacity={0}/>
-                </linearGradient>
-                <linearGradient id="gReal" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={PAL.real.stroke} stopOpacity={0.35}/>
-                  <stop offset="95%" stopColor={PAL.real.stroke} stopOpacity={0}/>
-                </linearGradient>
+                {degradado('grad_curvaMeta', PAL.meta.stroke)}
+                {degradado('grad_curvaReal', PAL.real.stroke)}
               </defs>
-              <CartesianGrid strokeDasharray="3 3" {...gridStyle}/>
-              <XAxis dataKey="semana" tick={axisTick} tickMargin={8}/>
-              <YAxis tick={axisTick} tickMargin={6} tickFormatter={fmtK}/>
+              <CartesianGrid {...GRILLA}/>
+              <XAxis {...EJE} dataKey="semana" tickMargin={8}/>
+              <YAxis {...EJE} tickMargin={6} tickFormatter={fmtK}/>
               <Tooltip content={<Tip/>} cursor={{stroke:'#cbd5e1',strokeWidth:1,strokeDasharray:'3 3'}}/>
               <Legend content={renderLegend(hidCurva, setHidCurva)} verticalAlign="bottom"/>
-              <Area type="monotone" dataKey="HH Meta Acum" stroke={PAL.meta.stroke} fill="url(#gMeta)"
-                strokeWidth={2} strokeDasharray="5 3" hide={hidCurva.has('HH Meta Acum')} animationDuration={500}/>
-              <Area type="monotone" dataKey="HH Real Acum" stroke={PAL.real.stroke} fill="url(#gReal)"
-                strokeWidth={3} hide={hidCurva.has('HH Real Acum')} animationDuration={500}/>
+              <Area type="monotone" dataKey="HH Meta Acum" stroke={PAL.meta.stroke} fill="url(#grad_curvaMeta)"
+                strokeWidth={2.5} strokeDasharray="5 3" hide={hidCurva.has('HH Meta Acum')} animationDuration={500}/>
+              <Area type="monotone" dataKey="HH Real Acum" stroke={PAL.real.stroke} fill="url(#grad_curvaReal)"
+                strokeWidth={2.5} hide={hidCurva.has('HH Real Acum')} animationDuration={500}/>
             </AreaChart>
           </ResponsiveContainer>
         )}
@@ -643,16 +634,16 @@ export default function Graficos({ grafData: grafDataOriginal, filtrados = [], w
               <div style={{ minWidth: `${minW}px`, height: 360 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={grafData.porPartida} margin={{top:10,right:20,left:10,bottom:60}} barCategoryGap="25%">
-                    <CartesianGrid strokeDasharray="3 3" {...gridStyle}/>
-                    <XAxis dataKey="partida" tick={<TwoLineTick/>} interval={0} height={65} tickLine={false}/>
-                    <YAxis tick={axisTick} tickMargin={6} tickFormatter={fmtK}/>
+                    <CartesianGrid {...GRILLA}/>
+                    <XAxis {...EJE} dataKey="partida" tick={<TwoLineTick/>} interval={0} height={65}/>
+                    <YAxis {...EJE} tickMargin={6} tickFormatter={fmtK}/>
                     <Tooltip content={<Tip/>} cursor={{fill:'#0f1f3a08'}}/>
                     <Legend content={renderLegend(hidPart, setHidPart)} verticalAlign="top"/>
-                    <Bar dataKey="HH Meta" fill={PAL.meta.fill} radius={[5,5,0,0]}
+                    <Bar {...BARRA} dataKey="HH Meta" fill={PAL.meta.fill}
                       hide={hidPart.has('HH Meta')} animationDuration={500}/>
-                    <Bar dataKey="HH Real" fill={PAL.real.fill} radius={[5,5,0,0]}
+                    <Bar {...BARRA} dataKey="HH Real" fill={PAL.real.fill}
                       hide={hidPart.has('HH Real')} animationDuration={500}/>
-                    <Bar dataKey="HH Ppto" fill={PAL.ppt.fill} radius={[5,5,0,0]}
+                    <Bar {...BARRA} dataKey="HH Ppto" fill={PAL.ppt.fill}
                       hide={hidPart.has('HH Ppto')} animationDuration={500}/>
                   </BarChart>
                 </ResponsiveContainer>
@@ -680,19 +671,19 @@ export default function Graficos({ grafData: grafDataOriginal, filtrados = [], w
         {!grafData.semanas.length ? noData : (
           <ResponsiveContainer width="100%" height={310}>
             <ComposedChart data={grafData.semanas} margin={{top:10,right:30,left:10,bottom:10}}>
-              <CartesianGrid strokeDasharray="3 3" {...gridStyle}/>
-              <XAxis dataKey="semana" tick={axisTick} tickMargin={8}/>
-              <YAxis yAxisId="left" tick={axisTick} tickMargin={6} tickFormatter={fmtK}
+              <CartesianGrid {...GRILLA}/>
+              <XAxis {...EJE} dataKey="semana" tickMargin={8}/>
+              <YAxis {...EJE} yAxisId="left" tickMargin={6} tickFormatter={fmtK}
                 label={{value:'HH',angle:-90,position:'insideLeft',style:{fontSize:10,fill:'#64748b',fontWeight:700}}}/>
-              <YAxis yAxisId="right" orientation="right" domain={[0, 1.6]} tick={axisTick} tickMargin={6}
+              <YAxis {...EJE} yAxisId="right" orientation="right" domain={[0, 1.6]} tickMargin={6}
                 tickFormatter={v => `${Math.round(v * 100)}%`}
                 label={{value:'CPI',angle:90,position:'insideRight',style:{fontSize:10,fill:'#64748b',fontWeight:700}}}/>
               <Tooltip content={<Tip/>} cursor={{fill:'#0f1f3a08'}}/>
               <Legend content={renderLegend(hidComp, setHidComp)} verticalAlign="top"/>
               <ReferenceLine yAxisId="right" y={1} stroke={PAL.meta.stroke} strokeDasharray="4 2" strokeWidth={1.5}/>
-              <Bar yAxisId="left" dataKey="HH Real" fill={PAL.real.fill} radius={[5,5,0,0]}
+              <Bar {...BARRA} yAxisId="left" dataKey="HH Real" fill={PAL.real.fill}
                 hide={hidComp.has('HH Real')} animationDuration={500}/>
-              <Bar yAxisId="left" dataKey="HH Meta" fill={PAL.meta.fill} radius={[5,5,0,0]} opacity={0.65}
+              <Bar {...BARRA} yAxisId="left" dataKey="HH Meta" fill={PAL.meta.fill} opacity={0.65}
                 hide={hidComp.has('HH Meta')} animationDuration={500}/>
               <Line yAxisId="right" type="monotone" dataKey="CPI" stroke={PAL.cpi.stroke} strokeWidth={3}
                 hide={hidComp.has('CPI')}

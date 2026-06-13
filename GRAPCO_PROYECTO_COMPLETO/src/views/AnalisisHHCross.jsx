@@ -8,6 +8,7 @@ import {
   XAxis, YAxis, Tooltip, CartesianGrid, Legend,
 } from 'recharts';
 import { BASE, CHART_PALETTE } from '../utils/styles';
+import { EJE, GRILLA, TOOLTIP_STYLE, LEYENDA, BARRA } from '../utils/chartKit';
 import { fmt1 } from '../utils/helpers';
 import { crearResolverNombre } from '../utils/nombresCanonicos';
 import VistaHeader from '../components/VistaHeader';
@@ -310,7 +311,7 @@ export default function AnalisisHHCross({ filtrados = [], personalDB = [] }) {
             {/* Distribución por actividad — DONUT */}
             <div style={{ ...card, padding: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
-                <p style={sectionTitle}>🔨 Distribución por Actividad</p>
+                <p style={sectionTitle}>Distribución por Actividad</p>
                 <span style={{ fontSize: '10px', color: BASE.muted, fontWeight: '600' }}>Click para filtrar · {porActividad.length} actividades</span>
               </div>
               {porActividad.length === 0 ? (
@@ -337,8 +338,8 @@ export default function AnalisisHHCross({ filtrados = [], personalDB = [] }) {
                           ))}
                         </Pie>
                         <Tooltip
+                          {...TOOLTIP_STYLE}
                           formatter={(v) => [`${fmt1(v)} HH`, 'Horas']}
-                          contentStyle={{ fontSize: '11px', borderRadius: '8px', border: `1px solid ${BASE.border}` }}
                         />
                       </PieChart>
                     </ResponsiveContainer>
@@ -379,7 +380,7 @@ export default function AnalisisHHCross({ filtrados = [], personalDB = [] }) {
             {/* Detalle diario — BARRAS */}
             <div style={{ ...card, padding: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
-                <p style={sectionTitle}>📊 Detalle Diario (HN + HE)</p>
+                <p style={sectionTitle}>Detalle Diario (HN + HE)</p>
                 <span style={{ fontSize: '10px', color: BASE.muted, fontWeight: '600' }}>{porDia.length} día{porDia.length === 1 ? '' : 's'}</span>
               </div>
               {porDia.length === 0 ? (
@@ -397,17 +398,17 @@ export default function AnalisisHHCross({ filtrados = [], personalDB = [] }) {
                       }}
                       margin={{ top: 4, right: 8, bottom: 0, left: -8 }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" stroke={BASE.border} />
-                      <XAxis dataKey="fecha" tick={{ fontSize: 10, fill: BASE.muted }} />
-                      <YAxis tick={{ fontSize: 10, fill: BASE.muted }} />
+                      <CartesianGrid {...GRILLA} />
+                      <XAxis {...EJE} dataKey="fecha" />
+                      <YAxis {...EJE} />
                       <Tooltip
-                        contentStyle={{ fontSize: '11px', borderRadius: '8px', border: `1px solid ${BASE.border}` }}
+                        {...TOOLTIP_STYLE}
                         formatter={(v, name) => [`${fmt1(v)} h`, name]}
                         labelFormatter={(_, p) => p?.[0]?.payload?.fechaFull || ''}
                       />
-                      <Legend wrapperStyle={{ fontSize: '11px' }} />
-                      <Bar dataKey="HN" stackId="a" fill="#2563eb" cursor="pointer" />
-                      <Bar dataKey="HE" stackId="a" fill="#d97706" cursor="pointer" />
+                      <Legend {...LEYENDA} />
+                      <Bar {...BARRA} dataKey="HN" stackId="a" fill="#2563eb" cursor="pointer" />
+                      <Bar {...BARRA} dataKey="HE" stackId="a" fill="#d97706" cursor="pointer" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -417,7 +418,7 @@ export default function AnalisisHHCross({ filtrados = [], personalDB = [] }) {
             {/* Timeline de días trabajados */}
             <div style={{ ...card, padding: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '10px' }}>
-                <p style={sectionTitle}>📅 Timeline · Días trabajados</p>
+                <p style={sectionTitle}>Timeline · Días trabajados</p>
                 <span style={{ fontSize: '10px', color: BASE.muted, fontWeight: '600' }}>Click para filtrar por día</span>
               </div>
               {timeline.arr.length === 0 ? (
