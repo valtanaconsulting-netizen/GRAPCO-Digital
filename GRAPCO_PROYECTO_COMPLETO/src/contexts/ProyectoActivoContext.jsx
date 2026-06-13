@@ -13,7 +13,7 @@ const ProyectoActivoContext = createContext({});
 const KEY_PROY = 'grapco_proyecto_activo';
 const KEY_FRENTE = 'grapco_frente_activo';
 
-export const PROYECTO_DEFAULT_ID = 'default-ptari';
+export const PROYECTO_DEFAULT_ID = 'creditex-ptar';   // antes 'default-ptari' (demo eliminado 2026-06-13)
 export const FRENTE_DEFAULT_ID = 'frente-general';
 export const FRENTE_TODOS = '__TODOS__';
 
