@@ -3,6 +3,8 @@
 
 import React, { useState, useMemo } from 'react';
 import { BASE } from '../utils/styles';
+import VistaHeader from '../components/VistaHeader';
+import Icon from '../components/Icon';
 import RoleGuard from '../components/RoleGuard';
 import DashboardOT from './oficinatecnica/DashboardOT';
 import RDOView from './oficinatecnica/RDOView';
@@ -15,54 +17,61 @@ import ROPanel from './modulos/resultadoOperativo/ROPanel';
 import BIM from './BIM';
 
 // Definición de grupos en orden de flujo natural
+// `icon` = nombre del SVG (Icon) — presentación formal GRAPCO; el campo `icono`
+// (emoji) y `color` se conservan por compatibilidad pero la UI usa navy/gold.
 const GRUPOS = {
   resumen: {
     label: 'RESUMEN',
     icono: '📊',
+    icon: 'dashboard',
     color: '#6366f1',
     tagline: 'Vista ejecutiva del proyecto',
     items: [
-      { id: 'dashboard', l: 'Dashboard', icono: '📊', desc: 'KPIs ejecutivos' },
+      { id: 'dashboard', l: 'Dashboard', icono: '📊', icon: 'dashboard', desc: 'KPIs ejecutivos' },
     ],
   },
   contrato: {
     label: 'PARTIDA CONTROL',
     icono: '📋',
+    icon: 'fileText',
     color: '#7c3aed',
     tagline: 'Presupuesto y control de partidas',
     items: [
-      { id: 'partidas', l: 'Partidas Control',   icono: '📋', desc: 'Presupuesto contractual' },
+      { id: 'partidas', l: 'Partidas Control',   icono: '📋', icon: 'fileText', desc: 'Presupuesto contractual' },
     ],
   },
   ejecucion: {
     label: 'EJECUCIÓN',
     icono: '🛠️',
+    icon: 'hardhat',
     color: '#0d9488',
     tagline: 'Captura de campo: día a día en obra',
     items: [
-      { id: 'rdo',         l: 'RDO',                  icono: '📅', desc: 'Reporte Diario de Obra' },
-      { id: 'fotografico', l: 'Registro Fotográfico', icono: '🖼️', desc: 'Fotos automáticas del capataz' },
-      { id: 'bim',         l: 'Modelo BIM',           icono: '🏗️', desc: 'Vínculos + visor 3D' },
+      { id: 'rdo',         l: 'RDO',                  icono: '📅', icon: 'registro', desc: 'Reporte Diario de Obra' },
+      { id: 'fotografico', l: 'Registro Fotográfico', icono: '🖼️', icon: 'layers',   desc: 'Fotos automáticas del capataz' },
+      { id: 'bim',         l: 'Modelo BIM',           icono: '🏗️', icon: 'cube',     desc: 'Vínculos + visor 3D' },
     ],
   },
   facturacion: {
     label: 'VALORIZACIÓN',
     icono: '💰',
+    icon: 'coins',
     color: '#f59e0b',
     tagline: 'Valorización y cobro al cliente',
     items: [
-      { id: 'valoriz',  l: 'Valorizaciones', icono: '💰', desc: 'Mensual al cliente (auto-calcula)' },
-      { id: 'sustento', l: 'Sustento',       icono: '📸', desc: 'Fotos manuales para PQ-XX' },
-      { id: 'informe',  l: 'Informe PDF',    icono: '📑', desc: 'Genera el sustento imprimible' },
+      { id: 'valoriz',  l: 'Valorizaciones', icono: '💰', icon: 'coins',    desc: 'Mensual al cliente (auto-calcula)' },
+      { id: 'sustento', l: 'Sustento',       icono: '📸', icon: 'layers',   desc: 'Fotos manuales para PQ-XX' },
+      { id: 'informe',  l: 'Informe PDF',    icono: '📑', icon: 'fileText', desc: 'Genera el sustento imprimible' },
     ],
   },
   ro: {
     label: 'RO',
     icono: '📈',
+    icon: 'trendingUp',
     color: '#0ea5e9',
     tagline: 'Resultado operativo del proyecto',
     items: [
-      { id: 'ro', l: 'Resultado Operativo', icono: '📈', desc: 'RO · CR · Adicionales · Deductivos' },
+      { id: 'ro', l: 'Resultado Operativo', icono: '📈', icon: 'trendingUp', desc: 'RO · CR · Adicionales · Deductivos' },
     ],
   },
 };
@@ -123,75 +132,63 @@ export default function OficinaTecnicaPanel({ showToast, tabExterna, onChangeTab
   return (
     <RoleGuard rolesPermitidos={['admin', 'ingeniero', 'oficina_tecnica']}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        {/* HEADER */}
-        <div style={{
-          background: `linear-gradient(135deg, #6366f1, #4338ca)`,
-          borderRadius: '14px',
-          padding: '20px 26px',
-          color: '#fff',
-          borderLeft: `5px solid ${BASE.gold}`,
-          boxShadow: '0 4px 20px rgba(99, 102, 241, 0.25)',
-        }}>
-          <p style={{ fontSize: '10px', fontWeight: '900', color: BASE.gold, letterSpacing: '1.6px' }}>
-            📊 MODULO OFICINA TÉCNICA · CONTRATO Y FACTURACIÓN
-          </p>
-          <h2 style={{ fontSize: '22px', fontWeight: '900', marginTop: '4px' }}>
-            Flujo: Contrato → Ejecución → Facturación
-          </h2>
-          <p style={{ fontSize: '12px', opacity: 0.85, marginTop: '4px' }}>
-            RDO automático desde tareos+LPS. Valorización auto-calculada desde producción.
-          </p>
-        </div>
+        {/* HEADER — cabecera unificada GRAPCO */}
+        <VistaHeader
+          icono="ruler"
+          eyebrow="Oficina Técnica"
+          titulo="Contrato · Ejecución · Facturación"
+          subtitulo="RDO automático desde tareos+LPS. Valorización auto-calculada desde producción."
+        />
 
         {!tabExterna && (
           <>
-            {/* NIVEL 1 — GRUPOS */}
+            {/* NIVEL 1 — GRUPOS (segmented / pills navy-gold) */}
             <div style={{
-              background: BASE.white,
+              background: BASE.bgSoft,
               border: `1px solid ${BASE.border}`,
-              borderRadius: '12px 12px 0 0',
-              borderBottom: 'none',
-              boxShadow: '0 1px 3px rgba(15,23,42,0.04)',
+              borderRadius: '12px',
+              padding: '6px',
+              boxShadow: BASE.shadowSm,
+              display: 'flex', gap: '4px', flexWrap: 'wrap',
             }}>
-              <div style={{ display: 'flex', flexWrap: 'wrap' }}>
-                {Object.entries(GRUPOS).map(([gid, g]) => {
-                  const activo = grupoActivo === gid;
-                  return (
-                    <button key={gid} onClick={() => cambiarGrupo(gid)} style={{
-                      flex: '1 1 auto', minWidth: '150px',
-                      padding: '14px 18px',
-                      background: 'transparent',
-                      color: activo ? g.color : BASE.muted,
-                      border: 'none',
-                      fontSize: '12px',
-                      fontWeight: activo ? '900' : '700',
-                      letterSpacing: '0.5px',
-                      cursor: 'pointer',
-                      transition: 'color 0.15s',
-                      borderBottom: activo ? `3px solid ${g.color}` : '3px solid transparent',
-                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                    }}
-                    onMouseEnter={e => { if (!activo) e.currentTarget.style.color = BASE.navy; }}
-                    onMouseLeave={e => { if (!activo) e.currentTarget.style.color = BASE.muted; }}>
-                      <span style={{ fontSize: '15px' }}>{g.icono}</span>
-                      {g.label}
-                    </button>
-                  );
-                })}
-              </div>
+              {Object.entries(GRUPOS).map(([gid, g]) => {
+                const activo = grupoActivo === gid;
+                return (
+                  <button key={gid} onClick={() => cambiarGrupo(gid)} style={{
+                    flex: '1 1 auto', minWidth: '130px',
+                    padding: '10px 16px',
+                    background: activo ? BASE.navy : 'transparent',
+                    color: activo ? '#fff' : BASE.muted,
+                    border: 'none',
+                    borderRadius: '10px',
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.6px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                    boxShadow: activo ? `0 4px 12px ${BASE.navy}33` : 'none',
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                  }}
+                  onMouseEnter={e => { if (!activo) { e.currentTarget.style.background = BASE.white; e.currentTarget.style.color = BASE.navy; } }}
+                  onMouseLeave={e => { if (!activo) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = BASE.muted; } }}>
+                    <Icon name={g.icon} size={15} color={activo ? BASE.gold : 'currentColor'} strokeWidth={2} />
+                    {g.label}
+                  </button>
+                );
+              })}
             </div>
 
             {/* NIVEL 2 — SUB-TABS DEL GRUPO ACTIVO */}
             <div style={{
               background: BASE.white,
               border: `1px solid ${BASE.border}`,
-              borderTop: 'none',
-              borderRadius: '0 0 12px 12px',
+              borderRadius: '14px',
               padding: '12px 16px',
-              marginTop: '-14px', // compensa el gap para que se vea pegado al nivel 1
+              boxShadow: BASE.shadowMd,
             }}>
-              <p style={{ fontSize: '10.5px', color: BASE.muted, fontWeight: '600', marginBottom: '10px' }}>
-                <span style={{ color: grupoCfg.color, fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.6px' }}>{grupoCfg.label}</span>
+              <p style={{ fontSize: '10px', color: BASE.muted, fontWeight: 700, marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                <span style={{ color: BASE.navy, fontWeight: 800, letterSpacing: '0.6px' }}>{grupoCfg.label}</span>
                 <span style={{ margin: '0 6px', opacity: 0.4 }}>·</span>
                 {grupoCfg.tagline}
               </p>
@@ -201,23 +198,23 @@ export default function OficinaTecnicaPanel({ showToast, tabExterna, onChangeTab
                   return (
                     <button key={item.id} onClick={() => setTab(item.id)} style={{
                       padding: '9px 14px',
-                      background: activa ? `${grupoCfg.color}15` : 'transparent',
-                      color: activa ? grupoCfg.color : BASE.muted,
-                      border: `1px solid ${activa ? `${grupoCfg.color}55` : BASE.border}`,
-                      borderRadius: '8px',
-                      fontSize: '12px',
-                      fontWeight: activa ? '800' : '600',
+                      background: activa ? BASE.navy : BASE.bgSoft,
+                      color: activa ? '#fff' : BASE.muted,
+                      border: `1px solid ${activa ? BASE.navy : BASE.border}`,
+                      borderRadius: '10px',
+                      fontSize: '11px',
+                      fontWeight: activa ? 800 : 600,
                       cursor: 'pointer',
                       transition: 'all 0.15s',
-                      display: 'inline-flex', alignItems: 'center', gap: '7px',
+                      display: 'inline-flex', alignItems: 'center', gap: '8px',
                       letterSpacing: '0.2px',
                     }}
-                    onMouseEnter={e => { if (!activa) { e.currentTarget.style.background = BASE.bgSoft; e.currentTarget.style.color = BASE.navy; } }}
-                    onMouseLeave={e => { if (!activa) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = BASE.muted; } }}>
-                      <span style={{ fontSize: '13px' }}>{item.icono}</span>
+                    onMouseEnter={e => { if (!activa) { e.currentTarget.style.background = BASE.white; e.currentTarget.style.color = BASE.navy; e.currentTarget.style.borderColor = BASE.navyLight; } }}
+                    onMouseLeave={e => { if (!activa) { e.currentTarget.style.background = BASE.bgSoft; e.currentTarget.style.color = BASE.muted; e.currentTarget.style.borderColor = BASE.border; } }}>
+                      <Icon name={item.icon} size={14} color={activa ? BASE.gold : 'currentColor'} strokeWidth={2} />
                       <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
-                        <span>{item.l}</span>
-                        <span style={{ fontSize: '9.5px', fontWeight: '600', opacity: 0.75 }}>{item.desc}</span>
+                        <span style={{ textTransform: 'uppercase', letterSpacing: '0.3px' }}>{item.l}</span>
+                        <span style={{ fontSize: '9.5px', fontWeight: 600, opacity: 0.75, textTransform: 'none', letterSpacing: 0 }}>{item.desc}</span>
                       </span>
                     </button>
                   );

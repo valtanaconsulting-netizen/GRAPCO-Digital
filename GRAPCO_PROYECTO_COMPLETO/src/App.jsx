@@ -85,6 +85,7 @@ const PRELOAD_BY_KEY = {
   normaltec:      () => import('./views/planeamiento/NormalTecnologica'),
   radarProd:      () => import('./views/modulos/radarProduccion/RadarProduccion'),
   dashEjecutivo:  () => import('./views/modulos/dashboardEjecutivo/DashboardEjecutivo'),
+  estadoObra:     () => import('./views/modulos/estadoObra/EstadoObra'),
 };
 const preloadModulo = (k) => { try { PRELOAD_BY_KEY[k]?.(); } catch { /* noop */ } };
 const Capataz             = lazy(() => import('./views/Capataz'));
@@ -113,6 +114,7 @@ const RadarProduccion     = lazy(() => import('./views/modulos/radarProduccion/R
 const BIM                 = lazy(() => import('./views/BIM'));
 const CapatazPanel        = lazy(() => import('./views/capataz/CapatazPanel'));
 const SeguridadPanel      = lazy(() => import('./views/seguridad/SeguridadPanel'));
+const EstadoObra          = lazy(() => import('./views/modulos/estadoObra/EstadoObra'));
 
 // ── Alcance de módulos por ÁREA (sidebar del shell ingeniero/admin/planeamiento) ──
 // Cada área ve SOLO sus módulos. Únicamente Administración (admin) ve todos.
@@ -120,7 +122,7 @@ const SeguridadPanel      = lazy(() => import('./views/seguridad/SeguridadPanel'
 //   - planeamiento → WBS, APU, Last Planner
 //   - admin      → null = TODOS los módulos (acceso completo)
 // Ingeniería de Producción ahora ABSORBE Planeamiento (Plan Maestro, APU, Last Planner).
-const KEYS_PRODUCCION  = ['flujo', 'dashboard', 'radarProd', 'registro', 'carta', 'warroom', 'planMaestro', 'apus', 'lps', 'cronogramaobra', 'normaltec', 'pullplanning', 'planvaciado', 'materiales', 'bim'];
+const KEYS_PRODUCCION  = ['estadoObra', 'flujo', 'dashboard', 'radarProd', 'registro', 'carta', 'warroom', 'planMaestro', 'apus', 'lps', 'cronogramaobra', 'normaltec', 'pullplanning', 'planvaciado', 'materiales', 'bim'];
 const KEYS_PLANEAMIENTO = ['flujo', 'cronogramaobra', 'normaltec', 'planMaestro', 'apus', 'pullplanning', 'lps', 'planvaciado'];
 // Devuelve la lista de keys permitidas para el rol, o null si ve todo (admin).
 const keysPermitidasPorRol = (rol) => {
@@ -562,6 +564,8 @@ function AppInner() {
             { key: 'pullplanning', label: 'Pull Planning',          iconName: 'target',      color: '#a78bfa',    group: 'PLANEAMIENTO' },
             { key: 'lps',         label: 'Last Planner System',     iconName: 'target',      color: '#34d399',    group: 'PLANEAMIENTO' },
             { key: 'planvaciado', label: 'Plan de Vaciado',         iconName: 'target',      color: '#38bdf8',    group: 'PLANEAMIENTO' },
+            // RESUMEN — el tablero "estado de obra" que reúne todo
+            { key: 'estadoObra',  label: 'Estado de Obra',          iconName: 'dashboard',   color: BASE.gold,    group: 'RESUMEN' },
             // PRODUCCIÓN — control de avance, productividad y carta balance
             { key: 'dashboard',   label: 'Producción',              iconName: 'barChart3',   color: BASE.gold,    group: 'PRODUCCIÓN' },
             { key: 'radarProd',   label: 'Radar de Producción',     iconName: 'target',      color: '#f87171',    group: 'PRODUCCIÓN' },
@@ -828,6 +832,11 @@ function AppInner() {
                     </aside>
                   </>
                 )}
+
+            {/* Estado de Obra — tablero unificado (avance, CPI, PPC, calidad, seguridad) */}
+            {moduloIngeniero === 'estadoObra' && (
+              <EstadoObra irA={setModuloIngeniero} />
+            )}
 
             {/* Dashboard */}
             {moduloIngeniero === 'dashboard' && (

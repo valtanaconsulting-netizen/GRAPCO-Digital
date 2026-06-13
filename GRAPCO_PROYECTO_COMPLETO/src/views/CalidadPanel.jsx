@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import { BASE } from '../utils/styles';
+import VistaHeader from '../components/VistaHeader';
+import Icon from '../components/Icon';
 import RoleGuard from '../components/RoleGuard';
 import DashboardCalidad from './calidad/DashboardCalidad';
 import ProtocolosView from './calidad/ProtocolosView';
@@ -17,15 +19,15 @@ import BIM from './BIM';
 import PlanosView from './calidad/PlanosView';
 
 const TABS = [
-  { id: 'dashboard',  l: 'Dashboard',         icono: '📊', desc: 'KPIs ejecutivos',         color: '#ec4899' },
-  { id: 'protocolos', l: 'Protocolos',        icono: '📋', desc: 'Pre-Vaciado y por elemento', color: '#7c3aed' },
-  { id: 'archivo',    l: 'Archivo',           icono: '📁', desc: 'PDFs firmados por Frente y Semana',     color: '#0d9488' },
-  { id: 'planos',     l: 'Planos',            icono: '📐', desc: 'Por frente · PDF/imágenes',  color: '#0284c7' },
-  { id: 'calfor',     l: 'CAL-FOR',           icono: '📄', desc: 'Plantilla GRAPCO con firmas', color: '#a855f7' },
-  { id: 'pets',       l: 'PETs',              icono: '📜', desc: 'PETs (10 secciones)',     color: '#0ea5e9' },
-  { id: 'ncs',        l: 'No Conformidades',  icono: '🚨', desc: 'NCs abiertas y cerradas', color: '#dc2626' },
-  { id: 'ensayos',    l: 'Ensayos',           icono: '🧪', desc: 'Resultados laboratorio',  color: '#f59e0b' },
-  { id: 'bim',        l: 'Modelo BIM',        icono: '🏗️', desc: 'Vínculos por partida + visor', color: '#6366f1' },
+  { id: 'dashboard',  l: 'Dashboard',         ic: 'dashboard', desc: 'KPIs ejecutivos' },
+  { id: 'protocolos', l: 'Protocolos',        ic: 'fileText',  desc: 'Pre-Vaciado y por elemento' },
+  { id: 'archivo',    l: 'Archivo',           ic: 'package',   desc: 'PDFs firmados por Frente y Semana' },
+  { id: 'planos',     l: 'Planos',            ic: 'ruler',     desc: 'Por frente · PDF/imágenes' },
+  { id: 'calfor',     l: 'CAL-FOR',           ic: 'registro',  desc: 'Plantilla GRAPCO con firmas' },
+  { id: 'pets',       l: 'PETs',              ic: 'fileText',  desc: 'PETs (10 secciones)' },
+  { id: 'ncs',        l: 'No Conformidades',  ic: 'alert',     desc: 'NCs abiertas y cerradas' },
+  { id: 'ensayos',    l: 'Ensayos',           ic: 'target',    desc: 'Resultados laboratorio' },
+  { id: 'bim',        l: 'Modelo BIM',        ic: 'layers',    desc: 'Vínculos por partida + visor' },
 ];
 
 // Mapa de keys del sidebar (calidad.dashboard, calidad.protocolos, ...) a tab interno
@@ -60,24 +62,12 @@ export default function CalidadPanel({ showToast, tabExterna, onChangeTab }) {
     <RoleGuard rolesPermitidos={['admin', 'ingeniero', 'calidad', 'supervisor_cliente']}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         {/* HEADER */}
-        <div style={{
-          background: `linear-gradient(135deg, #ec4899, #be185d)`,
-          borderRadius: '14px',
-          padding: '20px 26px',
-          color: '#fff',
-          borderLeft: `5px solid ${BASE.gold}`,
-          boxShadow: '0 4px 20px rgba(236, 72, 153, 0.25)',
-        }}>
-          <p style={{ fontSize: '10px', fontWeight: '900', color: BASE.gold, letterSpacing: '1.6px' }}>
-            🦺 GESTIÓN DE CALIDAD · CONTROL Y LIBERACION
-          </p>
-          <h2 style={{ fontSize: '22px', fontWeight: '900', marginTop: '4px' }}>
-            Protocolos por elemento, PETs, No Conformidades, Ensayos
-          </h2>
-          <p style={{ fontSize: '12px', opacity: 0.85, marginTop: '4px' }}>
-            Sistema integral de calidad nivel grandes empresas. Replica formato GRAPCO con flujo digital y firmas.
-          </p>
-        </div>
+        <VistaHeader
+          icono="shield"
+          eyebrow="Gestión de Calidad · Control y Liberación"
+          titulo="Protocolos, PETs, No Conformidades y Ensayos"
+          subtitulo="Sistema integral de calidad con flujo digital y firmas, alineado al formato GRAPCO."
+        />
 
         {/* SUB-TABS — solo cuando NO usamos sidebar externa */}
         {!tabExterna && (
@@ -87,32 +77,37 @@ export default function CalidadPanel({ showToast, tabExterna, onChangeTab }) {
           borderRadius: '14px',
           padding: '6px',
           display: 'flex', gap: '4px', flexWrap: 'wrap',
-          boxShadow: '0 2px 6px rgba(15,23,42,0.04)',
+          boxShadow: BASE.shadowMd,
         }}>
           {TABS.map(t => {
             const activo = tab === t.id;
             return (
               <button key={t.id} onClick={() => { setTab(t.id); setProtocoloEdit(null); setPvEdit(null); }} style={{
-                padding: '12px 18px', flex: '1 1 auto', minWidth: '160px',
-                background: activo
-                  ? `linear-gradient(135deg, ${t.color}, ${t.color}dd)`
-                  : 'transparent',
+                padding: '9px 14px', flex: '1 1 auto', minWidth: '150px',
+                background: activo ? BASE.navy : BASE.bgSoft,
                 color: activo ? '#fff' : BASE.muted,
-                border: 'none',
+                border: `1px solid ${activo ? BASE.navy : BASE.border}`,
                 borderRadius: '10px',
-                fontSize: '12px', fontWeight: '800', cursor: 'pointer',
-                letterSpacing: '0.3px',
-                boxShadow: activo ? `0 4px 14px ${t.color}55` : 'none',
+                cursor: 'pointer',
+                boxShadow: activo ? BASE.shadowSm : 'none',
                 transition: 'all 0.18s ease',
                 textAlign: 'left',
-                display: 'flex', flexDirection: 'column', gap: '2px',
+                display: 'flex', alignItems: 'center', gap: '9px',
               }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '13px' }}>{t.icono}</span>
-                  {t.l}
-                </span>
-                <span style={{ fontSize: '9.5px', fontWeight: '600', opacity: activo ? 0.92 : 0.7 }}>
-                  {t.desc}
+                <Icon name={t.ic} size={16} color={activo ? BASE.gold : BASE.mutedSoft} strokeWidth={2} />
+                <span style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
+                  <span style={{
+                    fontSize: '11px', fontWeight: 800, letterSpacing: '0.5px',
+                    textTransform: 'uppercase', color: activo ? '#fff' : BASE.navy,
+                  }}>
+                    {t.l}
+                  </span>
+                  <span style={{
+                    fontSize: '9.5px', fontWeight: 600, letterSpacing: '0.2px',
+                    color: activo ? BASE.gold : BASE.muted, opacity: activo ? 0.9 : 0.85,
+                  }}>
+                    {t.desc}
+                  </span>
                 </span>
               </button>
             );
@@ -135,26 +130,31 @@ export default function CalidadPanel({ showToast, tabExterna, onChangeTab }) {
               {/* Selector de tipo — solo en modo lista, no dentro de un editor */}
               {!pvEdit && !protocoloEdit && (
                 <div style={{
-                  background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px',
-                  padding: '10px 14px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center',
+                  background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '14px',
+                  boxShadow: BASE.shadowMd,
+                  padding: '12px 16px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center',
                 }}>
-                  <span style={{ fontSize: '11px', fontWeight: 900, color: BASE.muted, letterSpacing: '0.5px' }}>
-                    TIPO DE PROTOCOLO:
+                  <span style={{
+                    fontSize: '10px', fontWeight: 800, color: BASE.muted,
+                    letterSpacing: '0.5px', textTransform: 'uppercase',
+                  }}>
+                    Tipo de protocolo
                   </span>
                   {[
-                    { id: 'prevaciado', l: '🧱 Pre-Vaciado (CAL-FOR-006)' },
-                    { id: 'elemento',   l: '📋 Por elemento (concreto, acero…)' },
+                    { id: 'prevaciado', l: 'Pre-Vaciado (CAL-FOR-006)' },
+                    { id: 'elemento',   l: 'Por elemento (concreto, acero…)' },
                   ].map(t => {
                     const activo = tipoProtocolo === t.id;
                     return (
                       <button key={t.id}
                         onClick={() => { setTipoProtocolo(t.id); setPvEdit(null); setProtocoloEdit(null); }}
                         style={{
-                          padding: '8px 14px', borderRadius: '8px', cursor: 'pointer',
-                          border: `1.5px solid ${activo ? '#7c3aed' : BASE.border}`,
-                          background: activo ? '#7c3aed' : 'transparent',
-                          color: activo ? '#fff' : BASE.muted,
-                          fontSize: '12px', fontWeight: 800, transition: 'all 0.15s',
+                          padding: '8px 14px', borderRadius: '10px', cursor: 'pointer',
+                          border: `1px solid ${activo ? BASE.navy : BASE.border}`,
+                          background: activo ? BASE.navy : BASE.bgSoft,
+                          color: activo ? '#fff' : BASE.navy,
+                          fontSize: '11px', fontWeight: 800, letterSpacing: '0.5px',
+                          textTransform: 'uppercase', transition: 'all 0.15s',
                         }}>
                         {t.l}
                       </button>
