@@ -448,9 +448,15 @@ export default function Login() {
               borderRadius: '10px',
               background: 'linear-gradient(135deg, #f59e0b, #d97706)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '20px', flexShrink: 0,
+              flexShrink: 0,
               boxShadow: '0 3px 8px rgba(245,158,11,0.35)',
-            }}>📲</div>
+            }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="12" rx="2" />
+                <path d="M8 20h8M12 16v4" />
+                <path d="M12 7v5M9.5 9.5 12 12l2.5-2.5" />
+              </svg>
+            </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ fontSize: '11px', fontWeight: '900', color: '#92400e', marginBottom: '2px', letterSpacing: '0.3px' }}>
                 Instala GRAPCO como aplicación
@@ -800,6 +806,18 @@ export default function Login() {
         @media (prefers-reduced-motion: reduce) {
           [style*="grapco-aur"] { animation: none !important; }
         }
+        /* Foco DORADO en los inputs del login (scopeado: no afecta otros forms) */
+        .grapco-login-bg input,
+        .grapco-login-bg select {
+          transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+        }
+        .grapco-login-bg input:focus,
+        .grapco-login-bg select:focus {
+          border-color: ${BASE.gold} !important;
+          box-shadow: 0 0 0 3px rgba(229,168,47,0.20) !important;
+          background: #ffffff !important;
+        }
+        .grapco-login-bg input::placeholder { color: #9aa7b8; }
         /* Overlay oscuro y dorado tenue para legibilidad del card */
         .grapco-hero-overlay {
           position: absolute; inset: 0; z-index: 1;
