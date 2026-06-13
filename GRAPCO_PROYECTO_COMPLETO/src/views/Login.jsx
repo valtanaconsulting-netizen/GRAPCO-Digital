@@ -10,6 +10,29 @@ const STORAGE_INTENTOS = 'grapco_login_intentos';
 const MAX_INTENTOS = 5;
 const COOLDOWN_MS = 30 * 1000;  // 30 segundos (antes eran 5 minutos)
 
+// Ícono profesional de mostrar/ocultar contraseña (SVG line-style, no emoji).
+function IconoOjo({ abierto }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
+      style={{ display: 'block', color: '#64748b' }}>
+      {abierto ? (
+        <>
+          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+          <circle cx="12" cy="12" r="3" />
+        </>
+      ) : (
+        <>
+          <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a13.2 13.2 0 0 1-1.67 2.36" />
+          <path d="M6.1 6.1A13.3 13.3 0 0 0 2 11s3.5 7 10 7a9.1 9.1 0 0 0 4.9-1.34" />
+          <path d="m9.9 9.9a3 3 0 0 0 4.2 4.2" />
+          <line x1="2" y1="2" x2="22" y2="22" />
+        </>
+      )}
+    </svg>
+  );
+}
+
 export default function Login() {
   const { login, register, registerAsBootstrapAdmin } = useAuth();
   const [bootstrapDisponible, setBootstrapDisponible] = useState(false);
@@ -395,7 +418,7 @@ export default function Login() {
             letterSpacing: '2px',
             textShadow: '0 2px 8px rgba(0,0,0,0.3)',
           }}>
-            GRAPCO <span style={{ color: BASE.gold }}>SAC</span>
+            GRAPCO <span style={{ color: BASE.gold }}>S.A.C.</span>
           </h1>
           <p style={{
             fontSize: '10px', color: BASE.gold,
@@ -513,8 +536,8 @@ export default function Login() {
                   style={inp({ padding: '12px', paddingRight: '40px', width: '100%', boxSizing: 'border-box' })} />
                 <button type="button" onClick={() => setVerPassword(v => !v)}
                   title={verPassword ? 'Ocultar' : 'Mostrar'}
-                  style={{ position:'absolute', right:'8px', top:'50%', transform:'translateY(-50%)', background:'transparent', border:'none', cursor:'pointer', fontSize:'15px', padding:'4px' }}>
-                  {verPassword ? '🙈' : '👁️'}
+                  style={{ position:'absolute', right:'8px', top:'50%', transform:'translateY(-50%)', background:'transparent', border:'none', cursor:'pointer', padding:'4px', display:'inline-flex' }}>
+                  <IconoOjo abierto={verPassword} />
                 </button>
               </div>
               {bootstrapError && (
@@ -583,7 +606,7 @@ export default function Login() {
               onMouseEnter={e => { e.currentTarget.style.background = BASE.bgSoft; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
             >
-              {verPassword ? '🙈' : '👁️'}
+              <IconoOjo abierto={verPassword} />
             </button>
           </div>
 
@@ -632,17 +655,23 @@ export default function Login() {
 
           <button
             type="submit" disabled={loading || bloqueadoHasta > Date.now()}
+            onMouseEnter={e => { if (!(loading || loginExitoso || bloqueadoHasta > Date.now())) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 14px 30px -10px rgba(15,42,71,0.7), 0 0 0 1.5px ${BASE.gold}55`; } }}
+            onMouseLeave={e => { if (!loginExitoso) { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = `0 10px 24px -10px rgba(15,42,71,0.55), inset 0 1px 0 rgba(255,255,255,0.08)`; } }}
             style={{
-              width: '100%', padding: '14px',
+              width: '100%', padding: '15px',
               background: loginExitoso
-                ? '#16a34a'
-                : (loading || bloqueadoHasta > Date.now()) ? '#94a3b8' : BASE.navy,
-              color: '#fff', border: 'none', borderRadius: '10px',
-              fontWeight: '800', fontSize: '14px',
+                ? 'linear-gradient(135deg, #16a34a, #15803d)'
+                : (loading || bloqueadoHasta > Date.now())
+                  ? '#94a3b8'
+                  : `linear-gradient(135deg, ${BASE.navy} 0%, ${BASE.navyDark || '#0f1a2e'} 100%)`,
+              color: '#fff', border: 'none', borderRadius: '12px',
+              fontWeight: '900', fontSize: '14px', letterSpacing: '0.6px',
               cursor: (loading || bloqueadoHasta > Date.now()) ? 'not-allowed' : 'pointer',
               marginTop: '4px',
               transition: 'all 0.2s ease',
-              boxShadow: loginExitoso ? '0 4px 16px rgba(22,163,74,0.45)' : 'none',
+              boxShadow: loginExitoso
+                ? '0 4px 16px rgba(22,163,74,0.45)'
+                : (loading || bloqueadoHasta > Date.now()) ? 'none' : `0 10px 24px -10px rgba(15,42,71,0.55), inset 0 1px 0 rgba(255,255,255,0.08)`,
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
               transform: loginExitoso ? 'scale(1.02)' : 'scale(1)',
             }}
@@ -673,7 +702,7 @@ export default function Login() {
             ) : bloqueadoHasta > Date.now() ? (
               '🔒 BLOQUEADO'
             ) : view === 'login' ? (
-              'INGRESAR'
+              <>INGRESAR <span style={{ fontSize: '16px', lineHeight: 1 }}>→</span></>
             ) : (
               'REGISTRARSE'
             )}
