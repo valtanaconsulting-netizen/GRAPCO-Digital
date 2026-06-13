@@ -267,28 +267,28 @@ export default function EditorWbsIsp({ showToast }) {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px' }}>
             <thead>
               {/* Fila de grupos */}
-              <tr>
-                <th rowSpan={2} style={{ ...thG, minWidth: '320px', textAlign: 'left' }}>ACTIVIDAD</th>
-                <th rowSpan={2} style={thG}>UND</th>
+              <tr style={{ height: THG_H }}>
+                <th rowSpan={2} style={{ ...thG, height: HEAD_H, lineHeight: `${HEAD_H}px`, minWidth: '320px', textAlign: 'left', padding: '0 8px' }}>ACTIVIDAD</th>
+                <th rowSpan={2} style={{ ...thG, height: HEAD_H, lineHeight: `${HEAD_H}px` }}>UND</th>
                 {columnas.map(c => (
-                  <th key={c.id} colSpan={3} style={{ ...thG, background: '#e2e8f0' }}>PPTO OFERTA · {c.nombre}</th>
+                  <th key={c.id} colSpan={3} style={{ ...thG, borderBottom: `3px solid ${SEC_ACCENT.oferta}` }}>PPTO OFERTA · {c.nombre}</th>
                 ))}
-                <th colSpan={3} style={{ ...thG, background: '#f3e8ff', color: '#6b21a8' }}>ADICIONALES</th>
-                <th colSpan={3} style={{ ...thG, background: '#fef9c3', color: '#a16207' }}>PPTO CONTRACTUAL</th>
-                <th colSpan={3} style={{ ...thG, background: '#cffafe', color: '#0e7490' }}>PPTO META</th>
-                <th rowSpan={2} style={thG}></th>
+                <th colSpan={3} style={{ ...thG, borderBottom: `3px solid ${SEC_ACCENT.adic}` }}>ADICIONALES</th>
+                <th colSpan={3} style={{ ...thG, borderBottom: `3px solid ${SEC_ACCENT.contractual}` }}>PPTO CONTRACTUAL</th>
+                <th colSpan={3} style={{ ...thG, borderBottom: `3px solid ${SEC_ACCENT.meta}` }}>PPTO META</th>
+                <th rowSpan={2} style={{ ...thG, height: HEAD_H, lineHeight: `${HEAD_H}px` }}></th>
               </tr>
               {/* Fila de sub-columnas */}
-              <tr>
-                {columnas.map(c => <SubCols key={c.id} bg="#eef2f7" />)}
-                <SubCols bg="#faf5ff" />
-                <SubCols bg="#fefce8" />
-                <SubCols bg="#ecfeff" />
+              <tr style={{ height: THS_H }}>
+                {columnas.map(c => <SubCols key={c.id} accent={SEC_ACCENT.oferta} />)}
+                <SubCols accent={SEC_ACCENT.adic} />
+                <SubCols accent={SEC_ACCENT.contractual} />
+                <SubCols accent={SEC_ACCENT.meta} />
               </tr>
             </thead>
             <tbody>
-              {/* TOTAL general — también arriba */}
-              <FilaSuma cols={columnas} datos={totalGeneral} label="TOTAL GENERAL" tono="total" />
+              {/* TOTAL general — también arriba, FIJO bajo el encabezado al hacer scroll */}
+              <FilaSuma cols={columnas} datos={totalGeneral} label="TOTAL GENERAL" tono="total" sticky />
               {arbol.map((p, pi) => {
                 const actsPartida = [];
                 (p.subpartidas || []).forEach(s => actsPartida.push(...(s.actividades || [])));
@@ -296,9 +296,9 @@ export default function EditorWbsIsp({ showToast }) {
                 <React.Fragment key={pi}>
                   {/* Partida */}
                   <tr>
-                    <td colSpan={totalCols} style={{ background: '#dbeafe', borderBottom: `1px solid ${BASE.border}`, padding: '5px 8px' }}>
+                    <td colSpan={totalCols} style={{ background: '#bcd3f2', borderBottom: `1px solid ${BASE.border}`, padding: '5px 8px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <input value={p.nombre} onChange={e => renamePartida(pi, e.target.value)} style={inpNombre(BASE.navy, '12px', '#dbeafe')} />
+                        <input value={p.nombre} onChange={e => renamePartida(pi, e.target.value)} style={inpNombre(BASE.navy, '12px', '#bcd3f2')} />
                         <Btn onClick={() => addSub(pi)} bg="#eef2ff" color="#3730a3" sm>➕ Sub-partida</Btn>
                         <Btn onClick={() => delPartida(pi)} bg="#fef2f2" color="#dc2626" sm>🗑</Btn>
                       </div>
@@ -311,9 +311,9 @@ export default function EditorWbsIsp({ showToast }) {
                       <React.Fragment key={si}>
                         {/* Sub-partida */}
                         <tr>
-                          <td colSpan={totalCols} style={{ background: '#fdf3e3', borderBottom: `1px solid ${BASE.border}`, padding: '4px 8px 4px 20px' }}>
+                          <td colSpan={totalCols} style={{ background: '#f3e2c2', borderBottom: `1px solid ${BASE.border}`, padding: '4px 8px 4px 20px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <input value={s.nombre} onChange={e => renameSub(pi, si, e.target.value)} style={inpNombre('#1e293b', '11px', '#fdf3e3')} />
+                              <input value={s.nombre} onChange={e => renameSub(pi, si, e.target.value)} style={inpNombre('#1e293b', '11px', '#f3e2c2')} />
                               <Btn onClick={() => addAct(pi, si)} bg="#ecfdf5" color="#047857" sm>➕ Actividad</Btn>
                               <Btn onClick={() => delSub(pi, si)} bg="#fef2f2" color="#dc2626" sm>🗑</Btn>
                             </div>
@@ -326,8 +326,10 @@ export default function EditorWbsIsp({ showToast }) {
                           const adicVac = !num(a.adicional?.met) && !num(a.adicional?.ip);
                           return (
                             <tr key={ai}>
-                              <td style={{ ...tdC, paddingLeft: '24px' }}>
-                                <input value={a.nombre} onChange={e => setActCampo(pi, si, ai, 'nombre', e.target.value)} style={inpTxt('100%')} />
+                              <td style={{ ...tdC, paddingLeft: '24px', verticalAlign: 'middle' }}>
+                                <textarea value={a.nombre} rows={1} ref={autoGrow}
+                                  onChange={e => { setActCampo(pi, si, ai, 'nombre', e.target.value); autoGrow(e.target); }}
+                                  title={a.nombre} style={inpTxtArea} />
                               </td>
                               <td style={tdC}><input value={a.un} onChange={e => setActCampo(pi, si, ai, 'un', e.target.value)} style={inpTxt('46px')} /></td>
                               {columnas.map(col => {
@@ -399,12 +401,12 @@ export default function EditorWbsIsp({ showToast }) {
 }
 
 // ── Sub-componentes (nivel módulo, estables) ──────────────────────
-function SubCols({ bg }) {
+function SubCols({ accent }) {
   return (
     <>
-      <th style={{ ...thS, background: bg }}>METRADO</th>
-      <th style={{ ...thS, background: bg }}>HH</th>
-      <th style={{ ...thS, background: bg }}>IP</th>
+      <th style={{ ...thS, color: accent }}>METRADO</th>
+      <th style={{ ...thS, color: accent }}>HH</th>
+      <th style={{ ...thS, color: accent }}>IP</th>
     </>
   );
 }
@@ -413,30 +415,35 @@ const TONOS_SUMA = {
   partida:  { bg: '#64748b', col: '#ffffff', fs: '10.5px' },
   total:    { bg: '#1e3a5f', col: '#ffffff', fs: '11px' },
 };
-function FilaSuma({ cols, datos, label, tono = 'subtotal' }) {
+function FilaSuma({ cols, datos, label, tono = 'subtotal', sticky = false }) {
   const t = TONOS_SUMA[tono] || TONOS_SUMA.subtotal;
   const bg = t.bg, col = t.col;
-  const celda = { ...tdC, textAlign: 'right', fontWeight: 900, background: bg, color: col, fontFamily: 'monospace' };
+  // sticky: la fila TOTAL GENERAL queda pegada bajo el encabezado. -1 = cinturón
+  // que solapa el borde. dim={} cuando es sticky → celdas OPACAS (no dejan pasar
+  // las filas de datos al hacer scroll; con opacity 0.4 se transparentarían).
+  const st  = sticky ? { position: 'sticky', top: HEAD_H - 1, zIndex: 3 } : {};
+  const dim = sticky ? {} : { opacity: 0.4 };
+  const celda = { ...tdC, textAlign: 'right', fontWeight: 900, background: bg, color: col, fontFamily: 'monospace', ...st };
   return (
     <tr>
-      <td colSpan={2} style={{ ...tdC, background: bg, color: col, fontWeight: 900, fontSize: t.fs, paddingLeft: '24px' }}>{label}</td>
+      <td colSpan={2} style={{ ...tdC, background: bg, color: col, fontWeight: 900, fontSize: t.fs, paddingLeft: '24px', ...st, ...(sticky ? { zIndex: 4 } : {}) }}>{label}</td>
       {cols.map(c => (
         <React.Fragment key={c.id}>
-          <td style={{ ...celda, opacity: 0.4 }}></td>
+          <td style={{ ...celda, ...dim }}></td>
           <td style={celda}>{fmt(datos.ofe[c.id])}</td>
-          <td style={{ ...celda, opacity: 0.4 }}></td>
+          <td style={{ ...celda, ...dim }}></td>
         </React.Fragment>
       ))}
-      <td style={{ ...celda, opacity: 0.4 }}></td>
+      <td style={{ ...celda, ...dim }}></td>
       <td style={celda}>{fmt(datos.adic)}</td>
-      <td style={{ ...celda, opacity: 0.4 }}></td>
-      <td style={{ ...celda, opacity: 0.4 }}></td>
+      <td style={{ ...celda, ...dim }}></td>
+      <td style={{ ...celda, ...dim }}></td>
       <td style={celda}>{fmt(datos.contr)}</td>
-      <td style={{ ...celda, opacity: 0.4 }}></td>
-      <td style={{ ...celda, opacity: 0.4 }}></td>
+      <td style={{ ...celda, ...dim }}></td>
+      <td style={{ ...celda, ...dim }}></td>
       <td style={celda}>{fmt(datos.meta)}</td>
-      <td style={{ ...celda, opacity: 0.4 }}></td>
-      <td style={{ ...celda, opacity: 0.4 }}></td>
+      <td style={{ ...celda, ...dim }}></td>
+      <td style={{ ...celda, ...dim }}></td>
     </tr>
   );
 }
@@ -483,18 +490,47 @@ const inpNum = {
   width: '100%', minWidth: '58px', border: `1px solid ${BASE.border}`, borderRadius: '4px',
   padding: '4px 4px', fontSize: '10px', textAlign: 'right', boxSizing: 'border-box',
 };
+// ── Encabezado institucional (navy + acento por sección): más oscuro y legible
+// que los pasteles anteriores, sin llegar al negro. Alturas FIJAS para que el
+// TOTAL GENERAL se pegue EXACTO bajo el encabezado al hacer scroll (sin huecos).
+const HEAD_NAVY   = '#0F2A47';  // fila de grupos
+const HEAD_NAVY2  = '#1B3A5E';  // sub-cabecera (un punto más claro)
+const HEAD_BORDER = '#22456A';  // borde de celda dentro del header (sobre navy)
+const THG_H = 28;               // alto fijo fila de grupos
+const THS_H = 24;               // alto fijo sub-cabecera
+const HEAD_H = THG_H + THS_H;   // 52 px — offset para pegar el TOTAL GENERAL
+// Acento por sección (muted, paleta GRAPCO). El gold rige lo CONTRACTUAL.
+const SEC_ACCENT = {
+  oferta:      '#7FA0C0',  // acero
+  adic:        '#A18FC2',  // violeta apagado
+  contractual: '#E5A82F',  // gold (lo contractual rige)
+  meta:        '#54A6B8',  // teal apagado
+};
 const thG = {
-  padding: '5px 6px', textAlign: 'center', fontSize: '9px', fontWeight: 900,
-  color: BASE.muted, background: '#f8fafc', border: `1px solid ${BASE.border}`,
-  whiteSpace: 'nowrap',
+  padding: '0 6px', textAlign: 'center', fontSize: '9px', fontWeight: 900,
+  color: '#fff', background: HEAD_NAVY, border: `1px solid ${HEAD_BORDER}`,
+  whiteSpace: 'nowrap', letterSpacing: '0.4px',
+  boxSizing: 'border-box', height: THG_H, lineHeight: `${THG_H - 3}px`,
   position: 'sticky', top: 0, zIndex: 5,   // ← cabecera de grupos siempre fija
 };
-// Sub-cabecera (METRADO/HH/IP): fija justo debajo de la fila de grupos. El
-// boxShadow inferior dibuja la línea separadora (los bordes de celda no se
-// "pegan" con border-collapse al hacer scroll).
-const thS = { ...thG, fontSize: '8px', top: 25, zIndex: 4, boxShadow: 'inset 0 -1px 0 #cbd5e1, 0 2px 3px -2px rgba(15,42,71,0.25)' };
+// Sub-cabecera (METRADO/HH/IP): navy un punto más claro, rótulo en el acento de
+// la sección; fija justo debajo de la fila de grupos.
+const thS = {
+  ...thG, fontSize: '8px', fontWeight: 800, background: HEAD_NAVY2,
+  height: THS_H, lineHeight: `${THS_H}px`, top: THG_H, zIndex: 4,
+  boxShadow: '0 2px 3px -2px rgba(8,26,46,0.5)',
+};
 const tdC = { padding: '2px 4px', border: `1px solid ${BASE.border}` };
 const tdN = { ...tdC, textAlign: 'right' };
 const tdCalc = (color, bg) => ({
   ...tdC, textAlign: 'right', fontWeight: 700, color, background: bg, fontFamily: 'monospace',
 });
+// Nombre de actividad: textarea que AJUSTA su alto al contenido (wrap) → el nombre
+// completo se ve siempre, en varias líneas si hace falta. autoGrow recalcula el alto.
+const inpTxtArea = {
+  width: '100%', border: `1px solid ${BASE.border}`, borderRadius: '4px',
+  padding: '4px 6px', fontSize: '10.5px', boxSizing: 'border-box',
+  fontFamily: 'inherit', lineHeight: 1.25, resize: 'none', overflow: 'hidden',
+  whiteSpace: 'normal', wordBreak: 'break-word', display: 'block', minHeight: '26px',
+};
+const autoGrow = (el) => { if (el) { el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px`; } };
