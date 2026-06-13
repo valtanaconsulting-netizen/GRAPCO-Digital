@@ -3,6 +3,7 @@ import React, { useState, useMemo, useRef, useLayoutEffect } from 'react';
 import { INFO_MAP } from '../utils/constants';
 import { BASE } from '../utils/styles';
 import { calcCPI, fmtCPIPct, fmt1, fmt2, getEstado } from '../utils/helpers';
+import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 
 // Badge para etiquetas de tipo de dato
 const Badge = ({ tipo }) => {
@@ -144,6 +145,18 @@ function ModalAjustarSaldo({ datos, onCerrar, onGuardar }) {
 export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, onActualizarFlags }) {
   // Catálogo de datos: el editable del proyecto, o el fijo del código como respaldo.
   const INFO = infoMap || INFO_MAP;
+  const { proyectoActivo } = useProyectoActivo();
+
+  // Exportar Excel de rendimientos (WBS · presupuesto · real) para cierre de obra.
+  const exportarRendimientos = async () => {
+    try {
+      const { exportarRendimientosWBS } = await import('../utils/exportRendimientos');
+      await exportarRendimientosWBS({ wbs, infoMap: INFO, proyectoNombre: proyectoActivo?.nombre || 'Proyecto' });
+    } catch (e) {
+      console.error('[exportarRendimientos]', e);
+      alert('No se pudo exportar: ' + e.message);
+    }
+  };
   // Multi-abierto: se pueden expandir varias partidas/subpartidas a la vez (no acordeón).
   // Las subpartidas se llavean por `${partida}::${sub}` para no chocar entre partidas homónimas.
   const [openP, setOpenP] = useState(() => new Set());
@@ -458,6 +471,22 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
             <span>{mostrarVacias ? '✓' : '○'}</span>
             <span style={{fontSize:'12px'}}>👁️</span>
             Mostrar sin avance
+          </button>
+
+          {/* EXPORTAR RENDIMIENTOS — Excel limpio de 3 columnas (WBS · IP
+              presupuesto · IP real). Pedido para el cierre de obra. */}
+          <button onClick={exportarRendimientos}
+            title="Excel: WBS (partida/subpartida/actividad) · rendimiento del presupuesto · rendimiento real en obra"
+            style={{
+              padding:'6px 14px',
+              background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark || '#0f1a2e'})`,
+              color:'#fff', border:'none', borderRadius:'8px',
+              fontSize:'10.5px', fontWeight:'800', letterSpacing:'0.3px', cursor:'pointer',
+              display:'flex', alignItems:'center', gap:'6px', marginLeft:'auto',
+              boxShadow:`0 4px 12px -4px ${BASE.navy}99`,
+            }}>
+            <span style={{ fontSize:'12px' }}>⬇</span>
+            Exportar rendimientos (Excel)
           </button>
         </div>
       </div>
