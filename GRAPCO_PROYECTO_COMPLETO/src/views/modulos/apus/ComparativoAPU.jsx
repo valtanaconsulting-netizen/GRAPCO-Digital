@@ -8,8 +8,10 @@ import {
   recalcularAPUReal, fmtSoles, fmtPct,
 } from '../../../utils/planMaestroAnalytics';
 import EmptyState from '../../../components/EmptyState';
+import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
 
 export default function ComparativoAPU() {
+  const { filtrarPorContexto } = useProyectoActivo();
   const [apus, setApus] = useState([]);
   const [actividades, setActividades] = useState([]);
   const [historial, setHistorial] = useState([]);
@@ -21,15 +23,15 @@ export default function ComparativoAPU() {
       onSnapshot(query(collection(db, 'APUs'), orderBy('codigo')),
         (snap) => { setApus(snap.docs.map(d => ({ id: d.id, ...d.data() }))); setLoading(false); }),
       onSnapshot(collection(db, 'PlanMaestro'),
-        (snap) => setActividades(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
+        (snap) => setActividades(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true }))),
       onSnapshot(collection(db, 'Historial'),
-        (snap) => setHistorial(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
+        (snap) => setHistorial(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true }))),
       onSnapshot(collection(db, 'Kardex_Movimientos'),
-        (snap) => setKardexMov(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+        (snap) => setKardexMov(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true })),
         (e) => console.warn('[Kardex]', e)),
     ];
     return () => unsubs.forEach(u => u());
-  }, []);
+  }, [filtrarPorContexto]);
 
   // Calcular precios reales del Kardex (último costo unitario por material)
   const preciosReales = useMemo(() => {

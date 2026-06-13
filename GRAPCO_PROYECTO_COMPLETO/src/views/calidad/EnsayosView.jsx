@@ -6,6 +6,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../firebaseConfig';
 import { BASE } from '../../utils/styles';
 import { useAuth } from '../../contexts/AuthContext';
+import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import { TIPOS_ENSAYO, ELEMENTOS_TIPO, fmtNumero } from '../../utils/calidadOTAnalytics';
 import Modal from '../../components/Modal';
 import EmptyState from '../../components/EmptyState';
@@ -22,6 +23,7 @@ const FORM_INICIAL = {
 
 export default function EnsayosView({ showToast }) {
   const { user } = useAuth();
+  const { filtrarPorContexto } = useProyectoActivo();
   const [ensayos, setEnsayos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editando, setEditando] = useState(null);
@@ -34,10 +36,10 @@ export default function EnsayosView({ showToast }) {
 
   useEffect(() => {
     const unsub = onSnapshot(query(collection(db, 'Ensayos'), orderBy('fechaToma', 'desc')),
-      (snap) => { setEnsayos(snap.docs.map(d => ({ id: d.id, ...d.data() }))); setLoading(false); },
+      (snap) => { setEnsayos(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true })); setLoading(false); },
       (e) => { console.error(e); setLoading(false); });
     return () => unsub();
-  }, []);
+  }, [filtrarPorContexto]);
 
   const filtrados = useMemo(() => ensayos.filter(e => {
     if (filtroTipo && e.tipo !== filtroTipo) return false;

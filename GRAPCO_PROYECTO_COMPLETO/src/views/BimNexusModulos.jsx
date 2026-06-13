@@ -219,7 +219,7 @@ export function PlazosNexus({ modelosDisponibles, showToast }) {
 const fechaDe = (iso) => { try { return fmtFechaCorta(iso); } catch (_) { return iso; } };
 
 function PlazosPanel({ els, niveles, isolate, showToast }) {
-  const { proyectoActivoId } = useProyectoActivo();
+  const { proyectoActivoId, filtrarPorContexto } = useProyectoActivo();
   const docId = proyectoActivoId || 'default';
   const [registros, setRegistros] = useState([]);
   const [idx, setIdx] = useState(0);
@@ -227,10 +227,10 @@ function PlazosPanel({ els, niveles, isolate, showToast }) {
 
   useEffect(() => {
     const u = onSnapshot(collection(db, 'Registros_Campo'),
-      s => setRegistros(s.docs.map(d => ({ id: d.id, ...d.data() }))),
+      s => setRegistros(filtrarPorContexto(s.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true })),
       e => console.error('[Plazos registros]', e));
     return () => u();
-  }, []);
+  }, [filtrarPorContexto]);
 
   const semanas = useMemo(() => {
     const m = {};

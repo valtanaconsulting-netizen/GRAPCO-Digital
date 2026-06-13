@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
+import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
 import {
   calcularROMensual, CATEGORIAS_MO,
 } from '../../../utils/planMaestroAnalytics';
@@ -12,6 +13,8 @@ import {
  * Lo usan: RODashboard, ROporPartida, ROProyeccion, CurvaSFinanciera.
  */
 export default function useRO({ margenMeta = 15, fechaActual = new Date() } = {}) {
+  // Aislamiento multi-proyecto: el RO usa SOLO la data del proyecto activo.
+  const { filtrarPorContexto } = useProyectoActivo();
   const [actividades, setActividades] = useState([]);
   const [apus, setApus] = useState([]);
   const [tareos, setTareos] = useState([]);
@@ -23,29 +26,31 @@ export default function useRO({ margenMeta = 15, fechaActual = new Date() } = {}
   useEffect(() => {
     let pendientes = 6;
     const dec = () => { pendientes -= 1; if (pendientes <= 0) setLoading(false); };
+    // Mapea el snapshot y aísla por proyecto activo (ignora frente: el RO es por obra).
+    const filt = (snap) => filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true });
 
     const unsubs = [
       onSnapshot(collection(db, 'PlanMaestro'),
-        (snap) => { setActividades(snap.docs.map(d => ({ id: d.id, ...d.data() }))); dec(); },
+        (snap) => { setActividades(filt(snap)); dec(); },
         (e) => { console.error('[PM]', e); dec(); }),
       onSnapshot(collection(db, 'APUs'),
-        (snap) => { setApus(snap.docs.map(d => ({ id: d.id, ...d.data() }))); dec(); },
+        (snap) => { setApus(filt(snap)); dec(); },
         (e) => { console.error('[APUs]', e); dec(); }),
       onSnapshot(collection(db, 'Registros_Campo'),
-        (snap) => { setTareos(snap.docs.map(d => ({ id: d.id, ...d.data() }))); dec(); },
+        (snap) => { setTareos(filt(snap)); dec(); },
         (e) => { console.warn('[Tareos]', e); dec(); }),
       onSnapshot(collection(db, 'Kardex_Movimientos'),
-        (snap) => { setKardexMov(snap.docs.map(d => ({ id: d.id, ...d.data() }))); dec(); },
+        (snap) => { setKardexMov(filt(snap)); dec(); },
         (e) => { console.warn('[Kardex]', e); dec(); }),
       onSnapshot(collection(db, 'Historial'),
-        (snap) => { setHistorial(snap.docs.map(d => ({ id: d.id, ...d.data() }))); dec(); },
+        (snap) => { setHistorial(filt(snap)); dec(); },
         (e) => { console.warn('[Hist]', e); dec(); }),
       onSnapshot(collection(db, 'ValorizacionesContractuales'),
-        (snap) => { setValorizaciones(snap.docs.map(d => ({ id: d.id, ...d.data() }))); dec(); },
+        (snap) => { setValorizaciones(filt(snap)); dec(); },
         (e) => { console.warn('[Val]', e); dec(); }),
     ];
     return () => unsubs.forEach(u => u());
-  }, []);
+  }, [filtrarPorContexto]);
 
   // Map de salarios por categoría desde insumos (si existen) o desde defaults
   const salariosPorCategoria = useMemo(() => {

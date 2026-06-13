@@ -8,6 +8,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { useAuth } from '../../contexts/AuthContext';
+import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import { BASE } from '../../utils/styles';
 import FotoUploader from '../../components/FotoUploader';
 import EmptyState from '../../components/EmptyState';
@@ -38,6 +39,7 @@ const formInicial = (tipoDefault = 'calidad') => ({
 
 export default function ReporteIncidencia({ showToast, tipoDefault = 'calidad' }) {
   const { user } = useAuth();
+  const { filtrarPorContexto, proyectoActivoId } = useProyectoActivo();
   const [form, setForm] = useState(() => formInicial(tipoDefault));
   const [enviando, setEnviando] = useState(false);
   const [misReportes, setMisReportes] = useState([]);
@@ -46,13 +48,13 @@ export default function ReporteIncidencia({ showToast, tipoDefault = 'calidad' }
     const q = query(collection(db, 'NoConformidades'), orderBy('detectadoEn', 'desc'), limit(10));
     const unsub = onSnapshot(q,
       (snap) => {
-        const todos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const todos = filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true });
         setMisReportes(todos.filter(r => r.reportadoPor === user?.email));
       },
       (err) => console.warn('[ReporteIncidencia]', err.message)
     );
     return () => unsub();
-  }, [user]);
+  }, [user, filtrarPorContexto]);
 
   const enviar = async () => {
     if (!form.descripcion.trim()) {
@@ -72,6 +74,7 @@ export default function ReporteIncidencia({ showToast, tipoDefault = 'calidad' }
         accionInmediata: form.accionInmediata,
         fotos: form.fotos,
         estado: 'abierta',
+        proyectoId: proyectoActivoId,   // aislamiento: la NC pertenece al proyecto activo
         detectadoEn: serverTimestamp(),
         reportadoPor: user?.email || 'capataz',
         creadoEn: serverTimestamp(),

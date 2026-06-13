@@ -7,6 +7,7 @@ import { collection, onSnapshot, query, orderBy, where } from 'firebase/firestor
 import { db } from '../firebaseConfig';
 import { BASE } from '../utils/styles';
 import { useAuth } from '../contexts/AuthContext';
+import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 import {
   calcularStockActual, stockGlobalPorMaterial, valorizarStock,
   alertasStockBajo, fmtSoles, fmtCantidad,
@@ -18,6 +19,7 @@ import KardexView from './materiales/KardexView';
 
 export default function Almacenero({ showToast }) {
   const { user } = useAuth();
+  const { filtrarPorContexto } = useProyectoActivo();
   const [vista, setVista] = useState('inicio');
   const [almacenes, setAlmacenes] = useState([]);
   const [materiales, setMateriales] = useState([]);
@@ -29,9 +31,9 @@ export default function Almacenero({ showToast }) {
     const u2 = onSnapshot(collection(db, 'Materiales'),
       (snap) => setMateriales(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     const u3 = onSnapshot(query(collection(db, 'Kardex_Movimientos'), orderBy('fecha', 'desc')),
-      (snap) => setMovimientos(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+      (snap) => setMovimientos(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true })));
     return () => { u1(); u2(); u3(); };
-  }, []);
+  }, [filtrarPorContexto]);
 
   // Almacen del usuario (segun email del responsable)
   const miAlmacen = useMemo(() => {

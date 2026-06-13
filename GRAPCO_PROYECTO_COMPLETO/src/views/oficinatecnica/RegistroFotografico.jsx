@@ -8,6 +8,7 @@ import { db } from '../../firebaseConfig';
 import { BASE } from '../../utils/styles';
 import { FECHA_INICIO_PROYECTO } from '../../utils/constants';
 import { obtenerSemana, fmtFechaCorta } from '../../utils/helpers';
+import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import Modal from '../../components/Modal';
 
 const card = {
@@ -24,6 +25,7 @@ const selectStyle = {
 };
 
 export default function RegistroFotografico() {
+  const { filtrarPorContexto } = useProyectoActivo();
   const [registros, setRegistros] = useState([]);
   const [loading, setLoading]     = useState(true);
 
@@ -37,13 +39,13 @@ export default function RegistroFotografico() {
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'Registros_Campo'),
       snap => {
-        setRegistros(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        setRegistros(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true }));
         setLoading(false);
       },
       err => { console.error('[RegistroFotografico]', err); setLoading(false); }
     );
     return () => unsub();
-  }, []);
+  }, [filtrarPorContexto]);
 
   // ── Aplanar: una entrada por foto ──────────────────────────────
   const fotos = useMemo(() => {

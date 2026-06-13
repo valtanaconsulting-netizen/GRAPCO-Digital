@@ -5,12 +5,14 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { BASE } from '../../utils/styles';
+import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import {
   dashboardCalidad, ESTADOS_PROTOCOLO, ESTADOS_NC, SEVERIDADES_NC,
   fmtSoles,
 } from '../../utils/calidadOTAnalytics';
 
 export default function DashboardCalidad() {
+  const { filtrarPorContexto } = useProyectoActivo();
   const [protocolos, setProtocolos] = useState([]);
   const [ncs, setNCs] = useState([]);
   const [ensayos, setEnsayos] = useState([]);
@@ -19,17 +21,17 @@ export default function DashboardCalidad() {
   useEffect(() => {
     const unsubs = [
       onSnapshot(query(collection(db, 'Protocolos'), orderBy('fechaCreacion', 'desc'), limit(500)),
-        (snap) => { setProtocolos(snap.docs.map(d => ({ id: d.id, ...d.data() }))); setLoading(false); },
+        (snap) => { setProtocolos(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true })); setLoading(false); },
         (e) => { console.error('[Prot]', e); setLoading(false); }),
       onSnapshot(query(collection(db, 'NoConformidades'), orderBy('fechaApertura', 'desc'), limit(500)),
-        (snap) => setNCs(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+        (snap) => setNCs(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true })),
         (e) => console.error('[NC]', e)),
       onSnapshot(query(collection(db, 'Ensayos'), orderBy('fechaToma', 'desc'), limit(500)),
-        (snap) => setEnsayos(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+        (snap) => setEnsayos(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true })),
         (e) => console.error('[Ens]', e)),
     ];
     return () => unsubs.forEach(u => u());
-  }, []);
+  }, [filtrarPorContexto]);
 
   const dash = useMemo(() => dashboardCalidad(protocolos, ncs, ensayos), [protocolos, ncs, ensayos]);
 

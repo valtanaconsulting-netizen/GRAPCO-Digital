@@ -171,6 +171,12 @@ export default function EditorWbsIsp({ showToast }) {
           actividades: (s.actividades || []).map(normalizarActividad),
         })),
       }));
+      // Guard: Firestore limita cada documento a 1 MB. Avisar ANTES de fallar con un error críptico.
+      if (JSON.stringify(limpio).length > 950000) {
+        toast('El catálogo es demasiado grande para un solo documento (límite 1 MB de Firestore). Reduce partidas/frentes o divide el alcance.', 'error');
+        setGuardando(false);
+        return;
+      }
       await setDoc(doc(db, 'Catalogo_WBS', proyectoActivoId), {
         proyectoId: proyectoActivoId, arbol: limpio, actualizadoEn: serverTimestamp(),
       });

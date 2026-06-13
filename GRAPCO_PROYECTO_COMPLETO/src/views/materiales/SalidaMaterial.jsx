@@ -12,7 +12,7 @@ import { calcularStockActual, fmtCantidad, fmtSoles, generarNumero } from '../..
 
 export default function SalidaMaterial({ showToast, onSaved }) {
   const { user } = useAuth();
-  const { proyectoActivoId } = useProyectoActivo();
+  const { proyectoActivoId, filtrarPorContexto } = useProyectoActivo();
   const [almacenes, setAlmacenes] = useState([]);
   const [materiales, setMateriales] = useState([]);
   const [partidas, setPartidas] = useState([]);
@@ -42,7 +42,7 @@ export default function SalidaMaterial({ showToast, onSaved }) {
     const u2 = onSnapshot(query(collection(db, 'Materiales'), orderBy('codigo')),
       (snap) => setMateriales(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(m => m.activo !== false && !m.esEquipo)));
     const u3 = onSnapshot(query(collection(db, 'Kardex_Movimientos'), orderBy('fecha', 'desc')),
-      (snap) => setMovimientos(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+      (snap) => setMovimientos(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true })));
     const u4 = onSnapshot(collection(db, 'Personal'),
       (snap) => setPersonalDB(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     const u5 = onSnapshot(query(collection(db, 'Historial'), orderBy('fecha', 'desc')),
@@ -51,7 +51,7 @@ export default function SalidaMaterial({ showToast, onSaved }) {
       (snap) => setPartidas(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
       () => setPartidas([]));
     return () => { u1(); u2(); u3(); u4(); u5(); u6(); };
-  }, []);
+  }, [filtrarPorContexto]);
 
   // Stock actual del almacen seleccionado
   const stockAlmacen = useMemo(() => {

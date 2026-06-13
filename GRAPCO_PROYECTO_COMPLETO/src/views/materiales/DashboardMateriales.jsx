@@ -9,8 +9,10 @@ import {
   alertasStockBajo, analizarABC, flujoMensual,
   fmtSoles, fmtCantidad, claseABCColor, severidadColor,
 } from '../../utils/materialesAnalytics';
+import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 
 export default function DashboardMateriales() {
+  const { filtrarPorContexto } = useProyectoActivo();
   const [movs, setMovs] = useState([]);
   const [materiales, setMateriales] = useState([]);
   const [almacenes, setAlmacenes] = useState([]);
@@ -19,7 +21,7 @@ export default function DashboardMateriales() {
   useEffect(() => {
     const unsubs = [];
     unsubs.push(onSnapshot(query(collection(db, 'Kardex_Movimientos'), orderBy('fecha', 'desc')),
-      (snap) => setMovs(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+      (snap) => setMovs(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true })),
       (e) => console.error('[Mov]', e)));
     unsubs.push(onSnapshot(collection(db, 'Materiales'),
       (snap) => { setMateriales(snap.docs.map(d => ({ id: d.id, ...d.data() }))); setLoading(false); },
@@ -28,7 +30,7 @@ export default function DashboardMateriales() {
       (snap) => setAlmacenes(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
       (e) => console.error('[Alm]', e)));
     return () => unsubs.forEach(u => u());
-  }, []);
+  }, [filtrarPorContexto]);
 
   const stock = useMemo(() => calcularStockActual(movs), [movs]);
   const global = useMemo(() => stockGlobalPorMaterial(stock), [stock]);

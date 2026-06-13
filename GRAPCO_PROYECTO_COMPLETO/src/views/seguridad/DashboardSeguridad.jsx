@@ -14,25 +14,24 @@ const SEV_COLOR = { baja: BASE.green, media: BASE.gold, alta: BASE.red, critica:
 const EST_COLOR = { abierta: BASE.red, tratamiento: BASE.gold, enProceso: BASE.gold, cerrada: BASE.green, verificada: '#16a34a' };
 
 export default function DashboardSeguridad() {
-  const { proyectoActivoId } = useProyectoActivo();
+  const { filtrarPorContexto } = useProyectoActivo();
   const [ncs, setNcs] = useState([]);
   const [inspecciones, setInspecciones] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Aislamiento por proyecto: se filtra en cliente por proyectoId para no
-    // requerir índice compuesto (where + orderBy). Docs sin proyectoId no se
-    // mezclan entre obras.
-    const delProyecto = (arr) => arr.filter(d => d.proyectoId === proyectoActivoId);
+    // Aislamiento por proyecto: filtrarPorContexto con ignorarFrente aisla por
+    // PROYECTO (no por frente) y maneja docs legacy sin proyectoId, sin requerir
+    // índice compuesto (where + orderBy).
     const unsubs = [
       onSnapshot(query(collection(db, 'NoConformidades'), orderBy('detectadoEn', 'desc'), limit(200)),
-        (snap) => { setNcs(delProyecto(snap.docs.map(d => ({ id: d.id, ...d.data() })))); setLoading(false); },
+        (snap) => { setNcs(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true })); setLoading(false); },
         () => setLoading(false)),
       onSnapshot(query(collection(db, 'InspeccionesSeguridad'), orderBy('creadoEn', 'desc'), limit(60)),
-        (snap) => setInspecciones(delProyecto(snap.docs.map(d => ({ id: d.id, ...d.data() }))))),
+        (snap) => setInspecciones(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true }))),
     ];
     return () => unsubs.forEach(u => u());
-  }, [proyectoActivoId]);
+  }, [filtrarPorContexto]);
 
   const stats = useMemo(() => {
     const porSev = { baja: 0, media: 0, alta: 0, critica: 0 };

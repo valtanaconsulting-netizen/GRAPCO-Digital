@@ -6,8 +6,10 @@ import { db } from '../../firebaseConfig';
 import { BASE } from '../../utils/styles';
 import { TIPOS_MOVIMIENTO, fmtCantidad, fmtSoles, kardexPorMaterial } from '../../utils/materialesAnalytics';
 import EmptyState from '../../components/EmptyState';
+import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 
 export default function KardexView() {
+  const { filtrarPorContexto } = useProyectoActivo();
   const [movs, setMovs] = useState([]);
   const [materiales, setMateriales] = useState([]);
   const [almacenes, setAlmacenes] = useState([]);
@@ -22,14 +24,14 @@ export default function KardexView() {
   useEffect(() => {
     const unsubs = [
       onSnapshot(query(collection(db, 'Kardex_Movimientos'), orderBy('fecha', 'desc')),
-        (snap) => { setMovs(snap.docs.map(d => ({ id: d.id, ...d.data() }))); setLoading(false); }),
+        (snap) => { setMovs(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true })); setLoading(false); }),
       onSnapshot(collection(db, 'Materiales'),
         (snap) => setMateriales(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
       onSnapshot(collection(db, 'Almacenes'),
         (snap) => setAlmacenes(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
     ];
     return () => unsubs.forEach(u => u());
-  }, []);
+  }, [filtrarPorContexto]);
 
   const matMap = useMemo(() => new Map(materiales.map(m => [m.id, m])), [materiales]);
   const almMap = useMemo(() => new Map(almacenes.map(a => [a.id, a])), [almacenes]);

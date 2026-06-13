@@ -19,7 +19,7 @@ import EmptyState from '../../components/EmptyState';
 const HOY = new Date().toISOString().split('T')[0];
 
 export default function ReporteValorizadoS10({ showToast }) {
-  const { proyectoActivoId, proyectoActivo } = useProyectoActivo();
+  const { proyectoActivoId, proyectoActivo, filtrarPorContexto } = useProyectoActivo();
 
   const [movs, setMovs] = useState([]);
   const [materiales, setMateriales] = useState([]);
@@ -36,7 +36,8 @@ export default function ReporteValorizadoS10({ showToast }) {
     let pending = 3;
     const dec = () => { pending -= 1; if (pending <= 0) setLoading(false); };
     const u1 = onSnapshot(query(collection(db, 'Kardex_Movimientos'), orderBy('fecha', 'desc')),
-      (snap) => { setMovs(snap.docs.map(d => ({ id: d.id, ...d.data() }))); dec(); },
+      // Aislamiento: solo movimientos del proyecto activo.
+      (snap) => { setMovs(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true })); dec(); },
       (e) => { console.warn('[Kardex]', e); dec(); });
     const u2 = onSnapshot(query(collection(db, 'Materiales'), orderBy('codigo')),
       (snap) => { setMateriales(snap.docs.map(d => ({ id: d.id, ...d.data() }))); dec(); },
@@ -45,7 +46,7 @@ export default function ReporteValorizadoS10({ showToast }) {
       (snap) => { setAlmacenes(snap.docs.map(d => ({ id: d.id, ...d.data() }))); dec(); },
       (e) => { console.warn('[Almacenes]', e); dec(); });
     return () => { u1(); u2(); u3(); };
-  }, []);
+  }, [filtrarPorContexto]);
 
   const reporte = useMemo(() => {
     return reporteValorizadoS10({
