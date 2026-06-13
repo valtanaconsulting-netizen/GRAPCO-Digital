@@ -263,7 +263,7 @@ export default function EditorWbsIsp({ showToast }) {
           </div>
         </div>
       ) : (
-        <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '10px', overflowX: 'auto' }}>
+        <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '10px', overflow: 'auto', maxHeight: '74vh' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px' }}>
             <thead>
               {/* Fila de grupos */}
@@ -487,8 +487,12 @@ const thG = {
   padding: '5px 6px', textAlign: 'center', fontSize: '9px', fontWeight: 900,
   color: BASE.muted, background: '#f8fafc', border: `1px solid ${BASE.border}`,
   whiteSpace: 'nowrap',
+  position: 'sticky', top: 0, zIndex: 5,   // ← cabecera de grupos siempre fija
 };
-const thS = { ...thG, fontSize: '8px' };
+// Sub-cabecera (METRADO/HH/IP): fija justo debajo de la fila de grupos. El
+// boxShadow inferior dibuja la línea separadora (los bordes de celda no se
+// "pegan" con border-collapse al hacer scroll).
+const thS = { ...thG, fontSize: '8px', top: 25, zIndex: 4, boxShadow: 'inset 0 -1px 0 #cbd5e1, 0 2px 3px -2px rgba(15,42,71,0.25)' };
 const tdC = { padding: '2px 4px', border: `1px solid ${BASE.border}` };
 const tdN = { ...tdC, textAlign: 'right' };
 const tdCalc = (color, bg) => ({

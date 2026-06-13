@@ -1,0 +1,2867 @@
+[
+  {
+    "id": "2CjkQMOjSozCh7jAZHTk",
+    "codigo": "03.01.002",
+    "descripcion": "Tarrajeo de muros interiores",
+    "unidad": "m2",
+    "metradoContractual": 2400,
+    "precioUnitario": 28,
+    "hhTotalPresupuestado": 1920,
+    "rendimientoTeorico": 0.8,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1795046400,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1795651200,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "2oAAwE7WIuzJ7A3qP689",
+    "codigo": "02.03.003",
+    "descripcion": "Encofrado de columnas",
+    "unidad": "m2",
+    "metradoContractual": 480,
+    "precioUnitario": 52,
+    "hhTotalPresupuestado": 672,
+    "rendimientoTeorico": 1.4,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1789776000,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1790380800,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "46EJG36OUAuOaF88qNIk",
+    "codigo": "02.01.003",
+    "descripcion": "Relleno compactado",
+    "unidad": "m3",
+    "metradoContractual": 1800,
+    "metradoEjecutado": 407,
+    "precioUnitario": 28,
+    "hhTotalPresupuestado": 2700,
+    "rendimientoTeorico": 1.5,
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "_seedTag": "SEED_PTARI_DEMO_2026",
+    "creadoPor": "admin@grapco.pe",
+    "creadoEn": {
+      "_seconds": 1778635259,
+      "_nanoseconds": 982000000
+    }
+  },
+  {
+    "id": "48LWlvyxNQsJtsoYKNu0",
+    "codigo": "01.01.003",
+    "descripcion": "Cerco perimétrico",
+    "unidad": "ml",
+    "metradoContractual": 200,
+    "precioUnitario": 45,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1780876800,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1781654400,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "4n4HwZ4JDEXBOmsyZyVU",
+    "codigo": "01.01.002",
+    "descripcion": "Caseta y almacén",
+    "unidad": "m2",
+    "metradoContractual": 40,
+    "metradoEjecutado": 12,
+    "precioUnitario": 180,
+    "hhTotalPresupuestado": 60,
+    "rendimientoTeorico": 1.5,
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "_seedTag": "SEED_PTARI_DEMO_2026",
+    "creadoPor": "admin@grapco.pe",
+    "creadoEn": {
+      "_seconds": 1778635256,
+      "_nanoseconds": 149000000
+    }
+  },
+  {
+    "id": "4qbjCcrWVaNyqJhmhMmk",
+    "codigo": "01.01.001",
+    "descripcion": "Cartel de obra",
+    "unidad": "und",
+    "metradoContractual": 1,
+    "precioUnitario": 850,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1779408000,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1780185600,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "58i4MEO5vXoXhwUfKVSR",
+    "codigo": "04.01.002",
+    "descripcion": "Salida para tomacorriente",
+    "unidad": "pto",
+    "metradoContractual": 120,
+    "metradoEjecutado": 77,
+    "precioUnitario": 95,
+    "hhTotalPresupuestado": 180,
+    "rendimientoTeorico": 1.5,
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "_seedTag": "SEED_PTARI_DEMO_2026",
+    "creadoPor": "admin@grapco.pe",
+    "creadoEn": {
+      "_seconds": 1778635265,
+      "_nanoseconds": 694000000
+    }
+  },
+  {
+    "id": "5OflTG5pumikSAd62mwv",
+    "codigo": "03.02.001",
+    "descripcion": "Contrapiso de 4cm",
+    "unidad": "m2",
+    "metradoContractual": 800,
+    "precioUnitario": 32,
+    "hhTotalPresupuestado": 480,
+    "rendimientoTeorico": 0.6,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1796860800,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1797379200,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "5lDVUI7yI1JQs6Yc3w1Z",
+    "codigo": "01.01.001",
+    "descripcion": "Cartel de obra 3.6x2.4m",
+    "unidad": "und",
+    "metradoContractual": 1,
+    "precioUnitario": 850,
+    "hhTotalPresupuestado": 8,
+    "rendimientoTeorico": 8,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1779840000,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1780358400,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "5sSc4AqNhnYMipXgHSSF",
+    "codigo": "04.01.001",
+    "descripcion": "Bombas centrífugas + motores",
+    "unidad": "und",
+    "metradoContractual": 4,
+    "precioUnitario": 18500,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1797724800,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1798416000,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "7FuZOy55qL0B6rvqOJEn",
+    "codigo": "02.02.004",
+    "descripcion": "Encofrado de muros",
+    "unidad": "m2",
+    "metradoContractual": 1200,
+    "precioUnitario": 58,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1788566400,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1789344000,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "7Wu1iyICWAKS14aApTMw",
+    "codigo": "02.01.001",
+    "descripcion": "Excavación masiva",
+    "unidad": "m3",
+    "metradoContractual": 3500,
+    "metradoEjecutado": 2425,
+    "precioUnitario": 18,
+    "hhTotalPresupuestado": 5250,
+    "rendimientoTeorico": 1.5,
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "_seedTag": "SEED_PTARI_DEMO_2026",
+    "creadoPor": "admin@grapco.pe",
+    "creadoEn": {
+      "_seconds": 1778635258,
+      "_nanoseconds": 729000000
+    }
+  },
+  {
+    "id": "7h6yg0KbcG3qanUnMYR8",
+    "codigo": "04.01.001",
+    "descripcion": "Salida para alumbrado",
+    "unidad": "pto",
+    "metradoContractual": 80,
+    "precioUnitario": 95,
+    "hhTotalPresupuestado": 120,
+    "rendimientoTeorico": 1.5,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1803254400,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1803859200,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "7kTOLlchqYE4hpGtLLBU",
+    "codigo": "03.02.003",
+    "descripcion": "Zócalos y contrazócalos",
+    "unidad": "ml",
+    "metradoContractual": 600,
+    "precioUnitario": 42,
+    "hhTotalPresupuestado": 240,
+    "rendimientoTeorico": 0.4,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1797984000,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1798588800,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "8F9vO9E8suZ8qa1NvZJJ",
+    "codigo": "02.04.004",
+    "descripcion": "Ladrillo de techo",
+    "unidad": "und",
+    "metradoContractual": 12000,
+    "precioUnitario": 3.2,
+    "hhTotalPresupuestado": 480,
+    "rendimientoTeorico": 0.04,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1792713600,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1793318400,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "8FbdC0whYEzm5aYGZGID",
+    "codigo": "01.00.000",
+    "descripcion": "OBRAS PROVISIONALES",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "9Fe2CHsNu9gx1OqFaecz",
+    "codigo": "05.01.001",
+    "descripcion": "Sensores de nivel",
+    "unidad": "und",
+    "metradoContractual": 8,
+    "precioUnitario": 1800,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1802304000,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1802995200,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "AH2Qct547CeVuDSpqh80",
+    "codigo": "02.02.004",
+    "descripcion": "Encofrado de muros",
+    "unidad": "m2",
+    "metradoContractual": 1200,
+    "metradoEjecutado": 794,
+    "precioUnitario": 58,
+    "hhTotalPresupuestado": 1800,
+    "rendimientoTeorico": 1.5,
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "_seedTag": "SEED_PTARI_DEMO_2026",
+    "creadoPor": "admin@grapco.pe",
+    "creadoEn": {
+      "_seconds": 1778635262,
+      "_nanoseconds": 549000000
+    }
+  },
+  {
+    "id": "ArJcNtL9pXHgp24RP4vm",
+    "codigo": "01.01.004",
+    "descripcion": "TRABAJOS PRELIMINARES - ACARREO HORIZONTAL Y VERTICAL",
+    "unidad": "MES",
+    "metradoContractual": 6,
+    "metradoEjecutado": 3,
+    "precioUnitario": 180,
+    "hhTotalPresupuestado": 9,
+    "rendimientoTeorico": 1.5,
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "_seedTag": "SEED_PTARI_DEMO_2026",
+    "creadoPor": "admin@grapco.pe",
+    "creadoEn": {
+      "_seconds": 1778635257,
+      "_nanoseconds": 366000000
+    }
+  },
+  {
+    "id": "AxZvaXp7fh5bJPgqgnti",
+    "codigo": "01.02.000",
+    "descripcion": "Trabajos preliminares",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "CAEl19gw0OINKjVMIk24",
+    "codigo": "02.02.003",
+    "descripcion": "Acero estructural",
+    "unidad": "kg",
+    "metradoContractual": 28000,
+    "precioUnitario": 4.8,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1787788800,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1788566400,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "CaHa4ckhAcvi5JNXFgUv",
+    "codigo": "03.04.002",
+    "descripcion": "Pintura esmalte en metálicos",
+    "unidad": "m2",
+    "metradoContractual": 120,
+    "precioUnitario": 25,
+    "hhTotalPresupuestado": 48,
+    "rendimientoTeorico": 0.4,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1801526400,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1802131200,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "CqMS8xM5F6xtDcgkiqNS",
+    "codigo": "01.02.001",
+    "descripcion": "Trazo y replanteo",
+    "unidad": "m2",
+    "metradoContractual": 800,
+    "precioUnitario": 3.5,
+    "hhTotalPresupuestado": 40,
+    "rendimientoTeorico": 0.05,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1782172800,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1782777600,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "D4X7i9EWQhqqBlnhRgDL",
+    "codigo": "03.01.001",
+    "descripcion": "Tubería HDPE 200mm",
+    "unidad": "ml",
+    "metradoContractual": 850,
+    "metradoEjecutado": 447,
+    "precioUnitario": 145,
+    "hhTotalPresupuestado": 1275,
+    "rendimientoTeorico": 1.5,
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "89LP4EMaeUB1f2QPMFPk",
+    "_seedTag": "SEED_PTARI_DEMO_2026",
+    "creadoPor": "admin@grapco.pe",
+    "creadoEn": {
+      "_seconds": 1778635263,
+      "_nanoseconds": 751000000
+    }
+  },
+  {
+    "id": "DNI1GMLaxeF6lLDcq5JZ",
+    "codigo": "02.02.002",
+    "descripcion": "Acero de refuerzo en zapatas",
+    "unidad": "kg",
+    "metradoContractual": 8500,
+    "precioUnitario": 4.5,
+    "hhTotalPresupuestado": 212.5,
+    "rendimientoTeorico": 0.025,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1786838400,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1787443200,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "DhMzxFBUXFfpCbhgzOyr",
+    "codigo": "02.04.002",
+    "descripcion": "Acero en vigas y losa",
+    "unidad": "kg",
+    "metradoContractual": 18000,
+    "precioUnitario": 4.6,
+    "hhTotalPresupuestado": 450,
+    "rendimientoTeorico": 0.025,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1791504000,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1792108800,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "EC5kAVZlFy5iD15i9hFt",
+    "codigo": "03.03.000",
+    "descripcion": "Carpintería y vidrios",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "EMWaTSHb23iMtWvAcCwg",
+    "codigo": "05.00.000",
+    "descripcion": "INSTALACIONES SANITARIAS",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "EPIfLapFmBEOCGfNaBgt",
+    "codigo": "04.01.001",
+    "descripcion": "Salida para alumbrado",
+    "unidad": "pto",
+    "metradoContractual": 80,
+    "metradoEjecutado": 41,
+    "precioUnitario": 95,
+    "hhTotalPresupuestado": 120,
+    "rendimientoTeorico": 1.5,
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "_seedTag": "SEED_PTARI_DEMO_2026",
+    "creadoPor": "admin@grapco.pe",
+    "creadoEn": {
+      "_seconds": 1778635265,
+      "_nanoseconds": 165000000
+    }
+  },
+  {
+    "id": "EPXiMQjwy7lwfLztN93O",
+    "codigo": "01.01.005",
+    "descripcion": "OBRAS PROVISIONALES - LIMPIEZA Y AMOLADO EN METÁLICOS",
+    "unidad": "M2",
+    "metradoContractual": 320,
+    "metradoEjecutado": 108,
+    "precioUnitario": 0.53,
+    "hhTotalPresupuestado": 480,
+    "rendimientoTeorico": 1.5,
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "_seedTag": "SEED_PTARI_DEMO_2026",
+    "creadoPor": "admin@grapco.pe",
+    "creadoEn": {
+      "_seconds": 1778635257,
+      "_nanoseconds": 807000000
+    }
+  },
+  {
+    "id": "EdH7uDhkCSg5M4a3Rc4j",
+    "codigo": "04.00.000",
+    "descripcion": "INSTALACIONES ELÉCTRICAS",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "FWnxutppS9IY7uIdhurf",
+    "codigo": "01.01.003",
+    "descripcion": "Cerco perimétrico provisional",
+    "unidad": "ml",
+    "metradoContractual": 80,
+    "precioUnitario": 45,
+    "hhTotalPresupuestado": 120,
+    "rendimientoTeorico": 1.5,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1780963200,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1781568000,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "FmiBvIO9Ilr0viL6So4j",
+    "codigo": "03.00.000",
+    "descripcion": "LÍNEAS HIDRÁULICAS",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "GPlbgkzO58monyOeQeif",
+    "codigo": "03.02.000",
+    "descripcion": "Pisos y acabados",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "GmCTWjdegRXlScXcqLIf",
+    "codigo": "02.02.002",
+    "descripcion": "Concreto en muros f'c=280",
+    "unidad": "m3",
+    "metradoContractual": 240,
+    "precioUnitario": 620,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1787011200,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1787788800,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "GnwfLzH4K9Bpf4V51i6s",
+    "codigo": "01.01.001",
+    "descripcion": "Cartel de obra",
+    "unidad": "und",
+    "metradoContractual": 1,
+    "metradoEjecutado": 0,
+    "precioUnitario": 850,
+    "hhTotalPresupuestado": 1.5,
+    "rendimientoTeorico": 1.5,
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "_seedTag": "SEED_PTARI_DEMO_2026",
+    "creadoPor": "admin@grapco.pe",
+    "creadoEn": {
+      "_seconds": 1778635255,
+      "_nanoseconds": 557000000
+    }
+  },
+  {
+    "id": "J8B7uN3m4xCcn490H0Cs",
+    "codigo": "01.01.000",
+    "descripcion": "Obras provisionales",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "L8C3tJm73DiaO4NssPqN",
+    "codigo": "01.00.000",
+    "descripcion": "OBRAS PROVISIONALES Y TRABAJOS PRELIMINARES",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "LExw2RjvgumbTrXF0ybI",
+    "codigo": "01.01.002",
+    "descripcion": "Caseta de oficina + almacén",
+    "unidad": "m2",
+    "metradoContractual": 30,
+    "precioUnitario": 180,
+    "hhTotalPresupuestado": 120,
+    "rendimientoTeorico": 4,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1780358400,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1780963200,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "LmSjb6XwCQGRwwfWiPk1",
+    "codigo": "03.01.000",
+    "descripcion": "Albañilería",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "Lo6KwQnsP7Qps1PSbmOf",
+    "codigo": "03.01.002",
+    "descripcion": "Accesorios y válvulas",
+    "unidad": "und",
+    "metradoContractual": 24,
+    "precioUnitario": 480,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1794614400,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1795392000,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "MNsjDM8BjdfvIIh13SNw",
+    "codigo": "02.02.002",
+    "descripcion": "Concreto en muros f'c=280",
+    "unidad": "m3",
+    "metradoContractual": 240,
+    "metradoEjecutado": 107,
+    "precioUnitario": 620,
+    "hhTotalPresupuestado": 360,
+    "rendimientoTeorico": 1.5,
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "_seedTag": "SEED_PTARI_DEMO_2026",
+    "creadoPor": "admin@grapco.pe",
+    "creadoEn": {
+      "_seconds": 1778635261,
+      "_nanoseconds": 248000000
+    }
+  },
+  {
+    "id": "Mfv9ZCcVxY1ZHTATeMqA",
+    "codigo": "02.01.002",
+    "descripcion": "Eliminación de material excedente",
+    "unidad": "m3",
+    "metradoContractual": 1500,
+    "precioUnitario": 22,
+    "hhTotalPresupuestado": 300,
+    "rendimientoTeorico": 0.2,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1785110400,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1785715200,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "MrIm9Gq0G2CTp2IUCtW9",
+    "codigo": "05.01.001",
+    "descripcion": "Tubería PVC SAP 1/2\"",
+    "unidad": "ml",
+    "metradoContractual": 280,
+    "precioUnitario": 28,
+    "hhTotalPresupuestado": 140,
+    "rendimientoTeorico": 0.5,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1807401600,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1808006400,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "MsNsS702GsMyKwPp0pp1",
+    "codigo": "04.01.005",
+    "descripcion": "Rejas finas mecanizadas",
+    "unidad": "und",
+    "metradoContractual": 2,
+    "precioUnitario": 22000,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1800748800,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1801526400,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "NGKePewpILhXIYDton4D",
+    "codigo": "02.01.001",
+    "descripcion": "Excavación masiva",
+    "unidad": "m3",
+    "metradoContractual": 1200,
+    "precioUnitario": 18,
+    "hhTotalPresupuestado": 600,
+    "rendimientoTeorico": 0.5,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1784505600,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1785110400,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "NTvQnPF3RT5SIlhzlwmh",
+    "codigo": "04.00.000",
+    "descripcion": "EQUIPAMIENTO ELECTROMECÁNICO",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "NsfBH7puBUMSLXS61TrM",
+    "codigo": "02.03.002",
+    "descripcion": "Tapas de inspección",
+    "unidad": "und",
+    "metradoContractual": 18,
+    "precioUnitario": 380,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1791590400,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1792368000,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "Oa95HPtdk5DZ5KfhYB9V",
+    "codigo": "03.01.001",
+    "descripcion": "Muro de ladrillo KK soga",
+    "unidad": "m2",
+    "metradoContractual": 1200,
+    "precioUnitario": 78,
+    "hhTotalPresupuestado": 1800,
+    "rendimientoTeorico": 1.5,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1794441600,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1795046400,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "P5TZkvKHzW7ixB8zpuCC",
+    "codigo": "02.01.001",
+    "descripcion": "Excavación masiva",
+    "unidad": "m3",
+    "metradoContractual": 3500,
+    "precioUnitario": 18,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1783209600,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1783987200,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "P7wTMaXUdcNHqOG6wWpE",
+    "codigo": "05.02.000",
+    "descripcion": "Desagüe",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "PViLDCRVeKujlXj8HKJw",
+    "codigo": "03.02.001",
+    "descripcion": "Tubería HDPE 250mm",
+    "unidad": "ml",
+    "metradoContractual": 600,
+    "precioUnitario": 175,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1796169600,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1796947200,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "PktOigwb8eiVVVPXTsq7",
+    "codigo": "01.02.002",
+    "descripcion": "Demoliciones",
+    "unidad": "m3",
+    "metradoContractual": 50,
+    "precioUnitario": 35,
+    "hhTotalPresupuestado": 60,
+    "rendimientoTeorico": 1.2,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1782777600,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1783296000,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "QPkOIEl5wlwefFkHFDzM",
+    "codigo": "02.02.003",
+    "descripcion": "Encofrado y desencofrado de zapatas",
+    "unidad": "m2",
+    "metradoContractual": 320,
+    "precioUnitario": 38,
+    "hhTotalPresupuestado": 384,
+    "rendimientoTeorico": 1.2,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1787443200,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1788048000,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "R0BvQaJUW1ky58pSPVrJ",
+    "codigo": "02.01.002",
+    "descripcion": "Excavación de zanjas",
+    "unidad": "m3",
+    "metradoContractual": 1200,
+    "precioUnitario": 24,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1783987200,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1784764800,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "R0fYOpexYrxOIyRNwWc9",
+    "codigo": "03.01.003",
+    "descripcion": "Tarrajeo de cielo raso",
+    "unidad": "m2",
+    "metradoContractual": 800,
+    "precioUnitario": 35,
+    "hhTotalPresupuestado": 960,
+    "rendimientoTeorico": 1.2,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1795651200,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1796256000,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "RS9VJGTQi9GuZ2Oe2CwA",
+    "codigo": "02.03.001",
+    "descripcion": "Concreto en cámaras",
+    "unidad": "m3",
+    "metradoContractual": 95,
+    "precioUnitario": 540,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1790812800,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1791590400,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "SRtFySB3DYxNKbMxPj0X",
+    "codigo": "04.01.000",
+    "descripcion": "Salidas y tuberías",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "TuqSYd1inCTg1ML4nFeK",
+    "codigo": "05.01.000",
+    "descripcion": "Agua",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "URvgIdnYgCgH0C9fYsUY",
+    "codigo": "05.00.000",
+    "descripcion": "INSTRUMENTACIÓN Y CONTROL",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "VaI2teKFjPE3xV7H6tSj",
+    "codigo": "03.04.000",
+    "descripcion": "Pintura",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "YImvF2Xnp1rOuYo0pqoS",
+    "codigo": "03.04.001",
+    "descripcion": "Pintura látex en muros",
+    "unidad": "m2",
+    "metradoContractual": 2400,
+    "precioUnitario": 18,
+    "hhTotalPresupuestado": 720,
+    "rendimientoTeorico": 0.3,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1800921600,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1801526400,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "YXedyTNTqEiON9c1tyRD",
+    "codigo": "02.03.002",
+    "descripcion": "Acero en columnas",
+    "unidad": "kg",
+    "metradoContractual": 12500,
+    "precioUnitario": 4.8,
+    "hhTotalPresupuestado": 312.5,
+    "rendimientoTeorico": 0.025,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1789171200,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1789776000,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "YZCeOurrfYeHU8vl91tJ",
+    "codigo": "03.00.000",
+    "descripcion": "ARQUITECTURA",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "Z8pjLtOyyvGaVuio7nvQ",
+    "codigo": "04.02.001",
+    "descripcion": "Tablero general",
+    "unidad": "und",
+    "metradoContractual": 1,
+    "precioUnitario": 2800,
+    "hhTotalPresupuestado": 16,
+    "rendimientoTeorico": 16,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1805068800,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1805587200,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "ZLthTuuEqVE9o1KSBJuC",
+    "codigo": "03.01.001",
+    "descripcion": "Tubería HDPE 200mm",
+    "unidad": "ml",
+    "metradoContractual": 850,
+    "precioUnitario": 145,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1793836800,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1794614400,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "ZUcX1crL1Q1wlMf8eUi8",
+    "codigo": "02.02.001",
+    "descripcion": "CONCRETO F'C= 350 KG/CM2 EN LOSA DE FONDO",
+    "unidad": "M3",
+    "metradoContractual": 180,
+    "metradoEjecutado": 68,
+    "precioUnitario": 1000,
+    "hhTotalPresupuestado": 270,
+    "rendimientoTeorico": 1.5,
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "_seedTag": "SEED_PTARI_DEMO_2026",
+    "creadoPor": "admin@grapco.pe",
+    "creadoEn": {
+      "_seconds": 1778635260,
+      "_nanoseconds": 296000000
+    }
+  },
+  {
+    "id": "a92AFdOBn1Ko57I7D9kf",
+    "codigo": "05.02.001",
+    "descripcion": "Tubería PVC SAL 4\"",
+    "unidad": "ml",
+    "metradoContractual": 180,
+    "precioUnitario": 45,
+    "hhTotalPresupuestado": 108,
+    "rendimientoTeorico": 0.6,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1809129600,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1809734400,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "be2z7gY0Mejw5DHba4j8",
+    "codigo": "01.01.003",
+    "descripcion": "TRABAJOS PRELIMINARES - TRAZO Y REPLANTEO TOPOGRAFICO",
+    "unidad": "MES",
+    "metradoContractual": 6,
+    "metradoEjecutado": 1,
+    "precioUnitario": 280,
+    "hhTotalPresupuestado": 9,
+    "rendimientoTeorico": 1.5,
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "_seedTag": "SEED_PTARI_DEMO_2026",
+    "creadoPor": "admin@grapco.pe",
+    "creadoEn": {
+      "_seconds": 1778635256,
+      "_nanoseconds": 705000000
+    }
+  },
+  {
+    "id": "cWcQuJwyPvxQ5Ami88rF",
+    "codigo": "04.01.002",
+    "descripcion": "Aireadores superficiales",
+    "unidad": "und",
+    "metradoContractual": 2,
+    "precioUnitario": 28000,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1798416000,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1799193600,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "ctQ24KgJhNY4naFQXOUi",
+    "codigo": "05.01.002",
+    "descripcion": "Aparatos sanitarios",
+    "unidad": "und",
+    "metradoContractual": 12,
+    "precioUnitario": 480,
+    "hhTotalPresupuestado": 48,
+    "rendimientoTeorico": 4,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1808006400,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1808524800,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "dl8rdiwEgGCkZ2aNp2TZ",
+    "codigo": "02.01.002",
+    "descripcion": "Excavación de zanjas",
+    "unidad": "m3",
+    "metradoContractual": 1200,
+    "metradoEjecutado": 788,
+    "precioUnitario": 24,
+    "hhTotalPresupuestado": 1800,
+    "rendimientoTeorico": 1.5,
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "_seedTag": "SEED_PTARI_DEMO_2026",
+    "creadoPor": "admin@grapco.pe",
+    "creadoEn": {
+      "_seconds": 1778635259,
+      "_nanoseconds": 148000000
+    }
+  },
+  {
+    "id": "e5zjRVk9Gg1yA7knsyb9",
+    "codigo": "02.02.005",
+    "descripcion": "Impermeabilización",
+    "unidad": "m2",
+    "metradoContractual": 800,
+    "precioUnitario": 75,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1789344000,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1790035200,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "f1f9Ss9ZbG87sIGP2A7b",
+    "codigo": "02.00.000",
+    "descripcion": "OBRAS CIVILES",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "fBmaKeC17mCLUr1ovuhI",
+    "codigo": "05.01.003",
+    "descripcion": "Sistema SCADA",
+    "unidad": "glb",
+    "metradoContractual": 1,
+    "precioUnitario": 85000,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1803772800,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1804550400,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "ge5wMPZ1FqUp4aci91EC",
+    "codigo": "02.03.000",
+    "descripcion": "Concreto armado · Columnas y muros",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "gkOsIgSCpnBLCMNgZ3xV",
+    "codigo": "02.02.003",
+    "descripcion": "Acero estructural fy=4200",
+    "unidad": "kg",
+    "metradoContractual": 28000,
+    "metradoEjecutado": 18672,
+    "precioUnitario": 4.8,
+    "hhTotalPresupuestado": 42000,
+    "rendimientoTeorico": 1.5,
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "_seedTag": "SEED_PTARI_DEMO_2026",
+    "creadoPor": "admin@grapco.pe",
+    "creadoEn": {
+      "_seconds": 1778635261,
+      "_nanoseconds": 589000000
+    }
+  },
+  {
+    "id": "h9ZNMgCUpkopyBQbP8Fx",
+    "codigo": "04.01.004",
+    "descripcion": "Tableros locales",
+    "unidad": "und",
+    "metradoContractual": 4,
+    "precioUnitario": 8500,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1799971200,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1800748800,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "j83B7uZSpb7hvZdNIsDV",
+    "codigo": "02.04.001",
+    "descripcion": "Concreto en vigas y losa aligerada",
+    "unidad": "m3",
+    "metradoContractual": 220,
+    "precioUnitario": 495,
+    "hhTotalPresupuestado": 264,
+    "rendimientoTeorico": 1.2,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1790985600,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1791504000,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "jEEq9ZYXStOc6gwygsK6",
+    "codigo": "02.02.005",
+    "descripcion": "Impermeabilización",
+    "unidad": "m2",
+    "metradoContractual": 800,
+    "metradoEjecutado": 179,
+    "precioUnitario": 75,
+    "hhTotalPresupuestado": 1200,
+    "rendimientoTeorico": 1.5,
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "_seedTag": "SEED_PTARI_DEMO_2026",
+    "creadoPor": "admin@grapco.pe",
+    "creadoEn": {
+      "_seconds": 1778635262,
+      "_nanoseconds": 894000000
+    }
+  },
+  {
+    "id": "jRFWbDpZ6JkQQKj27Vhk",
+    "codigo": "02.01.000",
+    "descripcion": "Movimiento de tierras",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "jYdymhm7woGilwbqe55T",
+    "codigo": "05.01.002",
+    "descripcion": "Caudalímetros electromagnéticos",
+    "unidad": "und",
+    "metradoContractual": 3,
+    "precioUnitario": 12500,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1802995200,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1803772800,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "lO3BDpTMGPtNooLnWUM0",
+    "codigo": "04.01.003",
+    "descripcion": "Tablero general de control",
+    "unidad": "und",
+    "metradoContractual": 1,
+    "precioUnitario": 45000,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1799193600,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1799971200,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "mUOwK41SsoGPamkKjTl9",
+    "codigo": "03.01.000",
+    "descripcion": "Línea de impulsión",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "maPI782Ec7CvHY5eoe2q",
+    "codigo": "01.01.002",
+    "descripcion": "Caseta y almacén",
+    "unidad": "m2",
+    "metradoContractual": 40,
+    "precioUnitario": 180,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1780185600,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1780876800,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "nKP61FrZCEmZ2ZxpCh7Q",
+    "codigo": "02.02.000",
+    "descripcion": "Concreto armado · Cimentación",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "nPGWYt0WKqqc4kyXlVaf",
+    "codigo": "02.02.001",
+    "descripcion": "Concreto en losa de fondo f'c=280",
+    "unidad": "m3",
+    "metradoContractual": 180,
+    "precioUnitario": 580,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1786233600,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1787011200,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "oARkxJ6BruM17jbi6AuP",
+    "codigo": "04.02.002",
+    "descripcion": "Artefacto de iluminación LED",
+    "unidad": "und",
+    "metradoContractual": 60,
+    "precioUnitario": 180,
+    "hhTotalPresupuestado": 30,
+    "rendimientoTeorico": 0.5,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1805587200,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1806192000,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "qCf466NAUlaIIMAHOluu",
+    "codigo": "03.02.000",
+    "descripcion": "Línea de descarga",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "qNIseLvjUyFE21En848j",
+    "codigo": "04.02.000",
+    "descripcion": "Tableros y artefactos",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "qRRCJJSLWUOEICsCnOiE",
+    "codigo": "02.02.001",
+    "descripcion": "Concreto en zapatas f'c=210",
+    "unidad": "m3",
+    "metradoContractual": 145,
+    "precioUnitario": 480,
+    "hhTotalPresupuestado": 145,
+    "rendimientoTeorico": 1,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1786233600,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1786838400,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "qVe8fATp6Pn0zpE8hhQW",
+    "codigo": "03.02.002",
+    "descripcion": "Piso porcelanato 60x60",
+    "unidad": "m2",
+    "metradoContractual": 800,
+    "precioUnitario": 95,
+    "hhTotalPresupuestado": 800,
+    "rendimientoTeorico": 1,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1797379200,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1797984000,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "qYDwj5fsEIOE1dspDeDV",
+    "codigo": "02.01.003",
+    "descripcion": "Relleno compactado",
+    "unidad": "m3",
+    "metradoContractual": 1800,
+    "precioUnitario": 28,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1784764800,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1785456000,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "sbv5jOehLkKgaX0ewD9a",
+    "codigo": "02.04.003",
+    "descripcion": "Encofrado de vigas y losa",
+    "unidad": "m2",
+    "metradoContractual": 1800,
+    "precioUnitario": 48,
+    "hhTotalPresupuestado": 2340,
+    "rendimientoTeorico": 1.3,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1792108800,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1792713600,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "slqG8KQ5Lm8fJzyJb09T",
+    "codigo": "02.02.000",
+    "descripcion": "Concreto · Tanque sedimentación",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "uED3IK0IOFTII23huDeN",
+    "codigo": "03.03.001",
+    "descripcion": "Puertas contraplacadas",
+    "unidad": "und",
+    "metradoContractual": 25,
+    "precioUnitario": 480,
+    "hhTotalPresupuestado": 100,
+    "rendimientoTeorico": 4,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1799193600,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1799798400,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "vA9BxVElGSLJ46lFBgze",
+    "codigo": "02.01.000",
+    "descripcion": "Movimiento de tierras",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "wBB9LcgKxgwNb19Hr26M",
+    "codigo": "02.03.001",
+    "descripcion": "Concreto en columnas f'c=210",
+    "unidad": "m3",
+    "metradoContractual": 85,
+    "precioUnitario": 520,
+    "hhTotalPresupuestado": 127.5,
+    "rendimientoTeorico": 1.5,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1788566400,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1789171200,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "wk3nQ5cYpOEOGURB5hUZ",
+    "codigo": "02.04.000",
+    "descripcion": "Concreto armado · Vigas y losas",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "wqzIXnHCHkOSzzPKiapv",
+    "codigo": "02.00.000",
+    "descripcion": "ESTRUCTURAS",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "x1YI3bIVsA9CQd1rrbvo",
+    "codigo": "04.01.002",
+    "descripcion": "Salida para tomacorriente",
+    "unidad": "pto",
+    "metradoContractual": 120,
+    "precioUnitario": 95,
+    "hhTotalPresupuestado": 144,
+    "rendimientoTeorico": 1.2,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1803859200,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1804464000,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "xSvqtct7gLOwc9hN6zMw",
+    "codigo": "02.03.000",
+    "descripcion": "Concreto · Cámaras y estructuras",
+    "unidad": null,
+    "metradoContractual": 0,
+    "precioUnitario": 0,
+    "hhTotalPresupuestado": 0,
+    "rendimientoTeorico": 0,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": null,
+    "fechaFinProgramada": null,
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "fTgUP3YVLlCM0hFh0KgD",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638887,
+      "_nanoseconds": 647000000
+    }
+  },
+  {
+    "id": "xTM0aJyCy9EQaWWDJAAz",
+    "codigo": "05.01.001",
+    "descripcion": "Tubería PVC SAP 1/2\"",
+    "unidad": "ml",
+    "metradoContractual": 280,
+    "metradoEjecutado": 61,
+    "precioUnitario": 28,
+    "hhTotalPresupuestado": 420,
+    "rendimientoTeorico": 1.5,
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "_seedTag": "SEED_PTARI_DEMO_2026",
+    "creadoPor": "admin@grapco.pe",
+    "creadoEn": {
+      "_seconds": 1778635266,
+      "_nanoseconds": 210000000
+    }
+  },
+  {
+    "id": "xZjyr1wiZ6dUVOFbcDHF",
+    "codigo": "03.03.002",
+    "descripcion": "Ventanas de aluminio + vidrio",
+    "unidad": "m2",
+    "metradoContractual": 80,
+    "precioUnitario": 380,
+    "hhTotalPresupuestado": 160,
+    "rendimientoTeorico": 2,
+    "cuadrillaTeorica": null,
+    "fechaInicioProgramada": {
+      "_seconds": 1799798400,
+      "_nanoseconds": 0
+    },
+    "fechaFinProgramada": {
+      "_seconds": 1800316800,
+      "_nanoseconds": 0
+    },
+    "predecesoras": [],
+    "estado": "no_iniciada",
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "IBv8MYRxuZ1uoMPf20uM",
+    "avanceMetradoAcum": 0,
+    "hhAcumReal": 0,
+    "costoRealAcum": 0,
+    "creadoPor": "fjrosash@gmail.com",
+    "creadoEn": {
+      "_seconds": 1778638955,
+      "_nanoseconds": 460000000
+    }
+  },
+  {
+    "id": "xdGq2GieSnBFsSsBysHf",
+    "codigo": "03.01.002",
+    "descripcion": "Accesorios y válvulas",
+    "unidad": "und",
+    "metradoContractual": 24,
+    "metradoEjecutado": 12,
+    "precioUnitario": 480,
+    "hhTotalPresupuestado": 36,
+    "rendimientoTeorico": 1.5,
+    "proyectoId": "g7mT1zzIw9Ei09HFAPlc",
+    "frenteId": "89LP4EMaeUB1f2QPMFPk",
+    "_seedTag": "SEED_PTARI_DEMO_2026",
+    "creadoPor": "admin@grapco.pe",
+    "creadoEn": {
+      "_seconds": 1778635264,
+      "_nanoseconds": 272000000
+    }
+  }
+]

@@ -229,7 +229,7 @@ function TareoPDFContent({ registrosPorDia, personalDB, ruc, logoBase64, supervi
         const fechaFormateada = new Date(fecha + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: '2-digit' });
 
         return (
-          <Page key={fechaCapKey} style={styles.page}>
+          <Page key={fechaCapKey} size={['A4', 'landscape']} style={styles.page}>
             {/* HEADER */}
             <View style={styles.header}>
               <View style={styles.logoSection}>
