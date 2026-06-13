@@ -47,6 +47,7 @@ export default function LastPlannerPro() {
   const [crono, setCrono] = useState(null);        // doc Cronogramas (o false si no hay)
   const [lps, setLps] = useState(null);            // doc LPS
   const [semanaIso, setSemanaIso] = useState(isoDeFecha(lunesDe(new Date())));
+  const [semanaTocada, setSemanaTocada] = useState(false); // ¿el usuario navegó manualmente?
   const [sinGuardar, setSinGuardar] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [manual, setManual] = useState('');
@@ -62,7 +63,20 @@ export default function LastPlannerPro() {
         ]);
         if (cancel) return;
         setCrono(cSnap.exists() ? cSnap.data() : false);
-        setLps(lSnap.exists() ? lSnap.data() : { restricciones: {}, semanas: {} });
+        const lpsData = lSnap.exists() ? lSnap.data() : { restricciones: {}, semanas: {} };
+        setLps(lpsData);
+        // Si el usuario NO ha navegado y la semana actual está vacía pero hay
+        // historial, abrir en la ÚLTIMA semana con compromisos → así la data
+        // sembrada se VE de inmediato (no una semana futura vacía).
+        if (!cancel && !semanaTocada) {
+          const conDatos = Object.entries(lpsData.semanas || {})
+            .filter(([, s]) => (s.compromisos || []).length > 0)
+            .map(([iso]) => iso).sort();
+          const hoyIsoSem = isoDeFecha(lunesDe(new Date()));
+          if (conDatos.length && !(lpsData.semanas[hoyIsoSem]?.compromisos?.length)) {
+            setSemanaIso(conDatos[conDatos.length - 1]);
+          }
+        }
       } catch {
         if (!cancel) { setCrono(false); setLps({ restricciones: {}, semanas: {} }); }
       }
@@ -231,7 +245,7 @@ export default function LastPlannerPro() {
         padding: '10px 16px', boxShadow: BASE.shadowSm,
       }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-          <button onClick={() => setSemanaIso(isoDeFecha(addDias(lunes, -7)))} style={{
+          <button onClick={() => { setSemanaTocada(true); setSemanaIso(isoDeFecha(addDias(lunes, -7))); }} style={{
             width: '28px', height: '28px', border: `1.5px solid ${BASE.border}`, borderRadius: '7px',
             background: BASE.white, cursor: 'pointer', fontWeight: 800, color: BASE.navy,
           }}>‹</button>
@@ -243,7 +257,7 @@ export default function LastPlannerPro() {
               lun {fmtCorto(lunes)} — dom {fmtCorto(addDias(lunes, 6))}
             </p>
           </div>
-          <button onClick={() => setSemanaIso(isoDeFecha(addDias(lunes, 7)))} style={{
+          <button onClick={() => { setSemanaTocada(true); setSemanaIso(isoDeFecha(addDias(lunes, 7))); }} style={{
             width: '28px', height: '28px', border: `1.5px solid ${BASE.border}`, borderRadius: '7px',
             background: BASE.white, cursor: 'pointer', fontWeight: 800, color: BASE.navy,
           }}>›</button>
@@ -340,50 +354,82 @@ export default function LastPlannerPro() {
       {/* ══ 2) PLAN SEMANAL ══ */}
       <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '14px', padding: '16px 18px', boxShadow: BASE.shadowMd }}>
         {tit(`2 · PLAN SEMANAL — COMPROMISOS (${fmtCorto(lunes)} al ${fmtCorto(addDias(lunes, 6))})`)}
-        {semana.compromisos.length === 0 && (
+        {semana.compromisos.length === 0 ? (
           <p style={{ fontSize: '12.5px', color: BASE.muted, marginBottom: '10px' }}>
             Aún no hay compromisos esta semana. Trae tareas LIBRES desde el lookahead o agrega un compromiso manual.
           </p>
-        )}
-        {semana.compromisos.map(c => (
-          <div key={c.id} style={{
-            display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap',
-            padding: '8px 10px', borderRadius: '9px', marginBottom: '6px',
-            background: c.cumplido === true ? '#F0FDF4' : c.cumplido === false ? '#FEF2F2' : BASE.bgSoft,
-            border: `1px solid ${c.cumplido === true ? BASE.green + '50' : c.cumplido === false ? ROJO + '40' : BASE.borderSoft}`,
-          }}>
-            <span style={{ fontFamily: MONO, fontSize: '10px', color: BASE.mutedSoft, width: '44px' }}>{c.edt}</span>
-            <span style={{ flex: '2 1 240px', fontSize: '12px', fontWeight: 600, color: BASE.text }}>{c.nombre}</span>
-            <input value={c.responsable} placeholder="Responsable…" onChange={e => setCompromiso(c.id, 'responsable', e.target.value)}
-              style={{
-                flex: '1 1 130px', minWidth: '110px', padding: '6px 8px', borderRadius: '7px',
-                border: `1.5px solid ${BASE.border}`, fontSize: '11px',
-              }} />
-            <div style={{ display: 'inline-flex', borderRadius: '7px', overflow: 'hidden', border: `1px solid ${BASE.border}` }}>
-              {[['✓', true, BASE.green], ['✗', false, ROJO], ['—', null, BASE.mutedSoft]].map(([s, v, col]) => (
-                <button key={String(v)} onClick={() => setCompromiso(c.id, 'cumplido', v)} style={{
-                  width: '30px', padding: '5px 0', border: 'none', cursor: 'pointer', fontWeight: 900, fontSize: '11px',
-                  background: c.cumplido === v ? col : BASE.white,
-                  color: c.cumplido === v ? '#fff' : BASE.mutedSoft,
-                }}>{s}</button>
-              ))}
-            </div>
-            {c.cumplido === false && (
-              <select value={c.causa} onChange={e => setCompromiso(c.id, 'causa', e.target.value)} style={{
-                padding: '6px 8px', borderRadius: '7px', fontSize: '11px', fontWeight: 700,
-                border: `1.5px solid ${ROJO}60`, background: '#FEF2F2', color: ROJO, cursor: 'pointer',
-              }}>
-                <option value="">¿Causa (CNC)?</option>
-                {CNC.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-              </select>
-            )}
-            <button onClick={() => quitarCompromiso(c.id)} style={{
-              border: 'none', background: 'transparent', color: BASE.mutedSoft, cursor: 'pointer',
-              fontSize: '14px', fontWeight: 800, padding: '0 4px',
-            }}>×</button>
+        ) : (
+          // Grilla tipo Excel: cabecera navy sticky, bordes, zebra, totales
+          <div style={{ overflowX: 'auto', border: `1px solid ${BASE.borderSoft}`, borderRadius: '10px', marginBottom: '10px' }}>
+            <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: '720px' }}>
+              <thead>
+                <tr>
+                  {[['#', '4%'], ['EDT', '6%'], ['COMPROMISO', '40%'], ['RESPONSABLE', '20%'], ['CUMPLIÓ', '14%'], ['CAUSA (CNC)', '14%'], ['', '2%']].map(([h, w]) => (
+                    <th key={h || 'x'} style={{
+                      width: w, background: BASE.navy, color: '#fff', fontSize: '9.5px', fontWeight: 800,
+                      letterSpacing: '0.6px', padding: '8px 8px', textAlign: h === 'COMPROMISO' || h === 'RESPONSABLE' ? 'left' : 'center',
+                      borderRight: '1px solid rgba(255,255,255,0.10)', position: 'sticky', top: 0,
+                    }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {semana.compromisos.map((c, idx) => (
+                  <tr key={c.id} style={{
+                    background: c.cumplido === true ? '#F0FDF4' : c.cumplido === false ? '#FEF2F2' : (idx % 2 ? BASE.bgSoft : BASE.white),
+                    borderBottom: `1px solid ${BASE.borderSoft}`,
+                  }}>
+                    <td style={{ textAlign: 'center', fontFamily: MONO, fontSize: '10px', color: BASE.mutedSoft, padding: '4px 6px', borderRight: `1px solid ${BASE.borderSoft}` }}>{idx + 1}</td>
+                    <td style={{ textAlign: 'center', fontFamily: MONO, fontSize: '10px', color: BASE.mutedSoft, padding: '4px 6px', borderRight: `1px solid ${BASE.borderSoft}` }}>{c.edt}</td>
+                    <td style={{ fontSize: '11.5px', fontWeight: 600, color: BASE.text, padding: '4px 8px', borderRight: `1px solid ${BASE.borderSoft}` }}>{c.nombre}</td>
+                    <td style={{ padding: '2px 4px', borderRight: `1px solid ${BASE.borderSoft}` }}>
+                      <input value={c.responsable} placeholder="Responsable…" onChange={e => setCompromiso(c.id, 'responsable', e.target.value)}
+                        style={{ width: '100%', boxSizing: 'border-box', padding: '5px 7px', borderRadius: '6px', border: `1px solid ${BASE.border}`, fontSize: '11px' }} />
+                    </td>
+                    <td style={{ textAlign: 'center', padding: '4px 6px', borderRight: `1px solid ${BASE.borderSoft}` }}>
+                      <div style={{ display: 'inline-flex', borderRadius: '6px', overflow: 'hidden', border: `1px solid ${BASE.border}` }}>
+                        {[['✓', true, BASE.green], ['✗', false, ROJO], ['—', null, BASE.mutedSoft]].map(([s, v, col]) => (
+                          <button key={String(v)} onClick={() => setCompromiso(c.id, 'cumplido', v)} style={{
+                            width: '26px', padding: '4px 0', border: 'none', cursor: 'pointer', fontWeight: 900, fontSize: '11px',
+                            background: c.cumplido === v ? col : BASE.white, color: c.cumplido === v ? '#fff' : BASE.mutedSoft,
+                          }}>{s}</button>
+                        ))}
+                      </div>
+                    </td>
+                    <td style={{ padding: '2px 4px', borderRight: `1px solid ${BASE.borderSoft}`, textAlign: 'center' }}>
+                      {c.cumplido === false ? (
+                        <select value={c.causa} onChange={e => setCompromiso(c.id, 'causa', e.target.value)} style={{
+                          width: '100%', boxSizing: 'border-box', padding: '5px 6px', borderRadius: '6px', fontSize: '10.5px', fontWeight: 700,
+                          border: `1.5px solid ${ROJO}60`, background: '#FEF2F2', color: ROJO, cursor: 'pointer',
+                        }}>
+                          <option value="">¿Causa?</option>
+                          {CNC.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+                          {/* causas históricas (texto libre) se muestran aunque no estén en CNC */}
+                          {c.causa && !CNC.some(([k]) => k === c.causa) && <option value={c.causa}>{c.causa}</option>}
+                        </select>
+                      ) : <span style={{ color: BASE.mutedSoft, fontSize: '11px' }}>—</span>}
+                    </td>
+                    <td style={{ textAlign: 'center', padding: '4px 4px' }}>
+                      <button onClick={() => quitarCompromiso(c.id)} title="Quitar"
+                        style={{ border: 'none', background: 'transparent', color: BASE.mutedSoft, cursor: 'pointer', fontSize: '13px', fontWeight: 800 }}>×</button>
+                    </td>
+                  </tr>
+                ))}
+                {/* Fila de totales (estilo Excel) */}
+                <tr style={{ background: BASE.navySoft, fontWeight: 800 }}>
+                  <td colSpan={2} style={{ padding: '6px 8px', fontSize: '10px', color: BASE.navy, textAlign: 'right', borderRight: `1px solid ${BASE.border}` }}>TOTAL</td>
+                  <td style={{ padding: '6px 8px', fontSize: '10.5px', color: BASE.navy, borderRight: `1px solid ${BASE.border}` }}>{semana.compromisos.length} compromisos</td>
+                  <td style={{ borderRight: `1px solid ${BASE.border}` }} />
+                  <td style={{ textAlign: 'center', fontSize: '11px', color: BASE.navy, fontFamily: MONO, borderRight: `1px solid ${BASE.border}` }}>
+                    PPC {ppcSemana == null ? '—' : `${ppcSemana}%`}
+                  </td>
+                  <td colSpan={2} />
+                </tr>
+              </tbody>
+            </table>
           </div>
-        ))}
-        <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+        )}
+        <div style={{ display: 'flex', gap: '8px' }}>
           <input value={manual} placeholder="Compromiso manual (fuera del cronograma)…"
             onChange={e => setManual(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') agregarManual(); }}
