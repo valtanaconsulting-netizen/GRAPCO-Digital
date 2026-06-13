@@ -1,5 +1,5 @@
 // src/views/ingeniero/CpiEac.jsx — V2 con CPI % y badges
-import React, { useState, useMemo, useRef, useLayoutEffect } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { INFO_MAP } from '../utils/constants';
 import { BASE } from '../utils/styles';
 import { calcCPI, fmtCPIPct, fmt1, fmt2, getEstado } from '../utils/helpers';
@@ -185,16 +185,14 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
   // Mido el alto real del thead para pegar la fila TOTAL justo debajo del encabezado.
   const NAV_H = 0; // el contenedor de scroll de Ingeniero ya empieza bajo el navbar → offset 0
   const scrollWrapRef = useRef(null);
-  const [theadH, setTheadH] = useState(73);
-  useLayoutEffect(() => {
-    const calc = () => {
-      const thead = scrollWrapRef.current && scrollWrapRef.current.querySelector('thead');
-      if (thead) setTheadH(thead.offsetHeight);
-    };
-    calc();
-    window.addEventListener('resize', calc);
-    return () => window.removeEventListener('resize', calc);
-  }, [chipPpt, chipMeta, vista, mostrarVacias]);
+  // Alturas FIJAS del encabezado (deterministas). Antes se medía thead.offsetHeight con
+  // useLayoutEffect, pero con border-collapse el alto pintado redondeaba y NO coincidía con
+  // el `top` de la fila Σ TOTAL → quedaba una banda donde se asomaba una fila de datos
+  // ("TRABAJOS PRELIMINARES") al hacer scroll. Con alturas fijas la suma es EXACTA y la
+  // fila TOTAL pega justo bajo el head, sin medir nada.
+  const GROUP_H = 36;              // fila de grupos (1 línea)
+  const COL_H   = 38;              // sub-cabecera (2 líneas: "Var Act. HH" caben, lineHeight 1.15)
+  const theadH  = GROUP_H + COL_H; // 74 px exactos — constante, no medido
 
   // Referencias y colores según vista
   const REF = esMeta
@@ -283,48 +281,57 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
     whiteSpace:'nowrap',
     ...extra,
   }}>{v}</td>;
-  // Separadores entre secciones de columnas (más distintivos para guiar la lectura)
-  const SEP = '2px solid #94a3b8';
-  const sepRight = { borderRight: SEP };
+  // Separadores entre secciones: sobrios (sin "rejas"). En el head, hairline blanco casi
+  // invisible sobre el navy; en el cuerpo, acero claro de 1px. La separación real la dan el
+  // acento del grupo + el tinte de celda, no una regla gruesa.
+  const SEP_HEAD = '1px solid rgba(255,255,255,0.16)';
+  const SEP_BODY = '1px solid #D7DEE8';
+  const SEP = SEP_BODY;                       // compat: usos existentes en celdas del cuerpo
+  const sepRight = { borderRight: SEP_BODY };
 
-  // === SISTEMA DE COLOR UNIFICADO ===
-  // Headers: todos en navy oscuro + barra de acento por sección (legible y profesional).
-  // Tintes de celda muy sutiles (apenas perceptibles) para que los DATOS destaquen.
+  // === SISTEMA DE COLOR INSTITUCIONAL (navy + gold) ===
+  // Una sola rampa fría navy→acero→teal-apagado recorre las 6 secciones (matiz 200-215°,
+  // saturación baja) → diferenciación SUTIL pero real, sin "arcoíris". El gold GRAPCO es el
+  // ÚNICO acento fuerte y se reserva a ACUMULADO ACTUAL (el "ahora") y a la fila Σ TOTAL.
+  // accent = barra de 3px bajo el grupo + color del rótulo de la sub-cabecera.
+  // bgCell  = tinte casi imperceptible (los DATOS destacan).
   const SEC = {
-    ppt:      { accent: '#f59e0b', bgCell: '#fffaf2', text: '#92400e' }, // ámbar (presupuesto)
-    meta:     { accent: '#10b981', bgCell: '#f3fbf6', text: '#047857' }, // verde (objetivo)
-    acum:     { accent: '#eab308', bgCell: '#ffffff', text: '#111827' }, // amarillo (lo actual = blanco)
-    saldo:    { accent: '#8b5cf6', bgCell: '#faf8ff', text: '#5b21b6' }, // violeta (pendiente)
-    estimado: { accent: '#06b6d4', bgCell: '#f3fbfd', text: '#155e75' }, // cian (proyección)
-    forecast: { accent: '#ec4899', bgCell: '#fef5fa', text: '#9d174d' }, // magenta (forecast meta)
+    ppt:      { accent: '#6E86A6', bgCell: '#FAFBFD', text: '#3C5170' }, // acero claro — presupuesto
+    meta:     { accent: '#4E6E8C', bgCell: '#F8FAFC', text: '#2F4A66' }, // acero medio — meta
+    acum:     { accent: BASE.gold, bgCell: '#FFFFFF', text: '#0F2A47' }, // GOLD — el "ahora" (único acento fuerte)
+    saldo:    { accent: '#5C7E8C', bgCell: '#F7FAFB', text: '#33545F' }, // teal-acero — saldo
+    estimado: { accent: '#46728F', bgCell: '#F7FAFC', text: '#284E68' }, // azul-acero — estimado
+    forecast: { accent: '#7C8DA3', bgCell: '#FAFBFC', text: '#46586E' }, // azul-niebla — forecast
   };
-  const HEAD_BG = '#0f1f3a';      // navy profundo, igual para todos los headers
-  const HEAD_BG2 = '#1a2c4d';     // navy sub-header (un poco más claro)
+  const HEAD_BG = '#0F2A47';      // navy GRAPCO (BASE.navy) — fila de grupos, WBS, Estado
+  const HEAD_BG2 = '#15314F';     // navy sub-header (un punto más claro) — sub-cabecera y Σ TOTAL
 
   // Header de grupo (primera fila): navy + barra de acento abajo.
   // sticky top:NAV_H (bajo el navbar fijo) + altura fija (border-box) → offset exacto para la 2ª.
   const thGroup = (color, extra={}) => ({
-    padding: '10px 10px',
+    padding: '0 10px',
     background: HEAD_BG,
     color: '#fff',
     fontSize: '10px',
     fontWeight: 800,
     letterSpacing: '0.8px',
     textTransform: 'uppercase',
+    whiteSpace: 'nowrap',
     borderBottom: `3px solid ${color}`,
     textAlign: 'center',
     position: 'sticky',
     top: NAV_H,
     zIndex: 5,
     boxSizing: 'border-box',
-    height: '36px',   // 1ª fila con altura fija → offset exacto para la 2ª
+    height: GROUP_H,                 // altura FIJA → offset exacto para la 2ª fila
+    lineHeight: `${GROUP_H - 3}px`,  // centra vertical (descontando la barra de 3px)
     ...extra,
   });
   // Sub-header (segunda fila): navy más claro, texto en el accent del grupo.
   // sticky top:NAV_H+36 (justo debajo de la 1ª fila). Altura NATURAL: estos rótulos
   // ("Var Act. HH", "META Act. HH") se parten en 2 líneas y no deben recortarse.
   const thCol = (color, extra={}) => ({
-    padding: '9px 10px',
+    padding: '4px 8px',
     background: HEAD_BG2,
     color,
     fontSize: '10px',
@@ -332,9 +339,15 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
     letterSpacing: '0.3px',
     textAlign: 'center',
     textTransform: 'uppercase',
+    lineHeight: 1.15,
+    whiteSpace: 'normal',            // NO recortar: "Var Act. HH" / "META Act. HH" en 2 líneas
+    wordBreak: 'keep-all',
+    verticalAlign: 'middle',
     position: 'sticky',
-    top: NAV_H + 36,
+    top: NAV_H + GROUP_H,            // anclaje EXACTO bajo la 1ª fila
     zIndex: 5,
+    boxSizing: 'border-box',
+    height: COL_H,                   // altura FIJA → la suma con GROUP_H da theadH exacto
     ...extra,
   });
 
@@ -378,7 +391,9 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
   // Estilo de celda para la fila de TOTALES (navy, números claros).
   // sticky top: NAV_H + alto del encabezado → la fila TOTAL queda pegada justo debajo del
   // encabezado al hacer scroll de página (junto con él, como un bloque fijo).
-  const TT = (extra = {}) => ({ background: HEAD_BG2, color: '#fff', fontWeight: 800, borderTop: `2px solid ${BASE.gold}`, borderBottom: `2px solid ${BASE.gold}`, position:'sticky', top: NAV_H + theadH, zIndex: 4, ...extra });
+  // top = theadH - 1: solapa 1px bajo el borde gold de 2px (cinturón); evita que en zoom/subpíxel
+  // se asome una fila de datos en el límite. El -1 queda oculto bajo el borderTop gold.
+  const TT = (extra = {}) => ({ background: HEAD_BG2, color: '#fff', fontWeight: 800, borderTop: `2px solid ${BASE.gold}`, borderBottom: `2px solid ${BASE.gold}`, position:'sticky', top: NAV_H + theadH - 1, zIndex: 4, boxSizing:'border-box', height:40, ...extra });
   const vcD = (n) => { const v = parseFloat(n); if (!v || isNaN(v)) return 'rgba(255,255,255,0.55)'; return v > 0 ? '#86efac' : '#fca5a5'; };
 
   return (
@@ -502,52 +517,52 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
         <div ref={scrollWrapRef} style={{overflow:'visible'}}>
           <table style={{width:'100%',borderCollapse:'collapse',fontSize:'11px',minWidth:'900px'}}>
             <thead>
-              <tr>
-                <th rowSpan="2" style={{position:'sticky',left:0,top:NAV_H,zIndex:7,padding:'8px 12px',background:HEAD_BG,color:'#fff',textAlign:'left',fontWeight:'800',fontSize:'11px',letterSpacing:'0.6px',minWidth:'240px',borderRight:SEP,borderBottom:`3px solid ${BASE.gold}`,boxShadow:'4px 0 8px -4px rgba(15,23,42,0.25)'}}>WBS</th>
+              <tr style={{height:GROUP_H}}>
+                <th rowSpan="2" style={{position:'sticky',left:0,top:NAV_H,zIndex:7,height:theadH,boxSizing:'border-box',padding:'0 12px',verticalAlign:'middle',background:HEAD_BG,color:'#fff',textAlign:'left',fontWeight:'800',fontSize:'11px',letterSpacing:'0.6px',minWidth:'240px',borderRight:SEP_HEAD,borderBottom:`3px solid ${BASE.gold}`,boxShadow:'4px 0 8px -4px rgba(8,26,46,0.28)'}}>WBS</th>
                 {chipPpt && (
-                  <th colSpan="3" style={thGroup(SEC.ppt.accent,{borderRight:SEP})}>PRESUPUESTO (contractual)</th>
+                  <th colSpan="3" style={thGroup(SEC.ppt.accent,{borderRight:SEP_HEAD})}>PRESUPUESTO (contractual)</th>
                 )}
                 {chipMeta && (
-                  <th colSpan="3" style={thGroup(SEC.meta.accent,{borderRight:SEP})}>META (objetivo)</th>
+                  <th colSpan="3" style={thGroup(SEC.meta.accent,{borderRight:SEP_HEAD})}>META (objetivo)</th>
                 )}
-                <th colSpan="6" style={thGroup(SEC.acum.accent,{borderRight:SEP})}>ACUMULADO ACTUAL</th>
-                <th colSpan="3" style={thGroup(SEC.saldo.accent,{borderRight:SEP})}>SALDO ACTUAL</th>
-                <th colSpan="3" style={thGroup(SEC.estimado.accent,{borderRight:SEP})}>ESTIMADO AL TÉRMINO</th>
-                <th colSpan="3" style={thGroup(SEC.forecast.accent,{borderRight:SEP})}>FORECAST {REF.etiqueta}</th>
-                <th rowSpan="2" style={{position:'sticky',top:NAV_H,zIndex:5,padding:'8px 10px',background:HEAD_BG,color:'#fff',fontSize:'10px',fontWeight:'800',letterSpacing:'0.6px',borderBottom:`3px solid ${BASE.gold}`}}>Estado</th>
+                <th colSpan="6" style={thGroup(SEC.acum.accent,{borderRight:SEP_HEAD})}>ACUMULADO ACTUAL</th>
+                <th colSpan="3" style={thGroup(SEC.saldo.accent,{borderRight:SEP_HEAD})}>SALDO ACTUAL</th>
+                <th colSpan="3" style={thGroup(SEC.estimado.accent,{borderRight:SEP_HEAD})}>ESTIMADO AL TÉRMINO</th>
+                <th colSpan="3" style={thGroup(SEC.forecast.accent,{borderRight:SEP_HEAD})}>FORECAST {REF.etiqueta}</th>
+                <th rowSpan="2" style={{position:'sticky',top:NAV_H,zIndex:5,height:theadH,boxSizing:'border-box',padding:'0 10px',verticalAlign:'middle',textAlign:'center',background:HEAD_BG,color:'#fff',fontSize:'10px',fontWeight:'800',letterSpacing:'0.6px',borderLeft:SEP_HEAD,borderBottom:`3px solid ${BASE.gold}`}}>Estado</th>
               </tr>
-              <tr>
+              <tr style={{height:COL_H}}>
                 {chipPpt && <>
                   <th style={thCol(SEC.ppt.accent)}>Metrado</th>
                   <th style={thCol(SEC.ppt.accent)}>HH</th>
-                  <th style={thCol(SEC.ppt.accent,{borderRight:SEP})}>IP</th>
+                  <th style={thCol(SEC.ppt.accent,{borderRight:SEP_HEAD})}>IP</th>
                 </>}
                 {chipMeta && <>
                   <th style={thCol(SEC.meta.accent)}>Metrado</th>
                   <th style={thCol(SEC.meta.accent)}>HH</th>
-                  <th style={thCol(SEC.meta.accent,{borderRight:SEP})}>IP</th>
+                  <th style={thCol(SEC.meta.accent,{borderRight:SEP_HEAD})}>IP</th>
                 </>}
                 <th style={thCol(SEC.acum.accent)}>Metrado</th>
                 <th style={thCol(SEC.acum.accent)}>HH</th>
-                <th style={thCol(SEC.acum.accent,{borderRight:SEP})}>IP Real</th>
+                <th style={thCol(SEC.acum.accent,{borderRight:SEP_HEAD})}>IP Real</th>
                 <th style={thCol(SEC.acum.accent)}>{REF.etiqueta} Act. HH</th>
                 <th style={thCol(SEC.acum.accent)}>Var Act. HH</th>
-                <th style={thCol(SEC.acum.accent,{borderRight:SEP})}>CPI %</th>
+                <th style={thCol(SEC.acum.accent,{borderRight:SEP_HEAD})}>CPI %</th>
                 <th style={thCol(SEC.saldo.accent)}>Metrado</th>
                 <th style={thCol(SEC.saldo.accent)}>HH</th>
-                <th style={thCol(SEC.saldo.accent,{borderRight:SEP})}>IP</th>
+                <th style={thCol(SEC.saldo.accent,{borderRight:SEP_HEAD})}>IP</th>
                 <th style={thCol(SEC.estimado.accent)}>Metrado</th>
                 <th style={thCol(SEC.estimado.accent)}>HH</th>
-                <th style={thCol(SEC.estimado.accent,{borderRight:SEP})}>IP</th>
+                <th style={thCol(SEC.estimado.accent,{borderRight:SEP_HEAD})}>IP</th>
                 <th style={thCol(SEC.forecast.accent)}>TOT HH</th>
                 <th style={thCol(SEC.forecast.accent)}>Var {REF.etiqueta} HH</th>
-                <th style={thCol(SEC.forecast.accent,{borderRight:SEP})}>CPI %</th>
+                <th style={thCol(SEC.forecast.accent,{borderRight:SEP_HEAD})}>CPI %</th>
               </tr>
             </thead>
             <tbody>
               {/* ── FILA DE TOTALES DE OBRA (suma de HH de todas las partidas) ── */}
               <tr>
-                <td style={{ position:'sticky', left:0, top:NAV_H + theadH, zIndex:6, padding:'10px 14px', background:HEAD_BG, color:'#fff', fontWeight:900, fontSize:'12px', letterSpacing:'0.5px', borderRight:SEP, borderTop:`2px solid ${BASE.gold}`, borderBottom:`2px solid ${BASE.gold}`, whiteSpace:'nowrap', boxShadow:'4px 0 8px -4px rgba(15,23,42,0.25)' }}>Σ TOTAL OBRA · HH</td>
+                <td style={{ position:'sticky', left:0, top:NAV_H + theadH - 1, zIndex:6, padding:'10px 14px', background:HEAD_BG, color:'#fff', fontWeight:900, fontSize:'12px', letterSpacing:'0.5px', borderRight:SEP_HEAD, borderTop:`2px solid ${BASE.gold}`, borderBottom:`2px solid ${BASE.gold}`, whiteSpace:'nowrap', boxShadow:'4px 0 8px -4px rgba(8,26,46,0.28)' }}>Σ TOTAL OBRA · HH</td>
                 {chipPpt && <>
                   {td('—', TT({ color:'rgba(255,255,255,0.45)' }))}
                   {td(fmt1(totalSaldo.hhP), TT())}
@@ -573,7 +588,7 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
                 {td(fmt1(totalSaldo.hhRefTotal), TT())}
                 {td(fmtVar(totalSaldo.hhRefTotal - totalSaldo.hhEAC), TT({ color: vcD(totalSaldo.hhRefTotal - totalSaldo.hhEAC) }))}
                 {td(fmtCPIPct(totalSaldo.hhEAC > 0 ? totalSaldo.hhRefTotal / totalSaldo.hhEAC : null), TT({ ...sepRight }))}
-                <td style={{ position:'sticky', top:NAV_H + theadH, zIndex:4, background:HEAD_BG, borderTop:`2px solid ${BASE.gold}`, borderBottom:`2px solid ${BASE.gold}` }} />
+                <td style={{ position:'sticky', top:NAV_H + theadH - 1, zIndex:4, background:HEAD_BG, borderTop:`2px solid ${BASE.gold}`, borderBottom:`2px solid ${BASE.gold}` }} />
               </tr>
               {Object.keys(wbs).map(pN=>{
                 const p=wbs[pN];
@@ -904,9 +919,9 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
             {c:BASE.green,t:'CPI ≥ 100% → Óptimo'},
             {c:'#d97706',t:'85% ≤ CPI < 100% → Alerta'},
             {c:'#dc2626',t:'CPI < 85% → Crítico'},
-            {c:'#7c3aed',t:'SALDO = HH proyectada para metrado restante'},
-            {c:'#0d9488',t:'ESTIMADO = HH actual + saldo @real (al ritmo actual)'},
-            {c:'#ec4899',t:'FORECAST = comparación Meta TOT vs Estimado'},
+            {c:SEC.saldo.accent,t:'SALDO = HH proyectada para metrado restante'},
+            {c:SEC.estimado.accent,t:'ESTIMADO = HH actual + saldo @real (al ritmo actual)'},
+            {c:SEC.forecast.accent,t:'FORECAST = comparación Meta TOT vs Estimado'},
           ].map((l,i)=>(
             <div key={i} style={{display:'flex',alignItems:'center',gap:'6px'}}>
               <div style={{width:'10px',height:'10px',borderRadius:'50%',background:l.c}}/>
