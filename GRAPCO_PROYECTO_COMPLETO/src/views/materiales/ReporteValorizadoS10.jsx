@@ -13,7 +13,7 @@ import {
   fmtCantidad,
   CATEGORIAS_MATERIAL,
 } from '../../utils/materialesAnalytics';
-import { exportarValorizadoS10 } from '../../utils/excelExport';
+// exportarValorizadoS10 se carga LAZY (await import) al exportar → no arrastra xlsx (416KB) al chunk.
 import EmptyState from '../../components/EmptyState';
 
 const HOY = new Date().toISOString().split('T')[0];
@@ -78,12 +78,13 @@ export default function ReporteValorizadoS10({ showToast }) {
     [filasFiltradas]
   );
 
-  const exportar = () => {
+  const exportar = async () => {
     if (!filasFiltradas.length) {
       showToast?.('Sin datos para exportar', 'error');
       return;
     }
     try {
+      const { exportarValorizadoS10 } = await import('../../utils/excelExport');
       const almSel = almacenes.find(a => a.id === almacenId);
       const fname = exportarValorizadoS10({
         filas: filasFiltradas,

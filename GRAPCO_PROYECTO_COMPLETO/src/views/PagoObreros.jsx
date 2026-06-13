@@ -9,7 +9,7 @@ import {
   fmt1, fmtMoney, hoy, obtenerSemana,
   calcularCostosHEPorTrabajador,
 } from '../utils/helpers';
-import { exportarCostosHE } from '../utils/excelExport';
+// exportarCostosHE se carga LAZY (await import) al exportar → no arrastra xlsx (416KB) al chunk.
 import { crearResolverNombre } from '../utils/nombresCanonicos';
 import VistaHeader from '../components/VistaHeader';
 
@@ -127,9 +127,10 @@ export default function PagoObreros({ historial = [], cuadrillasActivas = {}, co
     }), { personas: 0, hn: 0, he60: 0, he100: 0, totalHH: 0, costoHN: 0, costoHE60: 0, costoHE100: 0, costoTotal: 0 });
   }, [porCapataz]);
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (porCapataz.length === 0) return showToast?.('Sin datos para exportar', 'warning');
     try {
+      const { exportarCostosHE } = await import('../utils/excelExport');
       const todos = porCapataz.flatMap(g => g.trabajadores);
       const fname = exportarCostosHE(todos, { fechaIni: desde, fechaFin: hasta }, costosCustomMap);
       showToast?.(`📥 ${fname}`, 'success');

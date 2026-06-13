@@ -12,7 +12,7 @@ import React, { useRef, useState } from 'react';
 import { ref, uploadBytesResumable, getDownloadURL, getBlob } from 'firebase/storage';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db, storage } from '../firebaseConfig';
-import { archivarBlobProtocoloEnDrive } from '../utils/archivarProtocoloDrive';
+// archivarBlobProtocoloEnDrive se carga LAZY al subir a Drive → no arrastra @react-pdf (1.3MB) al render.
 import { BASE } from '../utils/styles';
 
 export default function PdfFirmadoUploader({ protocolo, onUploaded, showToast }) {
@@ -43,6 +43,7 @@ export default function PdfFirmadoUploader({ protocolo, onUploaded, showToast })
     }
     setSubiendoDrive(true);
     try {
+      const { archivarBlobProtocoloEnDrive } = await import('../utils/archivarProtocoloDrive');
       const { url: driveUrl, id: driveId } = await archivarBlobProtocoloEnDrive(protocolo, blob);
       await updateDoc(doc(db, 'Protocolos', protocolo.id), {
         'archivado.drive': { url: driveUrl, id: driveId, fecha: new Date().toISOString() },

@@ -26,7 +26,7 @@ import {
   generarNumeroRegistro, codigoFrente, formatSemanaISO,
   calcularEstadoProtocolo,
 } from '../../utils/calidadOTAnalytics';
-import { descargarProtocoloPreVaciadoPDF } from '../../utils/pdf/ProtocoloPreVaciadoPDF';
+// descargarProtocoloPreVaciadoPDF se carga LAZY al generar el PDF → no arrastra @react-pdf (1.3MB) al abrir el editor.
 import PdfFirmadoUploader from '../../components/PdfFirmadoUploader';
 import VisorPlanos from '../../components/VisorPlanos';
 
@@ -216,6 +216,7 @@ export default function ProtocoloPreVaciadoEditor({ protocoloId, showToast, onCl
     const id = await guardar(false);
     if (!id) return;
     try {
+      const { descargarProtocoloPreVaciadoPDF } = await import('../../utils/pdf/ProtocoloPreVaciadoPDF');
       await descargarProtocoloPreVaciadoPDF(form);
       showToast?.('📄 PDF descargado · Imprime, firma y luego sube el escaneado', 'success');
     } catch (e) {
