@@ -13,6 +13,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
 import { BASE } from '../../../utils/styles';
+import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
 import RoleGuard from '../../../components/RoleGuard';
 import {
   calcularROMensual, CATEGORIAS_MO, obtenerActividadesHoja,
@@ -21,7 +22,8 @@ import {
 } from '../../../utils/planMaestroAnalytics';
 
 export default function PanelGerencia({ showToast }) {
-  // Cargar TODO
+  const { proyectoActivoId } = useProyectoActivo();
+  // Cargar TODO (filtrado por proyecto activo)
   const [actividades, setActividades] = useState([]);
   const [apus, setApus] = useState([]);
   const [tareos, setTareos] = useState([]);
@@ -36,7 +38,13 @@ export default function PanelGerencia({ showToast }) {
   useEffect(() => {
     let pendientes = 9;
     const dec = () => { pendientes -= 1; if (pendientes <= 0) setLoading(false); };
-    const cb = (setter) => (snap) => { setter(snap.docs.map(d => ({ id: d.id, ...d.data() }))); dec(); };
+    // Aislamiento por proyecto: cada colección se filtra en cliente por
+    // proyectoId === proyecto activo (sin índices compuestos). El panel
+    // ejecutivo de gerencia ve SOLO la obra seleccionada.
+    const cb = (setter) => (snap) => {
+      setter(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(d => d.proyectoId === proyectoActivoId));
+      dec();
+    };
     const errCb = (e) => { console.warn(e); dec(); };
     const unsubs = [
       onSnapshot(collection(db, 'PlanMaestro'), cb(setActividades), errCb),
@@ -50,7 +58,7 @@ export default function PanelGerencia({ showToast }) {
       onSnapshot(query(collection(db, 'PlanDiario'), orderBy('fecha', 'desc'), limit(60)), cb(setPlanDiario), errCb),
     ];
     return () => unsubs.forEach(u => u());
-  }, []);
+  }, [proyectoActivoId]);
 
   // Calcular RO
   const salariosMap = useMemo(() => {

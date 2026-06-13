@@ -10,6 +10,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { BASE } from '../utils/styles';
+import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 import EmptyState from '../components/EmptyState';
 import {
   rankingHistorico, calcularKPIs, paretoTNC, causasCriticasTNC,
@@ -24,6 +25,7 @@ const VENTANAS = [
 ];
 
 export default function WarRoomCuadrillas({ historial = [] }) {
+  const { proyectoActivoId } = useProyectoActivo();
   const [cartas, setCartas] = useState([]);
   const [cuadrillasDB, setCuadrillasDB] = useState({});
   const [loading, setLoading] = useState(true);
@@ -31,10 +33,12 @@ export default function WarRoomCuadrillas({ historial = [] }) {
   const [cuadrillaDrilled, setCuadrillaDrilled] = useState(null);
 
   useEffect(() => {
+    // Aislamiento por proyecto: filtra en cliente por proyectoId (sin índice
+    // compuesto). Cada obra ve solo SUS cartas y cuadrillas.
     const unsub1 = onSnapshot(
       query(collection(db, 'Cartas_Balance'), orderBy('fecha', 'desc')),
       (snap) => {
-        setCartas(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        setCartas(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.proyectoId === proyectoActivoId));
         setLoading(false);
       },
       (err) => { console.error('[WarRoom][cartas]', err); setLoading(false); }
@@ -45,13 +49,13 @@ export default function WarRoomCuadrillas({ historial = [] }) {
         const byName = {};
         snap.docs.forEach(d => {
           const data = d.data();
-          if (data.nombre) byName[data.nombre] = { id: d.id, ...data };
+          if (data.nombre && data.proyectoId === proyectoActivoId) byName[data.nombre] = { id: d.id, ...data };
         });
         setCuadrillasDB(byName);
       }
     );
     return () => { unsub1(); unsub2(); };
-  }, []);
+  }, [proyectoActivoId]);
 
   // Filtrar por ventana
   const cartasEnVentana = useMemo(() => {

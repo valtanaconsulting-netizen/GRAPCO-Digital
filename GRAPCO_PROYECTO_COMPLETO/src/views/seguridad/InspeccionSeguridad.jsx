@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { useAuth } from '../../contexts/AuthContext';
+import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import { BASE } from '../../utils/styles';
 import FotoUploader from '../../components/FotoUploader';
 
@@ -89,6 +90,7 @@ const ESTADOS = [
 
 export default function InspeccionSeguridad({ showToast }) {
   const { user } = useAuth();
+  const { proyectoActivoId } = useProyectoActivo();
   const [meta, setMeta] = useState({
     frente: '',
     fecha: new Date().toISOString().slice(0, 10),
@@ -138,6 +140,7 @@ export default function InspeccionSeguridad({ showToast }) {
         items,
         resumen,
         fotos,
+        proyectoId: proyectoActivoId,
         creadoEn: serverTimestamp(),
         creadoPor: user?.email || 'desconocido',
       });
@@ -148,6 +151,7 @@ export default function InspeccionSeguridad({ showToast }) {
           codigo: `NC-INSP-${Date.now()}`,
           origen: 'inspeccion_seguridad',
           tipo: 'seguridad',
+          proyectoId: proyectoActivoId,
           severidad: 'alta',
           ubicacion: meta.frente,
           descripcion: `Inspección detectó ${resumen.crit} hallazgo(s) crítico(s):\n` +

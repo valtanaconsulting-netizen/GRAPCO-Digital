@@ -7,26 +7,32 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { BASE } from '../../utils/styles';
+import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import EmptyState from '../../components/EmptyState';
 
 const SEV_COLOR = { baja: BASE.green, media: BASE.gold, alta: BASE.red, critica: '#7f1d1d' };
 const EST_COLOR = { abierta: BASE.red, tratamiento: BASE.gold, enProceso: BASE.gold, cerrada: BASE.green, verificada: '#16a34a' };
 
 export default function DashboardSeguridad() {
+  const { proyectoActivoId } = useProyectoActivo();
   const [ncs, setNcs] = useState([]);
   const [inspecciones, setInspecciones] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Aislamiento por proyecto: se filtra en cliente por proyectoId para no
+    // requerir índice compuesto (where + orderBy). Docs sin proyectoId no se
+    // mezclan entre obras.
+    const delProyecto = (arr) => arr.filter(d => d.proyectoId === proyectoActivoId);
     const unsubs = [
       onSnapshot(query(collection(db, 'NoConformidades'), orderBy('detectadoEn', 'desc'), limit(200)),
-        (snap) => { setNcs(snap.docs.map(d => ({ id: d.id, ...d.data() }))); setLoading(false); },
+        (snap) => { setNcs(delProyecto(snap.docs.map(d => ({ id: d.id, ...d.data() })))); setLoading(false); },
         () => setLoading(false)),
       onSnapshot(query(collection(db, 'InspeccionesSeguridad'), orderBy('creadoEn', 'desc'), limit(60)),
-        (snap) => setInspecciones(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
+        (snap) => setInspecciones(delProyecto(snap.docs.map(d => ({ id: d.id, ...d.data() }))))),
     ];
     return () => unsubs.forEach(u => u());
-  }, []);
+  }, [proyectoActivoId]);
 
   const stats = useMemo(() => {
     const porSev = { baja: 0, media: 0, alta: 0, critica: 0 };
