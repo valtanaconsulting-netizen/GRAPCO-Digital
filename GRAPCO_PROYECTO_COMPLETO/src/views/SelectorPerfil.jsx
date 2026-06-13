@@ -110,7 +110,7 @@ const primerNombre = (s) => {
 
 export default function SelectorPerfil() {
   const { user, entrarComoRol, logout, rolPermitido } = useAuth();
-  const { proyectos, frentesDelProyecto, proyectoActivoId, setProyectoActivoId, frenteActivoId, setFrenteActivoId, fechaInicioProyecto } = useProyectoActivo();
+  const { proyectos, proyectoActivo, frentesDelProyecto, proyectoActivoId, setProyectoActivoId, frenteActivoId, setFrenteActivoId, fechaInicioProyecto } = useProyectoActivo();
   const [modoMarcador, setModoMarcador] = useState(false);
   const [modoPin, setModoPin] = useState(false);
   const [pin, setPin] = useState('');
