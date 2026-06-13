@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getCountFromServer, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
-import { BASE } from '../../utils/styles';
+import { BASE, CHART_PALETTE } from '../../utils/styles';
 import { SkeletonKPIs } from '../../components/SkeletonLoader';
 
 export default function ResumenAdmin() {
@@ -64,7 +64,7 @@ export default function ResumenAdmin() {
 
   if (loading) return <SkeletonKPIs cantidad={9} />;
   if (error) return (
-    <div style={{ padding: '20px', background: '#fef2f2', borderRadius: '10px', color: BASE.red }}>
+    <div style={{ padding: '20px', background: BASE.redLight, borderRadius: '10px', color: BASE.red }}>
       ⚠️ {error}
     </div>
   );
@@ -74,7 +74,7 @@ export default function ResumenAdmin() {
     { l: 'REGISTROS DE CAMPO', v: kpis.registrosTotal,     sub: 'reportes históricos',             c: BASE.green, ico: '📋' },
     { l: 'CUADRILLAS',         v: kpis.cuadrillasTotal,    sub: 'maestro de equipos',              c: BASE.gold, ico: '👷' },
     { l: 'PERSONAL',           v: kpis.personalTotal,      sub: 'personas en el sistema',          c: BASE.navy, ico: '🧑' },
-    { l: 'CARTAS BALANCE',     v: kpis.cartasBalance,      sub: 'mediciones realizadas',           c: '#7c3aed', ico: '⚖️' },
+    { l: 'CARTAS BALANCE',     v: kpis.cartasBalance,      sub: 'mediciones realizadas',           c: CHART_PALETTE[3], ico: '⚖️' },
     { l: 'MODELOS BIM',        v: kpis.modelosBIM,         sub: 'subidos a APS',                   c: BASE.gold, ico: '🏗️' },
     { l: 'VÍNCULOS WBS↔BIM',   v: kpis.vinculosBIM,        sub: 'actividades vinculadas',          c: BASE.green, ico: '🔗' },
     { l: 'EVENTOS AUDITORÍA',  v: kpis.eventosAuditoria,   sub: 'operaciones registradas',         c: BASE.red, ico: '🕵️' },
@@ -84,7 +84,7 @@ export default function ResumenAdmin() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h3 style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.4px' }}>
-          📊 ESTADÍSTICAS DEL SISTEMA
+          ESTADÍSTICAS DEL SISTEMA
         </h3>
         <button onClick={cargarKpis} className="btn-feedback" style={{
           padding: '7px 14px', background: BASE.bgSoft, color: BASE.navy,
@@ -104,7 +104,7 @@ export default function ResumenAdmin() {
       </div>
 
       {/* Actividad reciente */}
-      <Seccion titulo="ACTIVIDAD RECIENTE (últimos 8 eventos)" icono="🕵️">
+      <Seccion titulo="ACTIVIDAD RECIENTE (últimos 8 eventos)">
         {actividadReciente.length === 0 ? (
           <p style={{ padding: '12px 0', textAlign: 'center', color: BASE.muted, fontSize: '12px' }}>
             Sin eventos registrados aún.
@@ -178,7 +178,7 @@ function Seccion({ titulo, icono, extra, children }) {
         gap: '8px', marginBottom: '12px',
       }}>
         <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.5px' }}>
-          {icono} {titulo}
+          {icono ? `${icono} ` : ''}{titulo}
         </p>
         {extra && (
           <span style={{ fontSize: '10px', color: BASE.muted, fontWeight: '700' }}>{extra}</span>

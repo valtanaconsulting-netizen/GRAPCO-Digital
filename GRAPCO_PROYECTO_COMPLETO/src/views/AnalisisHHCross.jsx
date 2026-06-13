@@ -234,8 +234,8 @@ export default function AnalisisHHCross({ filtrados = [], personalDB = [] }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
         {[
           { l: 'HH TOTAL',     v: fmt1(kpis.hh),  c: BASE.navy,    sub: `${fmt1(kpis.hn)} HN + ${fmt1(kpis.he)} HE` },
-          { l: viewMode === 'cuadrillas' ? 'CUADRILLAS' : 'PERSONAS', v: kpis.pers, c: '#7c3aed' },
-          { l: 'DÍAS',         v: kpis.dias,      c: '#0891b2' },
+          { l: viewMode === 'cuadrillas' ? 'CUADRILLAS' : 'PERSONAS', v: kpis.pers, c: BASE.gold },
+          { l: 'DÍAS',         v: kpis.dias,      c: PALETTE[2] },
           { l: 'ACTIVIDADES',  v: kpis.acts,      c: BASE.green },
         ].map(k => (
           <div key={k.l} style={{ ...card, padding: '10px 14px' }}>
@@ -348,7 +348,7 @@ export default function AnalisisHHCross({ filtrados = [], personalDB = [] }) {
                     {porActividad.map((a, i) => {
                       const activa = selActividad === a.name;
                       const total = porActividad.reduce((s, x) => s + x.value, 0) || 1;
-                      const pct = (a.value / total * 100).toFixed(1);
+                      const pct = Math.round(a.value / total * 100);
                       return (
                         <button key={a.name} onClick={() => setSelActividad(activa ? null : a.name)}
                           style={{
@@ -407,8 +407,8 @@ export default function AnalisisHHCross({ filtrados = [], personalDB = [] }) {
                         labelFormatter={(_, p) => p?.[0]?.payload?.fechaFull || ''}
                       />
                       <Legend {...LEYENDA} />
-                      <Bar {...BARRA} dataKey="HN" stackId="a" fill="#2563eb" cursor="pointer" />
-                      <Bar {...BARRA} dataKey="HE" stackId="a" fill="#d97706" cursor="pointer" />
+                      <Bar {...BARRA} dataKey="HN" stackId="a" fill={BASE.navy} cursor="pointer" />
+                      <Bar {...BARRA} dataKey="HE" stackId="a" fill={BASE.gold} cursor="pointer" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -433,7 +433,7 @@ export default function AnalisisHHCross({ filtrados = [], personalDB = [] }) {
                         title={`${d.fecha} · ${fmt1(d.hh)} HH`}
                         style={{
                           padding: '6px 8px',
-                          background: activo ? BASE.navy : `rgba(37, 99, 235, ${0.12 + intensidad * 0.55})`,
+                          background: activo ? BASE.navy : `rgba(15, 42, 71, ${0.12 + intensidad * 0.55})`,
                           color: activo ? '#fff' : intensidad > 0.55 ? '#fff' : BASE.navy,
                           border: `1px solid ${activo ? BASE.navy : 'transparent'}`,
                           borderRadius: '6px', cursor: 'pointer',

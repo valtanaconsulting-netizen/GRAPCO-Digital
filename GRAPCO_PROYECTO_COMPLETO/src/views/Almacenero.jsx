@@ -114,13 +114,13 @@ function Inicio({ user, miAlmacen, almacenes, valorMiAlmacen, stockGlobal, alert
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '480px', margin: '0 auto' }}>
       {/* Header personalizado */}
       <div style={{
-        background: `linear-gradient(135deg, #7c3aed, #5b21b6)`,
+        background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
         color: '#fff', padding: '22px 24px', borderRadius: '16px',
         borderLeft: `5px solid ${BASE.gold}`,
-        boxShadow: '0 8px 24px rgba(124,58,237,0.3)',
+        boxShadow: '0 8px 24px rgba(15,42,71,0.3)',
       }}>
         <p style={{ fontSize: '10px', fontWeight: '900', color: BASE.gold, letterSpacing: '1.5px' }}>
-          📦 PANEL DE ALMACENERO
+          PANEL DE ALMACENERO
         </p>
         <p style={{ fontSize: '20px', fontWeight: '900', marginTop: '4px' }}>Hola, {nombre}</p>
         {miAlmacen ? (
@@ -144,7 +144,7 @@ function Inicio({ user, miAlmacen, almacenes, valorMiAlmacen, stockGlobal, alert
         <StatCard
           label="VALOR INVENTARIO"
           valor={fmtSoles(valorMiAlmacen)}
-          color="#7c3aed"
+          color={BASE.gold}
           icono="💰"
         />
         <StatCard
@@ -176,7 +176,7 @@ function Inicio({ user, miAlmacen, almacenes, valorMiAlmacen, stockGlobal, alert
           borderRadius: '12px', padding: '14px 16px',
         }}>
           <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.red, letterSpacing: '0.5px', marginBottom: '8px' }}>
-            🚨 {alertas.length} ALERTAS DE STOCK
+            {alertas.length} ALERTAS DE STOCK
           </p>
           {alertas.slice(0, 3).map(a => (
             <div key={a.materialId} style={{
@@ -206,7 +206,7 @@ function Inicio({ user, miAlmacen, almacenes, valorMiAlmacen, stockGlobal, alert
 
       <BigButton
         onClick={() => setVista('salida')}
-        gradient={`linear-gradient(135deg, ${BASE.red}, #b91c1c)`}
+        gradient={`linear-gradient(135deg, ${BASE.red}, ${BASE.redDark})`}
         icono="⬆️"
         titulo="REGISTRAR SALIDA"
         desc="Vale digital con firma"
@@ -214,7 +214,7 @@ function Inicio({ user, miAlmacen, almacenes, valorMiAlmacen, stockGlobal, alert
 
       <BigButton
         onClick={() => setVista('stock')}
-        gradient={`linear-gradient(135deg, #2563eb, #1e40af)`}
+        gradient={`linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`}
         icono="📊"
         titulo="VER STOCK ACTUAL"
         desc="Inventario de mi almacen"
@@ -263,7 +263,7 @@ function StockDetalle({ stockGlobal, materiales, miAlmacen }) {
         borderRadius: '12px', padding: '14px 16px',
       }}>
         <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>
-          📦 STOCK · {miAlmacen?.nombre || 'TODOS'}
+          STOCK · {miAlmacen?.nombre || 'TODOS'}
         </p>
         <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
           {lista.length} materiales con stock

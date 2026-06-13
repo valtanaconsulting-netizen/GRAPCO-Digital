@@ -90,7 +90,7 @@ export default function ProyectosListView({ onEdit, onNuevo, showToast }) {
       <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', padding: '14px 18px' }}>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 200px' }}>
-            <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>🌎 Cartera de Proyectos</p>
+            <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>Cartera de Proyectos</p>
             <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
               {proyectos.length} proyectos · {frentes.length} frentes totales
             </p>
@@ -170,7 +170,7 @@ export default function ProyectosListView({ onEdit, onNuevo, showToast }) {
                       AVANCE FÍSICO
                     </span>
                     <span style={{ fontSize: '12px', fontWeight: '900', color: p.color || BASE.navy }}>
-                      {Number(p.avancePctActual || 0).toFixed(1)}%
+                      {Math.round(Number(p.avancePctActual || 0))}%
                     </span>
                   </div>
                   <div style={{ background: BASE.bgSoft, height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
@@ -187,7 +187,7 @@ export default function ProyectosListView({ onEdit, onNuevo, showToast }) {
                   <Mini label="Presupuesto" valor={fmtSoles(p.presupuestoContractual, p.moneda)} color={BASE.navy} />
                   <Mini label="CPI" valor={Number(p.cpiActual || 1).toFixed(2)}
                     color={p.cpiActual >= 0.95 ? '#16a34a' : p.cpiActual >= 0.85 ? '#f59e0b' : '#dc2626'} />
-                  <Mini label="Frentes" valor={frentesProy.length} color="#7c3aed" />
+                  <Mini label="Frentes" valor={frentesProy.length} color={BASE.navy} />
                 </div>
 
                 {/* Frentes — click para editar/mover */}
@@ -317,7 +317,7 @@ function ModalEditarFrente({ frente, proyectos, onClose, showToast }) {
   };
 
   return (
-    <Modal onClose={onClose} title={`✏️ Editar frente ${frente.codigo}`} maxW="640px">
+    <Modal onClose={onClose} title={`Editar frente ${frente.codigo}`} maxW="640px">
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '70vh', overflowY: 'auto' }}>
         <p style={{ fontSize: '11px', color: BASE.muted }}>
           Proyecto actual: <strong style={{ color: BASE.navy }}>{proyectoActual?.nombre || frente.proyectoId || '—'}</strong>

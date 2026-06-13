@@ -5,20 +5,20 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
-import { BASE } from '../utils/styles';
+import { BASE, CHART, CHART_PALETTE } from '../utils/styles';
 import { subirModeloAPS, esperarTraduccion, eliminarModeloAPS } from '../utils/apsClient';
 
 const FORMATOS_ACEPTADOS = '.rvt,.rfa,.ifc,.dwg,.dwfx,.nwd,.nwc,.3dm,.skp';
 
 // Especialidades estándar BIM (ISO 19650 simplificado para construcción Perú)
 export const ESPECIALIDADES = [
-  { id: 'ARQ',      label: 'Arquitectura',          color: '#3b82f6' },
-  { id: 'EST',      label: 'Estructuras',           color: '#0f1f3a' },
-  { id: 'MEP-IISS', label: 'MEP - Inst. Sanitarias',color: '#0ea5e9' },
-  { id: 'MEP-IIEE', label: 'MEP - Inst. Eléctricas',color: '#f59e0b' },
-  { id: 'MEP-HVAC', label: 'MEP - HVAC',            color: '#06b6d4' },
-  { id: 'CIV',      label: 'Obras Civiles',         color: '#78716c' },
-  { id: 'FED',      label: 'Federado (combinado)',  color: '#7c3aed' },
+  { id: 'ARQ',      label: 'Arquitectura',          color: BASE.navyLight },
+  { id: 'EST',      label: 'Estructuras',           color: BASE.navy },
+  { id: 'MEP-IISS', label: 'MEP - Inst. Sanitarias',color: CHART.forecast },
+  { id: 'MEP-IIEE', label: 'MEP - Inst. Eléctricas',color: BASE.gold },
+  { id: 'MEP-HVAC', label: 'MEP - HVAC',            color: CHART_PALETTE[8] },
+  { id: 'CIV',      label: 'Obras Civiles',         color: BASE.muted },
+  { id: 'FED',      label: 'Federado (combinado)',  color: CHART_PALETTE[3] },
 ];
 
 export default function BimUploader({ onModeloListo, showToast }) {

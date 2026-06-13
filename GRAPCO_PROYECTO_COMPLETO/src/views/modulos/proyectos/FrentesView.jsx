@@ -109,7 +109,7 @@ export default function FrentesView({ showToast }) {
         borderLeft: `5px solid ${BASE.gold}`,
       }}>
         <p style={{ fontSize: '10px', fontWeight: '900', color: BASE.gold, letterSpacing: '1.4px' }}>
-          🏗️ FRENTES DEL PROYECTO
+          FRENTES DEL PROYECTO
         </p>
         <h2 style={{ fontSize: '20px', fontWeight: '900', marginTop: '4px' }}>
           {proyectoActivo.nombre}
@@ -122,7 +122,7 @@ export default function FrentesView({ showToast }) {
       <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', padding: '14px 18px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
           <div>
-            <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>📍 Frentes de Trabajo</p>
+            <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>Frentes de Trabajo</p>
             <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
               Cada frente es una zona física o lógica de trabajo dentro del proyecto.
             </p>
@@ -130,10 +130,10 @@ export default function FrentesView({ showToast }) {
           {(rol === 'admin' || rol === 'ingeniero') && (
             <button onClick={abrirNuevo} style={{
               padding: '10px 18px', borderRadius: '8px',
-              background: 'linear-gradient(135deg, #7c3aed, #5b21b6)',
+              background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
               color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900',
               cursor: 'pointer', letterSpacing: '0.4px',
-              boxShadow: '0 4px 12px rgba(124,58,237,0.4)',
+              boxShadow: `0 4px 12px ${BASE.navy}66`,
             }}>➕ NUEVO FRENTE</button>
           )}
         </div>
@@ -187,7 +187,7 @@ export default function FrentesView({ showToast }) {
               <div style={{ marginTop: '10px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
                   <span style={{ fontSize: '9.5px', fontWeight: '900', color: BASE.muted, letterSpacing: '0.5px' }}>AVANCE</span>
-                  <span style={{ fontSize: '11px', fontWeight: '900', color: f.color }}>{Number(f.avancePctActual || 0).toFixed(1)}%</span>
+                  <span style={{ fontSize: '11px', fontWeight: '900', color: f.color }}>{Math.round(Number(f.avancePctActual || 0))}%</span>
                 </div>
                 <div style={{ background: BASE.bgSoft, height: '6px', borderRadius: '3px', overflow: 'hidden' }}>
                   <div style={{ background: f.color, height: '100%', width: `${Math.min(100, f.avancePctActual || 0)}%`, transition: 'width 0.5s' }} />
@@ -218,7 +218,7 @@ export default function FrentesView({ showToast }) {
       {editando && (
         <Modal onClose={() => setEditando(null)}>
           <h3 style={{ fontSize: '17px', fontWeight: '900', color: BASE.navy, marginBottom: '14px' }}>
-            {editando === 'NUEVO' ? '➕ Nuevo Frente' : '✏️ Editar Frente'}
+            {editando === 'NUEVO' ? 'Nuevo Frente' : 'Editar Frente'}
           </h3>
 
           <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '10px' }}>
@@ -313,4 +313,4 @@ const btnAct = (color) => ({
   border: 'none', fontSize: '10.5px', fontWeight: '900', cursor: 'pointer', letterSpacing: '0.4px',
 });
 const btnCancel = { padding: '11px 22px', borderRadius: '8px', background: BASE.bgSoft, color: BASE.muted, border: 'none', fontSize: '12px', fontWeight: '800', cursor: 'pointer' };
-const btnSave = { padding: '11px 22px', borderRadius: '8px', background: 'linear-gradient(135deg, #7c3aed, #5b21b6)', color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900', cursor: 'pointer', letterSpacing: '0.4px', boxShadow: '0 4px 12px rgba(124,58,237,0.4)' };
+const btnSave = { padding: '11px 22px', borderRadius: '8px', background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900', cursor: 'pointer', letterSpacing: '0.4px', boxShadow: `0 4px 12px ${BASE.navy}66` };

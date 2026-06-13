@@ -105,7 +105,7 @@ export default function CockpitEjecutivo({ historial = [], wbs = {}, filtrados =
       {/* HERO — estado en una mirada (compacto) */}
       <div style={{ background: heroBg, borderRadius: '14px', padding: isMobile ? '14px 16px' : '16px 20px', color: '#fff', boxShadow: '0 6px 20px rgba(15,23,42,0.22)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-          <span style={{ fontSize: '10px', fontWeight: '900', letterSpacing: '1.6px', opacity: 0.85 }}>🎯 COCKPIT EJECUTIVO · ESTADO DE OBRA</span>
+          <span style={{ fontSize: '10px', fontWeight: '900', letterSpacing: '1.6px', opacity: 0.85 }}>COCKPIT EJECUTIVO · ESTADO DE OBRA</span>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: grid(190), gap: '14px', alignItems: 'end' }}>
           <div>
@@ -117,7 +117,7 @@ export default function CockpitEjecutivo({ historial = [], wbs = {}, filtrados =
           </div>
           <div>
             <p style={{ fontSize: '10px', fontWeight: '800', opacity: 0.8, letterSpacing: '0.8px' }}>
-              {k.costoSobre >= 0 ? '💸 SOBRECOSTO ACUMULADO' : '💰 AHORRO ACUMULADO'}
+              {k.costoSobre >= 0 ? 'SOBRECOSTO ACUMULADO' : 'AHORRO ACUMULADO'}
             </p>
             <p style={{ fontSize: isMobile ? '24px' : '30px', fontWeight: '900', lineHeight: 1.05, marginTop: '2px' }}>
               {fmtS(Math.abs(k.costoSobre))}
@@ -129,7 +129,7 @@ export default function CockpitEjecutivo({ historial = [], wbs = {}, filtrados =
           <div>
             <p style={{ fontSize: '10px', fontWeight: '800', opacity: 0.8, letterSpacing: '0.8px' }}>AVANCE FÍSICO</p>
             <p style={{ fontSize: isMobile ? '24px' : '30px', fontWeight: '900', lineHeight: 1.05, marginTop: '2px' }}>
-              {k.avancePct != null ? k.avancePct.toFixed(0) + '%' : '—'}
+              {k.avancePct != null ? Math.round(k.avancePct) + '%' : '—'}
             </p>
             <div style={{ height: '7px', background: 'rgba(255,255,255,0.22)', borderRadius: '999px', marginTop: '6px', overflow: 'hidden' }}>
               <div style={{ width: `${k.avancePct || 0}%`, height: '100%', background: '#fff', borderRadius: '999px' }} />
@@ -141,12 +141,12 @@ export default function CockpitEjecutivo({ historial = [], wbs = {}, filtrados =
       {/* PROYECCIÓN DE CIERRE en soles */}
       {k.cierre && (
         <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '14px', padding: '18px 22px', borderLeft: `5px solid ${enRojo ? '#b91c1c' : BASE.navy}` }}>
-          <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.navy, letterSpacing: '1px', marginBottom: '12px' }}>🔮 PROYECCIÓN DE CIERRE (al ritmo actual)</p>
+          <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.navy, letterSpacing: '1px', marginBottom: '12px' }}>PROYECCIÓN DE CIERRE (al ritmo actual)</p>
           <div style={{ display: 'grid', gridTemplateColumns: grid(180), gap: '12px' }}>
             <Kpi label="Costo MO proyectado" valor={fmtS(k.cierre.costoFinalProy)} sub={`meta ${fmtS(k.cierre.costoMetaPresup)}`} color={BASE.navy} />
             <Kpi label={k.cierre.sobreFinal >= 0 ? 'Sobrecosto final estimado' : 'Ahorro final estimado'}
               valor={fmtS(Math.abs(k.cierre.sobreFinal))}
-              sub={`${((Math.abs(k.cierre.sobreFinal) / (k.cierre.costoMetaPresup || 1)) * 100).toFixed(0)}% vs presupuesto`}
+              sub={`${Math.round((Math.abs(k.cierre.sobreFinal) / (k.cierre.costoMetaPresup || 1)) * 100)}% vs presupuesto`}
               color={k.cierre.sobreFinal >= 0 ? '#b91c1c' : '#15803d'} />
             <Kpi label="Semanas para terminar" valor={k.cierre.semRest != null ? `${k.cierre.semRest}` : '—'}
               sub={k.cierre.semFin != null ? `fin ≈ S${k.cierre.semFin}` : 'sin ritmo'} color="#7c3aed" />
@@ -161,7 +161,7 @@ export default function CockpitEjecutivo({ historial = [], wbs = {}, filtrados =
       {/* TOP-5 ACTIVIDADES EN ROJO */}
       <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '14px', overflow: 'hidden' }}>
         <div style={{ padding: '14px 20px', borderBottom: `1px solid ${BASE.border}`, background: BASE.bgSoft }}>
-          <p style={{ fontSize: '12px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.6px' }}>🔴 DÓNDE SE PIERDE EL DINERO · Top 5 actividades</p>
+          <p style={{ fontSize: '12px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.6px' }}>DÓNDE SE PIERDE EL DINERO · Top 5 actividades</p>
         </div>
         {k.top.length === 0 ? (
           <p style={{ padding: '28px', textAlign: 'center', color: '#15803d', fontWeight: '700', fontSize: '13px' }}>

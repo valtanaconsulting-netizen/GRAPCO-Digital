@@ -4,7 +4,7 @@ import { collection, query, orderBy, onSnapshot, doc, deleteDoc } from 'firebase
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { db, auth } from '../../firebaseConfig';
 import { useAuth } from '../../contexts/AuthContext';
-import { BASE } from '../../utils/styles';
+import { BASE, CHART_PALETTE } from '../../utils/styles';
 import {
   crearUsuarioAdmin, cambiarRolUsuario, actualizarUsuarioAdmin,
   desactivarUsuario, eliminarUsuarioAdmin, sincronizarUsuariosAuth,
@@ -16,15 +16,15 @@ import EmptyState from '../../components/EmptyState';
 const ROLES_INFO = {
   admin:              { label: 'Admin / Gerente General',  color: BASE.red,    icon: '🛡️', desc: 'Acceso TOTAL, todos los proyectos, crea proyectos' },
   ingeniero:          { label: 'Ingeniero',                color: BASE.gold,   icon: '📊', desc: 'Producción (Auditoría + CPI/EAC + Control Gerencial), residente, admin de obra' },
-  oficina_tecnica:    { label: 'Oficina Técnica',          color: '#6366f1',   icon: '📐', desc: 'RDO, valorizaciones, partidas contractuales' },
+  oficina_tecnica:    { label: 'Oficina Técnica',          color: CHART_PALETTE[5],  icon: '📐', desc: 'RDO, valorizaciones, partidas contractuales' },
   calidad:            { label: 'Gestión de Calidad',      color: '#ec4899',   icon: '🦺', desc: 'Protocolos, PETs, NCs, ensayos' },
   seguridad:          { label: 'SSOMA / Seguridad',        color: BASE.red,    icon: '⚠️', desc: 'PETs, ATS, inspecciones, incidencias' },
-  almacenero:         { label: 'Almacenero',               color: '#7c3aed',   icon: '📦', desc: 'Almacén, kardex, vales, recepciones' },
-  logistica:          { label: 'Logística / Compras',      color: '#2563eb',   icon: '🚛', desc: 'OCs, OSs, proveedores' },
+  almacenero:         { label: 'Almacenero',               color: CHART_PALETTE[3],  icon: '📦', desc: 'Almacén, kardex, vales, recepciones' },
+  logistica:          { label: 'Logística / Compras',      color: CHART_PALETTE[5],  icon: '🚛', desc: 'OCs, OSs, proveedores' },
   capataz:            { label: 'Capataz',                  color: BASE.green,  icon: '👷', desc: 'Tareo, registro de producción, fotos' },
-  carta_balance:      { label: 'Carta Balance',            color: '#7c3aed',   icon: '⚖️', desc: 'Solo muestreos de Carta Balance' },
-  supervisor_cliente: { label: 'Supervisor Cliente',       color: '#0ea5e9',   icon: '🔍', desc: 'Inspección externa, lectura + firma' },
-  subcontratista:     { label: 'Subcontratista',           color: '#94a3b8',   icon: '🤝', desc: 'Contratista externo limitado a su frente' },
+  carta_balance:      { label: 'Carta Balance',            color: CHART_PALETTE[3],  icon: '⚖️', desc: 'Solo muestreos de Carta Balance' },
+  supervisor_cliente: { label: 'Supervisor Cliente',       color: CHART_PALETTE[11], icon: '🔍', desc: 'Inspección externa, lectura + firma' },
+  subcontratista:     { label: 'Subcontratista',           color: BASE.muted,  icon: '🤝', desc: 'Contratista externo limitado a su frente' },
 };
 
 // Roles que quedan anclados a UN proyecto. Solo `admin` ve todos.
@@ -117,7 +117,7 @@ export default function GestionUsuarios({ showToast }) {
           fontSize: '11.5px', fontWeight: '800', cursor: 'pointer',
           letterSpacing: '0.4px',
         }} title="Crear /Usuarios/{uid} para cada correo en Auth que aún no lo tenga">
-          🔄 SINCRONIZAR AUTH
+          SINCRONIZAR AUTH
         </button>
         <button onClick={() => setShowCrear(true)} className="btn-feedback" style={{
           padding: '9px 18px',
@@ -125,7 +125,7 @@ export default function GestionUsuarios({ showToast }) {
           color: '#fff', border: 'none', borderRadius: '8px',
           fontSize: '12px', fontWeight: '900', cursor: 'pointer',
           boxShadow: `0 4px 12px ${BASE.gold}55`, letterSpacing: '0.4px',
-        }}>➕ NUEVO USUARIO</button>
+        }}>NUEVO USUARIO</button>
       </div>
 
       {/* Tabla */}
@@ -228,7 +228,7 @@ export default function GestionUsuarios({ showToast }) {
                                 showToast?.('❌ ' + (err?.message || 'No se pudo enviar el correo'), 'error');
                               }
                             }} className="btn-feedback" style={{
-                              padding: '5px 10px', background: '#E0EAFF', color: '#3730A3',
+                              padding: '5px 10px', background: BASE.navySoft, color: BASE.navy,
                               border: 'none', borderRadius: '6px',
                               fontSize: '10px', fontWeight: '800', cursor: 'pointer',
                             }} title="Enviar correo para restablecer contraseña">🔑</button>
@@ -270,7 +270,7 @@ export default function GestionUsuarios({ showToast }) {
                                 }
                               }
                             }} className="btn-feedback" style={{
-                              padding: '5px 10px', background: '#fee2e2', color: BASE.red,
+                              padding: '5px 10px', background: BASE.redLight, color: BASE.red,
                               border: 'none', borderRadius: '6px',
                               fontSize: '10px', fontWeight: '800', cursor: 'pointer',
                             }} title="Eliminar definitivamente">🗑️</button>
@@ -348,7 +348,7 @@ function ModalCrearUsuario({ proyectos, onClose, showToast }) {
   };
 
   return (
-    <Modal abierto onClose={onClose} titulo="➕ Crear nuevo usuario">
+    <Modal abierto onClose={onClose} titulo="Crear nuevo usuario">
       <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <Campo label="Email" tipo="email" value={form.email} onChange={v => setForm({ ...form, email: v })} placeholder="usuario@grapco.pe" />
         <Campo label="Nombre" value={form.nombre} onChange={v => setForm({ ...form, nombre: v })} placeholder="Juan Pérez (opcional)" />
@@ -398,8 +398,8 @@ function ModalCrearUsuario({ proyectos, onClose, showToast }) {
           </label>
           {veTodo ? (
             <p style={{
-              padding: '10px 12px', background: '#fef3c7', borderRadius: '8px',
-              fontSize: '11px', color: '#92400e', fontWeight: '700',
+              padding: '10px 12px', background: BASE.goldLight, borderRadius: '8px',
+              fontSize: '11px', color: BASE.goldDark, fontWeight: '700',
             }}>
               🛡️ Admin / Gerente General ve TODOS los proyectos.
             </p>
@@ -419,11 +419,11 @@ function ModalCrearUsuario({ proyectos, onClose, showToast }) {
           )}
         </div>
 
-        {error && <div style={{ padding: '10px', background: '#fef2f2', color: BASE.red, borderRadius: '8px', fontSize: '12px' }}>⚠️ {error}</div>}
+        {error && <div style={{ padding: '10px', background: BASE.redLight, color: BASE.red, borderRadius: '8px', fontSize: '12px' }}>⚠️ {error}</div>}
 
         <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
           <button type="submit" disabled={loading} style={{
-            flex: 1, padding: '12px', background: loading ? '#94a3b8' : BASE.navy,
+            flex: 1, padding: '12px', background: loading ? BASE.mutedSoft : BASE.navy,
             color: '#fff', border: 'none', borderRadius: '8px',
             fontSize: '12px', fontWeight: '900', cursor: loading ? 'wait' : 'pointer',
             letterSpacing: '0.4px',
@@ -481,7 +481,7 @@ function ModalEditarRol({ usuario, proyectos, onClose, showToast }) {
   };
 
   return (
-    <Modal abierto onClose={onClose} titulo={`✏️ Editar ${usuario.nombre || usuario.email}`}>
+    <Modal abierto onClose={onClose} titulo={`Editar ${usuario.nombre || usuario.email}`}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '70vh', overflowY: 'auto' }}>
         <p style={{ fontSize: '12px', color: BASE.muted }}>
           Email: <strong style={{ color: BASE.navy }}>{usuario.email}</strong>
@@ -522,8 +522,8 @@ function ModalEditarRol({ usuario, proyectos, onClose, showToast }) {
           </p>
           {veTodo ? (
             <div style={{
-              padding: '12px', background: '#fef3c7', border: `1.5px solid ${BASE.gold}`,
-              borderRadius: '8px', fontSize: '11.5px', color: '#92400e', fontWeight: '700',
+              padding: '12px', background: BASE.goldLight, border: `1.5px solid ${BASE.gold}`,
+              borderRadius: '8px', fontSize: '11.5px', color: BASE.goldDark, fontWeight: '700',
             }}>
               🛡️ Este rol (admin / gerente general) ve <strong>TODOS</strong> los proyectos.
               No requiere asignación.
@@ -547,10 +547,10 @@ function ModalEditarRol({ usuario, proyectos, onClose, showToast }) {
         <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
           <button onClick={submit} disabled={loading} style={{
             flex: 1, padding: '12px',
-            background: loading ? '#94a3b8' : BASE.navy,
+            background: loading ? BASE.mutedSoft : BASE.navy,
             color: '#fff', border: 'none', borderRadius: '8px',
             fontSize: '12px', fontWeight: '900', cursor: 'pointer',
-          }}>{loading ? 'GUARDANDO...' : '💾 GUARDAR CAMBIOS'}</button>
+          }}>{loading ? 'GUARDANDO...' : 'GUARDAR CAMBIOS'}</button>
           <button onClick={onClose} style={{
             padding: '12px 18px', background: BASE.bgSoft, color: BASE.muted,
             border: `1px solid ${BASE.border}`, borderRadius: '8px',

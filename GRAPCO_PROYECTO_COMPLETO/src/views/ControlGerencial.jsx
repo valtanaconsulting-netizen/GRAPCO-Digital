@@ -59,10 +59,10 @@ export default function ControlGerencial({ historialEnriquecido, personalDB, con
         boxShadow: '0 2px 6px rgba(15,23,42,0.04)',
       }}>
         {[
-          { id: 'tareos',       l: 'Reporte de Tareos',     desc: 'Costos jerarquicos por partida', emoji: '💵' },
-          { id: 'crOficial',    l: 'CR Oficial (Excel)',    desc: 'Costo Real del ISP · S/25.50/h',  emoji: '🧾' },
-          { id: 'variaciones',  l: 'Control HH Variaciones', desc: 'Real vs meta + heatmap',         emoji: '📊' },
-          { id: 'ip',           l: 'Control de IP',          desc: 'IP por actividad y semana',      emoji: '🎯' },
+          { id: 'tareos',       l: 'Reporte de Tareos',     desc: 'Costos jerarquicos por partida' },
+          { id: 'crOficial',    l: 'CR Oficial (Excel)',    desc: 'Costo Real del ISP · S/25.50/h' },
+          { id: 'variaciones',  l: 'Control HH Variaciones', desc: 'Real vs meta + heatmap' },
+          { id: 'ip',           l: 'Control de IP',          desc: 'IP por actividad y semana' },
         ].map(t => {
           const activo = tab === t.id;
           return (
@@ -86,7 +86,6 @@ export default function ControlGerencial({ historialEnriquecido, personalDB, con
               position: 'relative',
             }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '15px' }}>{t.emoji}</span>
                 {t.l}
               </span>
               <span style={{
@@ -254,12 +253,12 @@ function ReporteTareos({ historial, tarifaPromedio, partidaExpandida, setPartida
           fontSize: '11.5px', fontWeight: '800', cursor: 'pointer',
           display: 'inline-flex', alignItems: 'center', gap: '6px',
           letterSpacing: '0.3px',
-        }}>📥 Exportar Excel</button>
+        }}>Exportar Excel</button>
         {buscar && (
           <span style={{
-            fontSize: '11px', fontWeight: '700', color: '#1e40af',
-            background: '#dbeafe', padding: '4px 10px', borderRadius: '999px',
-            border: '1px solid #93c5fd',
+            fontSize: '11px', fontWeight: '700', color: BASE.navy,
+            background: BASE.navySoft, padding: '4px 10px', borderRadius: '999px',
+            border: `1px solid ${BASE.border}`,
           }}>{partidasMostradas.length} de {reporte.partidas.length}</span>
         )}
       </div>
@@ -338,7 +337,7 @@ function ReporteTareos({ historial, tarifaPromedio, partidaExpandida, setPartida
                           color: '#fff', fontWeight: '900', fontSize: '11.5px',
                           fontFamily: 'var(--grapco-font-mono, monospace)',
                           minWidth: '42px', textAlign: 'right',
-                        }}>{pctTotal.toFixed(1)}%</span>
+                        }}>{Math.round(pctTotal)}%</span>
                       </div>
                     </td>
                   </tr>
@@ -376,7 +375,7 @@ function ReporteTareos({ historial, tarifaPromedio, partidaExpandida, setPartida
                               color: BASE.muted, fontWeight: '700', fontSize: '10.5px',
                               fontFamily: 'var(--grapco-font-mono, monospace)',
                               minWidth: '42px', textAlign: 'right',
-                            }}>{spPctDePartida.toFixed(1)}%</span>
+                            }}>{Math.round(spPctDePartida)}%</span>
                           </div>
                         </td>
                       </tr>
@@ -664,7 +663,6 @@ function MatrizIP({ historial, isMobile }) {
           padding: '14px 22px', color: '#fff',
           display: 'flex', alignItems: 'center', gap: '10px',
         }}>
-          <span style={{ fontSize: '17px' }}>🎯</span>
           <span style={{ fontSize: '13px', fontWeight: '800', letterSpacing: '0.5px' }}>
             CONTROL DE IP — IP Contractual vs Meta vs Real Acumulado por Semana
           </span>
@@ -759,7 +757,7 @@ function MatrizIP({ historial, isMobile }) {
                                 background: pct == null ? 'transparent' : esBueno ? '#dcfce740' : '#fee2e240',
                                 paddingRight: '14px',
                               })}>
-                                {pct == null ? '—' : `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`}
+                                {pct == null ? '—' : `${pct >= 0 ? '+' : ''}${Math.round(pct)}%`}
                               </td>
                             );
                           })()}
@@ -806,7 +804,7 @@ function MatrizIP({ historial, isMobile }) {
           borderTop: `1px solid ${BASE.border}`,
           fontSize: '11.5px', color: BASE.muted, lineHeight: 1.55,
         }}>
-          <strong style={{ color: BASE.navy }}>📖 Lectura:</strong> IP = HH/Metrado.
+          <strong style={{ color: BASE.navy }}>Lectura:</strong> IP = HH/Metrado.
           <strong style={{ color: BASE.greenDark }}> Bajo es mejor.</strong> Si el IP real
           supera al IP meta consistentemente en varias semanas, considera actualizar el APU
           (Analisis de Precios Unitarios) por si la meta era irreal.
