@@ -20,6 +20,35 @@ window.addEventListener('vite:preloadError', (event) => {
   window.location.reload();
 });
 
+// ── Detector de versión nueva (rompe el caché viejo de la PWA) ──
+// Al arrancar y al volver a la pestaña, compara el bundle que ESTÁ corriendo
+// contra el index.html FRESCO del servidor. Si el hosting tiene una versión
+// nueva, purga caches + service worker y recarga UNA vez. Se ejecuta al inicio
+// (antes de que el usuario trabaje), así nunca queda atascado en una build vieja.
+async function verificarVersion() {
+  try {
+    const corriendo = document.querySelector('script[type="module"][src*="/assets/index-"]')?.src || '';
+    const hashLocal = (corriendo.match(/index-[A-Za-z0-9_-]+\.js/) || [])[0];
+    if (!hashLocal) return;
+    const html = await fetch('/index.html', { cache: 'no-store' }).then(r => r.text());
+    const hashServidor = (html.match(/index-[A-Za-z0-9_-]+\.js/) || [])[0];
+    if (hashServidor && hashServidor !== hashLocal) {
+      const KEY = 'grapco_version_reload';
+      if (Date.now() - Number(sessionStorage.getItem(KEY) || 0) < 20000) return; // anti-bucle
+      sessionStorage.setItem(KEY, String(Date.now()));
+      try {
+        const regs = await navigator.serviceWorker?.getRegistrations?.() || [];
+        await Promise.all(regs.map(r => r.unregister()));
+        const keys = await caches?.keys?.() || [];
+        await Promise.all(keys.map(k => caches.delete(k)));
+      } catch { /* sin SW/caches: igual recargamos */ }
+      window.location.reload();
+    }
+  } catch { /* offline o sin red: no forzar nada */ }
+}
+verificarVersion();
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') verificarVersion(); });
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />
