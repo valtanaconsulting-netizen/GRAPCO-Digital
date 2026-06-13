@@ -35,7 +35,7 @@ export default function PortfolioDashboard() {
     const unsubs = [
       onSnapshot(collection(db, 'PlanMaestro'), cb(setActividades), errCb),
       onSnapshot(collection(db, 'APUs'), cb(setApus), errCb),
-      onSnapshot(collection(db, 'Tareos'), cb(setTareos), errCb),
+      onSnapshot(collection(db, 'Registros_Campo'), cb(setTareos), errCb),
       onSnapshot(collection(db, 'Kardex_Movimientos'), cb(setKardex), errCb),
     ];
     return () => unsubs.forEach(u => u());

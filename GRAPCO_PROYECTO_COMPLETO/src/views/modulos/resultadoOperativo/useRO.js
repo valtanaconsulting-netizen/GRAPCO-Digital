@@ -31,7 +31,7 @@ export default function useRO({ margenMeta = 15, fechaActual = new Date() } = {}
       onSnapshot(collection(db, 'APUs'),
         (snap) => { setApus(snap.docs.map(d => ({ id: d.id, ...d.data() }))); dec(); },
         (e) => { console.error('[APUs]', e); dec(); }),
-      onSnapshot(collection(db, 'Tareos'),
+      onSnapshot(collection(db, 'Registros_Campo'),
         (snap) => { setTareos(snap.docs.map(d => ({ id: d.id, ...d.data() }))); dec(); },
         (e) => { console.warn('[Tareos]', e); dec(); }),
       onSnapshot(collection(db, 'Kardex_Movimientos'),

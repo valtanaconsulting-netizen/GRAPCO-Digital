@@ -31,7 +31,7 @@ export default function RDOView({ showToast }) {
         (snap) => { setRDOs(snap.docs.map(d => ({ id: d.id, ...d.data() }))); setLoading(false); }),
       onSnapshot(query(collection(db, 'Historial'), orderBy('fecha', 'desc')),
         (snap) => setHistorial(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
-      onSnapshot(collection(db, 'Tareos'),
+      onSnapshot(collection(db, 'Registros_Campo'),
         (snap) => setTareos(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
       onSnapshot(collection(db, 'CuadrillasActivas'),
         (snap) => setCuadrillas(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
