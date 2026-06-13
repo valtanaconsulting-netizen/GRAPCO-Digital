@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, addDoc } from 'firebase/firestore';
+import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 import { CATALOGO_MASTER } from '../utils/constants';
 import { CATALOGOS, TIPOS } from './ImportarCartaBalance';
 import {
@@ -17,6 +18,7 @@ import {
 } from 'recharts';
 
 export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMobile, showToast }) {
+  const { proyectoActivoId } = useProyectoActivo();
   const [cbPhase,           setCbPhase]           = useState('setup');
   const [cbObra,            setCbObra]            = useState('CREDITEX PTARI');
   const [cbFecha,           setCbFecha]           = useState(hoy());
@@ -188,6 +190,8 @@ export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMob
 
       const duracionMs = cronoElapsed();
       await addDoc(collection(db, 'Cartas_Balance'), {
+        // ── Aislamiento por proyecto ──
+        proyectoId: proyectoActivoId,
         // ── Formato legacy (compatibilidad hacia atrás) ──
         obra: cbObra, fecha: cbFecha, horaInicio: cbHoraInicio, horaFin: cbHoraFin,
         ubicacion: cbUbicacion, actividad: cbActividad || cbActividadTexto,

@@ -122,11 +122,11 @@ export default function Navbar({ rol, isMobile, onSalir, onCambiarArea, onMenu }
           <span style={{
             fontSize: '12px', fontWeight: '900', color: BASE.gold,
             letterSpacing: '1.6px', lineHeight: 1,
-          }}>GRAPCO</span>
+          }}>GRAPCO <span style={{ color: 'rgba(255,255,255,0.92)' }}>S.A.C.</span></span>
           <span style={{
-            fontSize: '10px', color: 'rgba(255,255,255,0.7)',
-            marginTop: '3px', letterSpacing: '0.4px', fontWeight: '600',
-          }}>Gestión Integral de Obra</span>
+            fontSize: '9.5px', color: 'rgba(255,255,255,0.72)',
+            marginTop: '3px', letterSpacing: '0.8px', fontWeight: '700', textTransform: 'uppercase',
+          }}>Gestión de Proyectos VDC</span>
         </div>
       )}
 

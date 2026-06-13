@@ -244,7 +244,7 @@ export default function Login() {
             </div>
             <div>
               <p style={{ fontSize: '15px', fontWeight: 900, color: '#fff', letterSpacing: '2px', lineHeight: 1 }}>GRAPCO <span style={{ color: BASE.gold }}>S.A.C</span></p>
-              <p style={{ fontSize: '9px', fontWeight: 800, color: BASE.gold, letterSpacing: '2.2px', marginTop: '3px' }}>GESTIÓN INTEGRAL DE OBRA</p>
+              <p style={{ fontSize: '9px', fontWeight: 800, color: BASE.gold, letterSpacing: '2.2px', marginTop: '3px' }}>GESTIÓN DE PROYECTOS VDC</p>
             </div>
           </div>
 

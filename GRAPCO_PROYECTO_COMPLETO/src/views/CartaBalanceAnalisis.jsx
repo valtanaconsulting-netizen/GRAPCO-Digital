@@ -5,12 +5,13 @@
 // Conclusiones como paneles emergentes.
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { collection, query, orderBy, onSnapshot, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { loadXLSX } from '../utils/xlsxLazy';
 import {
   ResponsiveContainer, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, LabelList,
 } from 'recharts';
 import { db } from '../firebaseConfig';
+import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 import { BASE, CB_COL } from '../utils/styles';
 import { EJE, GRILLA, TOOLTIP_STYLE, BARRA } from '../utils/chartKit';
 import EmptyState from '../components/EmptyState';
@@ -129,6 +130,7 @@ function imprimirTablero() {
 }
 
 export default function CartaBalanceAnalisis() {
+  const { proyectoActivoId } = useProyectoActivo();
   const [cartas, setCartas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('resumen');
@@ -151,9 +153,13 @@ export default function CartaBalanceAnalisis() {
   const [vistaMedio, setVistaMedio] = useState('fecha'); // 'fecha' | 'cargo'
 
   useEffect(() => {
-    const q = query(collection(db, 'Cartas_Balance'), orderBy('fecha', 'desc'));
-    return onSnapshot(q, (s) => { setCartas(s.docs.map((d) => ({ id: d.id, ...d.data() }))); setLoading(false); }, (e) => { console.error(e); setLoading(false); });
-  }, []);
+    if (!proyectoActivoId) { setCartas([]); setLoading(false); return undefined; }
+    const q = query(collection(db, 'Cartas_Balance'), where('proyectoId', '==', proyectoActivoId));
+    return onSnapshot(q, (s) => {
+      setCartas(s.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => String(b.fecha || '').localeCompare(String(a.fecha || ''))));
+      setLoading(false);
+    }, (e) => { console.error(e); setLoading(false); });
+  }, [proyectoActivoId]);
   useEffect(() => onSnapshot(doc(db, 'Configuracion', 'metas_cb'), (s) => { if (s.exists()) setMetas({ ...METAS_CB_DEFAULT, ...(s.data() || {}) }); }, (e) => console.warn(e)), []);
 
   const setF = (key, val) => setFiltros((f) => ({ ...f, [key]: f[key] === val ? undefined : val }));

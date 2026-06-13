@@ -110,7 +110,7 @@ const primerNombre = (s) => {
 
 export default function SelectorPerfil() {
   const { user, entrarComoRol, logout, rolPermitido } = useAuth();
-  const { proyectos, frentesDelProyecto, proyectoActivoId, setProyectoActivoId, frenteActivoId, setFrenteActivoId } = useProyectoActivo();
+  const { proyectos, frentesDelProyecto, proyectoActivoId, setProyectoActivoId, frenteActivoId, setFrenteActivoId, fechaInicioProyecto } = useProyectoActivo();
   const [modoMarcador, setModoMarcador] = useState(false);
   const [modoPin, setModoPin] = useState(false);
   const [pin, setPin] = useState('');
@@ -138,7 +138,7 @@ export default function SelectorPerfil() {
   const saludo = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches';
   const fechaLargaRaw = new Date().toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const fechaLarga = fechaLargaRaw.charAt(0).toUpperCase() + fechaLargaRaw.slice(1);
-  const semanaProyecto = obtenerSemana(new Date(), FECHA_INICIO_PROYECTO);
+  const semanaProyecto = obtenerSemana(new Date(), fechaInicioProyecto || FECHA_INICIO_PROYECTO);
 
   // Cards visibles según el rol almacenado del usuario
   // Sin escalada: si el rol no está mapeado, solo ve su propia área (no TODAS).
@@ -379,7 +379,7 @@ export default function SelectorPerfil() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', margin: '0 auto' }}>
           <span style={{ height: '1px', width: '28px', background: `linear-gradient(90deg, transparent, ${BASE.gold}aa)` }} />
           <span style={{ color: BASE.gold, fontSize: '9.5px', fontWeight: 800, letterSpacing: '2.6px', textTransform: 'uppercase' }}>
-            Plataforma Integral de Gestión de Obra
+            Gestión de Proyectos VDC
           </span>
           <span style={{ height: '1px', width: '28px', background: `linear-gradient(90deg, ${BASE.gold}aa, transparent)` }} />
         </div>

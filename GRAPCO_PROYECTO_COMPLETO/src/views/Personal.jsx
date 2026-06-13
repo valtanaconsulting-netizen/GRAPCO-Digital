@@ -16,13 +16,17 @@ export default function Personal({ cuadrillasDB, personalDB, configuracion, show
   const [modalTrabajador, setModalTrabajador] = useState(null);
   const [modalTarifas,    setModalTarifas]    = useState(false);
   const [formCuadrilla,   setFormCuadrilla]   = useState({capatazId:'',especialidad:'Albañilería',miembros:[]});
-  const [formTrabajador,  setFormTrabajador]  = useState({nombre:'',dni:'',fechaNac:'',cargo:'Operario',cuadrillaId:''});
+  const [formTrabajador,  setFormTrabajador]  = useState({nombre:'',dni:'',fechaNac:'',cargo:'Operario',cuadrillaId:'',fechaIngreso:'',fechaSalida:'',fechaLiquidacion:''});
   const [formTarifas,     setFormTarifas]     = useState({});
   const [savingTarifas,   setSavingTarifas]   = useState(false);
   const [filtroCargo,     setFiltroCargo]     = useState('');
   const [busqTrab,        setBusqTrab]        = useState('');
   const [busqCuadModal,   setBusqCuadModal]   = useState('');
   const [filtroCargTrab,  setFiltroCargTrab]  = useState('');
+  const [filtroTipo,      setFiltroTipo]      = useState('todos'); // todos | obrero | staff
+
+  // Deriva el tipo de trabajador a partir del cargo (única regla, reutilizable)
+  const tipoDeCargo = cargo => CARGOS_STAFF.includes(cargo) ? 'staff' : 'obrero';
 
   // Sincronizar tarifas desde configuracion al abrir modal
   useEffect(() => {
@@ -127,6 +131,10 @@ export default function Personal({ cuadrillasDB, personalDB, configuracion, show
         dni: formTrabajador.dni.trim(),
         fechaNac: formTrabajador.fechaNac,
         cargo: formTrabajador.cargo,
+        tipo: tipoDeCargo(formTrabajador.cargo),
+        fechaIngreso: formTrabajador.fechaIngreso || '',
+        fechaSalida: formTrabajador.fechaSalida || '',
+        fechaLiquidacion: formTrabajador.fechaLiquidacion || '',
         proyectoId: proyectoActivoId || null,
       }, { merge: true });
 
@@ -189,7 +197,7 @@ export default function Personal({ cuadrillasDB, personalDB, configuracion, show
 
   const abrirModalTrabajador = item => {
     if (item === 'nuevo') {
-      setFormTrabajador({nombre:'',dni:'',fechaNac:'',cargo:'Operario',cuadrillaId:''});
+      setFormTrabajador({nombre:'',dni:'',fechaNac:'',cargo:'Operario',cuadrillaId:'',fechaIngreso:'',fechaSalida:'',fechaLiquidacion:''});
     } else {
       const cuadEntry = cuadrillaDeTrab(item.nombre);
       setFormTrabajador({
@@ -198,6 +206,9 @@ export default function Personal({ cuadrillasDB, personalDB, configuracion, show
         fechaNac: item.fechaNac||'',
         cargo: item.cargo||'Operario',
         cuadrillaId: cuadEntry ? cuadEntry[0] : '',
+        fechaIngreso: item.fechaIngreso||'',
+        fechaSalida: item.fechaSalida||'',
+        fechaLiquidacion: item.fechaLiquidacion||'',
       });
     }
     setModalTrabajador(item);
@@ -420,6 +431,22 @@ export default function Personal({ cuadrillasDB, personalDB, configuracion, show
               </select>
             </div>
 
+            {/* Fechas de gestión del trabajador (todas opcionales) */}
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))',gap:'10px'}}>
+              <div>
+                <label style={{fontSize:'10px',fontWeight:'700',color:BASE.muted,letterSpacing:'0.6px',display:'block',marginBottom:'5px'}}>Fecha de ingreso</label>
+                <input type="date" value={formTrabajador.fechaIngreso} onChange={e=>setFormTrabajador(p=>({...p,fechaIngreso:e.target.value}))} style={inp()}/>
+              </div>
+              <div>
+                <label style={{fontSize:'10px',fontWeight:'700',color:BASE.muted,letterSpacing:'0.6px',display:'block',marginBottom:'5px'}}>Fecha de salida</label>
+                <input type="date" value={formTrabajador.fechaSalida} onChange={e=>setFormTrabajador(p=>({...p,fechaSalida:e.target.value}))} style={inp()}/>
+              </div>
+              <div>
+                <label style={{fontSize:'10px',fontWeight:'700',color:BASE.muted,letterSpacing:'0.6px',display:'block',marginBottom:'5px'}}>Fecha de liquidación</label>
+                <input type="date" value={formTrabajador.fechaLiquidacion} onChange={e=>setFormTrabajador(p=>({...p,fechaLiquidacion:e.target.value}))} style={inp()}/>
+              </div>
+            </div>
+
             {/* NUEVO: Selector de cuadrilla — solo si cargo NO es Capataz */}
             {formTrabajador.cargo !== 'Capataz' && (
               <div style={{background:'#eff6ff',borderRadius:'10px',border:'1px solid #bfdbfe',padding:'14px'}}>
@@ -486,6 +513,22 @@ export default function Personal({ cuadrillasDB, personalDB, configuracion, show
             </div>
           </div>
 
+          {/* Segmented: separar obreros vs staff */}
+          <div style={{display:'flex',gap:'6px',marginBottom:'12px',flexWrap:'wrap'}}>
+            {[
+              {id:'todos', l:'Todos', n:personalDB.length},
+              {id:'obrero',l:'Obreros',n:personalDB.filter(p=>tipoDeCargo(p.cargo)==='obrero').length},
+              {id:'staff', l:'Staff',  n:personalDB.filter(p=>tipoDeCargo(p.cargo)==='staff').length},
+            ].map(t=>(
+              <button key={t.id} onClick={()=>setFiltroTipo(t.id)} style={{
+                padding:'7px 16px',borderRadius:'8px',border:`1.5px solid ${filtroTipo===t.id?BASE.navy:BASE.border}`,
+                background:filtroTipo===t.id?BASE.navy:BASE.white,
+                color:filtroTipo===t.id?'#fff':BASE.muted,
+                fontSize:'12px',fontWeight:'700',cursor:'pointer'
+              }}>{t.l} <span style={{opacity:0.7,fontWeight:'600'}}>({t.n})</span></button>
+            ))}
+          </div>
+
           <div style={{display:'flex',gap:'10px',marginBottom:'12px',flexWrap:'wrap'}}>
             <input type="text" value={busqTrab} onChange={e=>setBusqTrab(e.target.value)}
               placeholder="🔍 Buscar por nombre o DNI..."
@@ -524,16 +567,19 @@ export default function Personal({ cuadrillasDB, personalDB, configuracion, show
                     {personalDB.filter(p=>{
                       if (busqTrab && !p.nombre.toLowerCase().includes(busqTrab.toLowerCase()) && !p.dni?.includes(busqTrab)) return false;
                       if (filtroCargTrab && p.cargo!==filtroCargTrab) return false;
+                      if (filtroTipo!=='todos' && tipoDeCargo(p.cargo)!==filtroTipo) return false;
                       return true;
                     }).map((p,idx)=>{
                       const cuad = Object.values(cuadrillasDB).find(c=>c.miembros?.some(m=>m.nombre===p.nombre)) || null;
                       const edad = p.fechaNac ? Math.floor((new Date()-new Date(p.fechaNac))/31557600000) : null;
+                      const esStaff = tipoDeCargo(p.cargo)==='staff';
                       return (
                         <tr key={p.id} style={{background:idx%2===0?BASE.white:'#f8fafc',borderBottom:`1px solid ${BASE.border}`}}>
                           <td style={{padding:'10px 12px',fontWeight:'600',color:BASE.text}}>{p.nombre}</td>
                           <td style={{padding:'10px 12px',color:BASE.muted,fontFamily:'monospace'}}>{p.dni||'—'}</td>
                           <td style={{padding:'10px 12px'}}>
                             <span style={{background:'#e2e8f0',color:BASE.text,padding:'2px 8px',borderRadius:'20px',fontSize:'11px',fontWeight:'700'}}>{CARGOS_CORTO[p.cargo]||p.cargo}</span>
+                            <span style={{marginLeft:'6px',background:esStaff?BASE.navy+'18':BASE.orange+'18',color:esStaff?BASE.navy:BASE.orange,padding:'2px 8px',borderRadius:'20px',fontSize:'10px',fontWeight:'700'}}>{esStaff?'Staff':'Obrero'}</span>
                           </td>
                           <td style={{padding:'10px 12px',color:cuad?BASE.navy:BASE.muted,fontSize:'11px',fontWeight:cuad?'600':'400'}}>
                             {cuad ? `${cuad.capataz} (${cuad.especialidad||'General'})` : <span style={{color:'#cbd5e1'}}>Sin cuadrilla</span>}

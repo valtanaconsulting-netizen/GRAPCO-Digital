@@ -568,9 +568,9 @@ function AppInner() {
             { key: 'registro',    label: 'Registro de Producción',  iconName: 'registro',    color: BASE.green,   group: 'PRODUCCIÓN' },
             { key: 'carta',       label: 'Carta Balance',           iconName: 'balance',     color: BASE.orange,  group: 'PRODUCCIÓN' },
             { key: 'warroom',     label: 'Sala de Operaciones',     iconName: 'target',      color: '#f87171',    group: 'PRODUCCIÓN' },
-            // RECURSOS — abastecimiento y logística
-            { key: 'materiales',  label: 'Gestión de Materiales',   iconName: 'boxes',       color: '#c4b5fd',    group: 'RECURSOS' },
-            { key: 'compras',     label: 'Compras y Logística',     iconName: 'truck',       color: '#93c5fd',    group: 'RECURSOS' },
+            // ALMACÉN — abastecimiento y logística
+            { key: 'materiales',  label: 'Gestión de Materiales',   iconName: 'boxes',       color: '#c4b5fd',    group: 'ALMACÉN' },
+            { key: 'compras',     label: 'Compras y Logística',     iconName: 'truck',       color: '#93c5fd',    group: 'ALMACÉN' },
             // BIM
             { key: 'bim',         label: 'Coordinación BIM',        iconName: 'layers',      color: '#38bdf8',    group: 'BIM' },
             { key: 'calidad',     label: 'Gestión de Calidad',      iconName: 'checkSquare', color: '#f9a8d4',    group: 'GESTIÓN DE CALIDAD' },

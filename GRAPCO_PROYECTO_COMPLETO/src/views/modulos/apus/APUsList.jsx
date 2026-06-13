@@ -15,6 +15,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
 import { calcularCostoAPU, fmtSoles, fmtPct } from '../../../utils/planMaestroAnalytics';
 import { APUS_CREDITEX_RAW, transformarAPU, clasificarAPU, CATEGORIAS_APU } from '../../../data/seed/apusCreditex';
+import { LEGACY_CREDITEX_IDS } from '../../../hooks/useCatalogoWBS';
 import EmptyState from '../../../components/EmptyState';
 
 const CAT_BY_ID = Object.fromEntries(CATEGORIAS_APU.map(c => [c.id, c]));
@@ -42,9 +43,14 @@ export default function APUsList({ showToast, onEdit, onNuevo }) {
   // Categoría efectiva: la guardada, o inferida de la descripción (APUs viejos sin categoría)
   const catDe = (a) => a.categoria || clasificarAPU(a.descripcion);
 
+  // Aislamiento multi-proyecto: los APUs "empresa" (catálogo CREDITEX) solo se
+  // muestran en proyectos legacy CREDITEX. Un proyecto nuevo (TEXTIL) ve SOLO
+  // los APUs creados con su propio proyectoId — no hereda los de CREDITEX.
+  const esLegacy = LEGACY_CREDITEX_IDS.includes(proyectoActivoId);
   const filtrados = useMemo(() => {
     return apus.filter(a => {
       const scope = a.scope || (a.proyectoId ? SCOPE_PROYECTO : SCOPE_EMPRESA);
+      if (scope === SCOPE_EMPRESA && !esLegacy) return false; // empresa solo en CREDITEX
       if (filtroScope === SCOPE_EMPRESA && scope !== SCOPE_EMPRESA) return false;
       if (filtroScope === SCOPE_PROYECTO && scope !== SCOPE_PROYECTO) return false;
       if (scope === SCOPE_PROYECTO && a.proyectoId !== proyectoActivoId) return false;
@@ -54,7 +60,7 @@ export default function APUsList({ showToast, onEdit, onNuevo }) {
       return (a.codigo || '').toLowerCase().includes(f) ||
              (a.descripcion || '').toLowerCase().includes(f);
     });
-  }, [apus, filtro, filtroScope, filtroCat, proyectoActivoId]);
+  }, [apus, filtro, filtroScope, filtroCat, proyectoActivoId, esLegacy]);
 
   // Agrupado por categoría, respetando el orden de CATEGORIAS_APU
   const grupos = useMemo(() => {

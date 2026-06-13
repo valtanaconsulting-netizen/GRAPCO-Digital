@@ -3,8 +3,9 @@
 // Sin banners vacíos ni datos repetidos.
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
+import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
 import { BASE } from '../../../utils/styles';
 import {
   obtenerActividadesHoja, ESTADOS_ACTIVIDAD,
@@ -27,15 +28,22 @@ const fmtSolesCorto = (n) => {
 };
 
 export default function DashboardPlanMaestro() {
+  const { proyectoActivoId } = useProyectoActivo();
   const [actividades, setActividades] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsub = onSnapshot(query(collection(db, 'PlanMaestro'), orderBy('codigo')),
-      (snap) => { setActividades(snap.docs.map(d => ({ id: d.id, ...d.data() }))); setLoading(false); },
+    if (!proyectoActivoId) { setActividades([]); setLoading(false); return; }
+    setLoading(true);
+    const unsub = onSnapshot(query(collection(db, 'PlanMaestro'), where('proyectoId', '==', proyectoActivoId)),
+      (snap) => {
+        const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+          .sort((a, b) => String(a.codigo || '').localeCompare(String(b.codigo || ''), undefined, { numeric: true }));
+        setActividades(docs); setLoading(false);
+      },
       (e) => { console.error(e); setLoading(false); });
     return () => unsub();
-  }, []);
+  }, [proyectoActivoId]);
 
   const stats = useMemo(() => {
     const hojas = obtenerActividadesHoja(actividades);

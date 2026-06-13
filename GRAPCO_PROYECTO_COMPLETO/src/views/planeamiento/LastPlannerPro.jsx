@@ -43,7 +43,7 @@ const addDias = (dt, n) => { const d = new Date(dt); d.setDate(d.getDate() + n);
 const fmtCorto = (dt) => `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}`;
 
 export default function LastPlannerPro() {
-  const { proyectoActivoId } = useProyectoActivo();
+  const { proyectoActivoId, fechaInicioProyecto } = useProyectoActivo();
   const [crono, setCrono] = useState(null);        // doc Cronogramas (o false si no hay)
   const [lps, setLps] = useState(null);            // doc LPS
   const [semanaIso, setSemanaIso] = useState(isoDeFecha(lunesDe(new Date())));
@@ -237,7 +237,7 @@ export default function LastPlannerPro() {
           }}>‹</button>
           <div style={{ textAlign: 'center', minWidth: '190px' }}>
             <p style={{ fontSize: '13px', fontWeight: 900, color: BASE.navy, letterSpacing: '1px' }}>
-              SEMANA {obtenerSemana(semanaIso, FECHA_INICIO_PROYECTO)}
+              SEMANA {obtenerSemana(semanaIso, fechaInicioProyecto || FECHA_INICIO_PROYECTO)}
             </p>
             <p style={{ fontSize: '11px', fontWeight: 700, color: BASE.muted, fontFamily: MONO }}>
               lun {fmtCorto(lunes)} — dom {fmtCorto(addDias(lunes, 6))}

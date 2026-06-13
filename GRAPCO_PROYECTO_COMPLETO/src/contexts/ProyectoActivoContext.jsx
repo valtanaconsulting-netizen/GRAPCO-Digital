@@ -102,6 +102,27 @@ export function ProyectoActivoProvider({ children }) {
     return frentes.find(f => f.id === frenteActivoId) || null;
   }, [frentes, frenteActivoId]);
 
+  // ── Fecha de inicio del proyecto activo (rige el cálculo de SEMANAS) ──
+  // CREDITEX legacy mantiene su semana 1 = lunes 03/11/2025 (calendario LPS
+  // confirmado). Un proyecto NUEVO usa su fecha de inicio contractual, ajustada
+  // al LUNES de esa semana, para que su "Semana 1" sea la de su arranque real.
+  const fechaInicioProyecto = useMemo(() => {
+    const LEGACY = ['creditex-ptar', 'default-ptari'];
+    if (LEGACY.includes(proyectoActivoId)) return new Date('2025-11-03T00:00:00');
+    const raw = proyectoActivo?.fechaInicioContractual || proyectoActivo?.fechaInicio || null;
+    let d = null;
+    if (raw?.toDate) d = raw.toDate();
+    else if (raw?._seconds != null) d = new Date(raw._seconds * 1000);
+    else if (raw?.seconds != null) d = new Date(raw.seconds * 1000);
+    else if (typeof raw === 'string') d = new Date(raw);
+    else if (raw instanceof Date) d = raw;
+    if (!d || isNaN(d)) return new Date('2025-11-03T00:00:00'); // respaldo seguro
+    // Ajustar al lunes de la semana de inicio (corte lun-dom, igual que el LPS)
+    const dow = (d.getDay() + 6) % 7; // 0 = lunes
+    const lunes = new Date(d.getFullYear(), d.getMonth(), d.getDate() - dow, 0, 0, 0);
+    return lunes;
+  }, [proyectoActivo, proyectoActivoId]);
+
   const modoTodosFrentes = frenteActivoId === FRENTE_TODOS;
 
   const construirFiltros = useCallback(() => {
