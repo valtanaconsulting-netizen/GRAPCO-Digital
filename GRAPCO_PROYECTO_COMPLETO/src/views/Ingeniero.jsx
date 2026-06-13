@@ -36,16 +36,7 @@ import BIM from './BIM';
 import EditorWbsIsp from './modulos/wbsEditor/EditorWbsIsp';
 import { useCatalogoWBS } from '../hooks/useCatalogoWBS';
 import { ALIAS_ACTIVIDADES } from '../data/aliasesActividades';
-
-// Normaliza el nombre de una actividad para cruzarla de forma tolerante con el
-// catálogo WBS: ignora mayúsc/minúsc, espacios dobles, puntos finales y los
-// sufijos de frente «(F1-PTARI)», «(F2 - NAVE)», «(DECANTADOR)».
-const FRENTE_RE_ACT = /\s*\([^()]*(?:F\s*\d|PTAR|NAVE|DECANTAD)[^()]*\)\s*$/i;
-const normActividad = (s) => {
-  let t = String(s || '').trim(), prev;
-  do { prev = t; t = t.replace(FRENTE_RE_ACT, ''); } while (t !== prev);
-  return t.toUpperCase().trim().replace(/\.+$/, '').replace(/\s+/g, ' ').trim();
-};
+import { normActividad } from '../utils/normalizacion'; // idioma común (cruce tareo↔catálogo)
 
 export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, personalDB, planesDiarios, configuracion, asistencia, isMobile, showToast, vistaInicial, soloPlaneamiento }) {
   const [view, setView] = useState(vistaInicial || 'auditoria');
@@ -289,14 +280,9 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
     // ignora mayúsc/minúsc, espacios dobles, puntos finales y —en actividades—
     // los sufijos de frente «(F1-PTARI)», «(F2 - NAVE)», «(DECANTADOR)» etc.,
     // porque "PLACAS A DOBLE CARA" y "PLACAS A DOBLE CARA (F1-PTARI)" son lo mismo.
-    const normTxt = (s) => String(s || '').toUpperCase().trim()
+    const normTxt = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().trim()
       .replace(/\.+$/, '').replace(/\s+/g, ' ').trim();
-    const FRENTE_RE = /\s*\([^()]*(?:F\s*\d|PTAR|NAVE|DECANTAD)[^()]*\)\s*$/i;
-    const normAct = (s) => {
-      let t = String(s || '').trim(), prev;
-      do { prev = t; t = t.replace(FRENTE_RE, ''); } while (t !== prev);
-      return normTxt(t);
-    };
+    const normAct = normActividad; // idioma común (mismo criterio que el cruce CPI/cronograma)
 
     const j = {};
     const idxP = {};   // normTxt(partida) -> pk

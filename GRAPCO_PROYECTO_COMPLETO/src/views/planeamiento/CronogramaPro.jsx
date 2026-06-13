@@ -20,6 +20,7 @@ import ConfirmModal from '../../components/ConfirmModal';
 import SkeletonPantalla from '../../components/SkeletonPantalla';
 import { calcularCPM, renumerarEDT, nuevoId, fechaDeIso, isoDeFecha, indiceDeFecha } from '../../utils/cpm';
 import { CRONOGRAMAOBRA } from '../../data/cronogramaObraCreditex';
+import { normActividad as normAct, normActSinParen } from '../../utils/normalizacion'; // idioma común
 import CronogramaObra from './CronogramaObra';
 import GateProyectoLegacy from '../../components/GateProyectoLegacy';
 import { LEGACY_CREDITEX_IDS } from '../../hooks/useCatalogoWBS';
@@ -64,17 +65,7 @@ const seedEnBlanco = () => ([
 
 const hoyIso = () => isoDeFecha(new Date());
 
-// Normaliza nombres de actividad para cruzar cronograma ↔ tareos ↔ catálogo:
-// mayúsculas, sin acentos, sin sufijo de frente «(F1-PTARI)», sin puntos
-// finales ni espacios dobles. Mismo criterio tolerante que usa el ISP.
-const FRENTE_RE = /\s*\([^()]*(?:F\s*\d|PTAR|NAVE|DECANTAD)[^()]*\)\s*$/i;
-const normAct = (s) => {
-  let t = String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
-  let prev;
-  do { prev = t; t = t.replace(FRENTE_RE, ''); } while (t !== prev);
-  return t.toUpperCase().replace(/\.+$/, '').replace(/\s+/g, ' ').trim();
-};
-const normActSinParen = (s) => normAct(s).replace(/\s*\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim();
+// normAct / normActSinParen → idioma común en src/utils/normalizacion.js (importados arriba).
 
 export default function CronogramaPro() {
   const { proyectoActivoId } = useProyectoActivo();

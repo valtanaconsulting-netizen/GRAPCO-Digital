@@ -9,7 +9,7 @@
 // Color: verde si rindió igual o mejor (≤100%), rojo si rindió peor (>100%),
 // gris si no hubo avance (se asume el presupuesto). exceljs lazy.
 
-const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toUpperCase();
+import { normActividad as norm } from './normalizacion'; // idioma común (cruce con el catálogo)
 
 const NAVY = 'FF0F2A47', GOLDSOFT = 'FFFCEFC9';
 const VERDE = 'FF1E7A46', VERDEBG = 'FFE6F4EA', ROJO = 'FFB42318', ROJOBG = 'FFFBE9E7';

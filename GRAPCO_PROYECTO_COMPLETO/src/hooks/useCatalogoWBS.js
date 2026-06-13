@@ -8,6 +8,9 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { CATALOGO_MASTER, INFO_MAP } from '../utils/constants';
 import { arbolACatalogoMaster, arbolAInfoMap } from '../utils/catalogoWbs';
+import { LEGACY_CREDITEX_IDS } from '../config/proyecto';
+// Re-exportado por compatibilidad: varias vistas lo importan desde este hook.
+export { LEGACY_CREDITEX_IDS };
 
 export function useCatalogoWBS(proyectoId) {
   const [arbol, setArbol] = useState(null);   // null = aún cargando / sin catálogo propio
@@ -48,6 +51,3 @@ export function useCatalogoWBS(proyectoId) {
 
   return { loading, arbol, existe, catalogoMaster, infoMap };
 }
-
-// Proyectos "legacy" cuyo respaldo es el catálogo CREDITEX hardcodeado.
-export const LEGACY_CREDITEX_IDS = ['creditex-ptar', 'default-ptari'];

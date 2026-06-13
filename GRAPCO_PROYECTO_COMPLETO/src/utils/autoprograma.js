@@ -17,17 +17,10 @@
 
 import { calcActividad } from './catalogoWbs';
 import { SECTORIZACION } from '../data/sectorizacionCreditex';
+import { normActividad } from './normalizacion';
 
-// Normaliza nombres igual que CronogramaPro.normAct (sin acentos, sin sufijo de
-// frente, mayúsculas) para que la cuadrilla cruce por nombre y, más tarde, el
-// avance de tareos cruce con estas mismas tareas.
-const FRENTE_RE = /\s*\([^()]*(?:F\s*\d|PTAR|NAVE|DECANTAD)[^()]*\)\s*$/i;
-export const normNombre = (s) => {
-  let t = String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
-  let prev;
-  do { prev = t; t = t.replace(FRENTE_RE, ''); } while (t !== prev);
-  return t.toUpperCase().replace(/\.+$/, '').replace(/\s+/g, ' ').trim();
-};
+// Idioma común: misma normalización que usa el cruce tareo↔catálogo↔cronograma.
+export const normNombre = normActividad;
 
 // Cuadrillas REALES de la sectorización de CREDITEX (nº obreros = campo `mo`).
 const CUADRILLA_SECTORIZACION = (() => {

@@ -6,6 +6,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import { LEGACY_CREDITEX_IDS, FECHA_INICIO_LEGACY } from '../config/proyecto';
 
 const ProyectoActivoContext = createContext({});
 
@@ -110,8 +111,7 @@ export function ProyectoActivoProvider({ children }) {
   // confirmado). Un proyecto NUEVO usa su fecha de inicio contractual, ajustada
   // al LUNES de esa semana, para que su "Semana 1" sea la de su arranque real.
   const fechaInicioProyecto = useMemo(() => {
-    const LEGACY = ['creditex-ptar', 'default-ptari'];
-    if (LEGACY.includes(proyectoActivoId)) return new Date('2025-11-03T00:00:00');
+    if (LEGACY_CREDITEX_IDS.includes(proyectoActivoId)) return new Date(`${FECHA_INICIO_LEGACY}T00:00:00`);
     const raw = proyectoActivo?.fechaInicioContractual || proyectoActivo?.fechaInicio || null;
     let d = null;
     if (raw?.toDate) d = raw.toDate();

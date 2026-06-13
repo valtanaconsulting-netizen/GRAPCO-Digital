@@ -8,17 +8,12 @@
 import { buscarActividadCanonica, resolverIP, obtenerSemana } from './helpers';
 import { dashboardCalidad } from './calidadOTAnalytics';
 import { FECHA_INICIO_PROYECTO } from './constants';
+import { normActividad } from './normalizacion';
 
 const num = (v) => parseFloat(v) || 0;
 
-// Igual que en Ingeniero.jsx: normaliza el nombre de una actividad para cruzarla
-// de forma tolerante con el catálogo WBS (ignora frente, mayúsc., puntos, espacios).
-const FRENTE_RE_ACT = /\s*\([^()]*(?:F\s*\d|PTAR|NAVE|DECANTAD)[^()]*\)\s*$/i;
-export const normActividad = (s) => {
-  let t = String(s || '').trim(), prev;
-  do { prev = t; t = t.replace(FRENTE_RE_ACT, ''); } while (t !== prev);
-  return t.toUpperCase().trim().replace(/\.+$/, '').replace(/\s+/g, ' ').trim();
-};
+// Normalización canónica (idioma común) — re-exportada para quienes la importaban de aquí.
+export { normActividad };
 
 // ── Enriquece el historial con _ipMeta (réplica exacta de Ingeniero.jsx) ──
 // El catálogo WBS (infoMap) manda sobre el respaldo de resolverIP.

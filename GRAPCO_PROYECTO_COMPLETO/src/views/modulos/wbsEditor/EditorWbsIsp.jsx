@@ -22,7 +22,7 @@ import { generarCronogramaDesdeCatalogo } from '../../../utils/autoprograma';
 const clonar = (x) => JSON.parse(JSON.stringify(x || []));
 const fmt = (n, dec = 2) => num(n).toLocaleString('es-PE', { minimumFractionDigits: dec, maximumFractionDigits: dec });
 // Proyectos legacy que usan el catálogo CREDITEX hardcoded (sin doc en Catalogo_WBS).
-const LEGACY_IDS = ['creditex-ptar', 'default-ptari'];
+import { LEGACY_CREDITEX_IDS as LEGACY_IDS } from '../../../config/proyecto';
 const isoLocal = (d) => (d instanceof Date && !isNaN(d))
   ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : '';
 const lblModal = { display: 'block', fontSize: '11px', fontWeight: 800, color: BASE.navy, marginBottom: '4px' };
