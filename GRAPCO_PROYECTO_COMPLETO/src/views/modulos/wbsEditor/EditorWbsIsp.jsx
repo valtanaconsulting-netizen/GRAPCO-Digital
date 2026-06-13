@@ -203,7 +203,7 @@ export default function EditorWbsIsp({ showToast }) {
       const wb = XLSX.read(buf, { type: 'array' });
       const filas = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
       const nuevo = filasAArbol(filas, frentesProyecto);
-      if (!nuevo.length) return toast('No se encontraron filas válidas (revisa los encabezados)', 'warning');
+      if (!nuevo.length) return toast('No se encontraron filas válidas. El Excel debe tener columnas Partida, Actividad, Metrado e IP (descarga "Plantilla Excel" para ver el formato). Para copiar de otro proyecto SIN Excel, usa el botón "Importar de proyecto…".', 'warning');
       if (arbol.length && !confirm(`El Excel trae ${nuevo.length} partida(s). Esto reemplaza el catálogo actual. ¿Continuar?`)) return;
       setArbol(nuevo); setDirty(true);
       const t = totalesArbol(nuevo);

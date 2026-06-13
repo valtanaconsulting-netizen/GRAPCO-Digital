@@ -188,6 +188,20 @@ export function arbolAFilas(arbol, frentes = []) {
   return filas;
 }
 
+// Detección FLEXIBLE de encabezados (insensible a acentos/mayúsculas + sinónimos),
+// para que un Excel de otro proyecto/origen importe aunque los títulos varíen.
+const SINONIMOS_COL = {
+  partida:    ['partida', 'wbs', 'item', 'partida/wbs'],
+  subpartida: ['subpartida', 'sub-partida', 'sub partida', 'sub'],
+  actividad:  ['actividad', 'descripcion', 'nombre', 'descripcion actividad', 'partida/subpartida/actividad'],
+  unidad:     ['unidad', 'und', 'um', 'u', 'un'],
+  frente:     ['frente', 'fase', 'frente/fase'],
+  metrado:    ['metrado', 'cantidad', 'qty', 'metrado contractual', 'met'],
+  ip:         ['ip', 'rendimiento', 'ip ppto', 'ip presupuesto', 'ip contractual', 'rend', 'ip real'],
+  ipMeta:     ['ip meta', 'ipmeta', 'rendimiento meta', 'ip objetivo'],
+};
+const normHeader = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase().replace(/\s+/g, ' ');
+
 export function filasAArbol(filas, frentes = []) {
   const idDeFrente = (nombre) => {
     const raw = String(nombre || '').trim();
@@ -199,17 +213,31 @@ export function filasAArbol(filas, frentes = []) {
     );
     return f ? f.id : raw;   // sin coincidencia: el nombre ES la clave (columna nueva)
   };
+  const filasArr = filas || [];
+  // Mapea las cabeceras REALES del Excel a claves canónicas (una sola vez).
+  const keys = filasArr.length ? Object.keys(filasArr[0]) : [];
+  const colDe = {};
+  Object.entries(SINONIMOS_COL).forEach(([canon, syns]) => {
+    const set = new Set(syns.map(normHeader));
+    const hit = keys.find((k) => set.has(normHeader(k)));
+    if (hit) colDe[canon] = hit;
+  });
+  const val = (f, canon, fallbackKey) => {
+    if (colDe[canon] != null) return f[colDe[canon]];
+    return f[fallbackKey] ?? f[canon] ?? '';
+  };
   const orden = [], idx = {};
-  (filas || []).forEach((f) => {
-    const pN = String(f['Partida'] ?? f.partida ?? '').trim();
-    const sN = String(f['Subpartida'] ?? f.subpartida ?? '').trim();
-    const aN = String(f['Actividad'] ?? f.actividad ?? '').trim();
-    if (!pN || !sN || !aN) return;
-    const frente = idDeFrente(f['Frente'] ?? f.frente);
-    const met = num(f['Metrado'] ?? f.metrado);
-    const ip = num(f['IP'] ?? f.ip);
-    const un = String(f['Unidad'] ?? f.unidad ?? 'UND').trim().toUpperCase() || 'UND';
-    const ipMeta = num(f['IP Meta'] ?? f.ipMeta);
+  filasArr.forEach((f) => {
+    const pN = String(val(f, 'partida', 'Partida')).trim();
+    // Subpartida opcional: si falta, agrupa bajo "GENERAL" (no se descarta la fila).
+    const sN = String(val(f, 'subpartida', 'Subpartida')).trim() || 'GENERAL';
+    const aN = String(val(f, 'actividad', 'Actividad')).trim();
+    if (!pN || !aN) return;
+    const frente = idDeFrente(val(f, 'frente', 'Frente'));
+    const met = num(val(f, 'metrado', 'Metrado'));
+    const ip = num(val(f, 'ip', 'IP'));
+    const un = String(val(f, 'unidad', 'Unidad') || 'UND').trim().toUpperCase() || 'UND';
+    const ipMeta = num(val(f, 'ipMeta', 'IP Meta'));
 
     if (!idx[pN]) { idx[pN] = { subOrden: [], subs: {} }; orden.push(pN); }
     if (!idx[pN].subs[sN]) { idx[pN].subs[sN] = { actOrden: [], acts: {} }; idx[pN].subOrden.push(sN); }
