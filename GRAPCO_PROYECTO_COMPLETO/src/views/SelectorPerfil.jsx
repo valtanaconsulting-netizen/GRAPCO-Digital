@@ -115,7 +115,6 @@ export default function SelectorPerfil() {
   const [modoPin, setModoPin] = useState(false);
   const [pin, setPin] = useState('');
   const [errorPin, setErrorPin] = useState('');
-  const [clienteSel, setClienteSel] = useState('');
   const [nombreUsuario, setNombreUsuario] = useState('');
   const videoRef = useRef(null);
 
@@ -145,12 +144,22 @@ export default function SelectorPerfil() {
   const permitidos = ROL_CARDS_PERMITIDAS[rolPermitido] || (rolPermitido ? [rolPermitido] : []);
   const perfilesFiltrados = PERFILES.filter(p => permitidos.includes(p.rol));
 
-  // Cliente de cada proyecto (campo cliente/empresa). El cliente filtra los proyectos visibles.
+  // Cliente de cada proyecto (campo cliente/empresa).
   const clienteDe = (p) => p?.cliente || p?.clienteNombre || p?.empresa || '';
   const clientes = Array.from(new Set((proyectos || []).map(clienteDe).filter(Boolean))).sort();
-  const proyectosFiltrados = clienteSel
-    ? (proyectos || []).filter(p => clienteDe(p) === clienteSel)
+  // El CLIENTE siempre refleja el del PROYECTO ACTIVO: si hay proyecto, su
+  // cliente se conoce solo (no puede quedar en "Todos" mientras hay proyecto).
+  const clienteActivo = clienteDe(proyectoActivo);
+  // El selector de PROYECTO solo lista los proyectos del cliente activo.
+  const proyectosFiltrados = clienteActivo
+    ? (proyectos || []).filter(p => clienteDe(p) === clienteActivo)
     : (proyectos || []);
+  // Cambiar de CLIENTE → saltar al primer proyecto de ese cliente. Eso recarga
+  // el contexto y arrastra semana, datos y todo lo demás al nuevo proyecto.
+  const cambiarCliente = (c) => {
+    const primero = (proyectos || []).find(p => clienteDe(p) === c);
+    if (primero && primero.id !== proyectoActivoId) setProyectoActivoId(primero.id);
+  };
 
   // Atajo: si el usuario teclea 4 dígitos, intenta entrar por PIN.
   useEffect(() => {
@@ -419,8 +428,8 @@ export default function SelectorPerfil() {
         }}>
           <div>
             <label style={lblKiosk}>🏢 CLIENTE</label>
-            <select value={clienteSel} onChange={e => setClienteSel(e.target.value)} style={selKiosk}>
-              <option value="" style={optKiosk}>— Todos los clientes —</option>
+            <select value={clienteActivo} onChange={e => cambiarCliente(e.target.value)} style={selKiosk}>
+              {!clienteActivo && <option value="" style={optKiosk}>— Selecciona cliente —</option>}
               {clientes.map(c => <option key={c} value={c} style={optKiosk}>{c}</option>)}
             </select>
           </div>
