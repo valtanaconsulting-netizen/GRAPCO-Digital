@@ -1,0 +1,15 @@
+# .gitignore de la RAÍZ del repo (GRAPCO-Digital)
+# El código vive en GRAPCO_PROYECTO_COMPLETO/ (tiene su propio .gitignore).
+
+# Config local de herramientas, por máquina — NO versionar
+.claude/
+settings.local.json
+
+# Documentos de referencia sueltos en la raíz (su data ya vive en el código .js).
+# Solo nivel raíz (no afecta plantillas dentro de la app, p.ej. public/plantillas/*.xlsx).
+/*.xlsx
+/*.pdf
+/*.docx
+
+# Backups de reglas / artefactos regenerables
+*.original.bak

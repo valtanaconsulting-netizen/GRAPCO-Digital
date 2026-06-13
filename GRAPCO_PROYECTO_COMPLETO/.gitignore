@@ -38,3 +38,8 @@ serviceAccount*.json
 # Respaldos de datos (locales, no versionar)
 scripts/backups/
 *.backup.json
+
+# Config local de Claude Code, backups de reglas y salidas de prueba (no versionar)
+settings.local.json
+*.original.bak
+scripts/test-*
