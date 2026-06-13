@@ -1,11 +1,18 @@
 // src/views/asistencia/MarcadorAsistencia.jsx
-// Kiosko biométrico de asistencia — reconocimiento facial en vivo.
-// Mundial-grade: ENTRADA y SALIDA automáticas, auto-confirmación en match fuerte,
-// pantallas grandes legibles a distancia, loop continuo sin clics, evidencia foto.
+// Kiosko biométrico de asistencia — reconocimiento facial GRUPAL en vivo.
+// Una sola toma reconoce y marca a 10+ personas a la vez (detectAllFaces).
+//
+// Reglas de hora (pedido de gerencia):
+//  • ENTRADA: en el TAREO siempre se registra 07:30 para todos. PERO se guarda
+//    también la hora REAL de llegada (entradaReal) → registro de puntualidad.
+//  • SALIDA: el TAREO usa la hora EN PUNTO hacia abajo (piso). 17:00–17:59→17:00,
+//    18:35→18:00, 19:35→19:00. Se guarda también la hora REAL (salidaReal).
+//  • horasTrabajadas se calcula con las horas NORMALIZADAS (07:30 → salida-piso),
+//    así el tareo del capataz hereda HH coherentes.
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  collection, doc, onSnapshot, query, where, setDoc, serverTimestamp,
+  collection, doc, onSnapshot, query, where, writeBatch, serverTimestamp,
 } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../firebaseConfig';
@@ -13,7 +20,7 @@ import { BASE } from '../../utils/styles';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import { usePersonal } from '../../hooks/useFirebaseData';
-import { cargarModelos, obtenerDescriptor, buscarMatch, arrayToDescriptor, similitudPct, distanciaDeSimilitud, promediarDescriptores, faceapi } from '../../utils/faceapi';
+import { cargarModelos, obtenerDescriptoresTodos, buscarMatch, arrayToDescriptor, similitudPct, distanciaDeSimilitud } from '../../utils/faceapi';
 
 const hoyStr = () => new Date().toISOString().slice(0, 10);
 const horaStr = () => {
@@ -25,14 +32,30 @@ const minutos = (hhmm) => {
   return (h || 0) * 60 + (m || 0);
 };
 
+// ── Normalización de horas para el TAREO ──
+const ENTRADA_TAREO = '07:30';   // entrada oficial fija en el tareo (la REAL se guarda aparte)
+const DESCANSO_MIN  = 60;        // refrigerio (min)
+// Salida del tareo = hora EN PUNTO hacia abajo (piso). Salen a esa hora pero se
+// cambian/asean; el tareo cuenta hasta la hora cumplida. 17:35→17:00, 19:35→19:00.
+const salidaTareoDe = (hhmm) => {
+  const [h] = (hhmm || '17:00').split(':').map(Number);
+  return `${String(h || 0).padStart(2, '0')}:00`;
+};
+
 // ── SEGURIDAD BIOMÉTRICA — umbral de similitud OBLIGATORIO ──
 // Un rostro solo se acepta si alcanza SIMILITUD_MIN. Por debajo NUNCA hay match
 // ni registro (evita que caras desconocidas marquen asistencia al azar).
 // NO bajar de 75 sin autorización: es el piso de seguridad pedido por gerencia.
 const SIMILITUD_MIN  = 75;   // % mínimo obligatorio para aceptar un rostro
-const SIMILITUD_AUTO = 80;   // % desde el cual registra solo (auto); entre 75-80 pide confirmar
+const SIMILITUD_AUTO = 80;   // % desde el cual basta con menos evidencia temporal
 const DIST_MAX  = distanciaDeSimilitud(SIMILITUD_MIN);   // 0.25 → similitud 75%
 const DIST_AUTO = distanciaDeSimilitud(SIMILITUD_AUTO);  // 0.20 → similitud 80%
+
+// ── Robustez del marcaje grupal ──
+const COOLDOWN_MS   = 12000;  // tras marcar a alguien, no re-marcarlo por 12 s
+const RACHA_TTL_MS  = 2200;   // una "racha" caduca si no se le vuelve a ver en 2.2 s
+const JORNADA_MIN_MIN = 60;   // SALIDA solo si pasó ≥ 60 min desde la entrada real
+                              // (evita marcar salida por error justo tras la entrada)
 
 export default function MarcadorAsistencia({ showToast }) {
   const { user } = useAuth();
@@ -40,8 +63,6 @@ export default function MarcadorAsistencia({ showToast }) {
   const personalDB = usePersonal();
 
   // Buscar en TODO el personal activo enrolado (identidad biométrica global).
-  // El proyecto activo solo se usa para guardar la asistencia, no para filtrar
-  // a quién reconocer — así no excluimos a nadie por un proyectoId desactualizado.
   const personalEnrolado = useMemo(() => {
     if (!Array.isArray(personalDB)) return [];
     return personalDB
@@ -56,7 +77,7 @@ export default function MarcadorAsistencia({ showToast }) {
       .filter(p => p.faceDescriptors.length > 0);
   }, [personalDB]);
 
-  // Asistencias de hoy: { personalId: { entrada, salida, fotoUrl } }
+  // Asistencias de hoy: { personalId: { entrada, entradaReal, salida, salidaReal } }
   const [hoy, setHoy] = useState({});
   useEffect(() => {
     if (!proyectoActivoId) return;
@@ -69,7 +90,10 @@ export default function MarcadorAsistencia({ showToast }) {
       const m = {};
       snap.forEach(d => {
         const x = d.data();
-        if (x.personalId) m[x.personalId] = { entrada: x.entrada || null, salida: x.salida || null, fotoUrl: x.fotoEvidencia || null };
+        if (x.personalId) m[x.personalId] = {
+          entrada: x.entrada || null, entradaReal: x.entradaReal || null,
+          salida: x.salida || null, salidaReal: x.salidaReal || null,
+        };
       });
       setHoy(m);
     });
@@ -85,16 +109,14 @@ export default function MarcadorAsistencia({ showToast }) {
   const [modelosOK, setModelosOK] = useState(false);
   const [cargandoModelos, setCargandoModelos] = useState(false);
   const [stream, setStream] = useState(null);
-  const [match, setMatch] = useState(null);     // { obrero, distancia, dataUrl, accion }
-  const [exito, setExito] = useState(null);     // { nombre, accion, hora, foto }
-  const [noId, setNoId] = useState(false);      // cara detectada pero sin match (similitud < mínimo)
-  const [noIdSim, setNoIdSim] = useState(0);    // % de similitud del mejor candidato rechazado
   const [analizando, setAnalizando] = useState(false);
-  const [guardando, setGuardando] = useState(false);
-  const [cuenta, setCuenta] = useState(0);      // countdown auto-confirm
+  const [detectados, setDetectados] = useState(0);   // caras vistas en el último frame
+  const [reconocidos, setReconocidos] = useState(0); // de esas, cuántas superan el piso
+  const [recientes, setRecientes] = useState([]);    // [{ nombre, accion, hora, ts }] feedback
   const videoRef = useRef(null);
-  const lastDetectAt = useRef(0);
-  const bufRef = useRef([]);   // buffer de descriptores recientes (suavizado temporal)
+  const rachaRef = useRef(new Map());     // personalId → { hits, t, dist }
+  const cooldownRef = useRef(new Map());  // personalId → ts del último marcaje
+  const registrandoRef = useRef(false);   // evita lotes solapados
 
   useEffect(() => {
     setCargandoModelos(true);
@@ -111,159 +133,172 @@ export default function MarcadorAsistencia({ showToast }) {
 
   const abrirCamara = async () => {
     try {
+      // Resolución alta: en una toma grupal las caras quedan pequeñas, así que
+      // más píxeles = descriptores más fiables. Pedimos 1920×1440 ideal (4:3).
       const s = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 960 } },
+        video: { facingMode: 'user', width: { ideal: 1920 }, height: { ideal: 1440 } },
       });
       setStream(s);
     } catch (e) {
       showToast?.('No se pudo acceder a la cámara: ' + e.message, 'error');
     }
   };
-  const cerrarCamara = () => { if (stream) stream.getTracks().forEach(t => t.stop()); setStream(null); setMatch(null); setNoId(false); bufRef.current = []; };
+  const cerrarCamara = () => {
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    setStream(null);
+    setDetectados(0); setReconocidos(0);
+    rachaRef.current.clear();
+  };
 
-  // Loop de detección
+  // Limpieza de los chips de "recién marcados" (se desvanecen a los 6 s).
   useEffect(() => {
-    if (!stream || !modelosOK || match || exito || guardando) return;
+    if (!recientes.length) return;
+    const iv = setInterval(() => {
+      const now = Date.now();
+      setRecientes(prev => prev.filter(r => now - r.ts < 6000));
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [recientes.length]);
+
+  // ── Registro por LOTE: una foto del frame (evidencia grupal) + un writeBatch ──
+  const registrarLote = async (lote, dataUrl, ts) => {
+    if (registrandoRef.current || !proyectoActivoId) return;
+    registrandoRef.current = true;
+    try {
+      const fecha = hoyStr();
+      const hora = horaStr();
+      // Una sola subida de la foto del frame; se reutiliza para todo el lote.
+      const blob = await (await fetch(dataUrl)).blob();
+      const r = storageRef(storage, `Asistencia/${fecha}/lote_${ts}.jpg`);
+      await uploadBytes(r, blob, { contentType: 'image/jpeg' });
+      const fotoUrl = await getDownloadURL(r);
+
+      const batch = writeBatch(db);
+      const marcados = [];
+      for (const mt of lote) {
+        const personalId = mt.obrero.id;
+        const docId = `${fecha}_${proyectoActivoId}_${personalId}`;
+        const docRef = doc(db, 'Asistencia_Diaria', docId);
+        const base = {
+          fecha, proyectoId: proyectoActivoId,
+          frenteId: modoTodosFrentes ? null : frenteActivoId,
+          personalId, nombre: mt.obrero.nombre, categoria: mt.obrero.categoria || '',
+          fuente: 'biometric-face', matchDistancia: mt.distancia, matchSimilitud: mt.similitud ?? null,
+          registradoPor: user?.email || 'kiosko', actualizadoEn: serverTimestamp(),
+        };
+        if (mt.accion === 'entrada') {
+          batch.set(docRef, {
+            ...base,
+            entrada: ENTRADA_TAREO,   // TAREO: siempre 07:30
+            entradaReal: hora,        // hora REAL de llegada (puntualidad)
+            descanso: DESCANSO_MIN,
+            fotoEvidencia: fotoUrl,
+          }, { merge: true });
+        } else {
+          const salidaT = salidaTareoDe(hora);
+          const horas = Math.max(0, (minutos(salidaT) - minutos(ENTRADA_TAREO) - DESCANSO_MIN) / 60);
+          batch.set(docRef, {
+            ...base,
+            salida: salidaT,          // TAREO: hora en punto (piso)
+            salidaReal: hora,         // hora REAL de salida
+            horasTrabajadas: +horas.toFixed(2),
+            fotoSalida: fotoUrl,
+          }, { merge: true });
+        }
+        cooldownRef.current.set(personalId, Date.now());
+        rachaRef.current.delete(personalId);
+        marcados.push({ nombre: mt.obrero.nombre, accion: mt.accion, hora });
+      }
+      await batch.commit();
+      setRecientes(prev => [...marcados.map(m => ({ ...m, ts: Date.now() })), ...prev].slice(0, 8));
+    } catch (e) {
+      showToast?.('Error guardando: ' + e.message, 'error');
+    } finally {
+      registrandoRef.current = false;
+    }
+  };
+
+  // ── Loop de detección GRUPAL ──
+  useEffect(() => {
+    if (!stream || !modelosOK) return;
     let cancel = false;
     const tick = async () => {
       if (cancel) return;
-      const now = Date.now();
-      if (now - lastDetectAt.current < 420) { setTimeout(tick, 140); return; }
-      lastDetectAt.current = now;
-      if (!videoRef.current || !videoRef.current.videoWidth) { setTimeout(tick, 300); return; }
+      if (!videoRef.current || !videoRef.current.videoWidth || registrandoRef.current) {
+        setTimeout(tick, 300); return;
+      }
       setAnalizando(true);
       try {
         const canvas = document.createElement('canvas');
         canvas.width = videoRef.current.videoWidth;
         canvas.height = videoRef.current.videoHeight;
         canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
-        const det = await obtenerDescriptor(canvas);
-        if (det) {
-          // ── Suavizado temporal ──
-          // Acumulamos las últimas capturas y promediamos el descriptor. Promediar
-          // varios frames del mismo rostro elimina el "salto" del % y baja la
-          // distancia real → reconocimiento mucho más exacto y estable.
-          const buf = bufRef.current;
-          // Si el rostro cambió mucho (otra persona / gran movimiento) reiniciamos.
-          if (buf.length) {
-            const dPrev = faceapi.euclideanDistance(det.descriptor, buf[buf.length - 1].d);
-            if (dPrev > 0.6) buf.length = 0;
-          }
-          buf.push({ d: det.descriptor, t: now });
-          while (buf.length > 6) buf.shift();                       // máx 6 capturas
-          while (buf.length && now - buf[0].t > 2500) buf.shift();  // y solo de los últimos 2.5 s
+        const dets = await obtenerDescriptoresTodos(canvas);
+        const now = Date.now();
 
-          const descProm = promediarDescriptores(buf.map(x => x.d)) || det.descriptor;
-          // Buscar el MEJOR candidato sin filtrar, y luego aplicar el piso de seguridad.
-          const best = buscarMatch(descProm, personalEnrolado, Infinity);
-          const sim = best?.obrero ? similitudPct(best.distancia) : 0;
-          // Aceptar solo si: alcanza el mínimo (≥ SIMILITUD_MIN) Y hay al menos 2
-          // frames coherentes (un único frame ruidoso nunca dispara un registro).
-          if (best?.obrero && best.distancia <= DIST_MAX && buf.length >= 2) {
-            const accion = estadoDe(best.obrero.id);
-            bufRef.current = [];
-            setNoId(false);
-            setMatch({
-              obrero: best.obrero,
-              distancia: best.distancia,
-              similitud: sim,
-              dataUrl: canvas.toDataURL('image/jpeg', 0.85),
-              accion,
-            });
-            setAnalizando(false);
-            return;
+        // Caduca rachas viejas (alguien que solo pasó un instante no acumula).
+        for (const [id, rr] of rachaRef.current) if (now - rr.t > RACHA_TTL_MS) rachaRef.current.delete(id);
+
+        let reconoc = 0;
+        const lote = [];
+        const enLote = new Set();
+        for (const det of dets) {
+          const best = buscarMatch(det.descriptor, personalEnrolado, Infinity);
+          if (!best?.obrero || best.distancia > DIST_MAX) continue;  // bajo el piso 75% → ignora
+          reconoc++;
+          const id = best.obrero.id;
+
+          // Cooldown: no re-marcar a quien acaba de marcar.
+          const cd = cooldownRef.current.get(id);
+          if (cd && now - cd < COOLDOWN_MS) continue;
+
+          // Racha: exige verlo en varios frames antes de marcar (anti-falso positivo).
+          // ≥80% similitud → 2 frames bastan; 75–80% → 3 (más evidencia).
+          const prev = rachaRef.current.get(id) || { hits: 0 };
+          const hits = prev.hits + 1;
+          rachaRef.current.set(id, { hits, t: now, dist: best.distancia });
+          const need = best.distancia <= DIST_AUTO ? 2 : 3;
+          if (hits < need) continue;
+
+          const accion = estadoDe(id);
+          if (accion === 'completo') continue;
+          if (accion === 'salida') {
+            const er = hoy[id]?.entradaReal || hoy[id]?.entrada;
+            if (er && (minutos(horaStr()) - minutos(er)) < JORNADA_MIN_MIN) continue; // demasiado pronto
           }
-          // Hay cara pero NO alcanza el mínimo → rechazo (posible desconocido).
-          setNoIdSim(sim);
-          setNoId(true);
-          setTimeout(() => setNoId(false), 1800);
-        } else {
-          // Sin cara en el frame → vaciamos el buffer para no mezclar sesiones.
-          if (bufRef.current.length) bufRef.current = [];
+          if (enLote.has(id)) continue;
+          enLote.add(id);
+          lote.push({ obrero: best.obrero, distancia: best.distancia, similitud: similitudPct(best.distancia), accion });
+        }
+        setDetectados(dets.length);
+        setReconocidos(reconoc);
+
+        if (lote.length) {
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+          await registrarLote(lote, dataUrl, now);
         }
       } catch { /* reintenta */ }
       setAnalizando(false);
-      if (!cancel) setTimeout(tick, 320);
+      if (!cancel) setTimeout(tick, 260);
     };
     tick();
     return () => { cancel = true; };
-  }, [stream, modelosOK, match, exito, guardando, personalEnrolado, hoy]);
-
-  // Auto-confirmación con cuenta regresiva cuando el match es fuerte
-  useEffect(() => {
-    if (!match || match.accion === 'completo') { setCuenta(0); return; }
-    if (match.distancia > DIST_AUTO) return; // similitud 75-80% → confirmación manual (no auto)
-    setCuenta(3);
-    let n = 3;
-    const iv = setInterval(() => {
-      n -= 1;
-      setCuenta(n);
-      if (n <= 0) { clearInterval(iv); registrar(match); }
-    }, 800);
-    return () => clearInterval(iv);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [match]);
-
-  const registrar = async (mt) => {
-    if (!mt || !proyectoActivoId || guardando) return;
-    if (mt.accion === 'completo') { setMatch(null); return; }
-    setGuardando(true);
-    setCuenta(0);
-    try {
-      const personalId = mt.obrero.id;
-      const fecha = hoyStr();
-      const hora = horaStr();
-      const blob = await (await fetch(mt.dataUrl)).blob();
-      const path = `Asistencia/${fecha}/${personalId}_${mt.accion}.jpg`;
-      const r = storageRef(storage, path);
-      await uploadBytes(r, blob, { contentType: 'image/jpeg' });
-      const fotoUrl = await getDownloadURL(r);
-
-      const docId = `${fecha}_${proyectoActivoId}_${personalId}`;
-      const base = {
-        fecha, proyectoId: proyectoActivoId,
-        frenteId: modoTodosFrentes ? null : frenteActivoId,
-        personalId, nombre: mt.obrero.nombre, categoria: mt.obrero.categoria || '',
-        fuente: 'biometric-face', matchDistancia: mt.distancia, matchSimilitud: mt.similitud ?? null,
-        registradoPor: user?.email || 'kiosko', actualizadoEn: serverTimestamp(),
-      };
-
-      if (mt.accion === 'entrada') {
-        await setDoc(doc(db, 'Asistencia_Diaria', docId), {
-          ...base, entrada: hora, descanso: 60, fotoEvidencia: fotoUrl,
-        }, { merge: true });
-      } else {
-        const ent = hoy[personalId]?.entrada || '07:00';
-        const horas = Math.max(0, (minutos(hora) - minutos(ent) - 60) / 60);
-        await setDoc(doc(db, 'Asistencia_Diaria', docId), {
-          ...base, salida: hora, horasTrabajadas: +horas.toFixed(2), fotoSalida: fotoUrl,
-        }, { merge: true });
-      }
-
-      setExito({ nombre: mt.obrero.nombre, accion: mt.accion, hora, foto: mt.dataUrl });
-      setMatch(null);
-      setTimeout(() => setExito(null), 3200); // vuelve a escanear solo
-    } catch (e) {
-      showToast?.('Error guardando: ' + e.message, 'error');
-      setMatch(null);
-    } finally { setGuardando(false); }
-  };
+  }, [stream, modelosOK, personalEnrolado, hoy]);
 
   // ── Estado visual del header ──
   const presentes = Object.values(hoy).filter(r => r.entrada && !r.salida).length;
   const completos = Object.values(hoy).filter(r => r.entrada && r.salida).length;
+  const hayFresco = recientes.some(r => Date.now() - r.ts < 1500);
 
-  const headerColor = exito ? '#15803d' : noId ? '#b45309' : match ? '#1d4ed8' : BASE.navy;
-  const headerTxt = exito
-    ? (exito.accion === 'entrada' ? '✅ ENTRADA REGISTRADA' : '✅ SALIDA REGISTRADA')
-    : noId ? '⚠️ ROSTRO NO IDENTIFICADO'
-    : match ? '👤 IDENTIFICANDO…'
-    : stream ? '🔍 ACÉRCATE A LA CÁMARA' : '📷 LISTO PARA INICIAR';
+  const headerColor = hayFresco ? '#15803d' : BASE.navy;
+  const headerTxt = !stream ? '📷 LISTO PARA INICIAR'
+    : hayFresco ? '✅ MARCAJE REGISTRADO'
+    : '👥 ESCANEANDO GRUPO…';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
-      {/* Banda de estado grande — con relieve y degradado */}
+      {/* Banda de estado grande */}
       <div style={{
         background: headerColor,
         backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0) 45%), linear-gradient(0deg, rgba(0,0,0,0.18), rgba(0,0,0,0))',
@@ -296,7 +331,7 @@ export default function MarcadorAsistencia({ showToast }) {
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'stretch' }}>
 
-        {/* CÁMARA — área grande (≈2.2× el panel); se apila debajo del panel en pantallas angostas */}
+        {/* CÁMARA — área grande */}
         <div style={{
           flex: '2.2 1 460px', minWidth: 0,
           background: `linear-gradient(160deg, ${BASE.navy} 0%, ${BASE.navyDark} 100%)`,
@@ -319,104 +354,55 @@ export default function MarcadorAsistencia({ showToast }) {
                     fontSize: '15px', cursor: 'pointer', boxShadow: `0 8px 20px ${BASE.gold}55`,
                     opacity: (!modelosOK || personalEnrolado.length === 0) ? 0.5 : 1,
                   }}>
-                  ▶ Iniciar marcador
+                  ▶ Iniciar marcador grupal
                 </button>
               </div>
             )}
 
-            {/* Marco guía / estado */}
-            {stream && !exito && (
-              <div style={{
-                position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
-                width: '58%', aspectRatio: '3/4', borderRadius: '50%', pointerEvents: 'none',
-                border: `4px solid ${match ? '#22c55e' : noId ? '#f59e0b' : 'rgba(229,168,47,0.55)'}`,
-                boxShadow: match ? '0 0 0 9999px rgba(21,128,61,0.18)' : 'none',
-                transition: 'all 0.25s',
-              }} />
-            )}
-
-            {stream && analizando && !match && !exito && (
-              <div style={{ position: 'absolute', top: '12px', left: '12px', background: 'rgba(0,0,0,0.6)', color: '#fff', padding: '6px 14px', borderRadius: '999px', fontSize: '12px', fontWeight: 800 }}>
-                ● Analizando…
-              </div>
-            )}
-
-            {/* OVERLAY ÉXITO — pantalla grande */}
-            {exito && (
-              <div style={{
-                position: 'absolute', inset: 0, background: 'rgba(21,128,61,0.94)',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                color: '#fff', textAlign: 'center', padding: '20px',
-              }}>
-                <span style={{ fontSize: '64px', lineHeight: 1 }}>✅</span>
-                <p style={{ fontSize: '13px', fontWeight: 900, letterSpacing: '2px', marginTop: '10px', opacity: 0.9 }}>
-                  {exito.accion === 'entrada' ? 'BIENVENIDO' : 'HASTA MAÑANA'}
-                </p>
-                <p style={{ fontSize: '24px', fontWeight: 900, marginTop: '4px' }}>{exito.nombre}</p>
-                <p style={{ fontSize: '15px', fontWeight: 700, marginTop: '6px', opacity: 0.92 }}>
-                  {exito.accion === 'entrada' ? 'Entrada' : 'Salida'} registrada · {exito.hora}
-                </p>
-              </div>
-            )}
-
-            {/* OVERLAY MATCH — confirmación / cuenta regresiva */}
-            {match && !exito && (
-              <div style={{
-                position: 'absolute', left: 0, right: 0, bottom: 0,
-                background: 'linear-gradient(0deg, rgba(10,22,40,0.96), rgba(10,22,40,0.55) 70%, transparent)',
-                padding: '18px 16px 16px', color: '#fff',
-              }}>
-                {match.accion === 'completo' ? (
-                  <>
-                    <p style={{ fontSize: '20px', fontWeight: 900 }}>{match.obrero.nombre}</p>
-                    <p style={{ fontSize: '13px', color: '#fcd34d', fontWeight: 700, marginTop: '4px' }}>
-                      Ya registró entrada y salida hoy. ¡Buen trabajo! 👏
-                    </p>
-                    <button onClick={() => setMatch(null)} style={btnGhost}>Continuar</button>
-                  </>
-                ) : (
-                  <>
-                    <p style={{ fontSize: '12px', fontWeight: 800, color: '#86efac', letterSpacing: '1px' }}>
-                      ✓ RECONOCIDO · {match.similitud}% similitud {match.similitud >= SIMILITUD_AUTO ? '(alta)' : '(verificar)'}
-                    </p>
-                    <p style={{ fontSize: '22px', fontWeight: 900, marginTop: '3px' }}>{match.obrero.nombre}</p>
-                    <p style={{ fontSize: '13px', opacity: 0.85, marginTop: '2px' }}>
-                      {match.obrero.categoria || 'Personal'} · Marcará <b style={{ color: '#fcd34d' }}>{match.accion === 'entrada' ? 'ENTRADA' : 'SALIDA'}</b> {horaStr()}
-                    </p>
-                    {cuenta > 0 ? (
-                      <p style={{ fontSize: '14px', fontWeight: 800, marginTop: '10px' }}>
-                        Registrando automáticamente en <span style={{ color: '#fcd34d', fontSize: '20px' }}>{cuenta}</span>…
-                      </p>
-                    ) : (
-                      <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
-                        <button onClick={() => registrar(match)} disabled={guardando}
-                          style={{ flex: 1, padding: '13px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: 900, cursor: 'pointer' }}>
-                          {guardando ? 'Guardando…' : `✓ Confirmar ${match.accion}`}
-                        </button>
-                        <button onClick={() => setMatch(null)} style={btnGhost}>No soy yo</button>
-                      </div>
-                    )}
-                  </>
+            {/* Contador en vivo de rostros detectados / reconocidos */}
+            {stream && (
+              <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <span style={{ background: 'rgba(0,0,0,0.62)', color: '#fff', padding: '6px 13px', borderRadius: '999px', fontSize: '12px', fontWeight: 800 }}>
+                  {analizando ? '● ' : ''}👥 {detectados} {detectados === 1 ? 'rostro' : 'rostros'}
+                </span>
+                {reconocidos > 0 && (
+                  <span style={{ background: 'rgba(21,128,61,0.82)', color: '#fff', padding: '6px 13px', borderRadius: '999px', fontSize: '12px', fontWeight: 800 }}>
+                    ✓ {reconocidos} reconocido{reconocidos === 1 ? '' : 's'}
+                  </span>
                 )}
               </div>
             )}
 
-            {/* OVERLAY RECHAZO — rostro no alcanza el mínimo de similitud */}
-            {noId && !match && !exito && (
+            {/* Recuadro guía grupal */}
+            {stream && (
+              <div style={{
+                position: 'absolute', inset: '8% 6%', borderRadius: '14px', pointerEvents: 'none',
+                border: `3px dashed ${hayFresco ? 'rgba(34,197,94,0.8)' : 'rgba(229,168,47,0.45)'}`,
+                transition: 'border-color 0.3s',
+              }} />
+            )}
+
+            {/* Chips de "recién marcados" (feedback grupal) */}
+            {recientes.length > 0 && (
               <div style={{
                 position: 'absolute', left: 0, right: 0, bottom: 0,
-                background: 'linear-gradient(0deg, rgba(146,64,14,0.96), rgba(146,64,14,0.55) 70%, transparent)',
-                padding: '18px 16px 16px', color: '#fff',
+                background: 'linear-gradient(0deg, rgba(10,22,40,0.95), rgba(10,22,40,0.4) 75%, transparent)',
+                padding: '26px 14px 14px', display: 'flex', flexDirection: 'column', gap: '6px',
               }}>
-                <p style={{ fontSize: '13px', fontWeight: 900, color: '#fed7aa', letterSpacing: '0.5px' }}>
-                  ⚠️ ROSTRO NO RECONOCIDO
-                </p>
-                <p style={{ fontSize: '13px', opacity: 0.92, marginTop: '3px' }}>
-                  Similitud <b style={{ color: '#fde047' }}>{noIdSim}%</b> — se requiere mínimo <b>{SIMILITUD_MIN}%</b>.
-                </p>
-                <p style={{ fontSize: '11.5px', opacity: 0.8, marginTop: '2px' }}>
-                  Acércate al óvalo, mejora la iluminación o pide ser re-enrolado.
-                </p>
+                <p style={{ fontSize: '10.5px', fontWeight: 900, color: '#cbd5e1', letterSpacing: '1px' }}>RECIÉN MARCADOS</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px' }}>
+                  {recientes.map((r, i) => (
+                    <span key={`${r.nombre}-${r.ts}-${i}`} style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '6px',
+                      background: r.accion === 'entrada' ? 'rgba(22,163,74,0.92)' : 'rgba(37,99,235,0.92)',
+                      color: '#fff', padding: '6px 12px', borderRadius: '999px', fontSize: '12px', fontWeight: 800,
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                    }}>
+                      {r.accion === 'entrada' ? '▸' : '◂'} {r.nombre}
+                      <b style={{ color: '#fde68a', fontFamily: 'monospace' }}>{r.hora}</b>
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -464,12 +450,14 @@ export default function MarcadorAsistencia({ showToast }) {
                     {p.nombre}
                   </span>
                   {r?.entrada && (
-                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#15803d', fontFamily: 'monospace' }}>
-                      ▸ {r.entrada}
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#15803d', fontFamily: 'monospace' }}
+                      title={r.entradaReal ? `Llegada real ${r.entradaReal}` : ''}>
+                      ▸ {r.entrada}{r.entradaReal && r.entradaReal !== r.entrada ? <span style={{ color: BASE.mutedSoft, fontWeight: 700 }}> ({r.entradaReal})</span> : null}
                     </span>
                   )}
                   {r?.salida && (
-                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#b91c1c', fontFamily: 'monospace' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#b91c1c', fontFamily: 'monospace' }}
+                      title={r.salidaReal ? `Salida real ${r.salidaReal}` : ''}>
                       ◂ {r.salida}
                     </span>
                   )}
@@ -481,7 +469,7 @@ export default function MarcadorAsistencia({ showToast }) {
             })}
           </div>
           <p style={{ fontSize: '10.5px', color: BASE.muted, marginTop: '10px', textAlign: 'center', fontStyle: 'italic' }}>
-            Acércate al óvalo. La 1ª marca = ENTRADA, la 2ª = SALIDA. Solo se acepta con similitud ≥ {SIMILITUD_MIN}%; registro automático desde {SIMILITUD_AUTO}%.
+            Reconoce hasta 10+ personas a la vez. 1ª marca = ENTRADA (tareo 07:30), 2ª = SALIDA (hora en punto). La hora real se guarda para puntualidad. Solo se acepta con similitud ≥ {SIMILITUD_MIN}%.
           </p>
         </div>
       </div>
@@ -490,4 +478,3 @@ export default function MarcadorAsistencia({ showToast }) {
 }
 
 const cardBox = { background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', padding: '18px', textAlign: 'center', color: BASE.muted, fontSize: '13px', fontWeight: 600 };
-const btnGhost = { marginTop: '12px', padding: '11px 18px', background: 'rgba(255,255,255,0.14)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '10px', fontSize: '13px', fontWeight: 800, cursor: 'pointer' };

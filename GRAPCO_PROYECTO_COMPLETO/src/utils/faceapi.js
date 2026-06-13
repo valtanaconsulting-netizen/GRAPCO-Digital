@@ -43,6 +43,14 @@ export async function cargarModelos() {
 // similitud (≥75%) que aplica el marcador; bajarlo solo mejora la detección.
 const DETECT_OPTS = new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.4 });
 
+// Detección MULTI-rostro (kiosko grupal): inputSize 608 (múltiplo de 32, más alto
+// que 512) para que rostros pequeños/lejanos de un grupo de 10+ personas sigan
+// teniendo suficiente resolución y landmarks alineados. scoreThreshold 0.35: en
+// una toma grupal las caras del fondo puntúan algo más bajo; lo bajamos un poco
+// para no perderlas (la SEGURIDAD sigue dependiendo del piso de similitud ≥75%
+// que aplica el marcador al hacer match, no de este umbral de detección).
+const DETECT_OPTS_MULTI = new faceapi.TinyFaceDetectorOptions({ inputSize: 608, scoreThreshold: 0.35 });
+
 /** Detecta una sola cara y retorna { detection, landmarks, descriptor } o null. */
 export async function obtenerDescriptor(input) {
   await cargarModelos();
@@ -51,6 +59,22 @@ export async function obtenerDescriptor(input) {
     .withFaceLandmarks()
     .withFaceDescriptor();
   return detection || null;
+}
+
+/**
+ * Detecta TODAS las caras del frame y retorna un array de
+ * { detection, landmarks, descriptor } (vacío si no hay ninguna).
+ * Es la base del marcaje grupal: una sola toma puede reconocer 10+ personas a la
+ * vez. Cada elemento trae su propio descriptor de 128 floats y su bounding box
+ * (detection.box) por si se quiere dibujar el recuadro.
+ */
+export async function obtenerDescriptoresTodos(input) {
+  await cargarModelos();
+  const dets = await faceapi
+    .detectAllFaces(input, DETECT_OPTS_MULTI)
+    .withFaceLandmarks()
+    .withFaceDescriptors();
+  return Array.isArray(dets) ? dets : [];
 }
 
 /**

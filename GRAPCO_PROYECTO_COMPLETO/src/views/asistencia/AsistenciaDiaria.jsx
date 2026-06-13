@@ -22,6 +22,20 @@ function timeToHours(t) {
   return h + m / 60;
 }
 
+// Puntualidad vs la entrada meta del proyecto (07:30). Compara la hora REAL de
+// llegada (la del marcador facial) — independiente de lo que va al tareo (07:30
+// fijo). Sirve para reconocer a quién llega más temprano / más puntual.
+const META_ENTRADA_MIN = 7 * 60 + 30; // 07:30
+const toMin = (t) => { const [h, m] = (t || '0:0').split(':').map(Number); return (h || 0) * 60 + (m || 0); };
+function puntualidad(real) {
+  if (!real || !/^\d{2}:\d{2}$/.test(real)) return null;
+  const delta = toMin(real) - META_ENTRADA_MIN;
+  if (delta < 0)  return { txt: `${-delta} min antes`, color: '#15803d', bg: '#dcfce7' };
+  if (delta === 0) return { txt: 'Puntual', color: '#15803d', bg: '#dcfce7' };
+  if (delta <= 10) return { txt: `+${delta} min`, color: '#b45309', bg: '#fef3c7' };
+  return { txt: `Tarde +${delta} min`, color: '#b91c1c', bg: '#fee2e2' };
+}
+
 function calcularHHDelDia(entrada, salida, descansoMin = 60) {
   const e = timeToHours(entrada);
   const s = timeToHours(salida);
@@ -62,6 +76,8 @@ export default function AsistenciaDiaria({ showToast }) {
           map[data.personalId] = {
             entrada:  data.entrada || '',
             salida:   data.salida  || '',
+            entradaReal: data.entradaReal || '',
+            salidaReal:  data.salidaReal  || '',
             descanso: data.descanso ?? 60,
             observacion: data.observacion || '',
             docId: d.id,
@@ -201,6 +217,7 @@ export default function AsistenciaDiaria({ showToast }) {
                   <th style={{ ...th, textAlign: 'left', paddingLeft: '14px' }}>OBRERO</th>
                   <th style={th}>CATEGORÍA</th>
                   <th style={th}>ENTRADA</th>
+                  <th style={th}>PUNTUALIDAD<br/><span style={{ fontWeight: 600, opacity: 0.7 }}>(llegada real)</span></th>
                   <th style={th}>SALIDA</th>
                   <th style={th}>DESCANSO (min)</th>
                   <th style={th}>HN</th>
@@ -229,8 +246,25 @@ export default function AsistenciaDiaria({ showToast }) {
                           onChange={e => actualizar(p.id, 'entrada', e.target.value)} />
                       </td>
                       <td style={tdC}>
+                        {(() => {
+                          const pu = puntualidad(r.entradaReal);
+                          if (!pu) return <span style={{ color: BASE.mutedSoft }}>—</span>;
+                          return (
+                            <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                              <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: '11px', color: BASE.text }}>{r.entradaReal}</span>
+                              <span style={{ fontSize: '9.5px', fontWeight: 800, padding: '1px 7px', borderRadius: '20px', background: pu.bg, color: pu.color }}>{pu.txt}</span>
+                            </span>
+                          );
+                        })()}
+                      </td>
+                      <td style={tdC}>
                         <input type="time" value={r.salida} style={inp}
                           onChange={e => actualizar(p.id, 'salida', e.target.value)} />
+                        {r.salidaReal && r.salidaReal !== r.salida && (
+                          <div style={{ fontSize: '9.5px', color: BASE.mutedSoft, fontWeight: 700, marginTop: '2px' }}>
+                            real {r.salidaReal}
+                          </div>
+                        )}
                       </td>
                       <td style={tdC}>
                         <input type="number" min="0" max="120" value={r.descanso ?? 60} style={{ ...inp, width: '60px' }}
