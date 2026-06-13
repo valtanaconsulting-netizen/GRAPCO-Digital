@@ -17,7 +17,7 @@ export default function SectorizacionTren() {
   const cols = S.dias || Math.max(0, ...S.actividades.map(a => a.grid.length));
   const dias = Array.from({ length: cols }, (_, i) => i + 1);
   const totHH = S.actividades.reduce((s, a) => s + (a.hh || 0), 0);
-  const LW = 320, DW = 34;
+  const LW = 440, DW = 34;
 
   const td = { padding: '5px 6px', borderRight: '1px solid #eef2f6', fontSize: '10px' };
   const tn = { ...td, textAlign: 'right', fontFamily: 'monospace' };
@@ -69,8 +69,8 @@ export default function SectorizacionTren() {
             {/* filas */}
             {S.actividades.map((a, ai) => (
               <div key={ai} style={{ display: 'flex', borderBottom: '1px solid #eef2f6', minHeight: 28, background: ai % 2 ? '#f8fbff' : '#fff' }}>
-                <div style={{ width: LW, minWidth: LW, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px', padding: '0 8px', borderRight: `2px solid ${BASE.border}` }}>
-                  <span style={{ flex: 1, minWidth: 0, fontSize: '10px', color: BASE.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={a.actividad}>
+                <div style={{ width: LW, minWidth: LW, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', borderRight: `2px solid ${BASE.border}` }}>
+                  <span style={{ flex: 1, minWidth: 0, fontSize: '10px', color: BASE.text, whiteSpace: 'normal', lineHeight: 1.2, wordBreak: 'break-word' }} title={a.actividad}>
                     <b style={{ color: BASE.navy }}>{a.cod} </b>{a.actividad}
                   </span>
                   <span style={tn}>{nf(a.metrado, a.metrado < 100 ? 1 : 0)}</span>

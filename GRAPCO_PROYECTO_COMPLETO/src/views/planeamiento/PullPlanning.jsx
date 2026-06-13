@@ -61,7 +61,7 @@ export default function PullPlanning() {
   const totMarcas = filas.reduce((s, a) => s + (a.grid ? a.grid.filter(x => x != null).length : 0), 0);
   const dec = (P.decision && P.decision[0]) || null;
 
-  const LW = 300, DW = 26;
+  const LW = 430, DW = 26;
   const td = { padding: '4px 6px', fontSize: '10px' };
   const tn = { ...td, textAlign: 'right', fontFamily: 'ui-monospace, monospace', width: 30, flexShrink: 0, color: BASE.text };
   const bandaSeccion = '#EDF2F8';
@@ -182,8 +182,8 @@ export default function PullPlanning() {
               }
               return (
                 <div key={ai} style={{ display: 'flex', borderBottom: `1px solid ${BASE.borderSoft}`, minHeight: 26, background: zebra }}>
-                  <div style={{ width: LW, minWidth: LW, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px', padding: '0 8px', borderRight: `2px solid ${BASE.border}`, position: 'sticky', left: 0, zIndex: 1, background: zebra }}>
-                    <span style={{ flex: 1, minWidth: 0, fontSize: '11px', color: BASE.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={a.actividad || a.seccion}>
+                  <div style={{ width: LW, minWidth: LW, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', borderRight: `2px solid ${BASE.border}`, position: 'sticky', left: 0, zIndex: 1, background: zebra }}>
+                    <span style={{ flex: 1, minWidth: 0, fontSize: '11px', color: BASE.text, whiteSpace: 'normal', lineHeight: 1.2, wordBreak: 'break-word' }} title={a.actividad || a.seccion}>
                       {a.cod && <b style={{ color: BASE.navy }}>{a.cod} </b>}
                       {a.actividad || <span style={{ color: BASE.muted, fontStyle: 'italic' }}>↳ {a.seccion}</span>}
                     </span>

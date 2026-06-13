@@ -25,7 +25,7 @@ const ESPEC = {
 };
 const colorEsp = (cod) => (ESPEC[cod] && ESPEC[cod].c) || BASE.muted;
 
-const LW = 360; // ancho columna izquierda (actividad)
+const LW = 460; // ancho columna izquierda (actividad)
 const DW = 32;  // ancho columna de día
 
 // Tipografía formal reutilizada
@@ -138,9 +138,9 @@ export default function NormalTecnologica() {
                       const filaBg = ai % 2 ? BASE.bgSoft : BASE.white;
                       return (
                         <div key={ai} style={{ display: 'flex', borderBottom: `1px solid ${BASE.borderSoft}`, minHeight: 28, background: filaBg }}>
-                          <div style={{ width: LW, minWidth: LW, flexShrink: 0, position: 'sticky', left: 0, zIndex: 2, background: filaBg, display: 'flex', alignItems: 'center', gap: '6px', padding: '0 10px', borderRight: `2px solid ${BASE.border}` }}>
+                          <div style={{ width: LW, minWidth: LW, flexShrink: 0, position: 'sticky', left: 0, zIndex: 2, background: filaBg, display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRight: `2px solid ${BASE.border}` }}>
                             <span style={{ width: 44, flexShrink: 0, fontSize: '8.5px', fontWeight: 800, color: col, background: `${col}14`, border: `1px solid ${col}40`, borderRadius: '5px', padding: '2px 0', textAlign: 'center', letterSpacing: '0.4px' }}>{a.cod}</span>
-                            <span style={{ flex: 1, minWidth: 0, fontSize: '11px', color: BASE.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={a.actividad}>{a.actividad}</span>
+                            <span style={{ flex: 1, minWidth: 0, fontSize: '11px', color: BASE.text, whiteSpace: 'normal', lineHeight: 1.2, wordBreak: 'break-word' }} title={a.actividad}>{a.actividad}</span>
                             <span style={{ ...MONO_NUM, width: 34, flexShrink: 0, textAlign: 'center', fontSize: '10px', fontWeight: 700, color: BASE.muted }}>{a.dur || ''}</span>
                           </div>
                           <div style={{ flex: 1, display: 'flex' }}>

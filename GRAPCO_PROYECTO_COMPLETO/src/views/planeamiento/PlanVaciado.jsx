@@ -68,7 +68,7 @@ export default function PlanVaciado() {
     P.actividades.flatMap(a => (a.grid || []).map(m => (String(m || '').match(/A(\d+)/) || [])[1]).filter(Boolean))
   )).sort();
 
-  const LW = 360, DW = 30;
+  const LW = 480, DW = 30;
   const totalW = LW + dias.length * DW;
   const tn = { padding: '4px 6px', fontSize: '10.5px', textAlign: 'right', fontFamily: 'monospace' };
 
@@ -195,8 +195,8 @@ export default function PlanVaciado() {
                     const rowBg = ai % 2 ? BASE.bgSoft : BASE.white;
                     return (
                       <div key={ai} style={{ display: 'flex', borderBottom: `1px solid ${BASE.borderSoft}`, minHeight: 26, background: rowBg }}>
-                        <div style={{ width: LW, minWidth: LW, flexShrink: 0, position: 'sticky', left: 0, zIndex: 2, background: rowBg, display: 'flex', alignItems: 'center', padding: '0 10px', borderRight: `2px solid ${BASE.border}` }}>
-                          <span style={{ flex: 1, minWidth: 0, fontSize: '11px', color: BASE.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={`${a.cod} · ${a.actividad}`}>
+                        <div style={{ width: LW, minWidth: LW, flexShrink: 0, position: 'sticky', left: 0, zIndex: 2, background: rowBg, display: 'flex', alignItems: 'center', padding: '4px 10px', borderRight: `2px solid ${BASE.border}` }}>
+                          <span style={{ flex: 1, minWidth: 0, fontSize: '11px', color: BASE.text, whiteSpace: 'normal', lineHeight: 1.2, wordBreak: 'break-word' }} title={`${a.cod} · ${a.actividad}`}>
                             <b style={{ color: BASE.navyLight, fontSize: '9.5px' }}>{a.cod} </b>{a.actividad}
                           </span>
                           {FIJAS.map(f => (

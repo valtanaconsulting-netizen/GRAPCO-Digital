@@ -24,7 +24,6 @@ const ROL_ITEMS = {
   oficina_tecnica:   [{ key: 'ot',       label: 'Oficina Técnica',         iconName: 'fileText',   color: '#6366f1', group: 'MI ÁREA' }],
   seguridad:         [{ key: 'seguridad',label: 'Seguridad y Medio Ambiente', iconName: 'alert',   color: '#dc2626', group: 'MI ÁREA' }],
   planeamiento:      [
-    { key: 'planMaestro', label: 'Plan Maestro (WBS)',        iconName: 'tree',       color: '#1e3a5f',    group: 'PLANEAMIENTO' },
     { key: 'apus',        label: 'Análisis de Precios (APU)', iconName: 'calculator', color: '#6366f1',    group: 'PLANEAMIENTO' },
     { key: 'lps',         label: 'Last Planner System',       iconName: 'target',     color: '#0d9488',    group: 'PLANEAMIENTO' },
     { key: 'dashboard',   label: 'Producción',                iconName: 'dashboard',  color: BASE.navy,    group: 'ANÁLISIS' },
@@ -122,8 +121,8 @@ const EstadoObra          = lazy(() => import('./views/modulos/estadoObra/Estado
 //   - planeamiento → WBS, APU, Last Planner
 //   - admin      → null = TODOS los módulos (acceso completo)
 // Ingeniería de Producción ahora ABSORBE Planeamiento (Plan Maestro, APU, Last Planner).
-const KEYS_PRODUCCION  = ['estadoObra', 'flujo', 'dashboard', 'radarProd', 'registro', 'carta', 'warroom', 'planMaestro', 'apus', 'lps', 'cronogramaobra', 'normaltec', 'pullplanning', 'planvaciado', 'materiales', 'bim'];
-const KEYS_PLANEAMIENTO = ['flujo', 'cronogramaobra', 'normaltec', 'planMaestro', 'apus', 'pullplanning', 'lps', 'planvaciado'];
+const KEYS_PRODUCCION  = ['estadoObra', 'flujo', 'dashboard', 'radarProd', 'registro', 'carta', 'warroom', 'apus', 'lps', 'cronogramaobra', 'normaltec', 'pullplanning', 'planvaciado', 'materiales', 'bim'];
+const KEYS_PLANEAMIENTO = ['flujo', 'cronogramaobra', 'normaltec', 'apus', 'pullplanning', 'lps', 'planvaciado'];
 // Devuelve la lista de keys permitidas para el rol, o null si ve todo (admin).
 const keysPermitidasPorRol = (rol) => {
   if (rol === 'admin') return null;            // acceso total
@@ -592,7 +591,6 @@ function AppInner() {
             { key: 'flujo',       label: 'Flujo de Planeamiento',   iconName: 'target',      color: '#e5a82f',    group: 'PLANEAMIENTO' },
             { key: 'cronogramaobra', label: 'Cronograma de Obra',   iconName: 'clock',       color: '#34d399',    group: 'PLANEAMIENTO' },
             { key: 'normaltec',   label: 'Normal Tecnológica',      iconName: 'layers',      color: '#fb923c',    group: 'PLANEAMIENTO' },
-            { key: 'planMaestro', label: 'Plan Maestro (WBS)',      iconName: 'compass',     color: '#60a5fa',    group: 'PLANEAMIENTO' },
             { key: 'apus',        label: 'Análisis de Precios (APU)', iconName: 'coins',     color: '#a5b4fc',    group: 'PLANEAMIENTO' },
             { key: 'pullplanning', label: 'Pull Planning',          iconName: 'target',      color: '#a78bfa',    group: 'PLANEAMIENTO' },
             { key: 'lps',         label: 'Last Planner System',     iconName: 'target',      color: '#34d399',    group: 'PLANEAMIENTO' },
