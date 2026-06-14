@@ -169,15 +169,18 @@ export function mapearWBS(headers, rows) {
     return isNaN(n) ? 0 : n;
   };
 
-  const cPart = findCol(['partida']);
+  // "Partida" puede venir como tal o como Código/WBS (export de data del Plan Maestro).
+  const cPart = findCol(['partida', 'codigo', 'código', 'wbs', 'item']);
+  const cCodigo = findCol(['codigo', 'código', 'code']);     // código explícito (round-trip)
   const cSub  = findCol(['subpartida', 'sub-partida', 'sub partida']);
   const cAct  = findCol(['actividad', 'descripcion', 'descripción', 'nombre']);
   const cUnd  = findCol(['unidad', 'und', 'unit']);
   const cMet  = findCol(['metrado', 'cantidad', 'metr', 'qty']);
+  const cPU   = findCol(['precio unitario', 'precio', 'p.u.', 'pu']);  // PU (round-trip)
   const cHH   = findCol(['hh', 'horas hombre', 'horas']);
   const cIP   = findCol(['ip meta', 'ip', 'indice productividad', 'índice de productividad', 'rendimiento']);
 
-  const columnasDetectadas = { cPart, cSub, cAct, cUnd, cMet, cHH, cIP };
+  const columnasDetectadas = { cPart, cCodigo, cSub, cAct, cUnd, cMet, cPU, cHH, cIP };
   if (!cPart) errores.push('No se detectó la columna "Partida"');
   if (!cAct)  errores.push('No se detectó la columna "Actividad"');
   if (errores.length) return { items: [], errores, columnasDetectadas };
@@ -197,9 +200,10 @@ export function mapearWBS(headers, rows) {
       subpartida: (sub || '').toUpperCase(),
       actividad: act,
       descripcion: act,
-      codigo: '',
+      codigo: cCodigo ? (r[cCodigo] || '').toString().trim() : '',
       unidad: cUnd ? (r[cUnd] || '').toString().trim() || 'UND' : 'UND',
       metradoContractual: cMet ? num(r[cMet]) : 0,
+      precioUnitario: cPU ? num(r[cPU]) : 0,
       hhTotalPresupuestado: cHH ? num(r[cHH]) : 0,
       ipMeta: cIP ? num(r[cIP]) : 0,
       estado: 'no_iniciada',

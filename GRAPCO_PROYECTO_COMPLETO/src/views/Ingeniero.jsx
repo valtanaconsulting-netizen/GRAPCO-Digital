@@ -1022,7 +1022,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
       {/* === VISTAS === */}
       {view==='cockpit'    && <CockpitEjecutivo historial={historialEnriquecido} wbs={wbs} filtrados={filtrados} costosCustomMap={costosCustomMap} isMobile={isMobile}/>}
       {view==='auditoria'  && <Auditoria filtrados={filtrados} eliminar={eliminar} hhPorSemana={hhPorSemana} hhTotales={hhTotales} totalBaseDatos={(historial||[]).length}/>}
-      {view==='analisis'   && <CpiEac wbs={wbs} historial={historialEnriquecido} infoMap={infoWbs} onModificarWBS={() => handleSetView('wbs-editor')} onActualizarFlags={actualizarFlagsActividad}/>}
+      {view==='analisis'   && <CpiEac wbs={wbs} historial={historialEnriquecido} filtrados={filtrados} infoMap={infoWbs} onModificarWBS={() => handleSetView('wbs-editor')} onActualizarFlags={actualizarFlagsActividad}/>}
       {view==='wbs-editor' && <EditorWbsIsp showToast={showToast}/>}
       {view==='control'    && <ControlGerencial historialEnriquecido={historialEnriquecido} personalDB={personalDB} configuracion={configuracion} asistencia={asistencia} isMobile={isMobile}/>}
       {view==='vdc'        && <GateProyectoLegacy modulo="El VDC / LAP (lookahead del Excel)" icono="target"><VDC

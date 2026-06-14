@@ -144,7 +144,7 @@ function ModalAjustarSaldo({ datos, onCerrar, onGuardar }) {
   );
 }
 
-export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, onActualizarFlags }) {
+export default function CpiEac({ wbs, historial = [], filtrados = null, infoMap, onModificarWBS, onActualizarFlags }) {
   // Catálogo de datos: el editable del proyecto, o el fijo del código como respaldo.
   const INFO = infoMap || INFO_MAP;
   const { proyectoActivo } = useProyectoActivo();
@@ -200,6 +200,62 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
     } catch (e) {
       console.error('[exportarIPRealData]', e);
       alert('No se pudo exportar el IP real: ' + e.message);
+    }
+  };
+
+  // ISP SEMANAL (Excel): Informe Semanal de Producción — por semana HH real/meta/ppto,
+  // metrado, IP real y CPI, con acumulados. Misma agregación que la Curva S del CPI.
+  const exportarISPSemanal = async () => {
+    try {
+      const XLSX = await import('xlsx');
+      const bySem = {};
+      // Usa el set FILTRADO (lo que el usuario ve: partida/semana/fechas activas);
+      // si no llega el prop, cae al historial completo del proyecto.
+      const fuente = filtrados || historial || [];
+      fuente.forEach(r => {
+        const s = parseInt(r.semana);
+        if (!Number.isFinite(s) || s <= 0) return;
+        if (!bySem[s]) bySem[s] = { semana: s, hhR: 0, hhM: 0, hhP: 0, met: 0 };
+        const met = parseFloat(r.metrado) || 0;
+        bySem[s].hhR += parseFloat(r.totalHH) || 0;
+        bySem[s].met += met;
+        if (r._ipMeta && met > 0) bySem[s].hhM += met * r._ipMeta;
+        if (r._ipPpto && met > 0) bySem[s].hhP += met * r._ipPpto;
+      });
+      const semanas = Object.values(bySem).sort((a, b) => a.semana - b.semana);
+      if (!semanas.length) { alert('No hay registros semanales para el ISP.'); return; }
+      const COLS = ['Semana', 'Metrado', 'HH Real', 'HH Meta', 'HH Ppto', 'IP Real', 'CPI (meta)', 'Var HH (Meta-Real)', 'HH Real Acum', 'HH Meta Acum', 'CPI Acum'];
+      let aR = 0, aM = 0, aP = 0, aMet = 0;
+      const filas = semanas.map(s => {
+        aR += s.hhR; aM += s.hhM; aP += s.hhP; aMet += s.met;
+        return {
+          'Semana': `S${s.semana}`,
+          'Metrado': +s.met.toFixed(2),
+          'HH Real': +s.hhR.toFixed(1),
+          'HH Meta': +s.hhM.toFixed(1),
+          'HH Ppto': +s.hhP.toFixed(1),
+          'IP Real': s.met > 0 ? +(s.hhR / s.met).toFixed(3) : 0,
+          'CPI (meta)': s.hhR > 0 ? +(s.hhM / s.hhR).toFixed(2) : '',
+          'Var HH (Meta-Real)': +(s.hhM - s.hhR).toFixed(1),
+          'HH Real Acum': +aR.toFixed(1),
+          'HH Meta Acum': +aM.toFixed(1),
+          'CPI Acum': aR > 0 ? +(aM / aR).toFixed(2) : '',
+        };
+      });
+      filas.push({
+        'Semana': 'TOTAL', 'Metrado': +aMet.toFixed(2), 'HH Real': +aR.toFixed(1), 'HH Meta': +aM.toFixed(1), 'HH Ppto': +aP.toFixed(1),
+        'IP Real': aMet > 0 ? +(aR / aMet).toFixed(3) : 0, 'CPI (meta)': aR > 0 ? +(aM / aR).toFixed(2) : '',
+        'Var HH (Meta-Real)': +(aM - aR).toFixed(1), 'HH Real Acum': +aR.toFixed(1), 'HH Meta Acum': +aM.toFixed(1), 'CPI Acum': aR > 0 ? +(aM / aR).toFixed(2) : '',
+      });
+      const ws = XLSX.utils.json_to_sheet(filas, { header: COLS });
+      ws['!cols'] = COLS.map(c => ({ wch: Math.max(10, c.length + 1) }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'ISP Semanal');
+      const nombre = (proyectoActivo?.nombre || 'Proyecto').replace(/\s+/g, '_');
+      XLSX.writeFile(wb, `ISP_Semanal_${nombre}.xlsx`);
+    } catch (e) {
+      console.error('[ISP semanal]', e);
+      alert('No se pudo exportar el ISP semanal: ' + e.message);
     }
   };
   // Multi-abierto: se pueden expandir varias partidas/subpartidas a la vez (no acordeón).
@@ -564,6 +620,21 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
             }}>
             <span style={{ fontSize:'12px' }}>🔁</span>
             Exportar IP real (re-importable)
+          </button>
+
+          {/* ISP SEMANAL: Informe Semanal de Producción (HH/IP/CPI por semana, con acumulados). */}
+          <button onClick={exportarISPSemanal}
+            title="Excel del Informe Semanal de Producción: por semana HH real/meta/ppto, metrado, IP real y CPI, con acumulados."
+            style={{
+              padding:'6px 14px',
+              background: `linear-gradient(135deg, #0e7490, #155e75)`,
+              color:'#fff', border:'none', borderRadius:'8px',
+              fontSize:'10.5px', fontWeight:'800', letterSpacing:'0.3px', cursor:'pointer',
+              display:'flex', alignItems:'center', gap:'6px',
+              boxShadow:`0 4px 12px -4px #0e749099`,
+            }}>
+            <span style={{ fontSize:'12px' }}>📅</span>
+            ISP semanal (Excel)
           </button>
         </div>
       </div>

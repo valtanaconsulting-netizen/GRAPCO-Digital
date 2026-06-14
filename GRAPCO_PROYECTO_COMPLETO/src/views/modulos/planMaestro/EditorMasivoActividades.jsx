@@ -8,6 +8,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
 import { fmtSoles, fmtNumero } from '../../../utils/planMaestroAnalytics';
 import EmptyState from '../../../components/EmptyState';
+import ExportMenu from '../../../components/ExportMenu';
 
 const UNIDADES = ['', 'm3', 'm2', 'ml', 'kg', 'tn', 'und', 'glb', 'pza', 'par', 'jgo', 'pto'];
 
@@ -182,6 +183,50 @@ export default function EditorMasivoActividades({ showToast }) {
     }, 0) + nuevas.reduce((s, n) => s + (parseFloat(n.metradoContractual) || 0) * (parseFloat(n.precioUnitario) || 0), 0);
   }, [filasMostradas, nuevas, eliminadas]);
 
+  // ── Exportar: Informe (visual) y Data (re-importable vía «Importar Excel») ──
+  const exportarData = async () => {
+    if (!filasMostradas.length) { showToast?.('No hay actividades para exportar', 'info'); return; }
+    try {
+      const XLSX = await import('xlsx');
+      const COLS = ['Código', 'Descripción', 'Unidad', 'Metrado', 'Precio', 'HH'];
+      const filas = filasMostradas.map(a => ({
+        'Código': a.codigo || '',
+        'Descripción': a.descripcion || '',
+        'Unidad': a.unidad || '',
+        'Metrado': parseFloat(a.metradoContractual) || 0,
+        'Precio': parseFloat(a.precioUnitario) || 0,
+        'HH': parseFloat(a.hhTotalPresupuestado) || 0,
+      }));
+      const ws = XLSX.utils.json_to_sheet(filas, { header: COLS });
+      ws['!cols'] = COLS.map(c => ({ wch: c === 'Descripción' ? 40 : 14 }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'PlanMaestro');
+      XLSX.writeFile(wb, `Data_PlanMaestro_${(proyectoActivo?.nombre || 'proyecto').replace(/\s+/g, '_')}.xlsx`);
+      showToast?.(`Data exportada: ${filas.length} actividades. Se re-sube en «📥 Importar Excel» (aquí u otro proyecto) sin error.`, 'success');
+    } catch (e) { console.error('[exportarData PM]', e); showToast?.('No se pudo exportar la data', 'error'); }
+  };
+  const exportarInforme = async () => {
+    if (!filasMostradas.length) { showToast?.('No hay actividades para exportar', 'info'); return; }
+    try {
+      const XLSX = await import('xlsx');
+      const nombreFrente = (fid) => frentesDelProyecto.find(f => f.id === fid)?.codigo || '';
+      const COLS = ['Código', 'Descripción', 'Frente', 'Unidad', 'Metrado', 'P.U.', 'Subtotal', 'HH'];
+      let tMet = 0, tSub = 0, tHH = 0;
+      const filas = filasMostradas.map(a => {
+        const m = parseFloat(a.metradoContractual) || 0, p = parseFloat(a.precioUnitario) || 0, hh = parseFloat(a.hhTotalPresupuestado) || 0;
+        tMet += m; tSub += m * p; tHH += hh;
+        return { 'Código': a.codigo || '', 'Descripción': a.descripcion || '', 'Frente': nombreFrente(a.frenteId), 'Unidad': a.unidad || '', 'Metrado': m, 'P.U.': p, 'Subtotal': +(m * p).toFixed(2), 'HH': hh };
+      });
+      filas.push({ 'Código': '', 'Descripción': 'TOTAL', 'Frente': '', 'Unidad': '', 'Metrado': +tMet.toFixed(2), 'P.U.': '', 'Subtotal': +tSub.toFixed(2), 'HH': +tHH.toFixed(2) });
+      const ws = XLSX.utils.json_to_sheet(filas, { header: COLS });
+      ws['!cols'] = COLS.map(c => ({ wch: c === 'Descripción' ? 40 : 13 }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Informe');
+      XLSX.writeFile(wb, `Informe_PlanMaestro_${(proyectoActivo?.nombre || 'proyecto').replace(/\s+/g, '_')}.xlsx`);
+      showToast?.('Informe exportado.', 'success');
+    } catch (e) { console.error('[informe PM]', e); showToast?.('No se pudo exportar el informe', 'error'); }
+  };
+
   if (!proyectoActivo) {
     return <EmptyState icono="🌎" titulo="Sin proyecto activo" descripcion="Selecciona un proyecto para editar su Plan Maestro." />;
   }
@@ -206,6 +251,11 @@ export default function EditorMasivoActividades({ showToast }) {
           </select>
 
           <button onClick={agregarFila} style={btnAdd}>➕ Agregar fila</button>
+
+          <ExportMenu items={[
+            { icon: '📊', title: 'Informe (visual)', sub: 'Tabla con subtotales para leer/imprimir', onClick: exportarInforme },
+            { icon: '🔁', title: 'Data (re-importable)', sub: 'Se sube en «Importar Excel» (aquí u otro proyecto)', onClick: exportarData },
+          ]} />
 
           {cambiosPendientes > 0 && (
             <>

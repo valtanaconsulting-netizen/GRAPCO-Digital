@@ -6,7 +6,7 @@
 // El resultado alimenta el ISP / Análisis de Desempeño (CPI).
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs, query, where } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
 import { BASE } from '../../../utils/styles';
 import { CATALOGO_MASTER, INFO_MAP } from '../../../utils/constants';
@@ -19,6 +19,7 @@ import {
 } from '../../../utils/catalogoWbs';
 import { PRESUPUESTO_CREDITEX } from '../../../data/presupuestoCreditex';
 import { generarCronogramaDesdeCatalogo } from '../../../utils/autoprograma';
+import { calcularIPRealProyecto } from '../../../utils/ipRealProyecto';
 
 const clonar = (x) => JSON.parse(JSON.stringify(x || []));
 const fmt = (n, dec = 2) => num(n).toLocaleString('es-PE', { minimumFractionDigits: dec, maximumFractionDigits: dec });
@@ -45,6 +46,10 @@ export default function EditorWbsIsp({ showToast }) {
   const [origenSel, setOrigenSel] = useState('');
   const [resetMet, setResetMet] = useState(true);
   const [ipModo, setIpModo]     = useState('real'); // 'real' | 'presupuesto'
+  // Comparador de rendimientos reales entre proyectos
+  const [compB, setCompB]       = useState('');
+  const [compRows, setCompRows] = useState(null);
+  const [compMeta, setCompMeta] = useState(null);
   const [progFecha, setProgFecha] = useState('');
   const [progHoras, setProgHoras] = useState(8);
   const [progCrew, setProgCrew]   = useState(4);
@@ -322,38 +327,50 @@ export default function EditorWbsIsp({ showToast }) {
   }, [proyectos, proyectoActivoId]);
 
   const abrirImportar = () => { setOrigenSel(fuentes[0]?.id || ''); setResetMet(true); setModal('importar'); };
+  const abrirComparar = () => { setCompB(fuentes[0]?.id || ''); setCompRows(null); setCompMeta(null); setModal('comparar'); };
+
+  // Compara el IP REAL (productividad probada) de ESTE proyecto vs otro, por actividad.
+  const ejecutarComparacion = async () => {
+    if (!compB) return toast('Elige el proyecto a comparar', 'warning');
+    setTrabajando(true);
+    try {
+      const opt = { proyectoDefaultId: PROYECTO_DEFAULT_ID };
+      const [A, B] = await Promise.all([
+        calcularIPRealProyecto(proyectoActivoId, opt),
+        calcularIPRealProyecto(compB, opt),
+      ]);
+      const keys = new Set([...Object.keys(A.detalle), ...Object.keys(B.detalle)]);
+      const rows = [];
+      keys.forEach(k => {
+        const da = A.detalle[k], dbb = B.detalle[k];
+        const ipA = da?.ip ?? null, ipB = dbb?.ip ?? null;
+        if (ipA == null && ipB == null) return;
+        const nombre = da?.nombre || dbb?.nombre || k;
+        const delta = (ipA != null && ipB != null && ipA > 0) ? +(((ipB - ipA) / ipA) * 100).toFixed(1) : null;
+        rows.push({ nombre, ipA, ipB, delta });
+      });
+      // Δ% = (ipB − ipA)/ipA. Menor IP = mejor. Δ<0 ⇒ el OTRO (B) gasta menos ⇒ A (activo) PEOR.
+      rows.sort((x, y) => {
+        if ((x.delta == null) !== (y.delta == null)) return x.delta == null ? 1 : -1;
+        if (x.delta != null && y.delta != null) return x.delta - y.delta; // A más peor (Δ más negativo) arriba
+        return x.nombre.localeCompare(y.nombre);
+      });
+      const comunes = rows.filter(r => r.delta != null);
+      setCompRows(rows);
+      setCompMeta({
+        comunes: comunes.length,
+        mejor: comunes.filter(r => r.delta > 0).length,   // A rinde mejor: el otro gasta más HH/u
+        peor: comunes.filter(r => r.delta < 0).length,
+      });
+    } catch (e) {
+      console.error('[comparar]', e);
+      toast('Error al comparar: ' + e.message, 'error');
+    } finally { setTrabajando(false); }
+  };
   const abrirPrograma = () => {
     if (!arbol.length) return toast('Primero carga/importa el catálogo y captura metrados', 'warning');
     setProgFecha(isoLocal(fechaInicioProyecto) || isoLocal(new Date()));
     setProgHoras(8); setProgCrew(4); setModal('programa');
-  };
-
-  // IP REAL del proyecto origen = ΣtotalHH ÷ Σmetrado por actividad (desde su
-  // Historial), igual que el CPI. Devuelve { normActividad(nombre): ipReal }.
-  const calcularIPRealProyecto = async (projId) => {
-    // Aislamiento: registros del proyecto (legacy sin proyectoId solo cuentan en el default).
-    let docs = [];
-    if (projId === PROYECTO_DEFAULT_ID) {
-      const snap = await getDocs(collection(db, 'Historial'));
-      docs = snap.docs.map(d => d.data())
-        .filter(r => r.proyectoId === projId || !r.proyectoId);
-    } else {
-      const snap = await getDocs(query(collection(db, 'Historial'), where('proyectoId', '==', projId)));
-      docs = snap.docs.map(d => d.data());
-    }
-    const agg = {};
-    docs.forEach(r => {
-      const a = (r._actividadCanonica || r.actividad || '').trim();
-      if (!a) return;
-      const k = normActividad(a);
-      const met = parseFloat(r.metrado) || 0;
-      const hh = parseFloat(r.totalHH) || 0;
-      if (!agg[k]) agg[k] = { met: 0, hh: 0 };
-      agg[k].met += met; agg[k].hh += hh;
-    });
-    const ip = {};
-    Object.entries(agg).forEach(([k, v]) => { if (v.met > 0) ip[k] = +(v.hh / v.met).toFixed(4); });
-    return ip;
   };
 
   const importarDeProyecto = async () => {
@@ -370,7 +387,9 @@ export default function EditorWbsIsp({ showToast }) {
       if (!arbolFuente || !arbolFuente.length) { toast('Ese proyecto no tiene catálogo WBS para importar', 'warning'); return; }
 
       // Si se pidió el RENDIMIENTO REAL, calcularlo desde el Historial del origen.
-      const realIP = ipModo === 'real' ? await calcularIPRealProyecto(origenSel) : null;
+      const realIP = ipModo === 'real'
+        ? (await calcularIPRealProyecto(origenSel, { proyectoDefaultId: PROYECTO_DEFAULT_ID })).ip
+        : null;
       let nReal = 0;
       const destFrente = columnas[0]?.id || FRENTE_BASE;
 
@@ -513,6 +532,76 @@ export default function EditorWbsIsp({ showToast }) {
         </Modal>
       )}
 
+      {modal === 'comparar' && (
+        <Modal title="📊 Comparar rendimientos reales entre proyectos" onClose={() => !trabajando && setModal(null)}>
+          <p style={{ fontSize: '12px', color: BASE.muted, lineHeight: 1.6, marginBottom: '12px' }}>
+            Compara la <b>productividad REAL</b> (IP = HH ÷ unidad, <b>menor es mejor</b>) de <b>{proyectoNombre}</b> contra
+            otro proyecto, actividad por actividad. Útil para ver si mejoraste de obra a obra.
+          </p>
+          <label style={lblModal}>Comparar contra…</label>
+          <select value={compB} onChange={e => { setCompB(e.target.value); setCompRows(null); }} style={inputModal}>
+            <option value="">— Elige un proyecto —</option>
+            {fuentes.map(f => <option key={f.id} value={f.id}>{f.nombre}</option>)}
+          </select>
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '14px' }}>
+            <Btn onClick={() => setModal(null)} bg={BASE.white} color={BASE.navy} border>Cerrar</Btn>
+            <Btn onClick={ejecutarComparacion} bg={BASE.navy} color="#fff" disabled={trabajando || !compB}>
+              {trabajando ? 'Comparando…' : 'Comparar'}
+            </Btn>
+          </div>
+
+          {compRows && (
+            <div style={{ marginTop: '16px' }}>
+              {compMeta && (
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                  <ChipCmp txt={`${compMeta.comunes} actividades en ambos`} c={BASE.navy} />
+                  <ChipCmp txt={`🟢 ${compMeta.mejor} mejor aquí`} c={BASE.green} />
+                  <ChipCmp txt={`🔴 ${compMeta.peor} peor aquí`} c={'#dc2626'} />
+                </div>
+              )}
+              {compRows.length === 0 ? (
+                <p style={{ fontSize: '12px', color: BASE.muted, textAlign: 'center', padding: '14px' }}>
+                  Ninguno de los dos proyectos tiene avance real con IP para comparar.
+                </p>
+              ) : (
+                <>
+                  <div style={{ maxHeight: '46vh', overflow: 'auto', border: `1px solid ${BASE.border}`, borderRadius: '10px' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+                      <thead style={{ position: 'sticky', top: 0 }}>
+                        <tr style={{ background: BASE.navy, color: '#fff' }}>
+                          <th style={thCmp('left')}>Actividad</th>
+                          <th style={thCmp('right')}>IP · {proyectoNombre.slice(0, 14)}</th>
+                          <th style={thCmp('right')}>IP · {(fuentes.find(f => f.id === compB)?.nombre || 'otro').slice(0, 14)}</th>
+                          <th style={thCmp('right')}>Δ%</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {compRows.map((r, i) => {
+                          const col = r.delta == null ? BASE.muted : (r.delta > 0 ? BASE.green : '#dc2626');
+                          return (
+                            <tr key={i} style={{ background: i % 2 ? '#f8fafc' : '#fff', borderBottom: `1px solid ${BASE.border}` }}>
+                              <td style={tdCmp('left')}>{r.nombre}</td>
+                              <td style={tdCmp('right')}>{r.ipA != null ? r.ipA.toFixed(3) : '—'}</td>
+                              <td style={tdCmp('right')}>{r.ipB != null ? r.ipB.toFixed(3) : '—'}</td>
+                              <td style={{ ...tdCmp('right'), color: col, fontWeight: 800 }}>{r.delta != null ? `${r.delta > 0 ? '+' : ''}${r.delta}%` : '—'}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p style={{ fontSize: '10px', color: BASE.muted, marginTop: '8px', lineHeight: 1.5 }}>
+                    Δ% = (IP {(fuentes.find(f => f.id === compB)?.nombre || 'otro')} − IP {proyectoNombre}) ÷ IP {proyectoNombre} · menor IP = mejor.
+                    <b style={{ color: BASE.green }}> Verde (Δ&gt;0)</b> = {proyectoNombre} rinde mejor (el otro gasta más HH/u);
+                    <b style={{ color: '#dc2626' }}> rojo (Δ&lt;0)</b> = {proyectoNombre} rinde peor.
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+        </Modal>
+      )}
+
       {modal === 'programa' && (
         <Modal title="📅 Generar programación (tren de actividades)" onClose={() => !trabajando && setModal(null)}>
           <p style={{ fontSize: '12px', color: BASE.muted, lineHeight: 1.6, marginBottom: '14px' }}>
@@ -565,6 +654,7 @@ export default function EditorWbsIsp({ showToast }) {
             {existe ? '🔄 Recargar guardado' : '📋 Presupuesto CREDITEX'}
           </Btn>
           <Btn onClick={abrirImportar} bg={BASE.white} color={BASE.navy} border>📦 Importar de proyecto…</Btn>
+          <Btn onClick={abrirComparar} bg={BASE.white} color={BASE.navy} border>📊 Comparar rendimientos</Btn>
           <Btn onClick={aplicarCorreccionesISP} bg={BASE.white} color={BASE.navy} border>🔧 Aplicar correcciones ISP</Btn>
           <div style={{ position: 'relative' }}>
             <Btn onClick={() => setExportOpen(o => !o)} bg={BASE.white} color={BASE.navy} border>⬇️ Exportar ▾</Btn>
@@ -827,6 +917,15 @@ function ExportItem({ onClick, icon, title, sub, ultimo }) {
     </button>
   );
 }
+
+// Chip resumen del comparador
+function ChipCmp({ txt, c }) {
+  return (
+    <span style={{ background: `${c}14`, border: `1px solid ${c}40`, color: c, borderRadius: '999px', padding: '4px 11px', fontSize: '10.5px', fontWeight: 800 }}>{txt}</span>
+  );
+}
+const thCmp = (align) => ({ padding: '8px 10px', textAlign: align, fontSize: '10px', fontWeight: 800, letterSpacing: '0.3px', borderBottom: `2px solid ${BASE.gold}`, whiteSpace: 'nowrap' });
+const tdCmp = (align) => ({ padding: '6px 10px', textAlign: align, color: BASE.text, fontFamily: align === 'right' ? 'var(--grapco-font-mono, monospace)' : 'inherit' });
 
 // Celda numérica: muestra el valor formateado (Metrado/HH 2 dec · IP 4 dec)
 // cuando NO está enfocada; al editar muestra el valor crudo; al salir, formatea.
