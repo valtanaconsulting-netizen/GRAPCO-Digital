@@ -6,10 +6,11 @@
 // El resultado alimenta el ISP / Análisis de Desempeño (CPI).
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
 import { BASE } from '../../../utils/styles';
 import { CATALOGO_MASTER, INFO_MAP } from '../../../utils/constants';
+import { normActividad } from '../../../utils/normalizacion';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
 import { useCatalogoWBS } from '../../../hooks/useCatalogoWBS';
 import {
@@ -29,7 +30,7 @@ const lblModal = { display: 'block', fontSize: '11px', fontWeight: 800, color: B
 const inputModal = { width: '100%', border: `1px solid ${BASE.border}`, borderRadius: '8px', padding: '8px 10px', fontSize: '12px', boxSizing: 'border-box' };
 
 export default function EditorWbsIsp({ showToast }) {
-  const { proyectoActivoId, proyectos, frentes, fechaInicioProyecto } = useProyectoActivo();
+  const { proyectoActivoId, proyectos, frentes, fechaInicioProyecto, PROYECTO_DEFAULT_ID } = useProyectoActivo();
   const { loading, arbol: arbolRemoto, existe } = useCatalogoWBS(proyectoActivoId);
 
   const [arbol, setArbol]   = useState([]);
@@ -43,6 +44,7 @@ export default function EditorWbsIsp({ showToast }) {
   const [modal, setModal]       = useState(null);   // 'importar' | 'programa'
   const [origenSel, setOrigenSel] = useState('');
   const [resetMet, setResetMet] = useState(true);
+  const [ipModo, setIpModo]     = useState('real'); // 'real' | 'presupuesto'
   const [progFecha, setProgFecha] = useState('');
   const [progHoras, setProgHoras] = useState(8);
   const [progCrew, setProgCrew]   = useState(4);
@@ -326,6 +328,34 @@ export default function EditorWbsIsp({ showToast }) {
     setProgHoras(8); setProgCrew(4); setModal('programa');
   };
 
+  // IP REAL del proyecto origen = ΣtotalHH ÷ Σmetrado por actividad (desde su
+  // Historial), igual que el CPI. Devuelve { normActividad(nombre): ipReal }.
+  const calcularIPRealProyecto = async (projId) => {
+    // Aislamiento: registros del proyecto (legacy sin proyectoId solo cuentan en el default).
+    let docs = [];
+    if (projId === PROYECTO_DEFAULT_ID) {
+      const snap = await getDocs(collection(db, 'Historial'));
+      docs = snap.docs.map(d => d.data())
+        .filter(r => r.proyectoId === projId || !r.proyectoId);
+    } else {
+      const snap = await getDocs(query(collection(db, 'Historial'), where('proyectoId', '==', projId)));
+      docs = snap.docs.map(d => d.data());
+    }
+    const agg = {};
+    docs.forEach(r => {
+      const a = (r._actividadCanonica || r.actividad || '').trim();
+      if (!a) return;
+      const k = normActividad(a);
+      const met = parseFloat(r.metrado) || 0;
+      const hh = parseFloat(r.totalHH) || 0;
+      if (!agg[k]) agg[k] = { met: 0, hh: 0 };
+      agg[k].met += met; agg[k].hh += hh;
+    });
+    const ip = {};
+    Object.entries(agg).forEach(([k, v]) => { if (v.met > 0) ip[k] = +(v.hh / v.met).toFixed(4); });
+    return ip;
+  };
+
   const importarDeProyecto = async () => {
     if (!origenSel || origenSel === proyectoActivoId) return toast('Elige un proyecto de origen válido', 'warning');
     setTrabajando(true);
@@ -339,30 +369,49 @@ export default function EditorWbsIsp({ showToast }) {
       }
       if (!arbolFuente || !arbolFuente.length) { toast('Ese proyecto no tiene catálogo WBS para importar', 'warning'); return; }
 
+      // Si se pidió el RENDIMIENTO REAL, calcularlo desde el Historial del origen.
+      const realIP = ipModo === 'real' ? await calcularIPRealProyecto(origenSel) : null;
+      let nReal = 0;
       const destFrente = columnas[0]?.id || FRENTE_BASE;
+
       const nuevo = clonar(arbolFuente).map(p => ({
         nombre: p.nombre,
         subpartidas: (p.subpartidas || []).map(s => ({
           nombre: s.nombre,
           actividades: (s.actividades || []).map(a => {
-            if (!resetMet) return normalizarActividad(a);
-            // Conserva el RENDIMIENTO (IP) pero resetea los metrados a 0.
+            const ipRealAct = realIP ? realIP[normActividad(a.nombre)] : null;
+            if (ipRealAct != null) nReal += 1;
+            if (!resetMet) {
+              // Copia metrados tal cual; si hay IP real, sobreescribe el rendimiento.
+              const na = normalizarActividad(a);
+              if (ipRealAct != null) {
+                const fids = Object.keys(na.ofertas);
+                if (fids.length) fids.forEach(fid => { na.ofertas[fid].ip = ipRealAct; });
+                else na.ofertas[destFrente] = { met: 0, ip: ipRealAct };
+                na.ipMeta = ipRealAct;
+              }
+              return na;
+            }
+            // Resetea metrados a 0 y conserva el rendimiento (real si existe, si no el del presupuesto).
             const c = calcActividad(a);
-            // Primera oferta con IP > 0 (no la primera a secas, que podría ser 0 y perder el rendimiento).
             const ipOferta = Object.values(a.ofertas || {}).map(o => num(o?.ip)).find(v => v > 0) || 0;
-            const ipRep = c.contractualIP || ipOferta || num(a.ipMeta) || 0;
+            const ipPresup = c.contractualIP || ipOferta || num(a.ipMeta) || 0;
+            const ipRep = (ipRealAct != null) ? ipRealAct : ipPresup;
             return {
               nombre: a.nombre, un: a.un || 'UND',
               ofertas: { [destFrente]: { met: 0, ip: ipRep } },
               adicional: { met: 0, ip: 0 },
-              ipMeta: num(a.ipMeta) || ipRep || 0,
+              ipMeta: (ipRealAct != null) ? ipRealAct : (num(a.ipMeta) || ipPresup || 0),
             };
           }),
         })),
       }));
       setArbol(nuevo); setDirty(true); setModal(null);
       const t = totalesArbol(nuevo);
-      toast(`Importado de plantilla: ${t.partidas} partidas · ${t.actividades} actividades (rendimientos conservados). Captura metrados y Guarda.`, 'success');
+      const fuenteIP = ipModo === 'real'
+        ? (nReal > 0 ? `con IP REAL probado en ${nReal} actividades` : 'sin avance real en el origen → se usó el IP del presupuesto')
+        : 'con IP del presupuesto';
+      toast(`Importado de plantilla: ${t.partidas} partidas · ${t.actividades} actividades (${fuenteIP}). Captura metrados y Guarda.`, 'success');
     } catch (e) {
       console.error('[importarDeProyecto]', e);
       toast('Error al importar: ' + e.message, 'error');
@@ -428,6 +477,26 @@ export default function EditorWbsIsp({ showToast }) {
             <option value="">— Elige un proyecto —</option>
             {fuentes.map(f => <option key={f.id} value={f.id}>{f.nombre}</option>)}
           </select>
+
+          {/* Qué rendimiento (IP) traer: el REAL probado en obra o el del presupuesto */}
+          <label style={{ ...lblModal, marginTop: '14px' }}>¿Qué rendimiento (IP) copiar?</label>
+          {[
+            { v: 'real', t: 'IP REAL logrado en obra (recomendado)', d: 'La productividad PROBADA del proyecto origen (HH real ÷ metrado real). La realidad como base.' },
+            { v: 'presupuesto', t: 'IP del presupuesto', d: 'El rendimiento planificado del catálogo origen.' },
+          ].map(o => (
+            <label key={o.v} style={{
+              display: 'flex', alignItems: 'flex-start', gap: '8px', marginTop: '8px', cursor: 'pointer',
+              border: `1.5px solid ${ipModo === o.v ? BASE.gold : BASE.border}`, borderRadius: '10px',
+              padding: '10px 12px', background: ipModo === o.v ? '#fffaf0' : '#fff',
+            }}>
+              <input type="radio" name="ipModo" checked={ipModo === o.v} onChange={() => setIpModo(o.v)} style={{ marginTop: '2px' }} />
+              <span style={{ minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: '12px', fontWeight: 800, color: BASE.navy }}>{o.t}</span>
+                <span style={{ display: 'block', fontSize: '10.5px', color: BASE.muted, marginTop: '1px', lineHeight: 1.45 }}>{o.d}</span>
+              </span>
+            </label>
+          ))}
+
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '14px', fontSize: '12px', fontWeight: 700, color: BASE.navy, cursor: 'pointer' }}>
             <input type="checkbox" checked={resetMet} onChange={e => setResetMet(e.target.checked)} />
             Resetear metrados a 0 y conservar rendimientos (recomendado)
