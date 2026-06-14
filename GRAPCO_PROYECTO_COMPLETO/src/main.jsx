@@ -48,6 +48,11 @@ async function verificarVersion() {
 }
 verificarVersion();
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') verificarVersion(); });
+// Chequeo PERIÓDICO (cada 5 min): una PWA instalada en escritorio/kiosko puede
+// quedar horas abierta y enfocada → 'visibilitychange' nunca dispara y no se
+// enteraría de un deploy nuevo. Este intervalo garantiza que tome la última
+// versión sin que nadie tenga que cerrar/reabrir ni limpiar caché.
+setInterval(verificarVersion, 5 * 60 * 1000);
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
