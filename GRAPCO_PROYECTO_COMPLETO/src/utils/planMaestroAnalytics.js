@@ -28,8 +28,13 @@ export const CATEGORIAS_MO = [
   { id: 'AYUDANTE', label: 'Ayudante', salarioBase: 15.00 },
 ];
 
-// Factor de aportes legales Perú (CTS, vacaciones, ESSALUD, etc.)
+// Factor de aportes legales Perú (CTS, vacaciones, ESSALUD, etc.) — usado en APUs.
 export const FACTOR_APORTES_PE = 1.40;
+
+// Costo-hora ÚNICO de mano de obra para el COSTO REAL del RO. Debe coincidir con
+// helpers.COSTO_HORA_PROMEDIO (= 25.5). Toda la plataforma costea la MO a esta
+// tarifa, NO por cargo (regla de gerencia; cuadra con la hoja CR del F06).
+export const COSTO_HORA_RO = 25.5;
 
 // Niveles WBS típicos en construcción civil peruana
 export const NIVELES_WBS = [
@@ -293,23 +298,27 @@ export function recalcularAPUReal(apuTeorico, datosReales = {}) {
 //    Cruza Tareos + Kardex + Subcontratos con la actividad WBS
 // ════════════════════════════════════════════════════════════════
 
-export function calcularCostoRealActividad({ codigoWBS, tareos = [], kardexMovimientos = [], salariosPorCategoria = new Map() }) {
+export function calcularCostoRealActividad({
+  codigoWBS, tareos = [], kardexMovimientos = [],
+  facturas = [], valorizacionesSC = [],
+  salariosPorCategoria = new Map(),   // legacy: el costo real usa el costo-hora único
+}) {
   if (!codigoWBS) return null;
+  // Coincide la partida por cualquiera de los campos de enlace al Catálogo WBS.
+  const esDeEstaPartida = (x) => x?.partida === codigoWBS || x?.codigoWBS === codigoWBS || x?.actividad === codigoWBS;
 
-  // 1. Costo MO (de Tareos vinculados a esta partida WBS)
+  // 1. Costo MO — Tareos × costo-hora ÚNICO (S/25.5). Cuadra con "CONTROL TAREOS"
+  //    de la hoja CR del F06. No se usa tarifa por cargo.
   let costoMO = 0;
   let hhAcum = 0;
   for (const t of tareos) {
-    if (t.partida !== codigoWBS && t.actividad !== codigoWBS) continue;
+    if (!esDeEstaPartida(t)) continue;
     const hh = t.horasHombre || t.hh || 0;
-    const cat = (t.categoria || 'AYUDANTE').toUpperCase();
-    const salarioBase = salariosPorCategoria.get(cat) ||
-                        CATEGORIAS_MO.find(c => c.id === cat)?.salarioBase || 15;
-    costoMO += hh * salarioBase * FACTOR_APORTES_PE;
+    costoMO += hh * COSTO_HORA_RO;
     hhAcum += hh;
   }
 
-  // 2. Costo Materiales (de salidas de Kardex con partidaDestino = codigoWBS)
+  // 2. Costo Materiales — salidas de Kardex / Registro de Almacén a esta partida.
   let costoMat = 0;
   for (const m of kardexMovimientos) {
     if (m.tipo !== 'SALIDA') continue;
@@ -318,17 +327,29 @@ export function calcularCostoRealActividad({ codigoWBS, tareos = [], kardexMovim
     costoMat += m.costoTotal || (m.cantidad * (m.costoUnitario || 0));
   }
 
-  // 3. Equipos y SC: por implementar en fases siguientes
-  const costoEq = 0;
-  const costoSC = 0;
+  // 3. Facturas — subcontratos/proveedores devengados (sin IGV) a esta partida.
+  let costoFacturas = 0;
+  for (const f of facturas) {
+    if (!esDeEstaPartida(f) || f.estado === 'anulado') continue;
+    costoFacturas += Number(f.montoSinIGV ?? f.costoDirecto ?? f.monto ?? 0) || 0;
+  }
 
-  const costoTotal = costoMO + costoMat + costoEq + costoSC;
+  // 4. Subcontratos valorizados (F10) a esta partida/categoría.
+  let costoSC = 0;
+  for (const v of valorizacionesSC) {
+    if (!esDeEstaPartida(v) || v.estado === 'anulado') continue;
+    costoSC += Number(v.cdValorizado ?? v.montoSinIGV ?? v.monto ?? 0) || 0;
+  }
+
+  const costoEq = 0; // equipos: fase siguiente
+  const costoTotal = costoMO + costoMat + costoFacturas + costoSC + costoEq;
 
   return {
     costoMO: redondear(costoMO),
     costoMat: redondear(costoMat),
-    costoEq: redondear(costoEq),
+    costoFacturas: redondear(costoFacturas),
     costoSC: redondear(costoSC),
+    costoEq: redondear(costoEq),
     costoTotal: redondear(costoTotal),
     hhAcum: redondear(hhAcum, 2),
   };
@@ -452,7 +473,10 @@ export function calcularROMensual({
   apus = [],                 // APUs por actividad
   tareos = [],               // Tareos del mes
   kardexMovimientos = [],    // Movimientos materiales
-  valorizaciones = [],       // Valorizaciones contractuales
+  valorizaciones = [],       // Valorizaciones contractuales (cliente → EV)
+  facturas = [],             // Registro de Facturas (subcontratos/proveedores → AC)
+  valorizacionesSC = [],     // Valorizaciones a subcontratistas F10 (→ AC)
+  gastosGenerales = [],      // GG Oficina (→ AC, sección aparte; fase siguiente)
   salariosPorCategoria = new Map(),
   fechaActual = new Date(),
   margenMeta = 15,           // % margen meta del proyecto
@@ -478,6 +502,8 @@ export function calcularROMensual({
       codigoWBS,
       tareos,
       kardexMovimientos,
+      facturas,
+      valorizacionesSC,
       salariosPorCategoria,
     });
 

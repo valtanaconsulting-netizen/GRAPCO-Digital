@@ -21,10 +21,13 @@ export default function useRO({ margenMeta = 15, fechaActual = new Date() } = {}
   const [kardexMov, setKardexMov] = useState([]);
   const [historial, setHistorial] = useState([]);
   const [valorizaciones, setValorizaciones] = useState([]);
+  const [facturas, setFacturas] = useState([]);                 // Registro de Facturas (→ AC)
+  const [valorizacionesSC, setValorizacionesSC] = useState([]); // Valorizaciones subcontratistas F10 (→ AC)
+  const [gastosGenerales, setGastosGenerales] = useState([]);   // GG Oficina (→ AC, fase siguiente)
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let pendientes = 6;
+    let pendientes = 9;
     const dec = () => { pendientes -= 1; if (pendientes <= 0) setLoading(false); };
     // Mapea el snapshot y aísla por proyecto activo (ignora frente: el RO es por obra).
     const filt = (snap) => filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true });
@@ -48,6 +51,15 @@ export default function useRO({ margenMeta = 15, fechaActual = new Date() } = {}
       onSnapshot(collection(db, 'ValorizacionesContractuales'),
         (snap) => { setValorizaciones(filt(snap)); dec(); },
         (e) => { console.warn('[Val]', e); dec(); }),
+      onSnapshot(collection(db, 'Registro_Facturas'),
+        (snap) => { setFacturas(filt(snap)); dec(); },
+        (e) => { console.warn('[Facturas]', e); dec(); }),
+      onSnapshot(collection(db, 'ValorizacionesSubcontratistas'),
+        (snap) => { setValorizacionesSC(filt(snap)); dec(); },
+        (e) => { console.warn('[ValSC]', e); dec(); }),
+      onSnapshot(collection(db, 'GG_Oficina'),
+        (snap) => { setGastosGenerales(filt(snap)); dec(); },
+        (e) => { console.warn('[GG]', e); dec(); }),
     ];
     return () => unsubs.forEach(u => u());
   }, [filtrarPorContexto]);
@@ -66,13 +78,15 @@ export default function useRO({ margenMeta = 15, fechaActual = new Date() } = {}
       actividades, apus, tareos,
       kardexMovimientos: kardexMov,
       valorizaciones,
+      facturas, valorizacionesSC, gastosGenerales,
       salariosPorCategoria,
       fechaActual, margenMeta,
     });
-  }, [loading, actividades, apus, tareos, kardexMov, valorizaciones, salariosPorCategoria, fechaActual, margenMeta]);
+  }, [loading, actividades, apus, tareos, kardexMov, valorizaciones, facturas, valorizacionesSC, gastosGenerales, salariosPorCategoria, fechaActual, margenMeta]);
 
   return {
     ro, loading,
     actividades, apus, tareos, kardexMov, historial, valorizaciones,
+    facturas, valorizacionesSC, gastosGenerales,
   };
 }
