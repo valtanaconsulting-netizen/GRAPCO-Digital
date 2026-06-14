@@ -4,6 +4,8 @@ import { INFO_MAP } from '../utils/constants';
 import { BASE } from '../utils/styles';
 import { calcCPI, fmtCPIPct, fmt1, fmt2, getEstado } from '../utils/helpers';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
+import { num, COLUMNAS_PLANTILLA } from '../utils/catalogoWbs';
+import { normActividad as normAct } from '../utils/normalizacion';
 
 // Badge para etiquetas de tipo de dato
 const Badge = ({ tipo }) => {
@@ -155,6 +157,49 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
     } catch (e) {
       console.error('[exportarRendimientos]', e);
       alert('No se pudo exportar: ' + e.message);
+    }
+  };
+
+  // Exportar el IP REAL del CPI como DATA re-importable. La columna IP = rendimiento
+  // REAL logrado en obra (ΣHH ÷ Σmetrado); si una actividad no tiene avance, usa el
+  // IP del presupuesto para no dejarla vacía. Mismas columnas que lee el importador
+  // (filasAArbol) → se sube en «Importar Excel» de OTRO proyecto para reusar la
+  // productividad real probada como rendimiento base. IP Meta = el mismo IP real.
+  const exportarIPRealData = async () => {
+    try {
+      const XLSX = await import('xlsx');
+      const infoNorm = {};
+      Object.keys(INFO || {}).forEach(k => { infoNorm[normAct(k)] = INFO[k]; });
+      const filas = [];
+      Object.keys(wbs || {}).forEach(partida => {
+        const subs = (wbs[partida] && wbs[partida].subs) || {};
+        Object.keys(subs).forEach(subN => {
+          const acts = (subs[subN] && subs[subN].acts) || {};
+          Object.keys(acts).forEach(actN => {
+            const act = acts[actN] || {};
+            const info = infoNorm[normAct(actN)] || {};
+            const un = info.un || 'UND';
+            const ipPpto = (info.ipP != null && info.ipP !== '') ? +Number(info.ipP).toFixed(4) : 0;
+            const conAvance = num(act.met) > 0;
+            const ipReal = conAvance ? +(num(act.hhR) / num(act.met)).toFixed(4) : ipPpto;
+            const metrado = +(num(info.metP) || num(act.met) || 0).toFixed(2);
+            filas.push({
+              'Partida': partida, 'Subpartida': subN, 'Actividad': actN, 'Unidad': un,
+              'Frente': 'F1', 'Metrado': metrado, 'IP': ipReal, 'IP Meta': ipReal,
+            });
+          });
+        });
+      });
+      if (!filas.length) { alert('No hay actividades para exportar.'); return; }
+      const ws = XLSX.utils.json_to_sheet(filas, { header: COLUMNAS_PLANTILLA });
+      ws['!cols'] = COLUMNAS_PLANTILLA.map(c => ({ wch: Math.max(13, c.length + 2) }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'WBS');
+      const nombre = (proyectoActivo?.nombre || 'Proyecto').replace(/\s+/g, '_');
+      XLSX.writeFile(wb, `IP_Real_WBS_${nombre}.xlsx`);
+    } catch (e) {
+      console.error('[exportarIPRealData]', e);
+      alert('No se pudo exportar el IP real: ' + e.message);
     }
   };
   // Multi-abierto: se pueden expandir varias partidas/subpartidas a la vez (no acordeón).
@@ -502,6 +547,23 @@ export default function CpiEac({ wbs, historial = [], infoMap, onModificarWBS, o
             }}>
             <span style={{ fontSize:'12px' }}>⬇</span>
             Exportar rendimientos (Excel)
+          </button>
+
+          {/* EXPORTAR IP REAL como DATA re-importable: la columna IP = rendimiento
+              REAL del CPI. Se sube en «Importar Excel» de otro proyecto para reusar
+              la productividad real probada como rendimiento base. */}
+          <button onClick={exportarIPRealData}
+            title="Excel re-importable: por actividad lleva el IP REAL del CPI (HH real ÷ metrado real). Súbelo en «Importar Excel» de otro proyecto para reusar los rendimientos reales como base."
+            style={{
+              padding:'6px 14px',
+              background: `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark || '#b9831f'})`,
+              color: BASE.navy, border:'none', borderRadius:'8px',
+              fontSize:'10.5px', fontWeight:'800', letterSpacing:'0.3px', cursor:'pointer',
+              display:'flex', alignItems:'center', gap:'6px',
+              boxShadow:`0 4px 12px -4px ${BASE.gold}99`,
+            }}>
+            <span style={{ fontSize:'12px' }}>🔁</span>
+            Exportar IP real (re-importable)
           </button>
         </div>
       </div>
