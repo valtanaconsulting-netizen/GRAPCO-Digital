@@ -101,7 +101,7 @@ export default function Navbar({ rol, isMobile, onSalir, onCambiarArea, onMenu }
         width: '40px', height: '40px',
         borderRadius: '10px',
         background: '#fff',
-        padding: '3px',
+        padding: '1px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

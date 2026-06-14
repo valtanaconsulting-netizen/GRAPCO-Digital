@@ -242,8 +242,8 @@ export default function Login() {
           borderRadius: '16px',
           background: '#fff',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: `0 6px 20px rgba(0,0,0,0.35), 0 0 0 2px ${BASE.gold}`,
-          padding: '6px',
+          boxShadow: `0 6px 20px rgba(0,0,0,0.35), 0 0 0 1px ${BASE.gold}`,
+          padding: '2px',
         }}>
           <img
             src={LOGO}

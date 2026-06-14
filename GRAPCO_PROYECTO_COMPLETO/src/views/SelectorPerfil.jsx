@@ -230,7 +230,7 @@ export default function SelectorPerfil() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{
               width: '46px', height: '46px', borderRadius: '12px', background: '#fff',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2px',
             }}>
               <img src={LOGO} alt="GRAPCO"
                 onError={(e) => { if (!e.target.dataset.fb) { e.target.dataset.fb = '1'; e.target.src = LOGO_FALLBACK; } }}
@@ -398,7 +398,7 @@ export default function SelectorPerfil() {
           background: 'linear-gradient(150deg, #ffffff 0%, #eef3f9 100%)',
           borderRadius: '19px',
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          marginBottom: '10px', padding: '5px', position: 'relative',
+          marginBottom: '10px', padding: '2px', position: 'relative',
           boxShadow: `0 13px 30px -16px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.5), 0 0 0 1.5px ${BASE.gold}40`,
         }}>
           <img
@@ -459,7 +459,7 @@ export default function SelectorPerfil() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '13px', flex: '0 1 auto', minWidth: 0 }}>
             <div style={{
               width: '60px', height: '60px', borderRadius: '15px', background: '#fff',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '7px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3px',
               position: 'relative', overflow: 'hidden', flexShrink: 0,
               boxShadow: `0 10px 24px -10px rgba(0,0,0,0.6), 0 0 0 1px ${BASE.gold}33`,
             }}>
