@@ -108,12 +108,13 @@ export default function Navbar({ rol, isMobile, onSalir, onCambiarArea, onMenu }
         flexShrink: 0,
         boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
         position: 'relative',
+        overflow: 'hidden',
       }}>
         <img
           src={LOGO}
           alt="GRAPCO"
           onError={(e) => { if (e.target.src !== window.location.origin + LOGO_FALLBACK) e.target.src = LOGO_FALLBACK; }}
-          style={{ width: '100%', height: '100%', borderRadius: '6px', objectFit: 'contain' }}
+          style={{ width: '100%', height: '100%', borderRadius: '6px', objectFit: 'contain', transform: 'scale(1.25)' }}
         />
       </div>
 

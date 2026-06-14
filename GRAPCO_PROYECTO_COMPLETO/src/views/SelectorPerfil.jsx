@@ -230,11 +230,11 @@ export default function SelectorPerfil() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{
               width: '46px', height: '46px', borderRadius: '12px', background: '#fff',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2px', overflow: 'hidden',
             }}>
               <img src={LOGO} alt="GRAPCO"
                 onError={(e) => { if (!e.target.dataset.fb) { e.target.dataset.fb = '1'; e.target.src = LOGO_FALLBACK; } }}
-                style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scale(1.25)' }} />
             </div>
             <div>
               <p style={{ color: '#fff', fontSize: '17px', fontWeight: 900, letterSpacing: '0.4px' }}>
@@ -398,14 +398,14 @@ export default function SelectorPerfil() {
           background: 'linear-gradient(150deg, #ffffff 0%, #eef3f9 100%)',
           borderRadius: '19px',
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          marginBottom: '10px', padding: '2px', position: 'relative',
+          marginBottom: '10px', padding: '2px', position: 'relative', overflow: 'hidden',
           boxShadow: `0 13px 30px -16px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.5), 0 0 0 1.5px ${BASE.gold}40`,
         }}>
           <img
             src={LOGO}
             alt="GRAPCO"
             onError={(e) => { if (!e.target.dataset.fallback) { e.target.dataset.fallback = '1'; e.target.src = LOGO_FALLBACK; } }}
-            style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '14px' }}
+            style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '14px', transform: 'scale(1.25)' }}
           />
         </div>
         <h1 style={{

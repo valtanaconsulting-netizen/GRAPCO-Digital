@@ -124,7 +124,7 @@ export default function AppShell({
             boxShadow: `0 2px 8px rgba(0,0,0,0.25), 0 0 0 1px ${BASE.gold}55`,
             overflow: 'hidden',
           }}>
-            <img src={LOGO} alt="GRAPCO" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            <img src={LOGO} alt="GRAPCO" style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scale(1.25)' }} />
           </div>
           {!isMobile && (!collapsed) && (
             <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>

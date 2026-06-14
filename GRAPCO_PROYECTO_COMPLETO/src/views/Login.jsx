@@ -243,13 +243,13 @@ export default function Login() {
           background: '#fff',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: `0 6px 20px rgba(0,0,0,0.35), 0 0 0 1px ${BASE.gold}`,
-          padding: '2px',
+          padding: '2px', overflow: 'hidden',
         }}>
           <img
             src={LOGO}
             alt="GRAPCO"
             onError={(e) => { if (!e.target.dataset.fallback) { e.target.dataset.fallback = '1'; e.target.src = LOGO_FALLBACK; } }}
-            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scale(1.25)' }}
           />
         </div>
 
