@@ -31,8 +31,10 @@ export default function useRO({ margenMeta = 15, fechaActual = new Date() } = {}
   useEffect(() => {
     let pendientes = 11;
     const dec = () => { pendientes -= 1; if (pendientes <= 0) setLoading(false); };
-    // Mapea el snapshot y aísla por proyecto activo (ignora frente: el RO es por obra).
-    const filt = (snap) => filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true });
+    // Aísla por proyecto activo y HONRA el frente seleccionado: con "Todos los
+    // frentes" el RO es de toda la obra; al elegir F1 (PTARI) o F2 (NAVE) el RO se
+    // recalcula para ese frente (filtrarPorContexto ignora el frente solo en modo Todos).
+    const filt = (snap) => filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })));
 
     const unsubs = [
       onSnapshot(collection(db, 'PlanMaestro'),

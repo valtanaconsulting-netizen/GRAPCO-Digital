@@ -46,7 +46,8 @@ export default function EditorWbsIsp({ showToast }) {
   const [origenSel, setOrigenSel] = useState('');
   const [resetMet, setResetMet] = useState(true);
   const [ipModo, setIpModo]     = useState('real'); // 'real' | 'presupuesto'
-  // Comparador de rendimientos reales entre proyectos
+  // Comparador de rendimientos reales entre proyectos (A vs B, ambos elegibles)
+  const [compA, setCompA]       = useState('');
   const [compB, setCompB]       = useState('');
   const [compRows, setCompRows] = useState(null);
   const [compMeta, setCompMeta] = useState(null);
@@ -326,17 +327,32 @@ export default function EditorWbsIsp({ showToast }) {
     return list;
   }, [proyectos, proyectoActivoId]);
 
-  const abrirImportar = () => { setOrigenSel(fuentes[0]?.id || ''); setResetMet(true); setModal('importar'); };
-  const abrirComparar = () => { setCompB(fuentes[0]?.id || ''); setCompRows(null); setCompMeta(null); setModal('comparar'); };
+  // Lista para el comparador: TODOS los proyectos (incluido el activo) + CREDITEX plantilla.
+  const proyectosComparables = useMemo(() => {
+    const list = (proyectos || []).filter(p => p.id).map(p => ({ id: p.id, nombre: p.nombre || p.codigo || p.id }));
+    if (!list.some(x => x.id === 'creditex-ptar' || LEGACY_IDS.includes(x.id))) {
+      list.unshift({ id: 'creditex-ptar', nombre: 'CREDITEX PTAR (plantilla)' });
+    }
+    return list;
+  }, [proyectos]);
+  const nombreProy = (id) => proyectosComparables.find(p => p.id === id)?.nombre || id || 'proyecto';
 
-  // Compara el IP REAL (productividad probada) de ESTE proyecto vs otro, por actividad.
+  const abrirImportar = () => { setOrigenSel(fuentes[0]?.id || ''); setResetMet(true); setModal('importar'); };
+  const abrirComparar = () => {
+    setCompA(proyectoActivoId || proyectosComparables[0]?.id || '');
+    setCompB((proyectosComparables.find(p => p.id !== proyectoActivoId) || {}).id || '');
+    setCompRows(null); setCompMeta(null); setModal('comparar');
+  };
+
+  // Compara el IP REAL (productividad probada) del proyecto A vs el B, por actividad.
   const ejecutarComparacion = async () => {
-    if (!compB) return toast('Elige el proyecto a comparar', 'warning');
+    if (!compA || !compB) return toast('Elige los dos proyectos a comparar', 'warning');
+    if (compA === compB) return toast('Elige dos proyectos distintos', 'warning');
     setTrabajando(true);
     try {
       const opt = { proyectoDefaultId: PROYECTO_DEFAULT_ID };
       const [A, B] = await Promise.all([
-        calcularIPRealProyecto(proyectoActivoId, opt),
+        calcularIPRealProyecto(compA, opt),
         calcularIPRealProyecto(compB, opt),
       ]);
       const keys = new Set([...Object.keys(A.detalle), ...Object.keys(B.detalle)]);
@@ -366,6 +382,27 @@ export default function EditorWbsIsp({ showToast }) {
       console.error('[comparar]', e);
       toast('Error al comparar: ' + e.message, 'error');
     } finally { setTrabajando(false); }
+  };
+
+  const exportarComparacion = async () => {
+    if (!compRows || !compRows.length) return;
+    try {
+      const XLSX = await import('xlsx');
+      const nA = nombreProy(compA), nB = nombreProy(compB);
+      const COLS = ['Actividad', `IP ${nA}`, `IP ${nB}`, 'Δ%', 'Mejor'];
+      const filas = compRows.map(r => ({
+        'Actividad': r.nombre,
+        [`IP ${nA}`]: r.ipA != null ? r.ipA : '',
+        [`IP ${nB}`]: r.ipB != null ? r.ipB : '',
+        'Δ%': r.delta != null ? r.delta : '',
+        'Mejor': r.delta == null ? '—' : (r.delta > 0 ? nA : (r.delta < 0 ? nB : 'igual')),
+      }));
+      const ws = XLSX.utils.json_to_sheet(filas, { header: COLS });
+      ws['!cols'] = COLS.map(c => ({ wch: c === 'Actividad' ? 38 : Math.max(12, c.length + 2) }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Comparación IP');
+      XLSX.writeFile(wb, `Comparacion_IP_${nA.replace(/[^\w-]+/g, '_')}_vs_${nB.replace(/[^\w-]+/g, '_')}.xlsx`);
+    } catch (e) { console.error('[exportarComparacion]', e); toast('No se pudo exportar la comparación', 'error'); }
   };
   const abrirPrograma = () => {
     if (!arbol.length) return toast('Primero carga/importa el catálogo y captura metrados', 'warning');
@@ -535,17 +572,28 @@ export default function EditorWbsIsp({ showToast }) {
       {modal === 'comparar' && (
         <Modal title="📊 Comparar rendimientos reales entre proyectos" onClose={() => !trabajando && setModal(null)}>
           <p style={{ fontSize: '12px', color: BASE.muted, lineHeight: 1.6, marginBottom: '12px' }}>
-            Compara la <b>productividad REAL</b> (IP = HH ÷ unidad, <b>menor es mejor</b>) de <b>{proyectoNombre}</b> contra
-            otro proyecto, actividad por actividad. Útil para ver si mejoraste de obra a obra.
+            Compara la <b>productividad REAL</b> (IP = HH ÷ unidad, <b>menor es mejor</b>) de dos proyectos,
+            actividad por actividad. Útil para ver si mejoraste de obra a obra.
           </p>
-          <label style={lblModal}>Comparar contra…</label>
-          <select value={compB} onChange={e => { setCompB(e.target.value); setCompRows(null); }} style={inputModal}>
-            <option value="">— Elige un proyecto —</option>
-            {fuentes.map(f => <option key={f.id} value={f.id}>{f.nombre}</option>)}
-          </select>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <div style={{ flex: '1 1 200px' }}>
+              <label style={lblModal}>Proyecto A</label>
+              <select value={compA} onChange={e => { setCompA(e.target.value); setCompRows(null); }} style={inputModal}>
+                <option value="">— Elige —</option>
+                {proyectosComparables.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+              </select>
+            </div>
+            <div style={{ flex: '1 1 200px' }}>
+              <label style={lblModal}>Proyecto B</label>
+              <select value={compB} onChange={e => { setCompB(e.target.value); setCompRows(null); }} style={inputModal}>
+                <option value="">— Elige —</option>
+                {proyectosComparables.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+              </select>
+            </div>
+          </div>
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '14px' }}>
             <Btn onClick={() => setModal(null)} bg={BASE.white} color={BASE.navy} border>Cerrar</Btn>
-            <Btn onClick={ejecutarComparacion} bg={BASE.navy} color="#fff" disabled={trabajando || !compB}>
+            <Btn onClick={ejecutarComparacion} bg={BASE.navy} color="#fff" disabled={trabajando || !compA || !compB}>
               {trabajando ? 'Comparando…' : 'Comparar'}
             </Btn>
           </div>
@@ -553,10 +601,13 @@ export default function EditorWbsIsp({ showToast }) {
           {compRows && (
             <div style={{ marginTop: '16px' }}>
               {compMeta && (
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
-                  <ChipCmp txt={`${compMeta.comunes} actividades en ambos`} c={BASE.navy} />
-                  <ChipCmp txt={`🟢 ${compMeta.mejor} mejor aquí`} c={BASE.green} />
-                  <ChipCmp txt={`🔴 ${compMeta.peor} peor aquí`} c={'#dc2626'} />
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px', alignItems: 'center' }}>
+                  <ChipCmp txt={`${compMeta.comunes} en ambos`} c={BASE.navy} />
+                  <ChipCmp txt={`🟢 ${compMeta.mejor} mejor en ${nombreProy(compA)}`} c={BASE.green} />
+                  <ChipCmp txt={`🔴 ${compMeta.peor} mejor en ${nombreProy(compB)}`} c={'#dc2626'} />
+                  {compRows.length > 0 && (
+                    <button onClick={exportarComparacion} style={{ marginLeft: 'auto', padding: '6px 12px', borderRadius: '8px', border: `1px solid ${BASE.navy}`, background: BASE.navy, color: '#fff', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}>⬇️ Exportar (Excel)</button>
+                  )}
                 </div>
               )}
               {compRows.length === 0 ? (
@@ -570,8 +621,8 @@ export default function EditorWbsIsp({ showToast }) {
                       <thead style={{ position: 'sticky', top: 0 }}>
                         <tr style={{ background: BASE.navy, color: '#fff' }}>
                           <th style={thCmp('left')}>Actividad</th>
-                          <th style={thCmp('right')}>IP · {proyectoNombre.slice(0, 14)}</th>
-                          <th style={thCmp('right')}>IP · {(fuentes.find(f => f.id === compB)?.nombre || 'otro').slice(0, 14)}</th>
+                          <th style={thCmp('right')}>IP · {nombreProy(compA).slice(0, 14)}</th>
+                          <th style={thCmp('right')}>IP · {nombreProy(compB).slice(0, 14)}</th>
                           <th style={thCmp('right')}>Δ%</th>
                         </tr>
                       </thead>
@@ -591,9 +642,9 @@ export default function EditorWbsIsp({ showToast }) {
                     </table>
                   </div>
                   <p style={{ fontSize: '10px', color: BASE.muted, marginTop: '8px', lineHeight: 1.5 }}>
-                    Δ% = (IP {(fuentes.find(f => f.id === compB)?.nombre || 'otro')} − IP {proyectoNombre}) ÷ IP {proyectoNombre} · menor IP = mejor.
-                    <b style={{ color: BASE.green }}> Verde (Δ&gt;0)</b> = {proyectoNombre} rinde mejor (el otro gasta más HH/u);
-                    <b style={{ color: '#dc2626' }}> rojo (Δ&lt;0)</b> = {proyectoNombre} rinde peor.
+                    Δ% = (IP {nombreProy(compB)} − IP {nombreProy(compA)}) ÷ IP {nombreProy(compA)} · menor IP = mejor.
+                    <b style={{ color: BASE.green }}> Verde (Δ&gt;0)</b> = {nombreProy(compA)} rinde mejor (B gasta más HH/u);
+                    <b style={{ color: '#dc2626' }}> rojo (Δ&lt;0)</b> = {nombreProy(compA)} rinde peor.
                   </p>
                 </>
               )}

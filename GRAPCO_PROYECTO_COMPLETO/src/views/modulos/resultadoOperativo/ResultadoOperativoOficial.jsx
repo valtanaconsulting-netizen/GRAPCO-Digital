@@ -36,7 +36,7 @@ const GRP = {
 
 export default function ResultadoOperativoOficial({ showToast }) {
   const { ro, loading } = useRO();
-  const { proyectoActivo } = useProyectoActivo();
+  const { proyectoActivo, frenteActivo, modoTodosFrentes } = useProyectoActivo();
 
   // Partidas con sustancia (presupuesto, valorizado o costo real) — ordenadas por código WBS.
   const partidas = useMemo(() => {
@@ -139,7 +139,9 @@ export default function ResultadoOperativoOficial({ showToast }) {
           <p style={{ fontSize: 9.5, fontWeight: 900, letterSpacing: 1.4, color: BASE.gold }}>GP-GCE-FOR-F06 · RESULTADO OPERATIVO · EN VIVO</p>
           <h2 style={{ fontSize: 20, fontWeight: 900, marginTop: 2 }}>El Estado de Resultados de la Obra</h2>
           <p style={{ fontSize: 12, opacity: 0.85, marginTop: 2 }}>
-            {proyectoActivo?.nombre || 'Proyecto activo'} · {partidas.length} partidas con movimiento ·{' '}
+            {proyectoActivo?.nombre || 'Proyecto activo'}
+            {!modoTodosFrentes && frenteActivo ? <span style={{ fontWeight: 800, color: BASE.gold }}> · 🎯 {frenteActivo.nombre}</span> : ' · toda la obra'}
+            {' '}· {partidas.length} partidas ·{' '}
             <span style={{ fontWeight: 800, color: ro.evReal ? '#4ade80' : '#fbbf24' }}>
               {ro.evReal ? 'EV valorizado al cliente' : 'EV estimado (avance × PU)'}
             </span>
