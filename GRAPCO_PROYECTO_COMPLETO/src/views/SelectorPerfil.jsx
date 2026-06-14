@@ -7,7 +7,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { useAuth } from '../contexts/AuthContext';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
-import { BASE, LOGO, LOGO_FALLBACK } from '../utils/styles';
+import { BASE, LOGO, LOGO_FALLBACK, LOGO_VALTANA } from '../utils/styles';
 import { obtenerSemana } from '../utils/helpers';
 import { FECHA_INICIO_PROYECTO } from '../utils/constants';
 import Icon from '../components/Icon';
@@ -108,6 +108,19 @@ const primerNombre = (s) => {
   return n ? n.charAt(0).toUpperCase() + n.slice(1).toLowerCase() : '';
 };
 
+// Monograma del cliente para el respaldo cuando aún no subieron su logo.
+// Ignora sufijos societarios (SAA, SAC, S.A., EIRL…) y toma 2 letras representativas:
+// "CREDITEX SAA" → "CR" · "TEXTIL S.A.A" → "TE" · "ACME PERÚ" → "AP".
+const monogramaCliente = (nombre) => {
+  const limpio = String(nombre || '').trim();
+  if (!limpio) return '—';
+  const esSufijo = (w) => /^(sa|saa|sac|saac|eirl|srl|ltda|cia|ca)$/i.test(w.replace(/\./g, ''));
+  const palabras = limpio.split(/\s+/).filter(w => !esSufijo(w));
+  const ws = palabras.length ? palabras : limpio.split(/\s+/);
+  if (ws.length >= 2) return (ws[0][0] + ws[1][0]).toUpperCase();
+  return (ws[0] || limpio).slice(0, 2).toUpperCase();
+};
+
 export default function SelectorPerfil() {
   const { user, entrarComoRol, logout, rolPermitido } = useAuth();
   const { proyectos, proyectoActivo, frentesDelProyecto, proyectoActivoId, setProyectoActivoId, frenteActivoId, setFrenteActivoId, fechaInicioProyecto } = useProyectoActivo();
@@ -150,6 +163,9 @@ export default function SelectorPerfil() {
   // El CLIENTE siempre refleja el del PROYECTO ACTIVO: si hay proyecto, su
   // cliente se conoce solo (no puede quedar en "Todos" mientras hay proyecto).
   const clienteActivo = clienteDe(proyectoActivo);
+  // Logo del cliente activo (lo sube el admin en el editor de proyecto). Si aún no
+  // existe, la barra de contexto cae a un monograma elegante con sus iniciales.
+  const logoClienteUrl = proyectoActivo?.logoCliente || proyectoActivo?.logoUrl || '';
   // El selector de PROYECTO solo lista los proyectos del cliente activo.
   const proyectosFiltrados = clienteActivo
     ? (proyectos || []).filter(p => clienteDe(p) === clienteActivo)
@@ -361,38 +377,58 @@ export default function SelectorPerfil() {
       </div>
       <div className="grapco-scan" />
 
-      {/* Header — compacto para que todo entre sin scroll */}
+      {/* Header — marca premium: proveedor (Valtana) + plataforma (GRAPCO) */}
       <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', marginBottom: '16px' }}>
+        {/* Eyebrow del proveedor — Valtana desarrolla/opera la plataforma */}
         <div style={{
-          width: '56px', height: '56px',
-          background: '#fff',
-          borderRadius: '14px',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: '8px',
-          boxShadow: `0 8px 22px rgba(0,0,0,0.4), 0 0 0 2px ${BASE.gold}33`,
+          display: 'inline-flex', alignItems: 'center', gap: '9px', marginBottom: '14px',
+          padding: '5px 16px 5px 7px', borderRadius: '999px',
+          background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+          backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
+        }}>
+          <span style={{
+            height: '24px', minWidth: '24px', borderRadius: '6px', background: '#fff',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '3px',
+          }}>
+            <img src={LOGO_VALTANA} alt="Valtana"
+              onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
+              style={{ height: '100%', width: 'auto', objectFit: 'contain' }} />
+          </span>
+          <span style={{ fontSize: '9.5px', fontWeight: 800, letterSpacing: '1.4px', color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase' }}>
+            Desarrollado por <span style={{ color: BASE.gold }}>Valtana Consultoría &amp; Construcción</span>
+          </span>
+        </div>
+
+        {/* Isotipo GRAPCO — tamaño hero con marco premium navy+gold */}
+        <div style={{
+          width: '94px', height: '94px',
+          background: 'linear-gradient(150deg, #ffffff 0%, #eaf0f7 100%)',
+          borderRadius: '24px',
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          marginBottom: '12px', padding: '12px', position: 'relative',
+          boxShadow: `0 20px 46px -16px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.55), 0 0 0 4px ${BASE.gold}3a, 0 0 30px -6px ${BASE.gold}40`,
         }}>
           <img
             src={LOGO}
             alt="GRAPCO"
             onError={(e) => { if (!e.target.dataset.fallback) { e.target.dataset.fallback = '1'; e.target.src = LOGO_FALLBACK; } }}
-            style={{ width: '44px', height: '44px', objectFit: 'contain' }}
+            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
           />
         </div>
         <h1 style={{
-          color: '#fff', fontSize: '23px', fontWeight: '900',
-          margin: '0 0 5px', letterSpacing: '0.5px',
+          color: '#fff', fontSize: '28px', fontWeight: '900',
+          margin: '0 0 6px', letterSpacing: '0.5px',
         }}>
           GRAPCO <span style={{ color: BASE.gold }}>S.A.C.</span>
         </h1>
         {/* Eyebrow premium con líneas a los lados */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', margin: '0 auto' }}>
-          <span style={{ height: '1px', width: '28px', background: `linear-gradient(90deg, transparent, ${BASE.gold}aa)` }} />
-          <span style={{ color: BASE.gold, fontSize: '9.5px', fontWeight: 800, letterSpacing: '2.6px', textTransform: 'uppercase' }}>
+          <span style={{ height: '1px', width: '34px', background: `linear-gradient(90deg, transparent, ${BASE.gold}aa)` }} />
+          <span style={{ color: BASE.gold, fontSize: '10px', fontWeight: 800, letterSpacing: '2.8px', textTransform: 'uppercase' }}>
             Gestión de Proyectos VDC
           </span>
-          <span style={{ height: '1px', width: '28px', background: `linear-gradient(90deg, ${BASE.gold}aa, transparent)` }} />
+          <span style={{ height: '1px', width: '34px', background: `linear-gradient(90deg, ${BASE.gold}aa, transparent)` }} />
         </div>
         <p style={{
           color: '#94a3b8', fontSize: '12px',
@@ -415,7 +451,7 @@ export default function SelectorPerfil() {
         </button>
       </div>
 
-      {/* Selector de CLIENTE + PROYECTO — al inicio de la plataforma */}
+      {/* Barra de contexto con la MARCA del cliente activo + selección */}
       {!modoPin && (
         <div style={{
           position: 'relative', zIndex: 1,
@@ -424,23 +460,59 @@ export default function SelectorPerfil() {
           backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
           border: `1px solid ${BASE.gold}44`,
           borderRadius: '16px', padding: '14px 18px', marginBottom: '16px',
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '14px',
-          alignItems: 'end',
+          display: 'flex', alignItems: 'center', gap: '18px', flexWrap: 'wrap',
           boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 14px 34px -22px rgba(0,0,0,0.8)',
         }}>
-          <div>
-            <label style={lblKiosk}>🏢 CLIENTE</label>
-            <select value={clienteActivo} onChange={e => cambiarCliente(e.target.value)} style={selKiosk}>
-              {!clienteActivo && <option value="" style={optKiosk}>— Selecciona cliente —</option>}
-              {clientes.map(c => <option key={c} value={c} style={optKiosk}>{c}</option>)}
-            </select>
+          {/* Identidad del cliente — logo real si lo subieron, o monograma de respaldo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '13px', flex: '0 1 auto', minWidth: 0 }}>
+            <div style={{
+              width: '60px', height: '60px', borderRadius: '15px', background: '#fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '7px',
+              position: 'relative', overflow: 'hidden', flexShrink: 0,
+              boxShadow: `0 10px 24px -10px rgba(0,0,0,0.6), 0 0 0 1px ${BASE.gold}33`,
+            }}>
+              <span style={{
+                position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '23px', fontWeight: 900, color: BASE.navy, letterSpacing: '0.5px',
+              }}>{monogramaCliente(clienteActivo)}</span>
+              {logoClienteUrl && (
+                <img src={logoClienteUrl} alt={clienteActivo || 'Cliente'}
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                  style={{ position: 'relative', width: '100%', height: '100%', objectFit: 'contain', background: '#fff' }} />
+              )}
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ fontSize: '9px', fontWeight: 900, letterSpacing: '1.6px', color: BASE.gold, textTransform: 'uppercase', margin: 0 }}>
+                Cliente
+              </p>
+              <p style={{ fontSize: '16px', fontWeight: 900, color: '#fff', margin: '2px 0 0', lineHeight: 1.15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '240px' }}>
+                {clienteActivo || 'Sin cliente'}
+              </p>
+              <p style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.6)', margin: '1px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '240px' }}>
+                {proyectoActivo?.nombre || proyectoActivo?.codigo || '— sin proyecto —'}
+              </p>
+            </div>
           </div>
-          <div>
-            <label style={lblKiosk}>🏗️ PROYECTO</label>
-            <select value={proyectoActivoId || ''} onChange={e => setProyectoActivoId(e.target.value)} style={selKiosk}>
-              <option value="" style={optKiosk}>— Selecciona proyecto —</option>
-              {proyectosFiltrados.map(p => <option key={p.id} value={p.id} style={optKiosk}>{p.nombre || p.codigo || p.id}</option>)}
-            </select>
+
+          {/* Separador */}
+          <div style={{ width: '1px', alignSelf: 'stretch', minHeight: '48px', background: 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
+
+          {/* Selectores CLIENTE + PROYECTO */}
+          <div style={{ flex: '1 1 360px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '14px' }}>
+            <div>
+              <label style={lblKiosk}>🏢 CLIENTE</label>
+              <select value={clienteActivo} onChange={e => cambiarCliente(e.target.value)} style={selKiosk}>
+                {!clienteActivo && <option value="" style={optKiosk}>— Selecciona cliente —</option>}
+                {clientes.map(c => <option key={c} value={c} style={optKiosk}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={lblKiosk}>🏗️ PROYECTO</label>
+              <select value={proyectoActivoId || ''} onChange={e => setProyectoActivoId(e.target.value)} style={selKiosk}>
+                <option value="" style={optKiosk}>— Selecciona proyecto —</option>
+                {proyectosFiltrados.map(p => <option key={p.id} value={p.id} style={optKiosk}>{p.nombre || p.codigo || p.id}</option>)}
+              </select>
+            </div>
           </div>
         </div>
       )}

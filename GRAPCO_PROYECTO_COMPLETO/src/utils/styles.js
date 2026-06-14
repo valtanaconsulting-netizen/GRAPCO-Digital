@@ -12,6 +12,9 @@
 export const LOGO          = "/brand/grapco-192.png";
 export const LOGO_WIDE     = "/grapco-logo-wide.png";
 export const LOGO_FALLBACK = "/brand/grapco-128.png";
+// Logo de Valtana Consultoría & Construcción — empresa que desarrolla y opera la
+// plataforma. Se muestra como co-marca en la cabecera del hub (proveedor del servicio).
+export const LOGO_VALTANA  = "/brand/valtana-logo.png";
 
 export const PASSWORD_INGENIERIA = "GRAPCO2025";
 

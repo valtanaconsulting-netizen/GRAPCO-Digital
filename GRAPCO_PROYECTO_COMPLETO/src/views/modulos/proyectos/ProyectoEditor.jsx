@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { collection, addDoc, updateDoc, doc, setDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
-import { db } from '../../../firebaseConfig';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../../../firebaseConfig';
 import { BASE } from '../../../utils/styles';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
@@ -38,6 +39,7 @@ export default function ProyectoEditor({ proyecto, onClose, showToast }) {
     nombre: '',
     descripcionCorta: '',
     cliente: '',
+    logoCliente: '',
     tipoObra: 'edificacion',
     ubicacion: { lat: '', lng: '', ciudad: '', region: 'Lima', direccion: '' },
     presupuestoContractual: 0,
@@ -87,6 +89,30 @@ export default function ProyectoEditor({ proyecto, onClose, showToast }) {
 
   const updField = (k, v) => setForm({ ...form, [k]: v });
   const updUbic = (k, v) => setForm({ ...form, ubicacion: { ...form.ubicacion, [k]: v } });
+
+  // Subir el logo del cliente a Storage → guardar su URL en el proyecto. El logo
+  // se muestra como marca del cliente en el hub de la plataforma al elegirlo.
+  const [subiendoLogo, setSubiendoLogo] = useState(false);
+  const subirLogoCliente = async (file) => {
+    if (!file) return;
+    if (!file.type?.startsWith('image/')) { showToast?.('El logo debe ser una imagen (PNG, JPG o SVG)', 'warning'); return; }
+    if (file.size > 2 * 1024 * 1024) { showToast?.('El logo no debe superar 2 MB', 'warning'); return; }
+    setSubiendoLogo(true);
+    try {
+      const ext = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
+      const slug = (form.cliente || form.codigo || 'cliente').trim().toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'cliente';
+      const r = storageRef(storage, `clientes/logos/${slug}-${Date.now()}.${ext}`);
+      await uploadBytes(r, file, { contentType: file.type });
+      const url = await getDownloadURL(r);
+      setForm(f => ({ ...f, logoCliente: url }));
+      showToast?.('✅ Logo del cliente cargado', 'success');
+    } catch (e) {
+      showToast?.('Error subiendo el logo: ' + e.message, 'error');
+    } finally {
+      setSubiendoLogo(false);
+    }
+  };
 
   const addFrente = () => {
     const idx = form.frentesIniciales.length + 1;
@@ -154,6 +180,7 @@ export default function ProyectoEditor({ proyecto, onClose, showToast }) {
         nombre: form.nombre.trim(),
         descripcionCorta: form.descripcionCorta?.trim() || '',
         cliente: form.cliente?.trim() || '',
+        logoCliente: form.logoCliente || '',
         tipoObra: form.tipoObra,
         ubicacion: {
           lat: parseFloat(form.ubicacion.lat) || null,
@@ -303,6 +330,37 @@ export default function ProyectoEditor({ proyecto, onClose, showToast }) {
               <input type="text" value={form.cliente}
                 onChange={e => updField('cliente', e.target.value)}
                 placeholder="SEDAPAL" style={inpS} />
+            </Field>
+
+            <Field label="Logo del cliente" hint="Se muestra como marca del cliente en el inicio de la plataforma. PNG, JPG o SVG · máx 2 MB.">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                <div style={{
+                  width: '60px', height: '60px', borderRadius: '12px', background: '#fff',
+                  border: `1px solid ${BASE.border}`, flexShrink: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', padding: '6px',
+                }}>
+                  {form.logoCliente
+                    ? <img src={form.logoCliente} alt="Logo del cliente" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                    : <span style={{ fontSize: '22px', opacity: 0.35 }}>🏢</span>}
+                </div>
+                <label style={{
+                  padding: '10px 18px', borderRadius: '9px',
+                  background: subiendoLogo ? BASE.muted : `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
+                  color: '#fff', fontSize: '12px', fontWeight: 800, letterSpacing: '0.3px',
+                  cursor: subiendoLogo ? 'wait' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '7px',
+                }}>
+                  {subiendoLogo ? '⏳ Subiendo…' : (form.logoCliente ? '🔄 Cambiar logo' : '⬆ Subir logo')}
+                  <input type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" style={{ display: 'none' }}
+                    disabled={subiendoLogo}
+                    onChange={e => { subirLogoCliente(e.target.files?.[0]); e.target.value = ''; }} />
+                </label>
+                {form.logoCliente && !subiendoLogo && (
+                  <button type="button" onClick={() => setForm(f => ({ ...f, logoCliente: '' }))} style={{
+                    padding: '10px 14px', borderRadius: '9px', background: 'transparent',
+                    border: `1px solid ${BASE.border}`, color: BASE.muted, fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+                  }}>Quitar</button>
+                )}
+              </div>
             </Field>
 
             <Field label="Tipo de obra">
