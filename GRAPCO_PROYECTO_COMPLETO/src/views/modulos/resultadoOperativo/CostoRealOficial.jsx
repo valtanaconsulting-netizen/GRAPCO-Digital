@@ -1,11 +1,15 @@
 // src/views/modulos/resultadoOperativo/CostoRealOficial.jsx
-// CR · Costo Real (Reporte de Tareos) importado tal cual del ISP CREDITEX (hoja CR).
-// Costo = HH × Costo MO promedio. Alimenta el Actual Cost (AC) del RO.
-// Diseño ejecutivo: jerarquía por niveles, barras de % por costo, ceros atenuados.
+// CR · Costo Real — AHORA EN VIVO desde useRO. Ya NO importa datos estáticos.
+// Descompone el AC del RO en sus patas: MO (Tareos HH × S/25.5) + Materiales (Almacén)
+// + Otros (Facturas + Subcontratos). HH se deriva del costo MO / costo-hora único.
+// Se autoactualiza con la data del proyecto; estado-vacío si aún no hay costo real.
 
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { BASE } from '../../../utils/styles';
-import { CR_CREDITEX } from '../../../data/costoRealCreditex';
+import { COSTO_HORA_RO } from '../../../utils/planMaestroAnalytics';
+import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
+import useRO from './useRO';
+import EmptyState from '../../../components/EmptyState';
 
 const esZero = (n) => n == null || n === '' || (typeof n === 'number' && Math.abs(n) < 0.005);
 const S = (n, mutedZero = true) => {
@@ -21,46 +25,70 @@ const HH = (n) => {
 };
 
 export default function CostoRealOficial() {
-  const { meta, filas } = CR_CREDITEX;
-  const [verFormulas, setVerFormulas] = useState(false);
-  const [verSubs, setVerSubs] = useState(true);
-  const [abierto, setAbierto] = useState(null);
+  const { ro, loading } = useRO();
+  const { proyectoActivo } = useProyectoActivo();
 
-  const total = useMemo(() => filas.find((f) => f.tipo === 'total'), [filas]);
-  const t = total?.v || {};
-  const totAcum = (typeof t.acum === 'number' && t.acum) || 1;
-  const filasVis = filas.filter((f) => verSubs || f.tipo !== 'sub');
+  // Una fila por partida con costo real incurrido, descompuesto en patas.
+  const filas = useMemo(() => {
+    if (!ro?.detallePartidas) return [];
+    return ro.detallePartidas
+      .map((p) => {
+        const mo = p.costoMORealAct || 0;
+        const mat = p.costoMatRealAct || 0;
+        const total = p.costoReal || 0;
+        const otros = Math.max(0, total - mo - mat); // Facturas + Subcontratos + Equipos
+        return {
+          codigo: p.codigo,
+          descripcion: p.descripcion,
+          hh: mo / COSTO_HORA_RO,
+          mo, mat, otros, total,
+        };
+      })
+      .filter((f) => Math.abs(f.total) > 0.005 || Math.abs(f.hh) > 0.005)
+      .sort((a, b) => (a.codigo || '').localeCompare(b.codigo || '', 'es', { numeric: true }));
+  }, [ro]);
 
-  const pct = (f) => (typeof f.v?.acum === 'number' ? f.v.acum / totAcum : 0);
-  // color de acento por magnitud (detectar los grandes costos)
+  const totalRow = useMemo(() => filas.reduce((acc, f) => ({
+    hh: acc.hh + f.hh, mo: acc.mo + f.mo, mat: acc.mat + f.mat, otros: acc.otros + f.otros, total: acc.total + f.total,
+  }), { hh: 0, mo: 0, mat: 0, otros: 0, total: 0 }), [filas]);
+
+  if (loading) return <p style={{ padding: 30, textAlign: 'center', color: BASE.muted }}>⏳ Calculando el Costo Real…</p>;
+  if (!ro || filas.length === 0) {
+    return (
+      <EmptyState
+        icono="🧾"
+        variante="bim"
+        titulo="El Costo Real se calcula en vivo — aún no hay movimientos"
+        descripcion="El AC (Actual Cost) del RO ya NO se carga a mano: suma Tareos (HH × S/25.5) + salidas de Almacén + Facturas + Subcontratos por partida. En cuanto se registren tareos y costos, este reporte se llena solo."
+      />
+    );
+  }
+
+  const totAbs = Math.abs(totalRow.total) > 0.005 ? totalRow.total : 1;
   const acento = (p) => p >= 0.15 ? BASE.navy : p >= 0.06 ? BASE.gold : p >= 0.01 ? '#94a3b8' : '#e2e8f0';
-
-  const cel = (f, k, muted) => {
-    if (verFormulas && f.f?.[k]) return <span style={{ fontSize: 9, color: f.tipo === 'total' ? '#cbd5e1' : BASE.muted, fontFamily: 'monospace' }}>{f.f[k]}</span>;
-    return k === 'hh' ? HH(f.v?.hh) : S(f.v?.[k]);
-  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       {/* Cabecera ejecutiva */}
       <div style={{ background: `linear-gradient(135deg, #0c4a6e, #075985)`, color: '#fff', borderRadius: 16, padding: '18px 24px', boxShadow: '0 10px 30px -8px rgba(8,47,73,0.55)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14, borderLeft: `6px solid ${BASE.gold}` }}>
         <div>
-          <p style={{ fontSize: 9.5, fontWeight: 900, letterSpacing: 1.6, color: '#7dd3fc' }}>🧾 {meta.fuente}</p>
-          <h2 style={{ fontSize: 21, fontWeight: 900, marginTop: 3, letterSpacing: 0.2 }}>{meta.titulo}</h2>
-          <p style={{ fontSize: 11.5, opacity: 0.88, marginTop: 3 }}>{meta.nota}</p>
+          <p style={{ fontSize: 9.5, fontWeight: 900, letterSpacing: 1.6, color: '#7dd3fc' }}>🧾 CR · COSTO REAL · EN VIVO</p>
+          <h2 style={{ fontSize: 21, fontWeight: 900, marginTop: 3, letterSpacing: 0.2 }}>Costo Real por Partida (AC del RO)</h2>
+          <p style={{ fontSize: 11.5, opacity: 0.88, marginTop: 3 }}>{proyectoActivo?.nombre || 'Proyecto activo'} · MO + Almacén + Facturas + Subcontratos</p>
         </div>
         <div style={{ textAlign: 'right', background: 'rgba(255,255,255,0.08)', borderRadius: 12, padding: '8px 16px', border: '1px solid rgba(255,255,255,0.15)' }}>
           <p style={{ fontSize: 9.5, fontWeight: 800, opacity: 0.8, letterSpacing: 0.8 }}>COSTO MO PROMEDIO</p>
-          <p style={{ fontSize: 30, fontWeight: 900, lineHeight: 1, color: BASE.gold }}>S/ {HH(meta.costoMOprom)}<span style={{ fontSize: 13, opacity: 0.85 }}> /h</span></p>
+          <p style={{ fontSize: 30, fontWeight: 900, lineHeight: 1, color: BASE.gold }}>S/ {HH(COSTO_HORA_RO)}<span style={{ fontSize: 13, opacity: 0.85 }}> /h</span></p>
         </div>
       </div>
 
       {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 11 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 11 }}>
         {[
-          { l: 'HH Total', v: HH(t.hh), c: '#6366f1', ico: '⏱️' },
-          { l: 'Costo MO (semana)', v: S(t.costo, false), c: '#0ea5e9', ico: '💵' },
-          { l: 'Acumulado S/ IGV', v: S(t.acum, false), c: '#16a34a', ico: '📊' },
+          { l: 'HH Total', v: HH(totalRow.hh), c: '#6366f1', ico: '⏱️' },
+          { l: 'Costo MO', v: S(totalRow.mo, false), c: '#7c3aed', ico: '👷' },
+          { l: 'Materiales', v: S(totalRow.mat, false), c: '#f59e0b', ico: '📦' },
+          { l: 'Costo Real Total', v: S(totalRow.total, false), c: '#16a34a', ico: '📊' },
         ].map((k) => (
           <div key={k.l} style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderTop: `4px solid ${k.c}`, borderRadius: 12, padding: '12px 15px', boxShadow: '0 4px 14px -6px rgba(15,23,42,0.12)' }}>
             <p style={{ fontSize: 10, fontWeight: 800, color: BASE.muted, textTransform: 'uppercase', letterSpacing: 0.4 }}>{k.ico} {k.l}</p>
@@ -69,11 +97,9 @@ export default function CostoRealOficial() {
         ))}
       </div>
 
-      {/* Controles */}
+      {/* Nota */}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-        <button onClick={() => setVerSubs((s) => !s)} style={btn(verSubs)}>{verSubs ? '➖ Ocultar sub-partidas' : '➕ Ver sub-partidas'}</button>
-        <button onClick={() => setVerFormulas((s) => !s)} style={btn(verFormulas)}>{verFormulas ? '🔢 Ver valores' : 'ƒ Ver fórmulas'}</button>
-        <span style={{ fontSize: 11, color: BASE.muted, marginLeft: 'auto' }}>Importado tal cual del Excel · HH × S/{HH(meta.costoMOprom)}/h · la barra = % del costo total</span>
+        <span style={{ fontSize: 11, color: BASE.muted, marginLeft: 'auto' }}>HH × S/{HH(COSTO_HORA_RO)}/h · la barra = % del costo real total · «Otros» = Facturas + Subcontratos</span>
       </div>
 
       {/* Tabla ejecutiva */}
@@ -82,72 +108,60 @@ export default function CostoRealOficial() {
           <table style={{ borderCollapse: 'collapse', fontSize: 11.5, width: '100%', minWidth: 880 }}>
             <thead style={{ position: 'sticky', top: 0, zIndex: 3 }}>
               <tr style={{ background: `linear-gradient(180deg, #0f1f3a, #0b1729)` }}>
-                <th style={{ ...th, textAlign: 'left', minWidth: 300, paddingLeft: 16 }}>PARTIDA</th>
+                <th style={{ ...th, textAlign: 'left', minWidth: 280, paddingLeft: 16 }}>PARTIDA</th>
                 <th style={th}>HH</th>
-                <th style={th}>COSTO S/</th>
-                <th style={th}>ACUM S/ IGV</th>
+                <th style={th}>COSTO MO</th>
+                <th style={th}>MATERIALES</th>
+                <th style={th}>OTROS</th>
+                <th style={th}>COSTO REAL</th>
                 <th style={{ ...th, minWidth: 150 }}>% DEL COSTO</th>
-                <th style={{ ...th, width: 40 }}>📝</th>
               </tr>
             </thead>
             <tbody>
-              {filasVis.map((f, idx) => {
-                const nota = !!f.v?.comentario;
-                const p = pct(f);
-                const isTotal = f.tipo === 'total', isSecc = f.tipo === 'seccion', isPart = f.tipo === 'partida', isSub = f.tipo === 'sub';
-                const indent = isSub ? 26 : isPart ? 14 : 0;
-                const rowBg = isTotal ? 'transparent' : isSecc ? 'transparent' : isPart ? '#f8fafc' : (idx % 2 ? '#fcfdfe' : BASE.white);
-                const txtColor = isTotal ? '#fff' : isSecc ? BASE.navy : BASE.navy;
+              {/* TOTAL arriba */}
+              <tr style={{ background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, borderTop: `3px solid ${BASE.gold}`, borderBottom: `3px solid ${BASE.gold}` }}>
+                <td style={{ padding: '9px 16px', color: '#fff', fontWeight: 900, fontSize: 12.5, letterSpacing: 0.5, textTransform: 'uppercase', borderLeft: `4px solid ${BASE.gold}` }}>TOTAL COSTO REAL</td>
+                <td style={{ ...tdNum, color: '#fff', fontWeight: 800 }}>{HH(totalRow.hh)}</td>
+                <td style={{ ...tdNum, color: 'rgba(255,255,255,0.85)', fontWeight: 700 }}>{S(totalRow.mo, false)}</td>
+                <td style={{ ...tdNum, color: 'rgba(255,255,255,0.85)', fontWeight: 700 }}>{S(totalRow.mat, false)}</td>
+                <td style={{ ...tdNum, color: 'rgba(255,255,255,0.85)', fontWeight: 700 }}>{S(totalRow.otros, false)}</td>
+                <td style={{ ...tdNum, color: BASE.gold, fontWeight: 900 }}>{S(totalRow.total, false)}</td>
+                <td style={{ padding: '6px 12px' }}>
+                  <span style={{ fontSize: 10, fontWeight: 800, color: '#fff', fontFamily: 'monospace' }}>100%</span>
+                </td>
+              </tr>
+              {filas.map((f, idx) => {
+                const p = f.total / totAbs;
                 const barColor = acento(p);
+                const rowBg = idx % 2 ? '#fcfdfe' : BASE.white;
                 return (
-                  <React.Fragment key={f.fila}>
-                    <tr
-                      style={{
-                        background: isTotal ? `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})` : isSecc ? `linear-gradient(90deg, ${BASE.gold}22, ${BASE.gold}08)` : rowBg,
-                        borderTop: isTotal ? `3px solid ${BASE.gold}` : isSecc ? `2px solid ${BASE.gold}` : `1px solid #eef2f7`,
-                        borderBottom: isTotal ? `3px solid ${BASE.gold}` : 'none',
-                        transition: 'background 0.12s',
-                      }}
-                      onMouseEnter={(e) => { if (!isTotal) e.currentTarget.style.background = isSecc ? `${BASE.gold}33` : '#eef5ff'; }}
-                      onMouseLeave={(e) => { if (!isTotal) e.currentTarget.style.background = isSecc ? `linear-gradient(90deg, ${BASE.gold}22, ${BASE.gold}08)` : rowBg; }}
-                    >
-                      {/* PARTIDA con franja de acento por nivel */}
-                      <td style={{ padding: 0, borderLeft: isPart ? `4px solid ${barColor}` : isSecc ? `4px solid ${BASE.goldDark}` : isTotal ? `4px solid ${BASE.gold}` : '4px solid transparent' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', paddingLeft: 12 + indent }}>
-                          {f.codigo ? (
-                            <span style={{ fontSize: 9, fontWeight: 800, color: isTotal ? BASE.gold : '#fff', background: isTotal ? 'rgba(229,168,47,0.18)' : (isPart ? barColor : isSecc ? BASE.goldDark : '#cbd5e1'), borderRadius: 5, padding: '2px 6px', minWidth: 30, textAlign: 'center', fontFamily: 'monospace' }}>{f.codigo}</span>
-                          ) : null}
-                          <span style={{ fontWeight: isSub ? 600 : 900, fontSize: isTotal ? 12.5 : isSub ? 11 : 11.5, color: txtColor, letterSpacing: isSecc || isTotal ? 0.5 : 0.1, textTransform: isSecc || isTotal ? 'uppercase' : 'none', whiteSpace: 'nowrap' }}>{f.descripcion}</span>
+                  <tr key={f.codigo || idx}
+                    style={{ background: rowBg, borderTop: `1px solid #eef2f7`, transition: 'background 0.12s' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#eef5ff'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = rowBg; }}
+                  >
+                    <td style={{ padding: 0, borderLeft: `4px solid ${barColor}` }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px' }}>
+                        {f.codigo ? (
+                          <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', background: barColor, borderRadius: 5, padding: '2px 6px', minWidth: 30, textAlign: 'center', fontFamily: 'monospace' }}>{f.codigo}</span>
+                        ) : null}
+                        <span style={{ fontWeight: 700, fontSize: 11.5, color: BASE.navy, whiteSpace: 'nowrap' }}>{f.descripcion}</span>
+                      </div>
+                    </td>
+                    <td style={{ ...tdNum, color: BASE.text, fontWeight: 800 }}>{HH(f.hh)}</td>
+                    <td style={{ ...tdNum, color: BASE.muted, fontWeight: 600, fontSize: 11 }}>{S(f.mo)}</td>
+                    <td style={{ ...tdNum, color: BASE.muted, fontWeight: 600, fontSize: 11 }}>{S(f.mat)}</td>
+                    <td style={{ ...tdNum, color: BASE.muted, fontWeight: 600, fontSize: 11 }}>{S(f.otros)}</td>
+                    <td style={{ ...tdNum, color: BASE.navy, fontWeight: 900 }}>{S(f.total)}</td>
+                    <td style={{ padding: '6px 12px', verticalAlign: 'middle' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                        <div style={{ flex: 1, height: 7, borderRadius: 999, background: '#eef2f7', overflow: 'hidden' }}>
+                          <div style={{ width: `${Math.min(100, Math.round(p * 100))}%`, height: '100%', borderRadius: 999, background: `linear-gradient(90deg, ${barColor}, ${barColor}bb)` }} />
                         </div>
-                      </td>
-                      {/* HH */}
-                      <td style={{ ...tdNum, color: isTotal ? '#fff' : BASE.text, fontWeight: isSub ? 600 : 800 }}>{cel(f, 'hh')}</td>
-                      {/* COSTO semana (secundario, atenuado) */}
-                      <td style={{ ...tdNum, color: isTotal ? 'rgba(255,255,255,0.7)' : BASE.muted, fontWeight: 600, fontSize: 11 }}>{cel(f, 'costo')}</td>
-                      {/* ACUM (primario) */}
-                      <td style={{ ...tdNum, color: isTotal ? BASE.gold : (isSub ? BASE.text : BASE.navy), fontWeight: isSub ? 700 : 900 }}>{cel(f, 'acum')}</td>
-                      {/* % del costo con barra */}
-                      <td style={{ padding: '6px 12px', verticalAlign: 'middle' }}>
-                        {verFormulas ? null : (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                            <div style={{ flex: 1, height: 7, borderRadius: 999, background: isTotal ? 'rgba(255,255,255,0.18)' : '#eef2f7', overflow: 'hidden' }}>
-                              <div style={{ width: `${Math.min(100, Math.round(p * 100))}%`, height: '100%', borderRadius: 999, background: isTotal ? BASE.gold : `linear-gradient(90deg, ${barColor}, ${barColor}bb)` }} />
-                            </div>
-                            <span style={{ fontSize: 10, fontWeight: 800, color: isTotal ? '#fff' : (p >= 0.06 ? BASE.navy : BASE.muted), minWidth: 30, textAlign: 'right', fontFamily: 'monospace' }}>{Math.round(p * 100)}%</span>
-                          </div>
-                        )}
-                      </td>
-                      {/* nota */}
-                      <td style={{ textAlign: 'center', cursor: nota ? 'pointer' : 'default' }} onClick={() => nota && setAbierto(abierto === f.fila ? null : f.fila)}>
-                        {nota ? <span style={{ fontSize: 13 }}>{abierto === f.fila ? '🔽' : '📝'}</span> : ''}
-                      </td>
-                    </tr>
-                    {abierto === f.fila && nota && (
-                      <tr><td colSpan={6} style={{ background: '#fffdf5', padding: '11px 18px', borderLeft: `4px solid ${BASE.gold}`, borderBottom: `1px solid ${BASE.border}` }}>
-                        <p style={{ fontSize: 11.5, color: BASE.text, lineHeight: 1.55 }}><b style={{ color: BASE.navy }}>💬 Comentario:</b> {f.v.comentario}</p>
-                      </td></tr>
-                    )}
-                  </React.Fragment>
+                        <span style={{ fontSize: 10, fontWeight: 800, color: p >= 0.06 ? BASE.navy : BASE.muted, minWidth: 30, textAlign: 'right', fontFamily: 'monospace' }}>{Math.round(p * 100)}%</span>
+                      </div>
+                    </td>
+                  </tr>
                 );
               })}
             </tbody>
@@ -160,4 +174,3 @@ export default function CostoRealOficial() {
 
 const th = { padding: '11px 12px', color: '#cbd5e1', fontSize: 9.5, fontWeight: 800, letterSpacing: 0.7, textAlign: 'right', whiteSpace: 'nowrap', borderBottom: `3px solid ${BASE.gold}` };
 const tdNum = { padding: '7px 12px', textAlign: 'right', fontFamily: 'var(--grapco-font-mono, monospace)', whiteSpace: 'nowrap' };
-const btn = (on) => ({ fontSize: 11, fontWeight: 800, padding: '7px 13px', borderRadius: 9, border: `1px solid ${on ? BASE.navy : BASE.border}`, background: on ? BASE.navy : BASE.white, color: on ? '#fff' : BASE.navy, cursor: 'pointer' });

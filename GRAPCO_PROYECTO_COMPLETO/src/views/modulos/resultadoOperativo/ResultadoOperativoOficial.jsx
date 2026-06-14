@@ -1,24 +1,24 @@
 // src/views/modulos/resultadoOperativo/ResultadoOperativoOficial.jsx
-// Resultado Operativo OFICIAL importado tal cual del Excel GP-GCE-FOR-F06.
-// Muestra la tabla EVM completa (Presupuesto/PV/EV/AC/CPI/EAC/VAC/SPI) con sus
-// valores y la fórmula original de cada celda (toggle "ver fórmulas").
+// RO Oficial (formato GP-GCE-FOR-F06) — AHORA EN VIVO desde useRO.
+// Ya NO importa datos estáticos: cruza Plan Maestro + APUs + Tareos + Kardex +
+// Valorizaciones (las 4 patas del costo real) y arma la tabla EVM por partida.
+// Se autoactualiza al llenar las colecciones; estado-vacío si aún no hay data.
 
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { BASE } from '../../../utils/styles';
-import { RO_CREDITEX } from '../../../data/resultadoOperativoCreditex';
+import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
+import useRO from './useRO';
+import EmptyState from '../../../components/EmptyState';
 
 const S = (n) => (n == null || n === '') ? '—' : (typeof n === 'number' ? `S/ ${Math.round(n).toLocaleString('es-PE')}` : String(n));
 const P = (n) => (typeof n === 'number' ? `${Math.round(n * 100)}%` : (n || '—'));
-const cpiCol = (v) => (typeof v !== 'number') ? BASE.muted : v >= 1 ? '#16a34a' : v >= 0.9 ? '#d97706' : '#dc2626';
+const cpiCol = (v) => (typeof v !== 'number' || v === 0) ? BASE.muted : v >= 1 ? '#16a34a' : v >= 0.9 ? '#d97706' : '#dc2626';
 const varCol = (v) => (typeof v !== 'number' || v === 0) ? BASE.muted : v > 0 ? '#16a34a' : '#dc2626';
 
-// columnas numéricas a mostrar (en orden, agrupadas)
+// Columnas EVM que el motor en vivo alimenta hoy (F1/F2 · deductivos · adicionales
+// llegan en olas siguientes; por eso esas columnas del Excel no se muestran aún).
 const COLS = [
-  { k: 'pptoF1', l: 'Ppto F1', g: 'ppt' },
-  { k: 'pptoF2', l: 'Ppto F2', g: 'ppt' },
-  { k: 'deductivos', l: 'Deduct.', g: 'ppt' },
-  { k: 'adicionales', l: 'Adic.', g: 'ppt' },
-  { k: 'bac', l: 'BAC', g: 'ppt', bold: true },
+  { k: 'bac', l: 'Presupuesto', g: 'ppt', bold: true },
   { k: 'pv', l: 'Plan Value', g: 'pv' },
   { k: 'ev', l: 'Earned Value', g: 'ev', bold: true },
   { k: 'ac', l: 'Costo Real', g: 'ac', bold: true },
@@ -26,7 +26,6 @@ const COLS = [
   { k: 'cpi', l: 'CPI', g: 'mar', tipo: 'cpi' },
   { k: 'eac', l: 'EAC', g: 'eac' },
   { k: 'vac', l: 'VAC', g: 'eac', tipo: 'var' },
-  { k: 'cpiEac', l: 'CPI fin', g: 'eac', tipo: 'cpi' },
   { k: 'spi', l: 'SPI', g: 'cro', tipo: 'cpi' },
 ];
 const GRP = {
@@ -36,28 +35,60 @@ const GRP = {
 };
 
 export default function ResultadoOperativoOficial() {
-  const { meta, filas } = RO_CREDITEX;
-  const [verFormulas, setVerFormulas] = useState(false);
-  const [verSubs, setVerSubs] = useState(true);
-  const [abierto, setAbierto] = useState(null); // fila con comentario abierto
+  const { ro, loading } = useRO();
+  const { proyectoActivo } = useProyectoActivo();
 
-  const total = useMemo(() => filas.find((f) => f.tipo === 'total'), [filas]);
+  // Partidas con sustancia (presupuesto, valorizado o costo real) — ordenadas por código WBS.
+  const partidas = useMemo(() => {
+    if (!ro?.detallePartidas) return [];
+    return ro.detallePartidas
+      .filter(p => Math.abs(p.BAC || 0) > 0.005 || Math.abs(p.EV || 0) > 0.005 || Math.abs(p.AC || 0) > 0.005)
+      .sort((a, b) => (a.codigo || '').localeCompare(b.codigo || '', 'es', { numeric: true }));
+  }, [ro]);
+
+  // Filas para la tabla: TOTAL (roll-up del motor) + una fila por partida.
+  const filas = useMemo(() => {
+    if (!ro) return [];
+    const g = ro.indicadoresGlobales || {};
+    const t = ro.totales || {};
+    const total = {
+      fila: 'TOTAL', tipo: 'total', codigo: null, descripcion: 'TOTAL COSTO DE OBRA',
+      v: {
+        bac: t.BAC, pv: t.PV, ev: t.EV, ac: t.AC,
+        cv: (t.EV || 0) - (t.AC || 0), cpi: g.CPI,
+        eac: g.EAC, vac: g.VAC, spi: g.SPI,
+      },
+    };
+    const filasPart = partidas.map(p => ({
+      fila: p.codigo, tipo: 'partida', codigo: p.codigo, descripcion: p.descripcion,
+      v: { bac: p.BAC, pv: p.PV, ev: p.EV, ac: p.AC, cv: p.CV, cpi: p.CPI, eac: p.EAC, vac: p.VAC, spi: p.SPI },
+    }));
+    return [total, ...filasPart];
+  }, [ro, partidas]);
+
+  if (loading) return <p style={{ padding: 30, textAlign: 'center', color: BASE.muted }}>⏳ Calculando el Resultado Operativo…</p>;
+  if (!ro || partidas.length === 0) {
+    return (
+      <EmptyState
+        icono="📑"
+        variante="bim"
+        titulo="El RO se calcula en vivo — aún no hay datos"
+        descripcion="Este Resultado Operativo (formato F06) ya NO usa valores cargados a mano: se arma cruzando Plan Maestro + APUs + Tareos + Kardex + Valorizaciones. En cuanto registres avance y costos en el proyecto, la tabla EVM se llena sola."
+      />
+    );
+  }
+
+  const total = filas[0];
   const t = total?.v || {};
-
-  const filasVis = filas.filter((f) => verSubs || f.tipo !== 'sub');
 
   const celda = (f, col) => {
     const v = f.v?.[col.k];
-    const formula = f.f?.[col.k];
-    if (verFormulas && formula) {
-      return <span style={{ fontSize: 9, color: BASE.muted, fontFamily: 'monospace' }}>{formula}</span>;
-    }
     if (col.tipo === 'cpi') return <span style={{ color: cpiCol(v), fontWeight: 800 }}>{P(v)}</span>;
     if (col.tipo === 'var') return <span style={{ color: varCol(v), fontWeight: 700 }}>{S(v)}</span>;
     return <span style={{ fontWeight: col.bold ? 800 : 600, color: BASE.text }}>{S(v)}</span>;
   };
 
-  const fondoFila = (tipo) => tipo === 'total' ? BASE.navy : tipo === 'seccion' ? '#e2e8f0' : tipo === 'categoria' ? '#f1f5f9' : BASE.white;
+  const fondoFila = (tipo) => tipo === 'total' ? BASE.navy : BASE.white;
   const colorTexto = (tipo) => tipo === 'total' ? '#fff' : BASE.navy;
 
   return (
@@ -65,9 +96,9 @@ export default function ResultadoOperativoOficial() {
       {/* Cabecera / meta */}
       <div style={{ background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', borderRadius: 14, padding: '16px 22px', boxShadow: BASE.shadowMd, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <p style={{ fontSize: 9.5, fontWeight: 900, letterSpacing: 1.4, color: BASE.gold }}>{meta.documento} · Rev {meta.rev} · {meta.semana}</p>
-          <h2 style={{ fontSize: 20, fontWeight: 900, marginTop: 2 }}>{meta.titulo}</h2>
-          <p style={{ fontSize: 12, opacity: 0.85, marginTop: 2 }}>{meta.proyecto}</p>
+          <p style={{ fontSize: 9.5, fontWeight: 900, letterSpacing: 1.4, color: BASE.gold }}>GP-GCE-FOR-F06 · RESULTADO OPERATIVO · EN VIVO</p>
+          <h2 style={{ fontSize: 20, fontWeight: 900, marginTop: 2 }}>El Estado de Resultados de la Obra</h2>
+          <p style={{ fontSize: 12, opacity: 0.85, marginTop: 2 }}>{proyectoActivo?.nombre || 'Proyecto activo'} · {partidas.length} partidas con movimiento</p>
         </div>
         <div style={{ textAlign: 'right' }}>
           <p style={{ fontSize: 10, fontWeight: 800, color: BASE.gold }}>CPI GLOBAL</p>
@@ -92,17 +123,15 @@ export default function ResultadoOperativoOficial() {
         ))}
       </div>
 
-      {/* Controles */}
+      {/* Nota de fuente */}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-        <button onClick={() => setVerSubs((s) => !s)} style={btn(verSubs)}>{verSubs ? '➖ Ocultar sub-partidas' : '➕ Ver sub-partidas'}</button>
-        <button onClick={() => setVerFormulas((s) => !s)} style={btn(verFormulas)}>{verFormulas ? '🔢 Ver valores' : 'ƒ Ver fórmulas'}</button>
-        <span style={{ fontSize: 11, color: BASE.muted, marginLeft: 'auto' }}>Importado tal cual del Excel · clic en una fila con 📝 para ver comentarios/análisis</span>
+        <span style={{ fontSize: 11, color: BASE.muted, marginLeft: 'auto' }}>Calculado en vivo · Costo Real = Tareos (HH × S/25.5) + Almacén + Facturas + Subcontratos</span>
       </div>
 
       {/* Tabla EVM */}
       <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 12, overflow: 'hidden', boxShadow: BASE.shadowSm }}>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ borderCollapse: 'collapse', fontSize: 11, minWidth: 1200, width: '100%' }}>
+          <table style={{ borderCollapse: 'collapse', fontSize: 11, minWidth: 1000, width: '100%' }}>
             <thead>
               <tr>
                 <th rowSpan={2} style={{ ...thBase, textAlign: 'left', minWidth: 230, position: 'sticky', left: 0, background: BASE.navy, zIndex: 2 }}>PARTIDA</th>
@@ -110,44 +139,27 @@ export default function ResultadoOperativoOficial() {
                   const span = COLS.filter((c) => c.g === g).length;
                   return <th key={g} colSpan={span} style={{ ...thBase, borderBottom: `3px solid ${info.c}` }}>{info.l}</th>;
                 })}
-                <th rowSpan={2} style={{ ...thBase, minWidth: 36 }}>📝</th>
               </tr>
               <tr>
                 {COLS.map((c) => <th key={c.k} style={{ ...thCol }}>{c.l}</th>)}
               </tr>
             </thead>
             <tbody>
-              {filasVis.map((f) => {
-                const tieneNota = !!(f.v?.comentario || f.v?.analisisReal || f.v?.analisisISP);
-                const indent = f.tipo === 'sub' ? 22 : f.tipo === 'categoria' ? 11 : 0;
-                return (
-                  <React.Fragment key={f.fila}>
-                    <tr style={{ background: fondoFila(f.tipo), borderTop: f.tipo === 'seccion' || f.tipo === 'total' ? `2px solid ${BASE.gold}` : `1px solid ${BASE.borderSoft || BASE.border}` }}>
-                      <td style={{ padding: '7px 12px', paddingLeft: 12 + indent, position: 'sticky', left: 0, background: fondoFila(f.tipo), color: colorTexto(f.tipo), fontWeight: f.tipo === 'sub' ? 600 : 900, fontSize: f.tipo === 'sub' ? 10.5 : 11.5, whiteSpace: 'nowrap', borderRight: `1px solid ${BASE.border}` }}>
-                        {f.codigo ? <span style={{ color: f.tipo === 'total' ? BASE.gold : BASE.muted, fontWeight: 700, marginRight: 6, fontSize: 9.5 }}>{f.codigo}</span> : null}
-                        {f.descripcion}
-                      </td>
-                      {COLS.map((c) => (
-                        <td key={c.k} style={{ padding: '6px 8px', textAlign: 'right', whiteSpace: 'nowrap', fontFamily: 'var(--grapco-font-mono, monospace)', color: f.tipo === 'total' ? '#fff' : undefined }}>
-                          {f.tipo === 'total' ? <span style={{ color: c.tipo === 'cpi' ? '#fbbf24' : '#fff', fontWeight: 800 }}>{c.tipo === 'cpi' ? P(f.v?.[c.k]) : S(f.v?.[c.k])}</span> : celda(f, c)}
-                        </td>
-                      ))}
-                      <td style={{ textAlign: 'center', cursor: tieneNota ? 'pointer' : 'default' }} onClick={() => tieneNota && setAbierto(abierto === f.fila ? null : f.fila)}>
-                        {tieneNota ? <span style={{ fontSize: 13 }}>{abierto === f.fila ? '🔽' : '📝'}</span> : ''}
-                      </td>
-                    </tr>
-                    {abierto === f.fila && tieneNota && (
-                      <tr>
-                        <td colSpan={COLS.length + 2} style={{ background: BASE.bgSoft, padding: '10px 16px', borderBottom: `2px solid ${BASE.gold}` }}>
-                          {f.v?.comentario && <p style={{ fontSize: 11.5, color: BASE.text, lineHeight: 1.5 }}><b style={{ color: BASE.navy }}>💬 Comentario:</b> {f.v.comentario}</p>}
-                          {f.v?.analisisReal && <p style={{ fontSize: 11.5, color: BASE.text, lineHeight: 1.5, marginTop: 5 }}><b style={{ color: '#0ea5e9' }}>📊 Análisis costo real:</b> {f.v.analisisReal}</p>}
-                          {f.v?.analisisISP && <p style={{ fontSize: 11.5, color: BASE.text, lineHeight: 1.5, marginTop: 5 }}><b style={{ color: '#7c3aed' }}>📈 Análisis ISP:</b> {f.v.analisisISP}</p>}
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                );
-              })}
+              {filas.map((f) => (
+                <tr key={f.fila} style={{ background: fondoFila(f.tipo), borderTop: f.tipo === 'total' ? `2px solid ${BASE.gold}` : `1px solid ${BASE.borderSoft || BASE.border}` }}>
+                  <td style={{ padding: '7px 12px', position: 'sticky', left: 0, background: fondoFila(f.tipo), color: colorTexto(f.tipo), fontWeight: 900, fontSize: 11.5, whiteSpace: 'nowrap', borderRight: `1px solid ${BASE.border}` }}>
+                    {f.codigo ? <span style={{ color: f.tipo === 'total' ? BASE.gold : BASE.muted, fontWeight: 700, marginRight: 6, fontSize: 9.5, fontFamily: 'monospace' }}>{f.codigo}</span> : null}
+                    {f.descripcion}
+                  </td>
+                  {COLS.map((c) => (
+                    <td key={c.k} style={{ padding: '6px 8px', textAlign: 'right', whiteSpace: 'nowrap', fontFamily: 'var(--grapco-font-mono, monospace)', color: f.tipo === 'total' ? '#fff' : undefined }}>
+                      {f.tipo === 'total'
+                        ? <span style={{ color: c.tipo === 'cpi' ? '#fbbf24' : '#fff', fontWeight: 800 }}>{c.tipo === 'cpi' ? P(f.v?.[c.k]) : S(f.v?.[c.k])}</span>
+                        : celda(f, c)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -158,4 +170,3 @@ export default function ResultadoOperativoOficial() {
 
 const thBase = { padding: '8px 8px', background: BASE.navy, color: '#fff', fontSize: 9.5, fontWeight: 800, letterSpacing: 0.4, textTransform: 'uppercase', textAlign: 'center', whiteSpace: 'nowrap' };
 const thCol = { padding: '6px 8px', background: '#1a2c4d', color: '#cbd5e1', fontSize: 9, fontWeight: 700, textAlign: 'right', whiteSpace: 'nowrap' };
-const btn = (on) => ({ fontSize: 11, fontWeight: 800, padding: '7px 13px', borderRadius: 8, border: `1px solid ${on ? BASE.navy : BASE.border}`, background: on ? BASE.navy : BASE.white, color: on ? '#fff' : BASE.navy, cursor: 'pointer' });

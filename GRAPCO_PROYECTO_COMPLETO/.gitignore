@@ -39,6 +39,9 @@ serviceAccount*.json
 scripts/backups/
 *.backup.json
 
+# Análisis/volcados de costos CREDITEX (scratch local — NO versionar)
+_scratch_costos/
+
 # Config local de Claude Code, backups de reglas y salidas de prueba (no versionar)
 settings.local.json
 *.original.bak
