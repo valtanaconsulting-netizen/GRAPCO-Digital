@@ -7,7 +7,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { useAuth } from '../contexts/AuthContext';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
-import { BASE, LOGO, LOGO_FALLBACK, LOGO_VALTANA } from '../utils/styles';
+import { BASE, LOGO, LOGO_FALLBACK } from '../utils/styles';
 import { obtenerSemana } from '../utils/helpers';
 import { FECHA_INICIO_PROYECTO } from '../utils/constants';
 import Icon from '../components/Icon';
@@ -121,6 +121,19 @@ const monogramaCliente = (nombre) => {
   return (ws[0] || limpio).slice(0, 2).toUpperCase();
 };
 
+// Logos de clientes conocidos (mientras no suban el suyo desde el editor de proyecto).
+// La clave es un fragmento del nombre del cliente. El logo SUBIDO siempre tiene prioridad.
+const LOGOS_CLIENTE_CONOCIDOS = {
+  creditex: '/brand/creditex-logo.png',
+};
+const logoClienteConocido = (nombre) => {
+  const k = String(nombre || '').toLowerCase();
+  for (const clave in LOGOS_CLIENTE_CONOCIDOS) {
+    if (k.includes(clave)) return LOGOS_CLIENTE_CONOCIDOS[clave];
+  }
+  return '';
+};
+
 export default function SelectorPerfil() {
   const { user, entrarComoRol, logout, rolPermitido } = useAuth();
   const { proyectos, proyectoActivo, frentesDelProyecto, proyectoActivoId, setProyectoActivoId, frenteActivoId, setFrenteActivoId, fechaInicioProyecto } = useProyectoActivo();
@@ -165,7 +178,7 @@ export default function SelectorPerfil() {
   const clienteActivo = clienteDe(proyectoActivo);
   // Logo del cliente activo (lo sube el admin en el editor de proyecto). Si aún no
   // existe, la barra de contexto cae a un monograma elegante con sus iniciales.
-  const logoClienteUrl = proyectoActivo?.logoCliente || proyectoActivo?.logoUrl || '';
+  const logoClienteUrl = proyectoActivo?.logoCliente || proyectoActivo?.logoUrl || logoClienteConocido(clienteActivo);
   // El selector de PROYECTO solo lista los proyectos del cliente activo.
   const proyectosFiltrados = clienteActivo
     ? (proyectos || []).filter(p => clienteDe(p) === clienteActivo)
@@ -377,43 +390,22 @@ export default function SelectorPerfil() {
       </div>
       <div className="grapco-scan" />
 
-      {/* Header — marca premium: proveedor (Valtana) + plataforma (GRAPCO) */}
+      {/* Header — plataforma GRAPCO (Valtana ya firma en el pie de página) */}
       <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', marginBottom: '16px' }}>
-        {/* Eyebrow del proveedor — Valtana desarrolla/opera la plataforma */}
+        {/* Isotipo GRAPCO — marco slim que ABRAZA el logo (no un plafón blanco grande) */}
         <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: '9px', marginBottom: '14px',
-          padding: '5px 16px 5px 7px', borderRadius: '999px',
-          background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
-          backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
-        }}>
-          <span style={{
-            height: '24px', minWidth: '24px', borderRadius: '6px', background: '#fff',
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '3px',
-          }}>
-            <img src={LOGO_VALTANA} alt="Valtana"
-              onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
-              style={{ height: '100%', width: 'auto', objectFit: 'contain' }} />
-          </span>
-          <span style={{ fontSize: '9.5px', fontWeight: 800, letterSpacing: '1.4px', color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase' }}>
-            Desarrollado por <span style={{ color: BASE.gold }}>Valtana Consultoría &amp; Construcción</span>
-          </span>
-        </div>
-
-        {/* Isotipo GRAPCO — tamaño hero con marco premium navy+gold */}
-        <div style={{
-          width: '94px', height: '94px',
-          background: 'linear-gradient(150deg, #ffffff 0%, #eaf0f7 100%)',
-          borderRadius: '24px',
+          width: '82px', height: '82px',
+          background: 'linear-gradient(150deg, #ffffff 0%, #eef3f9 100%)',
+          borderRadius: '19px',
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          marginBottom: '12px', padding: '12px', position: 'relative',
-          boxShadow: `0 20px 46px -16px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.55), 0 0 0 4px ${BASE.gold}3a, 0 0 30px -6px ${BASE.gold}40`,
+          marginBottom: '10px', padding: '5px', position: 'relative',
+          boxShadow: `0 13px 30px -16px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.5), 0 0 0 1.5px ${BASE.gold}40`,
         }}>
           <img
             src={LOGO}
             alt="GRAPCO"
             onError={(e) => { if (!e.target.dataset.fallback) { e.target.dataset.fallback = '1'; e.target.src = LOGO_FALLBACK; } }}
-            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '14px' }}
           />
         </div>
         <h1 style={{
