@@ -376,10 +376,13 @@ export function calcularCostoRealActividad({
 export function calcularEVM({
   metradoContractual = 0, precioUnitario = 0,
   avanceMetradoAcum = 0, costoRealAcum = 0,
+  evValorizado = null,   // EV REAL valorizado al cliente (si existe, manda sobre avance×PU)
   fechaInicioProgramada = null, fechaFinProgramada = null, fechaActual = new Date(),
 }) {
   const BAC = metradoContractual * precioUnitario; // Budget at Completion
-  const EV = avanceMetradoAcum * precioUnitario;    // Earned Value (valor ganado)
+  // Earned Value: si hay valorización real al cliente para la partida, esa es la
+  // venta ganada (EV); si no, se aproxima con avance físico × PU.
+  const EV = (evValorizado != null && Number.isFinite(evValorizado)) ? evValorizado : avanceMetradoAcum * precioUnitario;
   const AC = costoRealAcum;                          // Actual Cost
 
   // Calcular PV (Planned Value) según fechas programadas
@@ -484,6 +487,22 @@ export function calcularROMensual({
 
   const apuMap = new Map(apus.map(a => [a.codigo || a.actividadId, a]));
 
+  // EV REAL: acumular lo valorizado al cliente por código de partida desde
+  // ValorizacionesContractuales (cada valorización lista sus partidasValorizadas).
+  // Si una partida tiene valorizado real, ese monto es su EV; si no, cae a avance×PU.
+  const valorizadoPorPartida = new Map();
+  for (const v of valorizaciones) {
+    if (v?.estado === 'anulada') continue;
+    const items = v?.partidasValorizadas || v?.partidas || [];
+    for (const it of items) {
+      const cod = it.codigo || it.codigoWBS || it.partida;
+      if (!cod) continue;
+      const monto = Number(it.montoBruto ?? it.monto ?? it.valorizado ?? 0) || 0;
+      valorizadoPorPartida.set(cod, (valorizadoPorPartida.get(cod) || 0) + monto);
+    }
+  }
+  const hayValorizacionReal = valorizadoPorPartida.size > 0;
+
   // Filtrar solo actividades hoja
   const actividadesHoja = obtenerActividadesHoja(actividades);
 
@@ -507,11 +526,13 @@ export function calcularROMensual({
       salariosPorCategoria,
     });
 
-    // EVM
+    // EVM — usa el EV valorizado real si la partida fue valorizada al cliente.
+    const evValorizado = valorizadoPorPartida.has(codigoWBS) ? valorizadoPorPartida.get(codigoWBS) : null;
     const evm = calcularEVM({
       metradoContractual, precioUnitario,
       avanceMetradoAcum,
       costoRealAcum: costoReal.costoTotal,
+      evValorizado,
       fechaInicioProgramada: act.fechaInicioProgramada,
       fechaFinProgramada: act.fechaFinProgramada,
       fechaActual,
@@ -652,6 +673,7 @@ export function calcularROMensual({
     },
     partidasCriticas,
     partidasEstrella,
+    evReal: hayValorizacionReal,   // true si el EV viene de valorizaciones al cliente
     fechaCalculo: fechaActual,
   };
 }

@@ -108,7 +108,12 @@ export default function ResultadoOperativoOficial() {
         <div>
           <p style={{ fontSize: 9.5, fontWeight: 900, letterSpacing: 1.4, color: BASE.gold }}>GP-GCE-FOR-F06 · RESULTADO OPERATIVO · EN VIVO</p>
           <h2 style={{ fontSize: 20, fontWeight: 900, marginTop: 2 }}>El Estado de Resultados de la Obra</h2>
-          <p style={{ fontSize: 12, opacity: 0.85, marginTop: 2 }}>{proyectoActivo?.nombre || 'Proyecto activo'} · {partidas.length} partidas con movimiento</p>
+          <p style={{ fontSize: 12, opacity: 0.85, marginTop: 2 }}>
+            {proyectoActivo?.nombre || 'Proyecto activo'} · {partidas.length} partidas con movimiento ·{' '}
+            <span style={{ fontWeight: 800, color: ro.evReal ? '#4ade80' : '#fbbf24' }}>
+              {ro.evReal ? 'EV valorizado al cliente' : 'EV estimado (avance × PU)'}
+            </span>
+          </p>
         </div>
         <div style={{ textAlign: 'right' }}>
           <p style={{ fontSize: 10, fontWeight: 800, color: BASE.gold }}>CPI GLOBAL</p>
