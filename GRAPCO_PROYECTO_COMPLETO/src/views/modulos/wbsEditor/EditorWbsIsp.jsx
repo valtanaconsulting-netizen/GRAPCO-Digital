@@ -36,6 +36,7 @@ export default function EditorWbsIsp({ showToast }) {
   const [dirty, setDirty]   = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [cargado, setCargado]     = useState(false);
+  const [exportOpen, setExportOpen] = useState(false); // menú "Exportar ▾"
   const fileRef = useRef(null);
 
   // Importar de otro proyecto + Generar programación
@@ -187,10 +188,12 @@ export default function EditorWbsIsp({ showToast }) {
       toast('Error al guardar: ' + e.message, 'error');
     } finally { setGuardando(false); }
   };
+  // ── PLANTILLA VACÍA: solo el formato de columnas (2 filas de ejemplo) ──────
   const descargarPlantilla = async () => {
+    setExportOpen(false);
     try {
       const XLSX = await import('xlsx');
-      const filas = arbol.length ? arbolAFilas(arbol, columnas) : [
+      const filas = [
         { 'Partida': 'TRABAJOS PRELIMINARES', 'Subpartida': 'TOPOGRAFÍA', 'Actividad': 'TRAZO Y REPLANTEO TOPOGRAFICO', 'Unidad': 'MES', 'Frente': columnas[0]?.nombre || 'F1', 'Metrado': 4, 'IP': 311.76, 'IP Meta': 280 },
         { 'Partida': 'TRABAJOS PRELIMINARES', 'Subpartida': 'TOPOGRAFÍA', 'Actividad': 'TRAZO Y REPLANTEO TOPOGRAFICO', 'Unidad': 'MES', 'Frente': columnas[1]?.nombre || 'F2', 'Metrado': 1, 'IP': 311.76, 'IP Meta': 280 },
       ];
@@ -200,6 +203,90 @@ export default function EditorWbsIsp({ showToast }) {
       XLSX.utils.book_append_sheet(wb, ws, 'WBS');
       XLSX.writeFile(wb, `Plantilla_WBS_${proyectoNombre.replace(/\s+/g, '_')}.xlsx`);
     } catch (e) { console.error('[plantilla]', e); toast('No se pudo generar la plantilla', 'error'); }
+  };
+
+  // ── EXPORTAR DATA: tu catálogo en formato LARGO re-importable (round-trip) ──
+  // Mismas columnas que el importador lee (filasAArbol): Partida·Subpartida·
+  // Actividad·Unidad·Frente·Metrado·IP·IP Meta. Se vuelve a subir SIN warning.
+  const exportarData = async () => {
+    setExportOpen(false);
+    if (!arbol.length) return toast('No hay catálogo para exportar. Carga o importa uno primero.', 'warning');
+    try {
+      const XLSX = await import('xlsx');
+      const filas = arbolAFilas(arbol, columnas);
+      const ws = XLSX.utils.json_to_sheet(filas, { header: COLUMNAS_PLANTILLA });
+      ws['!cols'] = COLUMNAS_PLANTILLA.map(c => ({ wch: Math.max(13, c.length + 2) }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'WBS');
+      XLSX.writeFile(wb, `Data_WBS_${proyectoNombre.replace(/\s+/g, '_')}.xlsx`);
+      toast(`Data exportada: ${filas.length} filas. Este Excel se vuelve a subir con «📤 Importar Excel» (aquí o en otro proyecto) sin error.`, 'success');
+    } catch (e) { console.error('[exportarData]', e); toast('No se pudo exportar la data', 'error'); }
+  };
+
+  // ── EXPORTAR INFORME: tabla visual/detallada (igual que en pantalla) ───────
+  // Por frente: Metrado·HH·IP + Adicionales + Contractual + Meta + totales.
+  // NO está pensado para re-importar (para eso está "Exportar data").
+  const exportarInforme = async () => {
+    setExportOpen(false);
+    if (!arbol.length) return toast('No hay catálogo para exportar.', 'warning');
+    try {
+      const XLSX = await import('xlsx');
+      const cols = columnas;
+      const r2 = (n) => +num(n).toFixed(2);
+      // 2 filas de cabecera (grupos + sub-columnas), como en pantalla
+      const g1 = ['', '', '', ''];
+      const g2 = ['Partida', 'Subpartida', 'Actividad', 'Und'];
+      cols.forEach(c => { g1.push(`PPTO OFERTA · ${c.nombre}`, '', ''); g2.push('Metrado', 'HH', 'IP'); });
+      g1.push('ADICIONALES', '', ''); g2.push('Metrado', 'HH', 'IP');
+      g1.push('PPTO CONTRACTUAL', '', ''); g2.push('Metrado', 'HH', 'IP');
+      g1.push('PPTO META', '', ''); g2.push('Metrado', 'HH', 'IP Meta');
+      const aoa = [g1, g2];
+      const T = { ofe: {}, adicHH: 0, contrMet: 0, contrHH: 0, metaMet: 0, metaHH: 0 };
+      cols.forEach(c => { T.ofe[c.id] = { met: 0, hh: 0 }; });
+      (arbol || []).forEach(p => {
+        aoa.push([(p.nombre || '').toUpperCase()]);
+        (p.subpartidas || []).forEach(s => {
+          aoa.push(['', (s.nombre || '').toUpperCase()]);
+          (s.actividades || []).forEach(a => {
+            const c = calcActividad(a);
+            const row = ['', '', a.nombre, a.un || 'UND'];
+            cols.forEach(col => {
+              const o = a.ofertas?.[col.id];
+              const met = num(o?.met), hh = hhDe(o), ip = num(o?.ip);
+              row.push(met || '', hh || '', ip || '');
+              T.ofe[col.id].met += met; T.ofe[col.id].hh += hh;
+            });
+            const am = num(a.adicional?.met), ah = hhDe(a.adicional), aip = num(a.adicional?.ip);
+            row.push(am || '', ah || '', aip || '');
+            row.push(r2(c.contractualMet), r2(c.contractualHH), c.contractualIP);
+            row.push(r2(c.metaMet), r2(c.metaHH), c.ipMeta);
+            T.adicHH += ah; T.contrMet += c.contractualMet; T.contrHH += c.contractualHH;
+            T.metaMet += c.metaMet; T.metaHH += c.metaHH;
+            aoa.push(row);
+          });
+        });
+      });
+      const totalRow = ['TOTAL GENERAL', '', '', ''];
+      cols.forEach(col => totalRow.push(r2(T.ofe[col.id].met), r2(T.ofe[col.id].hh), ''));
+      totalRow.push('', r2(T.adicHH), '');
+      totalRow.push(r2(T.contrMet), r2(T.contrHH), '');
+      totalRow.push(r2(T.metaMet), r2(T.metaHH), '');
+      aoa.push(totalRow);
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      // Combinar la fila de grupos (igual que el encabezado en pantalla)
+      const merges = []; let ci = 4;
+      const span3 = (st) => ({ s: { r: 0, c: st }, e: { r: 0, c: st + 2 } });
+      cols.forEach(() => { merges.push(span3(ci)); ci += 3; });
+      merges.push(span3(ci)); ci += 3;      // adicionales
+      merges.push(span3(ci)); ci += 3;      // contractual
+      merges.push(span3(ci)); ci += 3;      // meta
+      ws['!merges'] = merges;
+      ws['!cols'] = [{ wch: 26 }, { wch: 22 }, { wch: 34 }, { wch: 7 }, ...Array((cols.length + 3) * 3).fill({ wch: 11 })];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Informe WBS');
+      XLSX.writeFile(wb, `Informe_WBS_${proyectoNombre.replace(/\s+/g, '_')}.xlsx`);
+      toast('Informe exportado (visual). Para re-subir a otro proyecto usa «Exportar data».', 'success');
+    } catch (e) { console.error('[informe]', e); toast('No se pudo exportar el informe', 'error'); }
   };
   const importarExcel = async (file) => {
     if (!file) return;
@@ -410,7 +497,19 @@ export default function EditorWbsIsp({ showToast }) {
           </Btn>
           <Btn onClick={abrirImportar} bg={BASE.white} color={BASE.navy} border>📦 Importar de proyecto…</Btn>
           <Btn onClick={aplicarCorreccionesISP} bg={BASE.white} color={BASE.navy} border>🔧 Aplicar correcciones ISP</Btn>
-          <Btn onClick={descargarPlantilla} bg={BASE.white} color={BASE.navy} border>📥 Plantilla Excel</Btn>
+          <div style={{ position: 'relative' }}>
+            <Btn onClick={() => setExportOpen(o => !o)} bg={BASE.white} color={BASE.navy} border>⬇️ Exportar ▾</Btn>
+            {exportOpen && (
+              <>
+                <div onClick={() => setExportOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
+                <div style={{ position: 'absolute', top: 'calc(100% + 4px)', right: 0, zIndex: 50, background: '#fff', border: `1px solid ${BASE.border}`, borderRadius: '10px', boxShadow: '0 14px 34px -12px rgba(8,26,46,0.45)', minWidth: '262px', overflow: 'hidden' }}>
+                  <ExportItem onClick={exportarInforme} icon="📊" title="Informe (visual)" sub="Tabla detallada para leer/imprimir" />
+                  <ExportItem onClick={exportarData} icon="🔁" title="Data (re-importable)" sub="Se vuelve a subir con «Importar Excel»" />
+                  <ExportItem onClick={descargarPlantilla} icon="📥" title="Plantilla vacía" sub="Solo para ver el formato de columnas" ultimo />
+                </div>
+              </>
+            )}
+          </div>
           <Btn onClick={() => fileRef.current?.click()} bg={BASE.white} color={BASE.navy} border>📤 Importar Excel</Btn>
           <Btn onClick={guardar} bg={dirty ? BASE.navy : '#cbd5e1'} color="#fff" disabled={guardando || !dirty}>
             {guardando ? 'Guardando…' : dirty ? '💾 Guardar cambios' : '✓ Guardado'}
@@ -637,6 +736,26 @@ function Btn({ children, onClick, bg, color, border, sm, disabled }) {
       fontSize: sm ? '10px' : '12px', padding: sm ? '4px 8px' : '9px 14px',
       opacity: disabled ? 0.6 : 1, whiteSpace: 'nowrap',
     }}>{children}</button>
+  );
+}
+
+// Ítem del menú "Exportar ▾": título + descripción, hover suave.
+function ExportItem({ onClick, icon, title, sub, ultimo }) {
+  return (
+    <button onClick={onClick}
+      onMouseEnter={e => (e.currentTarget.style.background = '#f1f5f9')}
+      onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+      style={{
+        display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
+        background: '#fff', border: 'none', cursor: 'pointer', textAlign: 'left',
+        padding: '11px 14px', borderBottom: ultimo ? 'none' : `1px solid ${BASE.border}`,
+      }}>
+      <span style={{ fontSize: '18px', flexShrink: 0 }}>{icon}</span>
+      <span style={{ minWidth: 0 }}>
+        <span style={{ display: 'block', fontSize: '12.5px', fontWeight: 800, color: BASE.navy }}>{title}</span>
+        <span style={{ display: 'block', fontSize: '10.5px', color: BASE.muted, marginTop: '1px' }}>{sub}</span>
+      </span>
+    </button>
   );
 }
 
