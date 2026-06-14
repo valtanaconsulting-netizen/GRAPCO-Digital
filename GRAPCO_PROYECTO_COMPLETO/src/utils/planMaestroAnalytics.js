@@ -581,7 +581,12 @@ export function calcularROMensual({
     ventaSaldo: acc.ventaSaldo + p.ventaSaldo,
   }), { BAC: 0, PV: 0, EV: 0, AC: 0, vendido: 0, costoAplicado: 0, costoReal: 0, ventaSaldo: 0 });
 
-  // KPIs globales
+  // Gastos Generales de oficina (sección aparte del F06: NO se imputan a una
+  // partida; se suman al Total Costo de Obra). El motor solo los totaliza aquí.
+  const ggItems = gastosGenerales.filter(g => g?.estado !== 'anulado');
+  const ggTotal = ggItems.reduce((s, g) => s + (Number(g.monto ?? g.costo ?? g.importe ?? 0) || 0), 0);
+
+  // KPIs globales (COSTO DIRECTO — por partidas, sin GG; retro-compatible)
   const CPI_global = totales.AC > 0 ? totales.EV / totales.AC : 0;
   const SPI_global = totales.PV > 0 ? totales.EV / totales.PV : 0;
   const EAC_global = CPI_global > 0 ? totales.BAC / CPI_global : totales.BAC;
@@ -589,6 +594,13 @@ export function calcularROMensual({
   const margenAplicadoGlobal = totales.vendido > 0 ? ((totales.vendido - totales.costoAplicado) / totales.vendido) * 100 : 0;
   const margenRealGlobal = totales.vendido > 0 ? ((totales.vendido - totales.costoReal) / totales.vendido) * 100 : 0;
   const margenProyectadoCierre = totales.BAC > 0 ? (VAC_global / totales.BAC) * 100 : 0;
+
+  // KPIs CON GG (Total Costo de Obra = Costo Directo + Gastos Generales).
+  // Es el "resultado operativo" completo del F06: AC y CPI incluyen GG.
+  const acConGG = totales.AC + ggTotal;
+  const cpiConGG = acConGG > 0 ? totales.EV / acConGG : 0;
+  const eacConGG = cpiConGG > 0 ? totales.BAC / cpiConGG : totales.BAC;
+  const margenRealConGG = totales.vendido > 0 ? ((totales.vendido - (totales.costoReal + ggTotal)) / totales.vendido) * 100 : 0;
 
   // Identificar partidas críticas
   const partidasCriticas = detallePartidas
@@ -625,6 +637,18 @@ export function calcularROMensual({
       margenProyectadoCierre: redondear(margenProyectadoCierre, 2),
       margenMeta,
       pctAvanceFisico: totales.BAC > 0 ? redondear((totales.EV / totales.BAC) * 100, 2) : 0,
+    },
+    // Gastos Generales (sección aparte) + roll-up del Total Costo de Obra con GG.
+    gastosGenerales: {
+      total: redondear(ggTotal),
+      items: ggItems,
+      // Total Costo de Obra = Costo Directo + GG, con sus indicadores ya con GG.
+      acConGG: redondear(acConGG),
+      costoRealConGG: redondear(totales.costoReal + ggTotal),
+      CPI: redondear(cpiConGG, 3),
+      EAC: redondear(eacConGG),
+      VAC: redondear(totales.BAC - eacConGG),
+      margenReal: redondear(margenRealConGG, 2),
     },
     partidasCriticas,
     partidasEstrella,

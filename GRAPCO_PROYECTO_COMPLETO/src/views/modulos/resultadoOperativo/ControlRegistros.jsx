@@ -1,188 +1,192 @@
 // src/views/modulos/resultadoOperativo/ControlRegistros.jsx
-// Hoja "CR" del formato GP-GCE-FOR-F06 (RO_CREDITEX): cruza el costo real
-// contra cada fuente de registro (facturas, almacen, tareos, gastos generales)
-// para detectar partidas mal-imputadas o sin sustento.
+// CR · Control de Registros (hoja CR del F06) — AHORA EN VIVO desde useRO.
+// Cruza el Costo Real (AC) de cada partida contra sus 4 patas (Tareos · Almacén ·
+// Facturas · Subcontratos) + Gastos Generales (sección aparte). Permite IMPORTAR
+// Facturas y GG con un botón in-app; el RO se recalcula solo al cargarlas.
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { collection, onSnapshot } from 'firebase/firestore';
-import { db } from '../../../firebaseConfig';
+import React, { useMemo, useState } from 'react';
 import { BASE } from '../../../utils/styles';
 import EmptyState from '../../../components/EmptyState';
+import useRO from './useRO';
+import ImportadorRegistros from './ImportadorRegistros';
 
-const fmt = (n) => {
-  const v = Number(n) || 0;
-  return v.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-};
+const fmt = (n) => `S/ ${Math.round(Number(n) || 0).toLocaleString('es-PE')}`;
+const esDeEstaPartida = (x, cod) => x?.partida === cod || x?.codigoWBS === cod || x?.actividad === cod;
 
-// Estado de cuadre por fila: ok si la diferencia entre real y suma de registros es ≤ 1%
-const cuadreEstado = (real, registrado) => {
-  const r = Number(real) || 0;
-  const t = Number(registrado) || 0;
-  if (r === 0 && t === 0) return { color: BASE.muted, text: '—' };
-  const diff = Math.abs(r - t);
-  const tol = Math.max(Math.abs(r) * 0.01, 1);
-  if (diff <= tol)            return { color: BASE.green,    text: 'OK' };
-  if (diff <= Math.abs(r)*0.05) return { color: BASE.gold,    text: 'Revisar' };
-  return { color: BASE.red, text: 'Descuadre' };
-};
+// Esquemas de columnas (reusables por el importador genérico).
+export const CAMPOS_FACTURAS = [
+  { campo: 'partida', etiquetas: ['partida', 'codigo', 'codigowbs', 'item', 'cuenta'], tipo: 'texto', requerido: true },
+  { campo: 'proveedor', etiquetas: ['proveedor', 'razonsocial', 'acreedor', 'razon'], tipo: 'texto' },
+  { campo: 'documento', etiquetas: ['documento', 'comprobante', 'factura', 'serie', 'numero', 'nrodoc'], tipo: 'texto' },
+  { campo: 'fecha', etiquetas: ['fecha', 'femision', 'fechaemision'], tipo: 'texto' },
+  { campo: 'glosa', etiquetas: ['glosa', 'descripcion', 'concepto', 'detalle'], tipo: 'texto' },
+  { campo: 'montoSinIGV', etiquetas: ['montosinigv', 'sinigv', 'subtotal', 'base', 'valorventa', 'importe', 'monto', 'costodirecto'], tipo: 'numero', requerido: true },
+];
+export const CAMPOS_GG = [
+  { campo: 'concepto', etiquetas: ['concepto', 'descripcion', 'detalle', 'rubro', 'glosa', 'partida', 'cuenta'], tipo: 'texto', requerido: true },
+  { campo: 'categoria', etiquetas: ['categoria', 'tipo', 'clase', 'grupo'], tipo: 'texto' },
+  { campo: 'fecha', etiquetas: ['fecha'], tipo: 'texto' },
+  { campo: 'monto', etiquetas: ['monto', 'importe', 'costo', 'total', 'valor', 'soles'], tipo: 'numero', requerido: true },
+];
 
 export default function ControlRegistros({ showToast }) {
-  const [partidas, setPartidas] = useState([]);
-  const [historial, setHistorial] = useState([]);
-  const [movimientos, setMovimientos] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { ro, loading, facturas, valorizacionesSC, gastosGenerales } = useRO();
+  const [vista, setVista] = useState('cruce'); // cruce | facturas | gg
 
-  useEffect(() => {
-    const unsubs = [
-      onSnapshot(collection(db, 'PartidasContractuales'),
-        (snap) => { setPartidas(snap.docs.map(d => ({ id: d.id, ...d.data() }))); setLoading(false); }),
-      onSnapshot(collection(db, 'Historial'),
-        (snap) => setHistorial(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
-      onSnapshot(collection(db, 'Kardex_Movimientos'),
-        (snap) => setMovimientos(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
-    ];
-    return () => unsubs.forEach(u => u());
-  }, []);
-
-  // Agrupa los costos por partida desde cada fuente (placeholder de cálculo
-  // hasta que existan datos reales en Firestore). Cuando haya datos, esta
-  // función se ajusta para mapear los movimientos de almacén/facturas/tareos
-  // hacia la partida correspondiente.
   const filas = useMemo(() => {
-    return partidas.map(p => {
-      const real = Number(p.costoReal || 0);
-      const registroFacturas = Number(p.acumFacturas || 0);
-      const registroAlmacen  = Number(p.acumAlmacen  || 0);
-      const controlTareos    = Number(p.acumTareos   || 0);
-      const gastosGenerales  = Number(p.acumGG       || 0);
-      const totalRegistro = registroFacturas + registroAlmacen + controlTareos + gastosGenerales;
-      return {
-        codigo: p.codigo || p.id,
-        descripcion: p.descripcion || '—',
-        real,
-        registroFacturas,
-        registroAlmacen,
-        controlTareos,
-        gastosGenerales,
-        totalRegistro,
-        cuadre: cuadreEstado(real, totalRegistro),
-      };
-    });
-  }, [partidas]);
+    if (!ro?.detallePartidas) return [];
+    return ro.detallePartidas
+      .map((p) => {
+        const cod = p.codigo;
+        const tareos = p.costoMORealAct || 0;
+        const almacen = p.costoMatRealAct || 0;
+        const fact = (facturas || []).filter(f => f.estado !== 'anulado' && esDeEstaPartida(f, cod))
+          .reduce((s, f) => s + (Number(f.montoSinIGV ?? f.costoDirecto ?? f.monto ?? 0) || 0), 0);
+        const sc = (valorizacionesSC || []).filter(v => v.estado !== 'anulado' && esDeEstaPartida(v, cod))
+          .reduce((s, v) => s + (Number(v.cdValorizado ?? v.montoSinIGV ?? v.monto ?? 0) || 0), 0);
+        const real = p.costoReal || 0;
+        return { codigo: cod, descripcion: p.descripcion, tareos, almacen, fact, sc, real };
+      })
+      .filter(f => Math.abs(f.real) > 0.005)
+      .sort((a, b) => (a.codigo || '').localeCompare(b.codigo || '', 'es', { numeric: true }));
+  }, [ro, facturas, valorizacionesSC]);
 
-  const totales = useMemo(() => {
-    const acc = filas.reduce((a, f) => ({
-      real: a.real + f.real,
-      facturas: a.facturas + f.registroFacturas,
-      almacen: a.almacen + f.registroAlmacen,
-      tareos: a.tareos + f.controlTareos,
-      gg: a.gg + f.gastosGenerales,
-      total: a.total + f.totalRegistro,
-    }), { real: 0, facturas: 0, almacen: 0, tareos: 0, gg: 0, total: 0 });
-    return acc;
-  }, [filas]);
+  const tot = useMemo(() => filas.reduce((a, f) => ({
+    tareos: a.tareos + f.tareos, almacen: a.almacen + f.almacen, fact: a.fact + f.fact, sc: a.sc + f.sc, real: a.real + f.real,
+  }), { tareos: 0, almacen: 0, fact: 0, sc: 0, real: 0 }), [filas]);
 
-  if (loading) {
-    return <p style={{ color: BASE.muted, fontSize: '12px', padding: '20px' }}>Cargando registros…</p>;
-  }
+  const ggTotal = ro?.gastosGenerales?.total || 0;
+  const nFacturas = (facturas || []).filter(f => f.estado !== 'anulado').length;
+  const nGG = (gastosGenerales || []).filter(g => g.estado !== 'anulado').length;
 
-  if (!filas.length) {
+  // Sub-vistas de importación
+  if (vista === 'facturas') {
     return (
-      <EmptyState
-        icono="🧾"
-        titulo="Sin partidas para cruzar"
-        descripcion="Carga las partidas contractuales y los costos reales (facturas, almacén, tareos, GG) para ver el control."
-      />
+      <Wrapper onBack={() => setVista('cruce')}>
+        <ImportadorRegistros
+          titulo="Registro de Facturas (proveedores / subcontratos)"
+          subtitulo="Cada factura se imputa a una PARTIDA (código WBS). Suma al Costo Real (AC) de esa partida. Monto SIN IGV."
+          coleccion="Registro_Facturas"
+          campos={CAMPOS_FACTURAS}
+          showToast={showToast}
+          onDone={() => setVista('cruce')}
+        />
+      </Wrapper>
+    );
+  }
+  if (vista === 'gg') {
+    return (
+      <Wrapper onBack={() => setVista('cruce')}>
+        <ImportadorRegistros
+          titulo="Gastos Generales de Oficina (GG)"
+          subtitulo="Costos de obra que NO se imputan a una partida (administración, seguros, financieros…). Suman al Total Costo de Obra."
+          coleccion="GG_Oficina"
+          campos={CAMPOS_GG}
+          showToast={showToast}
+          onDone={() => setVista('cruce')}
+        />
+      </Wrapper>
     );
   }
 
-  const HEADERS = [
-    { id: 'codigo',   l: 'Partida', w: '90px',  align: 'left' },
-    { id: 'desc',     l: 'Descripción', w: 'auto', align: 'left' },
-    { id: 'real',     l: 'Costo Real (AC)', w: '130px', align: 'right', highlight: '#fef3c7' },
-    { id: 'fact',     l: 'Reg. Facturas',   w: '120px', align: 'right', highlight: '#ede9fe' },
-    { id: 'alm',      l: 'Reg. Almacén',    w: '120px', align: 'right', highlight: '#dcfce7' },
-    { id: 'tar',      l: 'Control Tareos',  w: '120px', align: 'right', highlight: '#fef3c7' },
-    { id: 'gg',       l: 'Gastos Grales',   w: '120px', align: 'right', highlight: '#fee2e2' },
-    { id: 'total',    l: 'Total Registro',  w: '130px', align: 'right', highlight: '#dbeafe' },
-    { id: 'estado',   l: 'Cuadre',          w: '110px', align: 'center' },
-  ];
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      <div style={{
-        background: BASE.white, border: `1px solid ${BASE.border}`,
-        borderRadius: '14px', padding: '16px', boxShadow: '0 2px 6px rgba(15,23,42,0.04)',
-      }}>
-        <p style={{ fontSize: '12px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.5px', marginBottom: '4px' }}>
-          🧾 CONTROL DE REGISTROS — CR
-        </p>
-        <p style={{ fontSize: '11px', color: BASE.muted, lineHeight: 1.5 }}>
-          Cada fila cruza el <b>costo real (AC)</b> de la partida con la suma de las cuatro fuentes
-          de registro contable. Si el cuadre es <b style={{ color: BASE.green }}>OK</b>, el RO está
-          sustentado. Si es <b style={{ color: BASE.red }}>Descuadre</b>, hay imputaciones cruzadas
-          o gastos sin asignar a partida.
-        </p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* Encabezado + acciones de import */}
+      <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 14, padding: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ flex: '1 1 280px' }}>
+          <p style={{ fontSize: 12, fontWeight: 900, color: BASE.navy, letterSpacing: 0.5 }}>🧾 CONTROL DE REGISTROS — CR (en vivo)</p>
+          <p style={{ fontSize: 11, color: BASE.muted, lineHeight: 1.5, marginTop: 4 }}>
+            El <b>Costo Real (AC)</b> de cada partida descompuesto en sus 4 patas. <b>Facturas</b> y <b>GG</b> se cargan aquí y el RO se recalcula solo.
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button onClick={() => setVista('facturas')} style={btnImp}>📑 Importar Facturas <span style={pill}>{nFacturas}</span></button>
+          <button onClick={() => setVista('gg')} style={btnImp}>🏢 Importar GG <span style={pill}>{nGG}</span></button>
+        </div>
       </div>
 
-      <div style={{
-        background: BASE.white, border: `1px solid ${BASE.border}`,
-        borderRadius: '14px', overflow: 'auto', boxShadow: '0 2px 6px rgba(15,23,42,0.04)',
-      }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', minWidth: '1100px' }}>
-          <thead>
-            <tr style={{ background: BASE.navy, color: '#fff' }}>
-              {HEADERS.map(h => (
-                <th key={h.id} style={{
-                  padding: '10px 8px', textAlign: h.align, fontWeight: 800,
-                  fontSize: '10.5px', letterSpacing: '0.4px',
-                  borderBottom: `2px solid ${BASE.gold}`,
-                  width: h.w,
-                }}>{h.l}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {filas.map((f, i) => (
-              <tr key={f.codigo + i} style={{
-                background: i % 2 === 0 ? '#fff' : '#f8fafc',
-                borderBottom: `1px solid ${BASE.border}`,
-              }}>
-                <td style={{ padding: '8px', fontWeight: 700, color: BASE.navy }}>{f.codigo}</td>
-                <td style={{ padding: '8px' }}>{f.descripcion}</td>
-                <td style={{ padding: '8px', textAlign: 'right', background: '#fef3c7', fontWeight: 700 }}>{fmt(f.real)}</td>
-                <td style={{ padding: '8px', textAlign: 'right', background: '#ede9fe' }}>{fmt(f.registroFacturas)}</td>
-                <td style={{ padding: '8px', textAlign: 'right', background: '#dcfce7' }}>{fmt(f.registroAlmacen)}</td>
-                <td style={{ padding: '8px', textAlign: 'right', background: '#fef3c7' }}>{fmt(f.controlTareos)}</td>
-                <td style={{ padding: '8px', textAlign: 'right', background: '#fee2e2' }}>{fmt(f.gastosGenerales)}</td>
-                <td style={{ padding: '8px', textAlign: 'right', background: '#dbeafe', fontWeight: 700 }}>{fmt(f.totalRegistro)}</td>
-                <td style={{ padding: '8px', textAlign: 'center' }}>
-                  <span style={{
-                    background: f.cuadre.color, color: '#fff',
-                    padding: '3px 10px', borderRadius: '999px',
-                    fontSize: '10px', fontWeight: 800, letterSpacing: '0.4px',
-                  }}>{f.cuadre.text}</span>
-                </td>
+      {loading ? (
+        <p style={{ padding: 24, textAlign: 'center', color: BASE.muted }}>⏳ Cargando registros…</p>
+      ) : !filas.length ? (
+        <EmptyState
+          icono="🧾"
+          variante="bim"
+          titulo="Sin costo real aún para cruzar"
+          descripcion="En cuanto haya tareos, salidas de almacén, facturas o subcontratos imputados a partidas, este control mostrará el desglose del AC por fuente. Usa los botones de arriba para importar Facturas o GG."
+        />
+      ) : (
+        <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 14, overflow: 'auto', boxShadow: '0 2px 6px rgba(15,23,42,0.04)' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5, minWidth: 980 }}>
+            <thead>
+              <tr style={{ background: BASE.navy, color: '#fff' }}>
+                <th style={{ ...th, textAlign: 'left' }}>Partida</th>
+                <th style={{ ...th, textAlign: 'left' }}>Descripción</th>
+                <th style={{ ...th, background: '#5b21b6' }}>Tareos (MO)</th>
+                <th style={{ ...th, background: '#b45309' }}>Almacén</th>
+                <th style={{ ...th, background: '#1d4ed8' }}>Facturas</th>
+                <th style={{ ...th, background: '#be123c' }}>Subcontr.</th>
+                <th style={{ ...th, background: '#065f46' }}>Costo Real (AC)</th>
+                <th style={th}>% MO</th>
               </tr>
-            ))}
-            <tr style={{ background: BASE.navySoft, fontWeight: 900, color: BASE.navy }}>
-              <td colSpan={2} style={{ padding: '10px 8px' }}>TOTAL COSTO DE OBRA</td>
-              <td style={{ padding: '10px 8px', textAlign: 'right' }}>{fmt(totales.real)}</td>
-              <td style={{ padding: '10px 8px', textAlign: 'right' }}>{fmt(totales.facturas)}</td>
-              <td style={{ padding: '10px 8px', textAlign: 'right' }}>{fmt(totales.almacen)}</td>
-              <td style={{ padding: '10px 8px', textAlign: 'right' }}>{fmt(totales.tareos)}</td>
-              <td style={{ padding: '10px 8px', textAlign: 'right' }}>{fmt(totales.gg)}</td>
-              <td style={{ padding: '10px 8px', textAlign: 'right' }}>{fmt(totales.total)}</td>
-              <td style={{ padding: '10px 8px', textAlign: 'center' }}>
-                {(() => {
-                  const c = cuadreEstado(totales.real, totales.total);
-                  return <span style={{ background: c.color, color: '#fff', padding: '3px 10px', borderRadius: '999px', fontSize: '10px', fontWeight: 800 }}>{c.text}</span>;
-                })()}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filas.map((f, i) => {
+                const pctMO = f.real > 0 ? Math.round((f.tareos / f.real) * 100) : 0;
+                return (
+                  <tr key={f.codigo + i} style={{ background: i % 2 ? '#f8fafc' : '#fff', borderBottom: `1px solid ${BASE.border}` }}>
+                    <td style={{ ...td, fontWeight: 800, color: BASE.navy, fontFamily: 'monospace' }}>{f.codigo}</td>
+                    <td style={td}>{f.descripcion}</td>
+                    <td style={{ ...tdN, background: '#f5f3ff' }}>{fmt(f.tareos)}</td>
+                    <td style={{ ...tdN, background: '#fffbeb' }}>{fmt(f.almacen)}</td>
+                    <td style={{ ...tdN, background: '#eff6ff' }}>{fmt(f.fact)}</td>
+                    <td style={{ ...tdN, background: '#fff1f2' }}>{fmt(f.sc)}</td>
+                    <td style={{ ...tdN, background: '#ecfdf5', fontWeight: 900 }}>{fmt(f.real)}</td>
+                    <td style={{ ...tdN }}>{pctMO}%</td>
+                  </tr>
+                );
+              })}
+              <tr style={{ background: BASE.navy, color: '#fff', fontWeight: 900 }}>
+                <td colSpan={2} style={{ padding: '10px 10px' }}>COSTO DIRECTO (partidas)</td>
+                <td style={{ ...tdN, color: '#fff' }}>{fmt(tot.tareos)}</td>
+                <td style={{ ...tdN, color: '#fff' }}>{fmt(tot.almacen)}</td>
+                <td style={{ ...tdN, color: '#fff' }}>{fmt(tot.fact)}</td>
+                <td style={{ ...tdN, color: '#fff' }}>{fmt(tot.sc)}</td>
+                <td style={{ ...tdN, color: BASE.gold }}>{fmt(tot.real)}</td>
+                <td style={{ ...tdN, color: '#fff' }}>{tot.real > 0 ? Math.round((tot.tareos / tot.real) * 100) : 0}%</td>
+              </tr>
+              {ggTotal > 0 && (
+                <>
+                  <tr style={{ background: '#fffaf0', fontWeight: 800, color: BASE.navy }}>
+                    <td colSpan={6} style={{ padding: '9px 10px' }}>🏢 GASTOS GENERALES (oficina · sección aparte)</td>
+                    <td style={{ ...tdN, color: BASE.goldDark }}>{fmt(ggTotal)}</td>
+                    <td style={td}></td>
+                  </tr>
+                  <tr style={{ background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', fontWeight: 900, borderTop: `3px solid ${BASE.gold}` }}>
+                    <td colSpan={6} style={{ padding: '11px 10px', textTransform: 'uppercase', letterSpacing: 0.5 }}>Total Costo de Obra (Directo + GG)</td>
+                    <td style={{ ...tdN, color: BASE.gold, fontSize: 13 }}>{fmt(tot.real + ggTotal)}</td>
+                    <td style={td}></td>
+                  </tr>
+                </>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
+
+function Wrapper({ children, onBack }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <button onClick={onBack} style={{ alignSelf: 'flex-start', padding: '7px 14px', borderRadius: 8, border: `1.5px solid ${BASE.border}`, background: BASE.white, color: BASE.navy, fontSize: 11.5, fontWeight: 800, cursor: 'pointer' }}>← Volver al control</button>
+      {children}
+    </div>
+  );
+}
+
+const th = { padding: '10px 8px', textAlign: 'right', fontWeight: 800, fontSize: 10.5, letterSpacing: 0.4, borderBottom: `2px solid ${BASE.gold}`, whiteSpace: 'nowrap' };
+const td = { padding: '8px', verticalAlign: 'top' };
+const tdN = { padding: '8px', textAlign: 'right', fontFamily: 'var(--grapco-font-mono, monospace)', whiteSpace: 'nowrap' };
+const btnImp = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 9, border: `1.5px solid ${BASE.navy}`, background: BASE.navy, color: '#fff', fontSize: 11.5, fontWeight: 800, cursor: 'pointer' };
+const pill = { background: BASE.gold, color: BASE.navy, borderRadius: 999, padding: '1px 7px', fontSize: 10, fontWeight: 900 };

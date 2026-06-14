@@ -46,24 +46,34 @@ export default function ResultadoOperativoOficial() {
       .sort((a, b) => (a.codigo || '').localeCompare(b.codigo || '', 'es', { numeric: true }));
   }, [ro]);
 
-  // Filas para la tabla: TOTAL (roll-up del motor) + una fila por partida.
+  // Filas para la tabla: TOTAL (Costo de Obra = Directo + GG) + partidas + sección GG.
   const filas = useMemo(() => {
     if (!ro) return [];
     const g = ro.indicadoresGlobales || {};
     const t = ro.totales || {};
+    const gg = ro.gastosGenerales || { total: 0 };
+    const hayGG = Math.abs(gg.total || 0) > 0.005;
+    const acTotal = hayGG ? gg.acConGG : t.AC;
     const total = {
       fila: 'TOTAL', tipo: 'total', codigo: null, descripcion: 'TOTAL COSTO DE OBRA',
       v: {
-        bac: t.BAC, pv: t.PV, ev: t.EV, ac: t.AC,
-        cv: (t.EV || 0) - (t.AC || 0), cpi: g.CPI,
-        eac: g.EAC, vac: g.VAC, spi: g.SPI,
+        bac: t.BAC, pv: t.PV, ev: t.EV, ac: acTotal,
+        cv: (t.EV || 0) - (acTotal || 0),
+        cpi: hayGG ? gg.CPI : g.CPI,
+        eac: hayGG ? gg.EAC : g.EAC,
+        vac: hayGG ? gg.VAC : g.VAC,
+        spi: g.SPI,
       },
     };
     const filasPart = partidas.map(p => ({
       fila: p.codigo, tipo: 'partida', codigo: p.codigo, descripcion: p.descripcion,
       v: { bac: p.BAC, pv: p.PV, ev: p.EV, ac: p.AC, cv: p.CV, cpi: p.CPI, eac: p.EAC, vac: p.VAC, spi: p.SPI },
     }));
-    return [total, ...filasPart];
+    const filaGG = hayGG ? [{
+      fila: 'GG', tipo: 'seccion', codigo: null, descripcion: 'GASTOS GENERALES (oficina)',
+      v: { ac: gg.total },
+    }] : [];
+    return [total, ...filasPart, ...filaGG];
   }, [ro, partidas]);
 
   if (loading) return <p style={{ padding: 30, textAlign: 'center', color: BASE.muted }}>⏳ Calculando el Resultado Operativo…</p>;
@@ -88,7 +98,7 @@ export default function ResultadoOperativoOficial() {
     return <span style={{ fontWeight: col.bold ? 800 : 600, color: BASE.text }}>{S(v)}</span>;
   };
 
-  const fondoFila = (tipo) => tipo === 'total' ? BASE.navy : BASE.white;
+  const fondoFila = (tipo) => tipo === 'total' ? BASE.navy : tipo === 'seccion' ? '#fffaf0' : BASE.white;
   const colorTexto = (tipo) => tipo === 'total' ? '#fff' : BASE.navy;
 
   return (
@@ -146,7 +156,7 @@ export default function ResultadoOperativoOficial() {
             </thead>
             <tbody>
               {filas.map((f) => (
-                <tr key={f.fila} style={{ background: fondoFila(f.tipo), borderTop: f.tipo === 'total' ? `2px solid ${BASE.gold}` : `1px solid ${BASE.borderSoft || BASE.border}` }}>
+                <tr key={f.fila} style={{ background: fondoFila(f.tipo), borderTop: (f.tipo === 'total' || f.tipo === 'seccion') ? `2px solid ${BASE.gold}` : `1px solid ${BASE.borderSoft || BASE.border}` }}>
                   <td style={{ padding: '7px 12px', position: 'sticky', left: 0, background: fondoFila(f.tipo), color: colorTexto(f.tipo), fontWeight: 900, fontSize: 11.5, whiteSpace: 'nowrap', borderRight: `1px solid ${BASE.border}` }}>
                     {f.codigo ? <span style={{ color: f.tipo === 'total' ? BASE.gold : BASE.muted, fontWeight: 700, marginRight: 6, fontSize: 9.5, fontFamily: 'monospace' }}>{f.codigo}</span> : null}
                     {f.descripcion}
