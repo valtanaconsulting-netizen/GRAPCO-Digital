@@ -11,6 +11,8 @@ import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { BASE } from '../utils/styles';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
+import { useCatalogoWBS } from '../hooks/useCatalogoWBS';
+import { normActividad } from '../utils/normalizacion';
 import EmptyState from '../components/EmptyState';
 import {
   rankingHistorico, calcularKPIs, paretoTNC, causasCriticasTNC,
@@ -26,6 +28,11 @@ const VENTANAS = [
 
 export default function WarRoomCuadrillas({ historial = [] }) {
   const { proyectoActivoId } = useProyectoActivo();
+  const { infoMap } = useCatalogoWBS(proyectoActivoId);
+  // Catálogo WBS normalizado por actividad → IP meta (rendimiento objetivo).
+  const infoNorm = useMemo(() => {
+    const m = {}; Object.entries(infoMap || {}).forEach(([k, v]) => { m[normActividad(k)] = v; }); return m;
+  }, [infoMap]);
   const [cartas, setCartas] = useState([]);
   const [cuadrillasDB, setCuadrillasDB] = useState({});
   const [loading, setLoading] = useState(true);
@@ -174,6 +181,9 @@ export default function WarRoomCuadrillas({ historial = [] }) {
           ))}
         </div>
       </div>
+
+      {/* PRODUCTIVIDAD POR CUADRILLA (Huddle) — IP/CPI real desde tareos */}
+      <PanelProductividadCuadrillas historial={historial} infoNorm={infoNorm} />
 
       {/* RESTRICCIONES / CAUSAS — desde Registros_Campo del proyecto */}
       <PanelRestricciones historial={historial} />
@@ -565,6 +575,135 @@ function KPIGrande({ label, valor, color, desc }) {
 
 const th = () => ({ padding: '8px 10px', textAlign: 'left', fontSize: '10px', fontWeight: '900', letterSpacing: '0.4px', color: BASE.navy });
 const td = () => ({ padding: '8px 10px', fontSize: '12px', color: BASE.text });
+
+// ════════════════════════════════════════════════════════════════
+// PRODUCTIVIDAD POR CUADRILLA (Huddle) — ranking de CPI desde tareos
+// CPI cuadrilla = HH meta (Σ metrado × IP meta del catálogo) ÷ HH real (Σ tareos).
+// >1 = la cuadrilla gana HH frente al objetivo; <1 = las pierde.
+// ════════════════════════════════════════════════════════════════
+const cpiColorProd = (cpi) => cpi == null ? BASE.muted : cpi >= 1 ? '#16a34a' : cpi >= 0.9 ? '#d97706' : '#dc2626';
+const fmtHH = (n) => Math.round(n).toLocaleString('es-PE');
+
+function PanelProductividadCuadrillas({ historial = [], infoNorm = {} }) {
+  const [sem, setSem] = useState('todas');
+  const [orden, setOrden] = useState('peor'); // peor | mejor primero
+
+  const semanas = useMemo(() => {
+    const s = new Set();
+    (historial || []).forEach(r => { const w = parseInt(r.semana); if (Number.isFinite(w) && w > 0) s.add(w); });
+    return [...s].sort((a, b) => a - b);
+  }, [historial]);
+
+  const { filas, resumen } = useMemo(() => {
+    const agg = {};
+    (historial || []).forEach(r => {
+      if (sem !== 'todas' && parseInt(r.semana) !== Number(sem)) return;
+      const cap = (r.capataz || '').trim() || '— sin capataz —';
+      const act = (r._actividadCanonica || r.actividad || '').trim();
+      const met = parseFloat(r.metrado) || 0;
+      const hh = parseFloat(r.totalHH) || 0;
+      if (hh <= 0 && met <= 0) return;
+      const info = infoNorm[normActividad(act)] || {};
+      const ipMeta = Number(info.ipM ?? r._ipMeta ?? 0) || 0;
+      const hhMeta = (ipMeta > 0 && met > 0) ? met * ipMeta : 0;
+      if (!agg[cap]) agg[cap] = { capataz: cap, hhReal: 0, hhMeta: 0, met: 0, acts: new Set(), sems: new Set() };
+      agg[cap].hhReal += hh; agg[cap].hhMeta += hhMeta; agg[cap].met += met;
+      if (act) agg[cap].acts.add(normActividad(act));
+      const w = parseInt(r.semana); if (Number.isFinite(w)) agg[cap].sems.add(w);
+    });
+    const arr = Object.values(agg).map(c => ({
+      ...c, nActs: c.acts.size, nSem: c.sems.size,
+      cpi: (c.hhMeta > 0 && c.hhReal > 0) ? c.hhMeta / c.hhReal : null,
+      deltaHH: c.hhMeta - c.hhReal,
+    })).filter(c => c.hhReal > 0)
+      .sort((a, b) => {
+        const ca = a.cpi == null ? 999 : a.cpi, cb = b.cpi == null ? 999 : b.cpi;
+        return orden === 'peor' ? ca - cb : cb - ca;
+      });
+    const conCpi = arr.filter(c => c.cpi != null);
+    const hhPerdidas = conCpi.reduce((s, c) => s + (c.deltaHH < 0 ? -c.deltaHH : 0), 0);
+    const hhGanadas = conCpi.reduce((s, c) => s + (c.deltaHH > 0 ? c.deltaHH : 0), 0);
+    const mejor = orden === 'mejor' ? conCpi[0] : [...conCpi].sort((a, b) => b.cpi - a.cpi)[0];
+    const peor = orden === 'peor' ? conCpi[0] : [...conCpi].sort((a, b) => a.cpi - b.cpi)[0];
+    return { filas: arr, resumen: { n: arr.length, hhPerdidas, hhGanadas, mejor, peor } };
+  }, [historial, infoNorm, sem, orden]);
+
+  if (!filas.length) return null;
+
+  return (
+    <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', overflow: 'hidden' }}>
+      <div style={{ padding: '14px 18px', borderBottom: `1px solid ${BASE.border}`, background: '#0F2A47', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        <div>
+          <p style={{ fontSize: '12px', fontWeight: 900, letterSpacing: '0.5px', color: BASE.gold }}>🏗️ PRODUCTIVIDAD POR CUADRILLA · HUDDLE</p>
+          <p style={{ fontSize: '11px', opacity: 0.85, marginTop: '3px' }}>CPI = HH meta ÷ HH real · &gt;100% gana HH, &lt;100% pierde · ¿quién va ganando/perdiendo?</p>
+        </div>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          <select value={sem} onChange={e => setSem(e.target.value)} style={selWar}>
+            <option value="todas">Todas las semanas</option>
+            {semanas.map(w => <option key={w} value={w}>Semana {w}</option>)}
+          </select>
+          <button onClick={() => setOrden(o => o === 'peor' ? 'mejor' : 'peor')} style={{ ...selWar, cursor: 'pointer', fontWeight: 800 }}>
+            {orden === 'peor' ? '🔻 Peores primero' : '🔺 Mejores primero'}
+          </button>
+        </div>
+      </div>
+
+      {/* Resumen */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 175px), 1fr))', gap: '10px', padding: '14px 18px', borderBottom: `1px solid ${BASE.border}` }}>
+        <KpiMini label="Cuadrillas (con tareos)" valor={resumen.n} color={BASE.navy} />
+        <KpiMini label="Mejor cuadrilla" valor={resumen.mejor ? `${resumen.mejor.capataz.split(' ')[0]} · ${Math.round(resumen.mejor.cpi * 100)}%` : '—'} color="#16a34a" />
+        <KpiMini label="Peor cuadrilla" valor={resumen.peor ? `${resumen.peor.capataz.split(' ')[0]} · ${Math.round(resumen.peor.cpi * 100)}%` : '—'} color="#dc2626" />
+        <KpiMini label="HH perdidas (vs meta)" valor={fmtHH(resumen.hhPerdidas)} color="#dc2626" />
+        <KpiMini label="HH ganadas (vs meta)" valor={fmtHH(resumen.hhGanadas)} color="#16a34a" />
+      </div>
+
+      {/* Ranking de cuadrillas — Huddle cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '10px', padding: '14px 18px' }}>
+        {filas.map((c, i) => {
+          const col = cpiColorProd(c.cpi);
+          const pctCpi = c.cpi != null ? Math.round(c.cpi * 100) : null;
+          const fill = c.hhMeta > 0 ? Math.min(100, Math.round((Math.min(c.hhReal, c.hhMeta * 2) / (c.hhMeta * 2)) * 100)) : 0;
+          return (
+            <div key={c.capataz} style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderLeft: `5px solid ${col}`, borderRadius: '12px', padding: '12px 14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ fontSize: '9.5px', fontWeight: 900, color: BASE.muted, letterSpacing: '0.5px' }}>#{i + 1} CUADRILLA</p>
+                  <p style={{ fontSize: '14px', fontWeight: 900, color: BASE.navy, lineHeight: 1.2 }}>{c.capataz}</p>
+                </div>
+                <div style={{ textAlign: 'center', padding: '5px 12px', background: col + '18', borderRadius: '10px', flexShrink: 0 }}>
+                  <p style={{ fontSize: '20px', fontWeight: 900, color: col, lineHeight: 1 }}>{pctCpi != null ? `${pctCpi}%` : '—'}</p>
+                  <p style={{ fontSize: '8px', fontWeight: 900, color: col, letterSpacing: '0.5px', marginTop: '2px' }}>CPI</p>
+                </div>
+              </div>
+              {/* Barra HH real vs meta */}
+              <div style={{ marginTop: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', fontWeight: 700, marginBottom: '3px' }}>
+                  <span style={{ color: BASE.muted }}>HH real {fmtHH(c.hhReal)}</span>
+                  <span style={{ color: BASE.muted }}>meta {c.hhMeta > 0 ? fmtHH(c.hhMeta) : '—'}</span>
+                </div>
+                <div style={{ height: '8px', borderRadius: '999px', background: '#eef2f7', overflow: 'hidden' }}>
+                  <div style={{ width: `${fill}%`, height: '100%', borderRadius: '999px', background: col }} />
+                </div>
+              </div>
+              {/* Δ HH + metadatos */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '9px', flexWrap: 'wrap', gap: '6px' }}>
+                <span style={{ fontSize: '11.5px', fontWeight: 900, color: c.deltaHH >= 0 ? '#16a34a' : '#dc2626' }}>
+                  {c.deltaHH >= 0 ? `▲ ahorra ${fmtHH(c.deltaHH)} HH` : `▼ pierde ${fmtHH(-c.deltaHH)} HH`}
+                </span>
+                <span style={{ fontSize: '10px', color: BASE.muted }}>{c.nActs} act · {c.nSem} sem · {fmtHH(c.met)} metr.</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p style={{ fontSize: '10px', color: BASE.muted, padding: '0 18px 12px' }}>
+        IP meta sale del catálogo WBS (rendimiento objetivo). Cuadrillas con actividades sin IP en el catálogo muestran CPI «—».
+      </p>
+    </div>
+  );
+}
+
+const selWar = { padding: '6px 12px', borderRadius: '7px', fontSize: '11px', fontWeight: 700, background: 'rgba(255,255,255,0.12)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)' };
 
 // ── Panel de Restricciones / Causas (observaciones del capataz) ──
 function PanelRestricciones({ historial = [] }) {
