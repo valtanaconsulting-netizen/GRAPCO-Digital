@@ -58,6 +58,26 @@ export default function ROFrentes() {
   const cpiOf = (ev, ac) => ac > 0 ? ev / ac : 0;
   const cv = (ev, ac) => ev - ac;
 
+  const exportarPDF = async () => {
+    try {
+      const { exportarPDF: expPDF } = await import('../../../utils/pdfExport');
+      const Sp = (n) => `S/ ${Math.round(n || 0).toLocaleString('es-PE')}`;
+      const headers = [['Frente', 'Presupuesto (BAC)', 'Valorizado (EV)', 'Costo Real (AC)', 'Margen (CV)', 'CPI', 'Margen %']];
+      const rows = porFrente.map(({ frente, ro, nPart }) => {
+        const cpi = cpiOf(ro.totales.EV, ro.totales.AC), m = margenPct(ro.totales.EV, ro.totales.AC);
+        return [`${frente.nombre} (${nPart} part.)`, Sp(ro.totales.BAC), Sp(ro.totales.EV), Sp(ro.totales.AC), Sp(cv(ro.totales.EV, ro.totales.AC)), cpi ? cpi.toFixed(2) : '—', `${Math.round(m)}%`];
+      });
+      const cpiT = cpiOf(total.EV, total.AC), mT = margenPct(total.EV, total.AC);
+      rows.push(['TOTAL OBRA (sin GG)', Sp(total.BAC), Sp(total.EV), Sp(total.AC), Sp(cv(total.EV, total.AC)), cpiT ? cpiT.toFixed(2) : '—', `${Math.round(mT)}%`]);
+      await expPDF({
+        titulo: 'Resultado Operativo por Frente (F1/F2)',
+        subtitulo: proyectoActivo?.nombre || 'Proyecto activo',
+        headers, rows, orientacion: 'l',
+        nombreArchivo: `RO_Frentes_${(proyectoActivo?.nombre || 'proyecto').replace(/\s+/g, '_')}.pdf`,
+      });
+    } catch (e) { console.error('[RO frentes PDF]', e); }
+  };
+
   const fila = (label, sub, bac, ev, ac, destacado) => {
     const cpi = cpiOf(ev, ac), m = margenPct(ev, ac), cvv = cv(ev, ac);
     return (
@@ -81,6 +101,10 @@ export default function ROFrentes() {
         <p style={{ fontSize: 9.5, fontWeight: 900, letterSpacing: 1.4, color: BASE.gold }}>RESULTADO OPERATIVO POR FRENTE · EN VIVO</p>
         <h2 style={{ fontSize: 20, fontWeight: 900, marginTop: 2 }}>F1 vs F2 — comparativo de la obra</h2>
         <p style={{ fontSize: 12, opacity: 0.85, marginTop: 2 }}>{proyectoActivo?.nombre || 'Proyecto activo'} · {porFrente.length} frente{porFrente.length !== 1 ? 's' : ''} con actividades · GG no se reparte (es obra-level)</p>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <button onClick={exportarPDF} style={{ fontSize: 11, fontWeight: 800, padding: '7px 14px', borderRadius: 9, border: `1px solid ${BASE.navy}`, background: BASE.navy, color: '#fff', cursor: 'pointer' }}>📄 Exportar PDF</button>
       </div>
 
       {/* KPIs comparativos rápidos */}

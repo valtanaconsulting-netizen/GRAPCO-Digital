@@ -147,7 +147,7 @@ function ModalAjustarSaldo({ datos, onCerrar, onGuardar }) {
 export default function CpiEac({ wbs, historial = [], filtrados = null, infoMap, onModificarWBS, onActualizarFlags }) {
   // Catálogo de datos: el editable del proyecto, o el fijo del código como respaldo.
   const INFO = infoMap || INFO_MAP;
-  const { proyectoActivo } = useProyectoActivo();
+  const { proyectoActivo, frenteActivo, modoTodosFrentes } = useProyectoActivo();
 
   // Exportar Excel de rendimientos (WBS · presupuesto · real) para cierre de obra.
   const exportarRendimientos = async () => {
@@ -252,7 +252,8 @@ export default function CpiEac({ wbs, historial = [], filtrados = null, infoMap,
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'ISP Semanal');
       const nombre = (proyectoActivo?.nombre || 'Proyecto').replace(/\s+/g, '_');
-      XLSX.writeFile(wb, `ISP_Semanal_${nombre}.xlsx`);
+      const fr = (!modoTodosFrentes && frenteActivo) ? `_${(frenteActivo.nombre || 'frente').replace(/\s+/g, '_')}` : '';
+      XLSX.writeFile(wb, `ISP_Semanal_${nombre}${fr}.xlsx`);
     } catch (e) {
       console.error('[ISP semanal]', e);
       alert('No se pudo exportar el ISP semanal: ' + e.message);

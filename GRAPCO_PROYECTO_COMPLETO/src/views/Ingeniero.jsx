@@ -124,8 +124,10 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
   // (el selector de frente sigue permitiendo "todos los frentes"). Un proyecto
   // nuevo (ej. TEXTIL) arranca en blanco; CREDITEX se ve solo al activarlo.
   const { filtrarPorContexto, proyectoActivoId, frenteActivoId, modoTodosFrentes, FRENTE_DEFAULT_ID } = useProyectoActivo();
+  // HONRA el frente: con "Todos los frentes" es toda la obra; al elegir F1 (PTARI) o
+  // F2 (NAVE) el CPI / ISP semanal / análisis se recalculan para ese frente.
   const historialProyecto = useMemo(
-    () => filtrarPorContexto(historial || [], { ignorarFrente: true }),
+    () => filtrarPorContexto(historial || [], {}),
     [historial, filtrarPorContexto],
   );
 
