@@ -19,22 +19,34 @@ export default function RODashboard() {
   }
 
   const { totales, indicadoresGlobales, partidasCriticas, partidasEstrella } = ro;
-  const colorCPIGlobal = colorCPI(indicadoresGlobales.CPI);
-  const colorMargenReal = colorMargen(indicadoresGlobales.margenReal, indicadoresGlobales.margenMeta);
+
+  // El RO completo: AC con Gastos Generales y BAC/EV con ajustes contractuales.
+  const gg = ro.gastosGenerales || { total: 0 };
+  const aj = ro.ajustes || {};
+  const hayGG = Math.abs(gg.total || 0) > 0.005;
+  const hayAj = !!aj.hayAjustes;
+  const bacShow = hayAj ? aj.bacContractual : totales.BAC;
+  const evShow = hayAj ? aj.evContractual : totales.EV;
+  const acShow = hayGG ? gg.costoRealConGG : totales.AC;
+  const cpiShow = acShow > 0 ? evShow / acShow : indicadoresGlobales.CPI;
+  const margenShow = hayGG ? gg.margenReal : indicadoresGlobales.margenReal;
+
+  const colorCPIGlobal = colorCPI(cpiShow);
+  const colorMargenReal = colorMargen(margenShow, indicadoresGlobales.margenMeta);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       {/* KPIs financieros principales */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(216px, 1fr))', gap: '10px' }}>
-        <KPI label="VENDIDO (EV)" valor={fmtSoles(totales.vendido)}
-          color={BASE.gold} sub={`${fmtPct(indicadoresGlobales.pctAvanceFisico)} avance físico`} icono="💵" />
+        <KPI label="VENDIDO (EV)" valor={fmtSoles(evShow)}
+          color={BASE.gold} sub={ro.evReal ? 'Valorizado al cliente' : `${fmtPct(indicadoresGlobales.pctAvanceFisico)} avance físico`} icono="💵" />
         <KPI label="COSTO APLICADO" valor={fmtSoles(totales.costoAplicado)}
           color="#7c3aed" sub="Lo que DEBERÍA costar (APU)" icono="📋" />
-        <KPI label="COSTO REAL (AC)" valor={fmtSoles(totales.costoReal)}
-          color={BASE.red} sub="Lo que SÍ costó (Tareos+Kardex)" icono="💸" />
-        <KPI label="MARGEN REAL ACTUAL" valor={fmtPct(indicadoresGlobales.margenReal)}
+        <KPI label="COSTO REAL (AC)" valor={fmtSoles(acShow)}
+          color={BASE.red} sub={hayGG ? 'Tareos+Almacén+Fact.+SC+GG' : 'Tareos+Almacén+Fact.+SC'} icono="💸" />
+        <KPI label="MARGEN REAL ACTUAL" valor={fmtPct(margenShow)}
           color={colorMargenReal}
-          sub={`Meta: ${indicadoresGlobales.margenMeta}%`} icono={indicadoresGlobales.margenReal >= indicadoresGlobales.margenMeta ? '✅' : '⚠️'} />
+          sub={`Meta: ${indicadoresGlobales.margenMeta}%`} icono={margenShow >= indicadoresGlobales.margenMeta ? '✅' : '⚠️'} />
       </div>
 
       {/* EVM PMI */}
@@ -47,11 +59,12 @@ export default function RODashboard() {
           🎯 EVM · EARNED VALUE MANAGEMENT (PMI/PMBOK)
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
-          <EVMCard label="BAC" valor={fmtSoles(totales.BAC)} desc="Presupuesto total" />
+          <EVMCard label="BAC" valor={fmtSoles(bacShow)} desc={hayAj ? 'Presup. + adic − deduct' : 'Presupuesto total'} />
           <EVMCard label="PV" valor={fmtSoles(totales.PV)} desc="Valor planificado" />
-          <EVMCard label="EV" valor={fmtSoles(totales.EV)} desc="Valor ganado" />
-          <EVMCard label="AC" valor={fmtSoles(totales.AC)} desc="Costo real" />
-          <EVMCard label="CPI" valor={indicadoresGlobales.CPI.toFixed(3)} desc={indicadoresGlobales.CPI >= 1 ? 'Bajo presupuesto' : 'Sobrecosto'}
+          <EVMCard label="EV" valor={fmtSoles(evShow)} desc={ro.evReal ? 'Valorizado real' : 'Valor ganado'} />
+          <EVMCard label="AC" valor={fmtSoles(acShow)} desc={hayGG ? 'Costo real + GG' : 'Costo real'} />
+          {hayGG && <EVMCard label="GG" valor={fmtSoles(gg.total)} desc="Gastos generales" />}
+          <EVMCard label="CPI" valor={cpiShow.toFixed(3)} desc={cpiShow >= 1 ? 'Bajo presupuesto' : 'Sobrecosto'}
             highlight={colorCPIGlobal} />
           <EVMCard label="SPI" valor={indicadoresGlobales.SPI.toFixed(3)} desc={indicadoresGlobales.SPI >= 1 ? 'Adelantado' : 'Atrasado'}
             highlight={indicadoresGlobales.SPI >= 0.95 ? BASE.green : BASE.red} />

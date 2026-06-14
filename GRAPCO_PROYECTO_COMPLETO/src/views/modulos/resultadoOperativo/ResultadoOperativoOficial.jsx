@@ -34,7 +34,7 @@ const GRP = {
   mar: { l: 'MARGEN', c: '#7c3aed' }, eac: { l: 'AL TÉRMINO', c: '#06b6d4' }, cro: { l: 'CRONOG.', c: '#ec4899' },
 };
 
-export default function ResultadoOperativoOficial() {
+export default function ResultadoOperativoOficial({ showToast }) {
   const { ro, loading } = useRO();
   const { proyectoActivo } = useProyectoActivo();
 
@@ -96,6 +96,31 @@ export default function ResultadoOperativoOficial() {
   const total = filas[0];
   const t = total?.v || {};
 
+  // Exporta la tabla EVM a PDF branded (jsPDF se carga lazy desde la utilidad).
+  const exportarRO = async () => {
+    try {
+      const { exportarPDF } = await import('../../../utils/pdfExport');
+      const Sp = (n) => (n == null || n === '') ? '—' : (typeof n === 'number' ? `S/ ${Math.round(n).toLocaleString('es-PE')}` : String(n));
+      const Pp = (n) => (typeof n === 'number' ? `${Math.round(n * 100)}%` : (n || '—'));
+      const headers = [['Partida', 'BAC', 'PV', 'EV', 'AC', 'Margen', 'CPI', 'EAC', 'VAC', 'SPI']];
+      const rows = filas.map(f => [
+        (f.codigo ? f.codigo + ' ' : '') + (f.descripcion || ''),
+        Sp(f.v.bac), Sp(f.v.pv), Sp(f.v.ev), Sp(f.v.ac), Sp(f.v.cv), Pp(f.v.cpi), Sp(f.v.eac), Sp(f.v.vac), Pp(f.v.spi),
+      ]);
+      await exportarPDF({
+        titulo: 'Resultado Operativo (GP-GCE-FOR-F06)',
+        subtitulo: proyectoActivo?.nombre || 'Proyecto activo',
+        headers, rows,
+        nombreArchivo: `RO_${(proyectoActivo?.nombre || 'proyecto').replace(/\s+/g, '_')}.pdf`,
+        orientacion: 'l',
+        metadata: { 'CPI global': Pp(t.cpi), 'BAC': Sp(t.bac), 'EV': Sp(t.ev), 'AC': Sp(t.ac), 'Fuente EV': ro.evReal ? 'Valorizado al cliente' : 'Estimado (avance x PU)' },
+      });
+      showToast?.('📄 PDF del RO generado', 'success');
+    } catch (e) {
+      showToast?.('Error generando PDF: ' + e.message, 'error');
+    }
+  };
+
   const celda = (f, col) => {
     const v = f.v?.[col.k];
     if (col.tipo === 'cpi') return <span style={{ color: cpiCol(v), fontWeight: 800 }}>{P(v)}</span>;
@@ -143,8 +168,9 @@ export default function ResultadoOperativoOficial() {
         ))}
       </div>
 
-      {/* Nota de fuente */}
+      {/* Nota de fuente + export */}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <button onClick={exportarRO} style={{ fontSize: 11, fontWeight: 800, padding: '7px 14px', borderRadius: 9, border: `1px solid ${BASE.navy}`, background: BASE.navy, color: '#fff', cursor: 'pointer' }}>📄 Exportar PDF</button>
         <span style={{ fontSize: 11, color: BASE.muted, marginLeft: 'auto' }}>Calculado en vivo · Costo Real = Tareos (HH × S/25.5) + Almacén + Facturas + Subcontratos</span>
       </div>
 

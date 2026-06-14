@@ -78,8 +78,8 @@ export default function ROPanel({ showToast }) {
         </div>
 
         <div className="anim-fade-in" key={tab}>
-          {tab === 'oficial'     && <ResultadoOperativoOficial />}
-          {tab === 'crOficial'   && <CostoRealOficial />}
+          {tab === 'oficial'     && <ResultadoOperativoOficial showToast={showToast} />}
+          {tab === 'crOficial'   && <CostoRealOficial showToast={showToast} />}
           {tab === 'dashboard'   && <RODashboard showToast={showToast} />}
           {tab === 'partidas'    && <ROporPartida showToast={showToast} />}
           {tab === 'cr'          && <ControlRegistros showToast={showToast} />}
