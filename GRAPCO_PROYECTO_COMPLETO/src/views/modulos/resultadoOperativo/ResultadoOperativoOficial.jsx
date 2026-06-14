@@ -46,34 +46,39 @@ export default function ResultadoOperativoOficial() {
       .sort((a, b) => (a.codigo || '').localeCompare(b.codigo || '', 'es', { numeric: true }));
   }, [ro]);
 
-  // Filas para la tabla: TOTAL (Costo de Obra = Directo + GG) + partidas + sección GG.
+  // Filas: TOTAL (Costo de Obra) + partidas + sección GG + ajustes contractuales.
   const filas = useMemo(() => {
     if (!ro) return [];
     const g = ro.indicadoresGlobales || {};
     const t = ro.totales || {};
     const gg = ro.gastosGenerales || { total: 0 };
+    const aj = ro.ajustes || { hayAjustes: false };
     const hayGG = Math.abs(gg.total || 0) > 0.005;
+    const hayAj = !!aj.hayAjustes;
     const acTotal = hayGG ? gg.acConGG : t.AC;
+    const bacTotal = hayAj ? aj.bacContractual : t.BAC;
+    const evTotal = hayAj ? aj.evContractual : t.EV;
+    const cpiTotal = acTotal > 0 ? evTotal / acTotal : (hayGG ? gg.CPI : g.CPI);
+    const eacTotal = cpiTotal > 0 ? bacTotal / cpiTotal : bacTotal;
     const total = {
       fila: 'TOTAL', tipo: 'total', codigo: null, descripcion: 'TOTAL COSTO DE OBRA',
       v: {
-        bac: t.BAC, pv: t.PV, ev: t.EV, ac: acTotal,
-        cv: (t.EV || 0) - (acTotal || 0),
-        cpi: hayGG ? gg.CPI : g.CPI,
-        eac: hayGG ? gg.EAC : g.EAC,
-        vac: hayGG ? gg.VAC : g.VAC,
-        spi: g.SPI,
+        bac: bacTotal, pv: t.PV, ev: evTotal, ac: acTotal,
+        cv: (evTotal || 0) - (acTotal || 0),
+        cpi: cpiTotal, eac: eacTotal, vac: bacTotal - eacTotal, spi: g.SPI,
       },
     };
     const filasPart = partidas.map(p => ({
       fila: p.codigo, tipo: 'partida', codigo: p.codigo, descripcion: p.descripcion,
       v: { bac: p.BAC, pv: p.PV, ev: p.EV, ac: p.AC, cv: p.CV, cpi: p.CPI, eac: p.EAC, vac: p.VAC, spi: p.SPI },
     }));
-    const filaGG = hayGG ? [{
-      fila: 'GG', tipo: 'seccion', codigo: null, descripcion: 'GASTOS GENERALES (oficina)',
-      v: { ac: gg.total },
-    }] : [];
-    return [total, ...filasPart, ...filaGG];
+    const extra = [];
+    if (hayGG) extra.push({ fila: 'GG', tipo: 'seccion', codigo: null, descripcion: 'GASTOS GENERALES (oficina)', v: { ac: gg.total } });
+    if (Math.abs(aj.adicionales?.presupuesto || 0) > 0.005 || Math.abs(aj.adicionales?.valorizado || 0) > 0.005)
+      extra.push({ fila: 'ADIC', tipo: 'seccion', codigo: null, descripcion: 'ADICIONALES (F05) +', v: { bac: aj.adicionales.presupuesto, ev: aj.adicionales.valorizado } });
+    if (Math.abs(aj.deductivos?.presupuesto || 0) > 0.005 || Math.abs(aj.deductivos?.valorizado || 0) > 0.005)
+      extra.push({ fila: 'DEDU', tipo: 'seccion', codigo: null, descripcion: 'DEDUCTIVOS (F05) −', v: { bac: -aj.deductivos.presupuesto, ev: -aj.deductivos.valorizado } });
+    return [total, ...filasPart, ...extra];
   }, [ro, partidas]);
 
   if (loading) return <p style={{ padding: 30, textAlign: 'center', color: BASE.muted }}>⏳ Calculando el Resultado Operativo…</p>;

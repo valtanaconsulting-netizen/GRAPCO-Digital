@@ -28,6 +28,12 @@ export const CAMPOS_GG = [
   { campo: 'fecha', etiquetas: ['fecha'], tipo: 'texto' },
   { campo: 'monto', etiquetas: ['monto', 'importe', 'costo', 'total', 'valor', 'soles'], tipo: 'numero', requerido: true },
 ];
+export const CAMPOS_SUBCONTRATOS = [
+  { campo: 'partida', etiquetas: ['partida', 'codigo', 'codigowbs', 'item', 'cuenta'], tipo: 'texto', requerido: true },
+  { campo: 'subcontratista', etiquetas: ['subcontratista', 'proveedor', 'razonsocial', 'empresa', 'razon'], tipo: 'texto' },
+  { campo: 'valorizacion', etiquetas: ['valorizacion', 'numero', 'nro', 'val', 'periodo'], tipo: 'texto' },
+  { campo: 'cdValorizado', etiquetas: ['cdvalorizado', 'valorizado', 'montosinigv', 'sinigv', 'monto', 'importe', 'costodirecto'], tipo: 'numero', requerido: true },
+];
 
 export default function ControlRegistros({ showToast }) {
   const { ro, loading, facturas, valorizacionesSC, gastosGenerales } = useRO();
@@ -58,6 +64,7 @@ export default function ControlRegistros({ showToast }) {
   const ggTotal = ro?.gastosGenerales?.total || 0;
   const nFacturas = (facturas || []).filter(f => f.estado !== 'anulado').length;
   const nGG = (gastosGenerales || []).filter(g => g.estado !== 'anulado').length;
+  const nSC = (valorizacionesSC || []).filter(v => v.estado !== 'anulado').length;
 
   // Sub-vistas de importación
   if (vista === 'facturas') {
@@ -88,6 +95,20 @@ export default function ControlRegistros({ showToast }) {
       </Wrapper>
     );
   }
+  if (vista === 'subcontratos') {
+    return (
+      <Wrapper onBack={() => setVista('cruce')}>
+        <ImportadorRegistros
+          titulo="Valorizaciones a Subcontratistas (F10)"
+          subtitulo="Lo valorizado a cada subcontratista, imputado a una PARTIDA. Suma al Costo Real (AC) de esa partida. Monto SIN IGV (costo directo)."
+          coleccion="ValorizacionesSubcontratistas"
+          campos={CAMPOS_SUBCONTRATOS}
+          showToast={showToast}
+          onDone={() => setVista('cruce')}
+        />
+      </Wrapper>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -101,6 +122,7 @@ export default function ControlRegistros({ showToast }) {
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button onClick={() => setVista('facturas')} style={btnImp}>📑 Importar Facturas <span style={pill}>{nFacturas}</span></button>
+          <button onClick={() => setVista('subcontratos')} style={btnImp}>🤝 Importar Subcontratos <span style={pill}>{nSC}</span></button>
           <button onClick={() => setVista('gg')} style={btnImp}>🏢 Importar GG <span style={pill}>{nGG}</span></button>
         </div>
       </div>

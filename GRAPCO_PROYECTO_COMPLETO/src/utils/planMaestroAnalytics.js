@@ -479,7 +479,9 @@ export function calcularROMensual({
   valorizaciones = [],       // Valorizaciones contractuales (cliente → EV)
   facturas = [],             // Registro de Facturas (subcontratos/proveedores → AC)
   valorizacionesSC = [],     // Valorizaciones a subcontratistas F10 (→ AC)
-  gastosGenerales = [],      // GG Oficina (→ AC, sección aparte; fase siguiente)
+  gastosGenerales = [],      // GG Oficina (→ AC, sección aparte)
+  adicionales = [],          // Adicionales F05 (→ BAC/EV contractual)
+  deductivos = [],           // Deductivos F05 (→ BAC/EV contractual, restan)
   salariosPorCategoria = new Map(),
   fechaActual = new Date(),
   margenMeta = 15,           // % margen meta del proyecto
@@ -607,6 +609,18 @@ export function calcularROMensual({
   const ggItems = gastosGenerales.filter(g => g?.estado !== 'anulado');
   const ggTotal = ggItems.reduce((s, g) => s + (Number(g.monto ?? g.costo ?? g.importe ?? 0) || 0), 0);
 
+  // Adicionales / Deductivos (F05): ajustan el BAC contractual y el EV (lo
+  // valorizado de esos PQ). Deductivos restan. Cada item trae PQ-01/PQ-02.
+  const sumarPQ = (arr, base) => arr
+    .filter(x => x?.estado !== 'anulado')
+    .reduce((s, x) => s + (Number(x[`${base}PQ01`] || 0) + Number(x[`${base}PQ02`] || 0)), 0);
+  const adicPresup = sumarPQ(adicionales, 'presupuesto');
+  const adicValor = sumarPQ(adicionales, 'valorizado');
+  const deductPresup = sumarPQ(deductivos, 'presupuesto');
+  const deductValor = sumarPQ(deductivos, 'valorizado');
+  const bacContractual = totales.BAC + adicPresup - deductPresup;
+  const evContractual = totales.EV + adicValor - deductValor;
+
   // KPIs globales (COSTO DIRECTO — por partidas, sin GG; retro-compatible)
   const CPI_global = totales.AC > 0 ? totales.EV / totales.AC : 0;
   const SPI_global = totales.PV > 0 ? totales.EV / totales.PV : 0;
@@ -670,6 +684,14 @@ export function calcularROMensual({
       EAC: redondear(eacConGG),
       VAC: redondear(totales.BAC - eacConGG),
       margenReal: redondear(margenRealConGG, 2),
+    },
+    // Ajustes contractuales (Adicionales / Deductivos F05) → BAC y EV vigentes.
+    ajustes: {
+      adicionales: { presupuesto: redondear(adicPresup), valorizado: redondear(adicValor) },
+      deductivos: { presupuesto: redondear(deductPresup), valorizado: redondear(deductValor) },
+      bacContractual: redondear(bacContractual),   // BAC base + adicionales − deductivos
+      evContractual: redondear(evContractual),     // EV base + valorizado adic − deduct
+      hayAjustes: (adicPresup + deductPresup + adicValor + deductValor) > 0.005,
     },
     partidasCriticas,
     partidasEstrella,
