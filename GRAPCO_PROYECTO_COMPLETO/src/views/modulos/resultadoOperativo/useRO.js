@@ -12,8 +12,9 @@ import {
  * Hook que carga TODOS los datos necesarios y calcula el RO completo.
  * Lo usan: RODashboard, ROporPartida, ROProyeccion, CurvaSFinanciera.
  */
-export default function useRO({ margenMeta = 15, fechaActual = new Date() } = {}) {
+export default function useRO({ margenMeta = 15, fechaActual = new Date(), ignorarFrente = false } = {}) {
   // Aislamiento multi-proyecto: el RO usa SOLO la data del proyecto activo.
+  // ignorarFrente: cargar TODOS los frentes (para el RO comparativo F1 vs F2).
   const { filtrarPorContexto } = useProyectoActivo();
   const [actividades, setActividades] = useState([]);
   const [apus, setApus] = useState([]);
@@ -34,7 +35,7 @@ export default function useRO({ margenMeta = 15, fechaActual = new Date() } = {}
     // Aísla por proyecto activo y HONRA el frente seleccionado: con "Todos los
     // frentes" el RO es de toda la obra; al elegir F1 (PTARI) o F2 (NAVE) el RO se
     // recalcula para ese frente (filtrarPorContexto ignora el frente solo en modo Todos).
-    const filt = (snap) => filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    const filt = (snap) => filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), ignorarFrente ? { ignorarFrente: true } : {});
 
     const unsubs = [
       onSnapshot(collection(db, 'PlanMaestro'),
@@ -72,7 +73,7 @@ export default function useRO({ margenMeta = 15, fechaActual = new Date() } = {}
         (e) => { console.warn('[Deduct]', e); dec(); }),
     ];
     return () => unsubs.forEach(u => u());
-  }, [filtrarPorContexto]);
+  }, [filtrarPorContexto, ignorarFrente]);
 
   // Map de salarios por categoría desde insumos (si existen) o desde defaults
   const salariosPorCategoria = useMemo(() => {

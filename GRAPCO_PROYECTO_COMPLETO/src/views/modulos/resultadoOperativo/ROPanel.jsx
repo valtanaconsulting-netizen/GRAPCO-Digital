@@ -12,10 +12,12 @@ import Adicionales from './Adicionales';
 import Deductivos from './Deductivos';
 import ResultadoOperativoOficial from './ResultadoOperativoOficial';
 import CostoRealOficial from './CostoRealOficial';
+import ROFrentes from './ROFrentes';
 
 const TABS = [
   { id: 'oficial',    l: 'RO Oficial (Excel)', icono: '📑', desc: 'Importado tal cual · EVM completo', color: '#0f1f3a' },
   { id: 'crOficial',  l: 'CR Costo Real (Excel)', icono: '🧾', desc: 'Reporte de Tareos · alimenta el AC', color: '#0ea5e9' },
+  { id: 'frentes',    l: 'Por Frente (F1/F2)', icono: '🎯', desc: 'PTARI vs NAVE · comparativo', color: '#0d9488' },
   { id: 'dashboard',  l: 'Dashboard RO',     icono: '📊', desc: 'KPIs ejecutivos',     color: '#f59e0b' },
   { id: 'partidas',   l: 'Por Partida',      icono: '📋', desc: 'Detalle CPI/Margen',  color: '#7c3aed' },
   { id: 'cr',         l: 'CR · Controles',   icono: '🧾', desc: 'Facturas · Almacén · Tareos · GG', color: '#0ea5e9' },
@@ -80,6 +82,7 @@ export default function ROPanel({ showToast }) {
         <div className="anim-fade-in" key={tab}>
           {tab === 'oficial'     && <ResultadoOperativoOficial showToast={showToast} />}
           {tab === 'crOficial'   && <CostoRealOficial showToast={showToast} />}
+          {tab === 'frentes'     && <ROFrentes />}
           {tab === 'dashboard'   && <RODashboard showToast={showToast} />}
           {tab === 'partidas'    && <ROporPartida showToast={showToast} />}
           {tab === 'cr'          && <ControlRegistros showToast={showToast} />}
