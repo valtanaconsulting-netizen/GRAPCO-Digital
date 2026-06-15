@@ -18,7 +18,7 @@ import {
   normalizarActividad, FRENTE_BASE, COLUMNAS_PLANTILLA, filasAArbol, arbolAFilas,
 } from '../../../utils/catalogoWbs';
 import { PRESUPUESTO_CREDITEX } from '../../../data/presupuestoCreditex';
-import { generarCronogramaDesdeCatalogo } from '../../../utils/autoprograma';
+import { generarCronogramaDesdeCatalogo, DIAS_LAB_POR_MES } from '../../../utils/autoprograma';
 import { calcularIPRealProyecto } from '../../../utils/ipRealProyecto';
 
 const clonar = (x) => JSON.parse(JSON.stringify(x || []));
@@ -54,6 +54,7 @@ export default function EditorWbsIsp({ showToast }) {
   const [progFecha, setProgFecha] = useState('');
   const [progHoras, setProgHoras] = useState(8);
   const [progCrew, setProgCrew]   = useState(4);
+  const [progMeses, setProgMeses] = useState(''); // duración objetivo (meses); vacío = sin comprimir
   const [trabajando, setTrabajando] = useState(false);
 
   const proyectoNombre = useMemo(
@@ -483,6 +484,7 @@ export default function EditorWbsIsp({ showToast }) {
       const { tareas, resumen } = generarCronogramaDesdeCatalogo(arbol, {
         horasDia: Math.min(24, Math.max(1, num(progHoras) || 8)),
         cuadrillaDefault: Math.max(1, num(progCrew) || 4),
+        duracionObjetivoDias: num(progMeses) > 0 ? Math.round(num(progMeses) * DIAS_LAB_POR_MES) : null,
       });
       if (!tareas.length) { toast('No hay actividades con HH > 0. Captura metrados primero.', 'warning'); return; }
       await setDoc(doc(db, 'Cronogramas', proyectoActivoId), {
@@ -669,11 +671,21 @@ export default function EditorWbsIsp({ showToast }) {
               <label style={lblModal}>Jornada (horas/día)</label>
               <input type="number" min="1" max="12" value={progHoras} onChange={e => setProgHoras(e.target.value)} style={inputModal} />
             </div>
+            <div style={{ flex: '1 1 150px' }}>
+              <label style={lblModal}>Duración objetivo (meses)</label>
+              <input type="number" min="1" max="60" step="0.5" placeholder="ej. 4 — vacío = sin comprimir"
+                value={progMeses} onChange={e => setProgMeses(e.target.value)} style={inputModal} />
+            </div>
           </div>
           <div style={{ marginTop: '12px' }}>
             <label style={lblModal}>Cuadrilla por defecto (obreros) — para actividades sin cuadrilla conocida</label>
             <input type="number" min="1" max="50" value={progCrew} onChange={e => setProgCrew(e.target.value)} style={inputModal} />
           </div>
+          {num(progMeses) > 0 && (
+            <p style={{ fontSize: '10.5px', color: BASE.goldDark, marginTop: '8px', lineHeight: 1.5, background: '#fffaf0', border: `1px solid ${BASE.gold}55`, borderRadius: '8px', padding: '8px 10px' }}>
+              🎯 Se comprimirá el plan para terminar en ~<b>{num(progMeses)} mes(es)</b> (≈ {Math.round(num(progMeses) * DIAS_LAB_POR_MES)} días laborables): primero solapando más las actividades (más paralelo) y, si hace falta, acortando duraciones. Todo queda editable en el cronograma.
+            </p>
+          )}
           <p style={{ fontSize: '10.5px', color: BASE.muted, marginTop: '10px', lineHeight: 1.5 }}>
             Las actividades estructurales de CREDITEX (excavación, encofrado, concreto…) usan su <b>cuadrilla real</b>;
             el resto, una cuadrilla típica por tipo de trabajo. Todo es editable luego en el cronograma.

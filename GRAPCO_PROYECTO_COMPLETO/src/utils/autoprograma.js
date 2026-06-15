@@ -60,53 +60,86 @@ export const cuadrillaDe = (nombre, porDefecto = 4) => {
   return Math.max(1, porDefecto);
 };
 
+// Días laborables por mes (semanas de 6 días) — para convertir "meses objetivo" a días.
+export const DIAS_LAB_POR_MES = 26;
+
 // Núcleo: árbol WBS (con metrados) → tareas de cronograma (tren de actividades).
-//   opts: { horasDia=8, cuadrillaDefault=4, ritmoFrac=0.5 }
+//   opts: { horasDia=8, cuadrillaDefault=4, ritmoFrac=0.5, duracionObjetivoDias=null }
 //   ritmoFrac = solape del tren: lag(días) = round(duración_previa × ritmoFrac).
+//   duracionObjetivoDias = si se da, COMPRIME el plan para que termine en ~esos días:
+//     primero solapa más las actividades (reduce los lags → más paralelo, manteniendo
+//     las duraciones realistas); si aún no cabe (objetivo < actividad más larga), también
+//     acorta las duraciones. Así "4 meses" sale en 4 meses sin re-digitar nada.
 export function generarCronogramaDesdeCatalogo(arbol, opts = {}) {
   const horasDia = Math.max(1, opts.horasDia || 8);
   const cuadrillaDefault = Math.max(1, opts.cuadrillaDefault || 4);
   const ritmoFrac = opts.ritmoFrac != null ? opts.ritmoFrac : 0.5;
+  const objetivo = (opts.duracionObjetivoDias && opts.duracionObjetivoDias > 0) ? opts.duracionObjetivoDias : null;
 
-  const tareas = [];
-  let id = 0;
-  let prevLeaf = null; // { id, dur } — la última actividad hoja, para encadenar el tren
+  // ── Pass 1: estructura plana ordenada + duración/lag NATURALES + timeline serial ──
+  const items = []; // { kind:'partida'|'sub'|'leaf', nombre, nivel, dur?, lagNat? }
+  let prevDur = null, runStart = 0, naturalEnd = 0, maxDur = 0;
   let nHojas = 0, hhTotal = 0;
   const detalleCuadrillas = {};
 
   (arbol || []).forEach((p) => {
-    // Sub-partidas que tienen al menos 1 actividad con HH > 0 (metrado capturado)
     const subs = (p.subpartidas || []).map((s) => {
-      const acts = (s.actividades || []).map((a) => {
-        const hh = calcActividad(a).contractualHH || 0;
-        return { a, hh };
-      }).filter((x) => x.hh > 0.0001);
+      const acts = (s.actividades || []).map((a) => ({ a, hh: calcActividad(a).contractualHH || 0 }))
+        .filter((x) => x.hh > 0.0001);
       return { s, acts };
     }).filter((x) => x.acts.length);
     if (!subs.length) return; // partida sin metrados → fuera del cronograma
 
-    const pid = String(++id);
-    tareas.push({ id: pid, nombre: (p.nombre || 'PARTIDA').trim(), nivel: 1, duracion: 0, predecesoras: '', avance: 0, inicioManual: null });
-
+    items.push({ kind: 'partida', nombre: (p.nombre || 'PARTIDA').trim(), nivel: 1 });
     subs.forEach(({ s, acts }) => {
-      const sid = String(++id);
-      tareas.push({ id: sid, nombre: (s.nombre || 'SUB-PARTIDA').trim(), nivel: 2, duracion: 0, predecesoras: '', avance: 0, inicioManual: null });
-
+      items.push({ kind: 'sub', nombre: (s.nombre || 'SUB-PARTIDA').trim(), nivel: 2 });
       acts.forEach(({ a, hh }) => {
         const crew = cuadrillaDe(a.nombre, cuadrillaDefault);
         const dur = Math.max(1, Math.ceil(hh / (crew * horasDia)));
-        const aid = String(++id);
-        let pred = '';
-        if (prevLeaf) {
-          const lag = Math.max(1, Math.round(prevLeaf.dur * ritmoFrac));
-          pred = `${prevLeaf.id}SS+${lag}`; // tren: arranca solapado a la anterior
-        }
-        tareas.push({ id: aid, nombre: (a.nombre || 'ACTIVIDAD').trim(), nivel: 3, duracion: dur, predecesoras: pred, avance: 0, inicioManual: null });
-        prevLeaf = { id: aid, dur };
+        const lagNat = prevDur != null ? Math.max(1, Math.round(prevDur * ritmoFrac)) : null;
+        const start = lagNat != null ? runStart + lagNat : 0; // tren serial natural
+        const end = start + dur;
+        runStart = start;
+        if (end > naturalEnd) naturalEnd = end;
+        if (dur > maxDur) maxDur = dur;
+        items.push({ kind: 'leaf', nombre: (a.nombre || 'ACTIVIDAD').trim(), nivel: 3, dur, lagNat });
+        prevDur = dur;
         nHojas++; hhTotal += hh;
         detalleCuadrillas[crew] = (detalleCuadrillas[crew] || 0) + 1;
       });
     });
+  });
+
+  // ── Compresión a la duración objetivo ──
+  let lagFactor = 1, durFactor = 1;
+  if (objetivo && naturalEnd > 0) {
+    if (objetivo >= maxDur) {
+      // Cabe acortando solapes (más paralelo); duraciones intactas (realistas).
+      lagFactor = Math.max(0, Math.min(1, objetivo / naturalEnd));
+    } else {
+      // Ni todo en paralelo cabe → además acorta las duraciones a escala.
+      durFactor = Math.max(0.1, objetivo / maxDur);
+      lagFactor = 0;
+    }
+  }
+
+  // ── Pass 2: emite tareas con ids, duraciones (×durFactor) y lags (×lagFactor) ──
+  const tareas = [];
+  let id = 0, prevLeafId = null;
+  items.forEach((it) => {
+    const tid = String(++id);
+    if (it.kind !== 'leaf') {
+      tareas.push({ id: tid, nombre: it.nombre, nivel: it.nivel, duracion: 0, predecesoras: '', avance: 0, inicioManual: null });
+      return;
+    }
+    const dur = durFactor === 1 ? it.dur : Math.max(1, Math.round(it.dur * durFactor));
+    let pred = '';
+    if (prevLeafId != null && it.lagNat != null) {
+      const lag = Math.max(0, Math.round(it.lagNat * lagFactor));
+      pred = lag > 0 ? `${prevLeafId}SS+${lag}` : `${prevLeafId}SS`; // SS = arranca junto a la previa (paralelo)
+    }
+    tareas.push({ id: tid, nombre: it.nombre, nivel: 3, duracion: dur, predecesoras: pred, avance: 0, inicioManual: null });
+    prevLeafId = tid;
   });
 
   return {
@@ -116,6 +149,8 @@ export function generarCronogramaDesdeCatalogo(arbol, opts = {}) {
       actividades: nHojas,
       hhTotal: Math.round(hhTotal),
       cuadrillas: detalleCuadrillas, // { tamañoCuadrilla: nActividades }
+      naturalDias: naturalEnd,       // duración "natural" (sin comprimir)
+      objetivoDias: objetivo,
     },
   };
 }
