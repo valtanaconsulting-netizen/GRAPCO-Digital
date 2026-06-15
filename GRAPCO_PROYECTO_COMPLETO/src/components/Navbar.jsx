@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { BASE, LOGO, LOGO_FALLBACK } from '../utils/styles';
 import Icon from './Icon';
 import UserProfileMenu from './UserProfileMenu';
+import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
+import { resolverCliente } from '../utils/clienteLogo';
 
 // El título central es siempre "PLATAFORMA GRAPCO S.A.C." (branding consistente).
 // El icono SVG + badge varían según el rol activo.
@@ -25,6 +27,10 @@ export default function Navbar({ rol, isMobile, onSalir, onCambiarArea, onMenu }
   const meta = ROL_META[rol] || { iconName: 'building', badge: (rol || '').toUpperCase(), color: BASE.gold };
   const { iconName, badge, color: colorBadge } = meta;
   const titulo = 'PLATAFORMA GRAPCO S.A.C.';
+
+  // Cliente del proyecto activo → su logo va al lado del de GRAPCO (identifica la obra).
+  const { proyectoActivo } = useProyectoActivo();
+  const cliente = resolverCliente(proyectoActivo);
 
   // Indicador online/offline
   const [online, setOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
@@ -93,6 +99,24 @@ export default function Navbar({ rol, isMobile, onSalir, onCambiarArea, onMenu }
             <line x1="3" y1="18" x2="21" y2="18" />
           </svg>
         </button>
+      )}
+
+      {/* Logo del CLIENTE del proyecto — al lado IZQUIERDO del de GRAPCO, mismo tamaño.
+          Identifica de qué empresa/obra es el proyecto. Solo el logo (el nombre va en él);
+          si no han subido logo, muestra su monograma de respaldo. */}
+      {(cliente.logoUrl || cliente.nombre) && (
+        <div title={cliente.nombre || 'Cliente'} style={{
+          width: '40px', height: '40px', borderRadius: '10px', background: '#fff',
+          padding: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.18)', overflow: 'hidden', position: 'relative',
+        }}>
+          <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 900, color: BASE.navy }}>{cliente.monograma}</span>
+          {cliente.logoUrl && (
+            <img src={cliente.logoUrl} alt={cliente.nombre || 'Cliente'}
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              style={{ position: 'relative', width: '100%', height: '100%', objectFit: 'contain', borderRadius: '6px', background: '#fff' }} />
+          )}
+        </div>
       )}
 
       {/* Logo + branding del navbar — visible siempre (el sidebar empieza debajo).
