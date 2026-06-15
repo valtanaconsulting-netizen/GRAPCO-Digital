@@ -95,6 +95,10 @@ export default function ResultadoOperativoOficial({ showToast }) {
 
   const total = filas[0];
   const t = total?.v || {};
+  // Presupuesto contractual del proyecto (top-down) vs BAC de partidas (bottom-up):
+  // % de cobertura — detecta partidas sin presupuestar o presupuesto que no cuadra.
+  const presupuesto = proyectoActivo?.presupuestoContractual || 0;
+  const coberturaBAC = (presupuesto > 0 && t.bac) ? Math.round((t.bac / presupuesto) * 100) : null;
 
   // Exporta la tabla EVM a PDF branded (jsPDF se carga lazy desde la utilidad).
   const exportarRO = async () => {
@@ -146,6 +150,12 @@ export default function ResultadoOperativoOficial({ showToast }) {
               {ro.evReal ? 'EV valorizado al cliente' : 'EV estimado (avance × PU)'}
             </span>
           </p>
+          {presupuesto > 0 && (
+            <p style={{ fontSize: 11, opacity: 0.82, marginTop: 3 }}>
+              Presupuesto contractual: <b style={{ color: BASE.gold }}>{proyectoActivo.moneda === 'USD' ? '$' : 'S/'} {Math.round(presupuesto).toLocaleString('es-PE')}</b>
+              {coberturaBAC != null && <> · el BAC de partidas cubre <b style={{ color: coberturaBAC >= 98 ? '#4ade80' : coberturaBAC >= 90 ? '#fbbf24' : '#fca5a5' }}>{coberturaBAC}%</b></>}
+            </p>
+          )}
         </div>
         <div style={{ textAlign: 'right' }}>
           <p style={{ fontSize: 10, fontWeight: 800, color: BASE.gold }}>CPI GLOBAL</p>

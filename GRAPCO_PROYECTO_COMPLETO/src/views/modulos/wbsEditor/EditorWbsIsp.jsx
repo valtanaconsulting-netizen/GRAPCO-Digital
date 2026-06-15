@@ -57,10 +57,25 @@ export default function EditorWbsIsp({ showToast }) {
   const [progMeses, setProgMeses] = useState(''); // duración objetivo (meses); vacío = sin comprimir
   const [trabajando, setTrabajando] = useState(false);
 
-  const proyectoNombre = useMemo(
-    () => (proyectos || []).find(p => p.id === proyectoActivoId)?.nombre || 'proyecto activo',
+  const proyActivo = useMemo(
+    () => (proyectos || []).find(p => p.id === proyectoActivoId) || null,
     [proyectos, proyectoActivoId]
   );
+  const proyectoNombre = proyActivo?.nombre || 'proyecto activo';
+  // Plazo contractual del proyecto (días) — del campo plazoDias o calculado de las fechas.
+  const plazoProyectoDias = useMemo(() => {
+    if (!proyActivo) return 0;
+    if (proyActivo.plazoDias > 0) return proyActivo.plazoDias;
+    const toD = (x) => x?.toDate ? x.toDate() : (x ? new Date(x) : null);
+    const ini = toD(proyActivo.fechaInicioContractual || proyActivo.fechaInicio);
+    const fin = toD(proyActivo.fechaFinContractual);
+    return (ini && fin && fin > ini) ? Math.round((fin - ini) / 86400000) : 0;
+  }, [proyActivo]);
+  const finProyectoIso = useMemo(() => {
+    const x = proyActivo?.fechaFinContractual;
+    const d = x?.toDate ? x.toDate() : (x ? new Date(x) : null);
+    return (d && !isNaN(d)) ? isoLocal(d) : '';
+  }, [proyActivo]);
 
   const frentesProyecto = useMemo(() => {
     const fs = (frentes || []).filter(f => f.proyectoId === proyectoActivoId);
@@ -408,7 +423,10 @@ export default function EditorWbsIsp({ showToast }) {
   const abrirPrograma = () => {
     if (!arbol.length) return toast('Primero carga/importa el catálogo y captura metrados', 'warning');
     setProgFecha(isoLocal(fechaInicioProyecto) || isoLocal(new Date()));
-    setProgHoras(8); setProgCrew(4); setModal('programa');
+    setProgHoras(8); setProgCrew(4);
+    // Duración objetivo = plazo contractual del proyecto (días → meses). Editable.
+    setProgMeses(plazoProyectoDias > 0 ? String(Math.round(plazoProyectoDias / 30 * 10) / 10) : '');
+    setModal('programa');
   };
 
   const importarDeProyecto = async () => {
@@ -662,6 +680,15 @@ export default function EditorWbsIsp({ showToast }) {
             = HH ÷ (cuadrilla × jornada), encadenadas como <b>tren de actividades</b> (flujo continuo).
             Luego se calculan la <b>ruta crítica</b> y la <b>Curva S</b>, y el Last Planner arma el LAP.
           </p>
+          {proyActivo && (plazoProyectoDias > 0 || proyActivo.presupuestoContractual > 0) && (
+            <div style={{ background: '#eef4fb', border: `1px solid ${BASE.border}`, borderRadius: '10px', padding: '9px 12px', marginBottom: '12px', fontSize: '11px', color: BASE.navy, lineHeight: 1.6 }}>
+              📋 <b>Tomado del proyecto:</b> inicio <b>{isoLocal(fechaInicioProyecto) || '—'}</b>
+              {finProyectoIso && <> · fin <b>{finProyectoIso}</b></>}
+              {plazoProyectoDias > 0 && <> · plazo <b>{plazoProyectoDias} días (~{Math.round(plazoProyectoDias / 30 * 10) / 10} meses)</b></>}
+              {proyActivo.presupuestoContractual > 0 && <> · presupuesto <b>{proyActivo.moneda === 'USD' ? '$' : 'S/'} {Math.round(proyActivo.presupuestoContractual).toLocaleString('es-PE')}</b></>}
+              . La <b>fecha de inicio</b> y la <b>duración objetivo</b> se cargaron de aquí (editables abajo).
+            </div>
+          )}
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             <div style={{ flex: '1 1 180px' }}>
               <label style={lblModal}>Fecha de inicio</label>
