@@ -63,6 +63,35 @@ export const cuadrillaDe = (nombre, porDefecto = 4) => {
 // Días laborables por mes (semanas de 6 días) — para convertir "meses objetivo" a días.
 export const DIAS_LAB_POR_MES = 26;
 
+// Escala el lag ("+N"/"-N") de una cadena de predecesoras por un factor.
+// Ej: "5SS+10" con f=0.5 → "5SS+5";  "3FS+2,7SS+4" → "3FS+1,7SS+2".
+const escalarLag = (pred, f) => (pred || '')
+  .split(',')
+  .map(tok => tok.trim().replace(/([+-])(\d+)/g, (_, s, n) => s + Math.max(0, Math.round(Number(n) * f))))
+  .filter(Boolean)
+  .join(',');
+
+/**
+ * Comprime (o estira) un cronograma YA EXISTENTE para que su duración se acerque a
+ * `objetivoDias`, escalando las duraciones de las hojas y los lags de las predecesoras por
+ * un mismo factor = objetivoDias / duracionActual. Sirve para "ajustar al plazo del proyecto"
+ * sin re-generar desde el catálogo. `duracionActual` = duración del proyecto según el CPM vivo.
+ */
+export function comprimirCronograma(tareas, objetivoDias, duracionActual) {
+  const obj = Number(objetivoDias) || 0;
+  const dur = Number(duracionActual) || 0;
+  if (!Array.isArray(tareas) || !tareas.length || obj <= 0 || dur <= 0) return tareas || [];
+  const f = Math.max(0.02, obj / dur);          // factor de escala (permite estirar si f>1)
+  return tareas.map(t => {
+    const esHoja = (t.duracion || 0) > 0;        // las fases/resumen tienen duración 0
+    return {
+      ...t,
+      duracion: esHoja ? Math.max(1, Math.round(t.duracion * f)) : t.duracion,
+      predecesoras: escalarLag(t.predecesoras, f),
+    };
+  });
+}
+
 // Núcleo: árbol WBS (con metrados) → tareas de cronograma (tren de actividades).
 //   opts: { horasDia=8, cuadrillaDefault=4, ritmoFrac=0.5, duracionObjetivoDias=null }
 //   ritmoFrac = solape del tren: lag(días) = round(duración_previa × ritmoFrac).

@@ -19,6 +19,7 @@ import VistaHeader from '../../components/VistaHeader';
 import ConfirmModal from '../../components/ConfirmModal';
 import SkeletonPantalla from '../../components/SkeletonPantalla';
 import { calcularCPM, renumerarEDT, nuevoId, fechaDeIso, isoDeFecha, indiceDeFecha } from '../../utils/cpm';
+import { comprimirCronograma } from '../../utils/autoprograma';
 import { CRONOGRAMAOBRA } from '../../data/cronogramaObraCreditex';
 import { normActividad as normAct, normActSinParen } from '../../utils/normalizacion'; // idioma común
 import CronogramaObra from './CronogramaObra';
@@ -68,7 +69,7 @@ const hoyIso = () => isoDeFecha(new Date());
 // normAct / normActSinParen → idioma común en src/utils/normalizacion.js (importados arriba).
 
 export default function CronogramaPro() {
-  const { proyectoActivoId } = useProyectoActivo();
+  const { proyectoActivoId, proyectoActivo, fechaInicioProyecto } = useProyectoActivo();
   const [tab, setTab] = useState('pro');
   const [tareas, setTareas] = useState(null);          // null = cargando
   const [fechaInicio, setFechaInicio] = useState('2025-12-15');
@@ -102,10 +103,13 @@ export default function CronogramaPro() {
         if (snap.exists()) {
           const d = snap.data();
           setTareas(d.tareas || []);
-          if (d.fechaInicio) setFechaInicio(d.fechaInicio);
+          // La fecha de inicio del cronograma sale del PROYECTO (fechaInicioContractual);
+          // solo se respeta la guardada si el usuario la cambió a mano antes.
+          setFechaInicio(d.fechaInicio || isoDeFecha(fechaInicioProyecto));
           if (d.baseline) setBaseline(d.baseline);
         } else {
           setTareas([]); // vacío → pantalla de arranque
+          setFechaInicio(isoDeFecha(fechaInicioProyecto));
         }
       } catch {
         if (!cancel) setTareas([]);
@@ -119,6 +123,32 @@ export default function CronogramaPro() {
     if (!tareas || !tareas.length) return null;
     return calcularCPM(renumerarEDT(tareas), fechaInicio);
   }, [tareas, fechaInicio]);
+
+  // Plazo objetivo del PROYECTO (días). De plazoDias o calculado de fechas contractuales.
+  const plazoObjetivoDias = useMemo(() => {
+    const p = proyectoActivo;
+    if (!p) return null;
+    if (Number(p.plazoDias) > 0) return Math.round(Number(p.plazoDias));
+    const toD = (raw) => raw?.toDate ? raw.toDate()
+      : raw?.seconds != null ? new Date(raw.seconds * 1000)
+      : (typeof raw === 'string' ? new Date(raw) : null);
+    const ini = toD(p.fechaInicioContractual || p.fechaInicio);
+    const fin = toD(p.fechaFinContractual);
+    if (ini && fin && !isNaN(ini) && !isNaN(fin)) return Math.max(1, Math.round((fin - ini) / 86400000));
+    return null;
+  }, [proyectoActivo]);
+
+  // Ajusta el cronograma al plazo del proyecto: comprime/estira duraciones+lags y
+  // pone la fecha de inicio = inicio del proyecto. Un click → de 823 d a ~plazo.
+  const ajustarAlPlazo = useCallback(() => {
+    if (!plazoObjetivoDias) { setSyncMsg('⚠️ El proyecto no tiene plazo/fechas definidas (edítalo en Cartera de Proyectos).'); return; }
+    if (!cpm) return;
+    const nuevas = comprimirCronograma(tareas, plazoObjetivoDias, cpm.duracionProyecto);
+    setTareas(nuevas);
+    setFechaInicio(isoDeFecha(fechaInicioProyecto));
+    setSinGuardar(true);
+    setSyncMsg(`📐 Cronograma ajustado al plazo del proyecto (~${plazoObjetivoDias} d). Revisa y pulsa Guardar.`);
+  }, [plazoObjetivoDias, cpm, tareas, fechaInicioProyecto]);
 
   const mutar = useCallback((fn) => {
     setTareas(prev => fn(prev));
@@ -509,6 +539,14 @@ export default function CronogramaPro() {
                 padding: '8px 14px', background: BASE.white, color: BASE.navy, border: `1.5px solid ${BASE.border}`,
                 borderRadius: '8px', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer',
               }}>+ Tarea</button>
+              {plazoObjetivoDias && (
+                <button onClick={ajustarAlPlazo}
+                  title={`Comprime/estira el cronograma para que dure ~${plazoObjetivoDias} días (el plazo contractual del proyecto) e inicia en la fecha del proyecto. Luego pulsa Guardar.`}
+                  style={{
+                    padding: '8px 14px', background: BASE.white, color: BASE.goldDark,
+                    border: `1.5px solid ${BASE.gold}`, borderRadius: '8px', fontSize: '11.5px', fontWeight: 800, cursor: 'pointer',
+                  }}>📐 Ajustar al plazo ({plazoObjetivoDias} d)</button>
+              )}
               <button onClick={fijarBaseline} title="Congela el plan actual para medir desvíos (como Set Baseline en MS Project)" style={{
                 padding: '8px 14px', background: BASE.white, color: baseline ? BASE.goldDark : BASE.navy,
                 border: `1.5px solid ${baseline ? BASE.gold : BASE.border}`,

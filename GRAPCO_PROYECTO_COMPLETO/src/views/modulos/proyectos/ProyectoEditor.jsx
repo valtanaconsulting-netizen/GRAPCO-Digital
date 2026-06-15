@@ -161,13 +161,23 @@ export default function ProyectoEditor({ proyecto, onClose, showToast }) {
     return null;
   };
 
+  // Pasos visibles: en EDICIÓN se oculta el 4 (Frentes), así que navegamos por la
+  // SECUENCIA visible (no por num+1) para no caer en un paso 4 en blanco ni numerar 1,2,3,5.
+  const pasosVis = () => (esNuevo ? PASOS : PASOS.filter(p => p.num !== 4));
+
   const siguiente = () => {
     const err = validarPaso();
     if (err) { showToast?.(err, 'error'); return; }
-    if (paso < 5) setPaso(paso + 1);
+    const vis = pasosVis();
+    const i = vis.findIndex(p => p.num === paso);
+    if (i >= 0 && i < vis.length - 1) setPaso(vis[i + 1].num);
   };
 
-  const anterior = () => { if (paso > 1) setPaso(paso - 1); };
+  const anterior = () => {
+    const vis = pasosVis();
+    const i = vis.findIndex(p => p.num === paso);
+    if (i > 0) setPaso(vis[i - 1].num);
+  };
 
   const guardar = async () => {
     const err = validarPaso();
@@ -279,9 +289,9 @@ export default function ProyectoEditor({ proyecto, onClose, showToast }) {
 
       {/* STEP INDICATOR */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap' }}>
-        {pasosVisibles.map(p => {
+        {(() => { const idxAct = pasosVisibles.findIndex(p => p.num === paso); return pasosVisibles.map((p, i) => {
           const activo = paso === p.num;
-          const completo = paso > p.num;
+          const completo = idxAct > i;   // completado = está antes del paso actual (por posición visible)
           return (
             <div key={p.num} style={{
               flex: '1 1 120px',
@@ -296,11 +306,11 @@ export default function ProyectoEditor({ proyecto, onClose, showToast }) {
               transition: 'all 0.2s',
             }}>
               <p style={{ fontSize: '14px', marginBottom: '2px' }}>{completo ? '✓' : p.icono}</p>
-              <p style={{ fontSize: '10px', letterSpacing: '0.4px' }}>PASO {p.num}</p>
+              <p style={{ fontSize: '10px', letterSpacing: '0.4px' }}>PASO {i + 1}</p>
               <p style={{ fontSize: '11px' }}>{p.l}</p>
             </div>
           );
-        })}
+        }); })()}
       </div>
 
       {/* PASO 1 - IDENTIFICACIÓN */}
@@ -604,10 +614,10 @@ export default function ProyectoEditor({ proyecto, onClose, showToast }) {
         }}>← Anterior</button>
 
         <span style={{ fontSize: '11px', color: BASE.muted, fontWeight: '700' }}>
-          Paso {paso} de {pasosVisibles[pasosVisibles.length - 1].num}
+          Paso {pasosVisibles.findIndex(p => p.num === paso) + 1} de {pasosVisibles.length}
         </span>
 
-        {paso < 5 ? (
+        {pasosVisibles.findIndex(p => p.num === paso) < pasosVisibles.length - 1 ? (
           <button onClick={siguiente} disabled={guardando} style={{
             ...btnPrimario,
             background: `linear-gradient(135deg, ${form.color}, ${form.color}dd)`,
