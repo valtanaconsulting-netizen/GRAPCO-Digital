@@ -615,8 +615,11 @@ export default function CronogramaPro() {
                         <th key={h || 'acc'} style={{
                           position: 'sticky', top: 0, zIndex: 3,
                           width: `${w}px`, minWidth: `${w}px`, maxWidth: `${w}px`,
+                          // Altura EXACTA = la de la cabecera del Gantt (32px) para que la fila 0
+                          // del grid quede a la misma Y que la fila 0 de las barras.
+                          height: '32px', boxSizing: 'border-box',
                           background: BASE.navy, color: '#fff', fontSize: '9.5px', fontWeight: 800,
-                          letterSpacing: '0.8px', padding: '9px 6px', textAlign: 'left',
+                          letterSpacing: '0.8px', padding: '0 6px', textAlign: 'left', verticalAlign: 'middle',
                           borderRight: '1px solid rgba(255,255,255,0.08)',
                         }}>{h}</th>
                       ))}
@@ -627,9 +630,11 @@ export default function CronogramaPro() {
                       <tr key={t.id}
                         onMouseEnter={() => setSel(idx)}
                         style={{
-                          height: `${ALTO_FILA}px`,
+                          // Altura EXACTA = ALTO_FILA (= alto de cada fila del SVG). SIN borderBottom:
+                          // ese 1px por fila se acumulaba y desfasaba el grid respecto a las barras.
+                          // La separación visual la da el zebra (igual que el Gantt).
+                          height: `${ALTO_FILA}px`, boxSizing: 'border-box',
                           background: sel === idx ? BASE.goldSoft : (t.resumen ? BASE.navySoft : (idx % 2 ? BASE.bgSoft : BASE.white)),
-                          borderBottom: `1px solid ${BASE.borderSoft}`,
                         }}>
                         {/* Acciones */}
                         <td style={{ padding: '0 4px', whiteSpace: 'nowrap' }}>
