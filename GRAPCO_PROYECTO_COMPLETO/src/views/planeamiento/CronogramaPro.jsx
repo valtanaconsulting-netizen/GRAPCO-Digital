@@ -8,7 +8,7 @@
 //   · Roll-up: las fases resumen suman fechas/duración/avance de sus hijas
 //   · Persistencia por proyecto en Firestore (Cronogramas/{proyectoId})
 //   · Pestaña "Plan base" con el Excel CREDITEX original de referencia
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { db } from '../../firebaseConfig';
 import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs, query, where } from 'firebase/firestore';
 import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
@@ -82,6 +82,9 @@ export default function CronogramaPro() {
   const [verCurvaS, setVerCurvaS] = useState(true);
   const [sincronizando, setSincronizando] = useState(false);
   const [syncMsg, setSyncMsg] = useState(null);
+  const [fullscreen, setFullscreen] = useState(false);  // pantalla completa del cronograma
+  const [gridW, setGridW] = useState(null);             // ancho del panel-grilla (null = natural); arrastrable
+  const gridRef = useRef(null);
   // Catálogo WBS del proyecto: metrados totales por actividad (fuente única)
   const { infoMap } = useCatalogoWBS(proyectoActivoId);
 
@@ -119,6 +122,30 @@ export default function CronogramaPro() {
   }, []);
 
   const setCampo = (idx, campo, valor) => mutar(prev => prev.map((t, i) => i === idx ? { ...t, [campo]: valor } : t));
+
+  // Arrastrar el divisor grilla↔Gantt para dar más/menos espacio al cronograma.
+  const onResizerDown = (e) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = gridRef.current?.offsetWidth || 600;
+    const move = (ev) => setGridW(Math.max(170, Math.min(1100, startW + (ev.clientX - startX))));
+    const up = () => {
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseup', up);
+      document.body.style.userSelect = '';
+    };
+    document.body.style.userSelect = 'none';
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+  };
+
+  // ESC sale de pantalla completa.
+  useEffect(() => {
+    if (!fullscreen) return;
+    const onKey = (e) => { if (e.key === 'Escape') setFullscreen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [fullscreen]);
 
   const insertarDebajo = (idx) => mutar(prev => {
     const id = nuevoId(prev);
@@ -444,6 +471,13 @@ export default function CronogramaPro() {
                   }}>{lbl}</button>
                 ))}
               </div>
+              <button onClick={() => setFullscreen(true)} title="Pantalla completa — ver el cronograma en grande"
+                style={{
+                  padding: '7px 11px', background: BASE.white, color: BASE.navy, border: `1.5px solid ${BASE.gold}`,
+                  borderRadius: '8px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center',
+                }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3" /></svg>
+              </button>
               <button onClick={() => insertarDebajo(tareas.length - 1)} style={{
                 padding: '8px 14px', background: BASE.white, color: BASE.navy, border: `1.5px solid ${BASE.border}`,
                 borderRadius: '8px', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer',
@@ -486,11 +520,29 @@ export default function CronogramaPro() {
           )}
 
           {/* ══ GRILLA + GANTT (scroll vertical compartido) ══ */}
-          <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '14px', boxShadow: BASE.shadowMd, overflow: 'hidden' }}>
-            <div style={{ display: 'flex', maxHeight: '62vh', overflowY: 'auto' }}>
+          <div style={{
+            background: BASE.white, border: `1px solid ${BASE.border}`, boxShadow: BASE.shadowMd, overflow: 'hidden',
+            borderRadius: fullscreen ? 0 : '14px',
+            ...(fullscreen ? { position: 'fixed', inset: 0, zIndex: 4000, margin: 0 } : { position: 'relative' }),
+          }}>
+            {/* Controles flotantes en pantalla completa: zoom + salir */}
+            {fullscreen && (
+              <div style={{ position: 'absolute', top: 10, right: 14, zIndex: 6, display: 'flex', gap: '8px', alignItems: 'center', background: 'rgba(255,255,255,0.92)', padding: '6px 8px', borderRadius: '10px', boxShadow: BASE.shadowMd }}>
+                <div style={{ display: 'inline-flex', border: `1px solid ${BASE.border}`, borderRadius: '7px', overflow: 'hidden' }}>
+                  {[[4, 'S'], [8, 'M'], [14, 'L']].map(([px, lbl]) => (
+                    <button key={px} onClick={() => setPxDia(px)} style={{ padding: '5px 9px', border: 'none', cursor: 'pointer', fontSize: '10px', fontWeight: 800, background: pxDia === px ? BASE.navy : '#fff', color: pxDia === px ? '#fff' : BASE.muted }}>{lbl}</button>
+                  ))}
+                </div>
+                <button onClick={() => setFullscreen(false)} title="Salir de pantalla completa (Esc)" style={{ padding: '6px 12px', background: BASE.navy, color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 800, fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3M16 3v3a2 2 0 0 0 2 2h3M8 21v-3a2 2 0 0 0-2-2H3M16 21v-3a2 2 0 0 1 2-2h3" /></svg>
+                  Salir
+                </button>
+              </div>
+            )}
+            <div style={{ display: 'flex', maxHeight: fullscreen ? '100vh' : '62vh', overflowY: 'auto' }}>
 
               {/* ── Panel izquierdo: grilla tipo Excel ── */}
-              <div style={{ flexShrink: 0, borderRight: `2px solid ${BASE.navy}22`, zIndex: 2, background: BASE.white }}>
+              <div ref={gridRef} style={{ flexShrink: 0, borderRight: `2px solid ${BASE.navy}22`, zIndex: 2, background: BASE.white, ...(gridW != null ? { width: `${gridW}px`, overflowX: 'auto' } : {}) }}>
                 <table style={{ borderCollapse: 'collapse', tableLayout: 'fixed' }}>
                   <thead>
                     <tr>
@@ -564,6 +616,12 @@ export default function CronogramaPro() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Divisor ARRASTRABLE: arrastra hacia la izquierda para ver más cronograma */}
+              <div onMouseDown={onResizerDown} title="Arrastra para ver más o menos del cronograma"
+                style={{ width: '8px', flexShrink: 0, cursor: 'col-resize', background: `${BASE.navy}0d`, borderLeft: `1px solid ${BASE.border}`, position: 'relative' }}>
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '3px', height: '30px', borderRadius: '3px', background: `${BASE.navy}40` }} />
               </div>
 
               {/* ── Panel derecho: GANTT ── */}
