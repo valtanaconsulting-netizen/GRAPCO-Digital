@@ -8,9 +8,15 @@ import {
 import { COSTO_HORA_DEFAULT } from '../utils/helpers';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 import Modal from '../components/Modal';
+import PersonalBaseDatos from './PersonalBaseDatos';
 
-export default function Personal({ cuadrillasDB, personalDB, configuracion, showToast }) {
-  const { proyectoActivoId } = useProyectoActivo();
+export default function Personal({ cuadrillasDB, personalDB: personalTodos, configuracion, showToast }) {
+  const { proyectoActivoId, filtrarPorContexto, proyectos } = useProyectoActivo();
+  // `personalDB` = SOLO el personal de ESTE proyecto (un proyecto nuevo arranca vacío).
+  // `personalTodos` = roster GLOBAL de GRAPCO (todos los que han trabajado), para el
+  // buscador "base de datos" que permite traer gente de otras obras a este proyecto.
+  const personalDB = useMemo(() => filtrarPorContexto(personalTodos || []), [personalTodos, filtrarPorContexto]);
+  const [modalBaseDatos, setModalBaseDatos] = useState(false);
   const [gTab,            setGTab]            = useState('trabajadores');
   const [modalCuadrilla,  setModalCuadrilla]  = useState(null);
   const [modalTrabajador, setModalTrabajador] = useState(null);
@@ -504,6 +510,9 @@ export default function Personal({ cuadrillasDB, personalDB, configuracion, show
               <p style={{fontSize:'12px',color:BASE.muted,marginTop:'2px'}}>{personalDB.length} trabajador{personalDB.length!==1?'es':''} registrado{personalDB.length!==1?'s':''}</p>
             </div>
             <div style={{display:'flex',gap:'8px',flexWrap:'wrap'}}>
+              <button onClick={()=>setModalBaseDatos(true)} style={{padding:'10px 16px',background:'#fff',color:BASE.navy,border:`2px solid ${BASE.gold}`,borderRadius:'10px',fontWeight:'700',cursor:'pointer',fontSize:'13px'}}>
+                🔎 Base de datos GRAPCO
+              </button>
               <button onClick={()=>setModalTarifas(true)} style={{padding:'10px 16px',background:'#fff',color:BASE.navy,border:`2px solid ${BASE.navy}`,borderRadius:'10px',fontWeight:'700',cursor:'pointer',fontSize:'13px'}}>
                 💰 Tarifas
               </button>
@@ -659,6 +668,17 @@ export default function Personal({ cuadrillasDB, personalDB, configuracion, show
             </div>
           )}
         </div>
+      )}
+
+      {modalBaseDatos && (
+        <PersonalBaseDatos
+          personalTodos={personalTodos}
+          cuadrillasDB={cuadrillasDB}
+          proyectos={proyectos}
+          proyectoActivoId={proyectoActivoId}
+          onClose={() => setModalBaseDatos(false)}
+          showToast={showToast}
+        />
       )}
     </div>
   );
