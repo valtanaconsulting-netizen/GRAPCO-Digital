@@ -124,21 +124,21 @@ export default function Navbar({ rol, isMobile, onSalir, onCambiarArea, onMenu }
       <div style={{
         width: '40px', height: '40px',
         borderRadius: '10px',
-        background: '#fff',
-        padding: '1px',
+        background: 'transparent',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         flexShrink: 0,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
         position: 'relative',
         overflow: 'hidden',
       }}>
+        {/* Solo el badge del PNG (anillo dorado + logo): recortamos el marco navy
+            externo (scale) y quitamos el plafón blanco CSS → mismo tamaño que el cliente. */}
         <img
           src={LOGO}
           alt="GRAPCO"
           onError={(e) => { if (e.target.src !== window.location.origin + LOGO_FALLBACK) e.target.src = LOGO_FALLBACK; }}
-          style={{ width: '100%', height: '100%', borderRadius: '6px', objectFit: 'contain', transform: 'scale(1.25)' }}
+          style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scale(1.42)' }}
         />
       </div>
 
