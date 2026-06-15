@@ -25,7 +25,6 @@ const ROL_ITEMS = {
   oficina_tecnica:   [{ key: 'ot',       label: 'Oficina Técnica',         iconName: 'fileText',   color: '#6366f1', group: 'MI ÁREA' }],
   // SSOMA (Seguridad y Medio Ambiente) movido a la plataforma independiente SIGMA (2026-06-15).
   planeamiento:      [
-    { key: 'apus',        label: 'Análisis de Precios (APU)', iconName: 'calculator', color: '#6366f1',    group: 'PLANEAMIENTO' },
     { key: 'lps',         label: 'Last Planner System',       iconName: 'target',     color: '#0d9488',    group: 'PLANEAMIENTO' },
     { key: 'dashboard',   label: 'Producción',                iconName: 'dashboard',  color: BASE.navy,    group: 'ANÁLISIS' },
     { key: 'warroom',     label: 'Sala de Operaciones',       iconName: 'target',     color: BASE.redDark, group: 'ANÁLISIS' },
@@ -69,7 +68,6 @@ const PRELOAD_BY_KEY = {
   calidad:     () => import('./views/CalidadPanel'),
   ot:          () => import('./views/OficinaTecnicaPanel'),
   planMaestro: () => import('./views/modulos/planMaestro/PlanMaestroPanel'),
-  apus:        () => import('./views/modulos/apus/APUsPanel'),
   gerencia:    () => import('./views/modulos/panelGerencia/PanelGerencia'),
   proyectos:   () => import('./views/modulos/proyectos/ProyectosPanel'),
   portfolio:   () => import('./views/modulos/portfolio/PortfolioPanel'),
@@ -98,7 +96,6 @@ const Almacenero          = lazy(() => import('./views/Almacenero'));
 const CalidadPanel        = lazy(() => import('./views/CalidadPanel'));
 const OficinaTecnicaPanel = lazy(() => import('./views/OficinaTecnicaPanel'));
 const PlanMaestroPanel    = lazy(() => import('./views/modulos/planMaestro/PlanMaestroPanel'));
-const APUsPanel           = lazy(() => import('./views/modulos/apus/APUsPanel'));
 const FlujoPlaneamiento   = lazy(() => import('./views/planeamiento/FlujoPlaneamiento'));
 const PullPlanning        = lazy(() => import('./views/planeamiento/PullPlanning'));
 const PlanVaciado         = lazy(() => import('./views/planeamiento/PlanVaciado'));
@@ -117,11 +114,12 @@ const EstadoObra          = lazy(() => import('./views/modulos/estadoObra/Estado
 // ── Alcance de módulos por ÁREA (sidebar del shell ingeniero/admin/planeamiento) ──
 // Cada área ve SOLO sus módulos. Únicamente Administración (admin) ve todos.
 //   - ingeniero  → Producción: avance, registro, carta balance, sala de operaciones, materiales, BIM
-//   - planeamiento → WBS, APU, Last Planner
+//   - planeamiento → WBS, Last Planner
 //   - admin      → null = TODOS los módulos (acceso completo)
-// Ingeniería de Producción ahora ABSORBE Planeamiento (Plan Maestro, APU, Last Planner).
-const KEYS_PRODUCCION  = ['estadoObra', 'flujo', 'dashboard', 'radarProd', 'registro', 'carta', 'warroom', 'apus', 'lps', 'cronogramaobra', 'normaltec', 'pullplanning', 'planvaciado', 'materiales', 'bim'];
-const KEYS_PLANEAMIENTO = ['flujo', 'cronogramaobra', 'normaltec', 'apus', 'pullplanning', 'lps', 'planvaciado'];
+// Ingeniería de Producción ahora ABSORBE Planeamiento (Plan Maestro, Last Planner).
+// El APU (Análisis de Precios Unitarios) ya NO está en GRAPCO: es costos y vive en la plataforma de Costos aparte.
+const KEYS_PRODUCCION  = ['estadoObra', 'flujo', 'dashboard', 'radarProd', 'registro', 'carta', 'warroom', 'lps', 'cronogramaobra', 'normaltec', 'pullplanning', 'planvaciado', 'materiales', 'bim'];
+const KEYS_PLANEAMIENTO = ['flujo', 'cronogramaobra', 'normaltec', 'pullplanning', 'lps', 'planvaciado'];
 // Devuelve la lista de keys permitidas para el rol, o null si ve todo (admin).
 const keysPermitidasPorRol = (rol) => {
   if (rol === 'admin') return null;            // acceso total
@@ -582,11 +580,11 @@ function AppInner() {
           // luminancia suficiente para contrastar contra el fondo del sidebar y se ven en
           // estado activo (background del botón) y como icono (sin tornarse invisibles).
           const ITEMS_FULL = [
-            // PLANEAMIENTO — flujo de proceso, WBS, costos unitarios, cronograma (va primero)
+            // PLANEAMIENTO — flujo de proceso, WBS, cronograma (va primero).
+            // El APU (Análisis de Precios) ya NO está en GRAPCO → migra a la plataforma de Costos aparte.
             { key: 'flujo',       label: 'Flujo de Planeamiento',   iconName: 'target',      color: '#e5a82f',    group: 'PLANEAMIENTO' },
             { key: 'cronogramaobra', label: 'Cronograma de Obra',   iconName: 'clock',       color: '#34d399',    group: 'PLANEAMIENTO' },
             { key: 'normaltec',   label: 'Normal Tecnológica',      iconName: 'layers',      color: '#fb923c',    group: 'PLANEAMIENTO' },
-            { key: 'apus',        label: 'Análisis de Precios (APU)', iconName: 'coins',     color: '#a5b4fc',    group: 'PLANEAMIENTO' },
             { key: 'pullplanning', label: 'Pull Planning',          iconName: 'target',      color: '#a78bfa',    group: 'PLANEAMIENTO' },
             { key: 'lps',         label: 'Last Planner System',     iconName: 'target',      color: '#34d399',    group: 'PLANEAMIENTO' },
             { key: 'planvaciado', label: 'Plan de Vaciado',         iconName: 'target',      color: '#38bdf8',    group: 'PLANEAMIENTO' },
@@ -939,11 +937,6 @@ function AppInner() {
             {/* Bloque 21 - Plan Maestro WBS */}
             {moduloIngeniero === 'planMaestro' && (
               <PlanMaestroPanel showToast={showToast} />
-            )}
-
-            {/* Bloque 21 - APUs */}
-            {moduloIngeniero === 'apus' && (
-              <APUsPanel showToast={showToast} />
             )}
 
             {/* Modelo BIM - acceso transversal */}

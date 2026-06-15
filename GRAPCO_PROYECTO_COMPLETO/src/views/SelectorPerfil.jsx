@@ -47,7 +47,7 @@ const PERFILES = [
     iconName: 'barChart3',
     color: '#047857',
     descripcion: 'Planificación, programación y control integral de obra bajo metodologías Lean Construction y VDC, orientadas a maximizar productividad, cumplimiento y desempeño operativo.',
-    accesos: ['Producción', 'Registro', 'Carta Balance', 'Sala de Operaciones', 'Plan Maestro', 'APU', 'Pull Planning', 'Materiales'],
+    accesos: ['Producción', 'Registro', 'Carta Balance', 'Sala de Operaciones', 'Plan Maestro', 'Pull Planning', 'Materiales'],
   },
   {
     rol: 'oficina_tecnica',
