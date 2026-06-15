@@ -5,6 +5,7 @@ import { sendPasswordResetEmail } from 'firebase/auth';
 import { db, auth } from '../firebaseConfig';
 import { useAuth } from '../contexts/AuthContext';
 import { BASE, LOGO, LOGO_FALLBACK, inp } from '../utils/styles';
+import { HERO_VIDEO } from '../utils/heroVideo';
 
 const STORAGE_INTENTOS = 'grapco_login_intentos';
 const MAX_INTENTOS = 5;
@@ -780,7 +781,7 @@ export default function Login() {
         aria-hidden="true"
         style={{ opacity: videoReady ? 0.5 : 0, transition: 'opacity 1.1s ease' }}
       >
-        <source src="/grapco-bg.mp4" type="video/mp4" />
+        <source src={HERO_VIDEO} type="video/mp4" />
       </video>
       {/* Overlay oscuro (degradado horizontal en desktop, radial en móvil) */}
       <div aria-hidden="true" style={{

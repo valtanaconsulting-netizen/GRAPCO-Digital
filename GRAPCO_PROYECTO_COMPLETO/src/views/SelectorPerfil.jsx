@@ -8,6 +8,7 @@ import { db } from '../firebaseConfig';
 import { useAuth } from '../contexts/AuthContext';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 import { BASE, LOGO, LOGO_FALLBACK } from '../utils/styles';
+import { HERO_VIDEO } from '../utils/heroVideo';
 import { obtenerSemana } from '../utils/helpers';
 import { FECHA_INICIO_PROYECTO } from '../utils/constants';
 import Icon from '../components/Icon';
@@ -331,7 +332,7 @@ export default function SelectorPerfil() {
           pointerEvents: 'none',
         }}
       >
-        <source src="/grapco-bg.mp4" type="video/mp4" />
+        <source src={HERO_VIDEO} type="video/mp4" />
       </video>
       {/* Lavado NAVY cohesivo (sin dorado) — unifica el fondo con la marca y hace
           resaltar las tarjetas. Sustituye al overlay que mezclaba dorado+verde. */}
