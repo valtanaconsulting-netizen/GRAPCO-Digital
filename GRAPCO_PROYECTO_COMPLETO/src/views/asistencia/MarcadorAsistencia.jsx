@@ -3,12 +3,16 @@
 // Una sola toma reconoce y marca a 10+ personas a la vez (detectAllFaces).
 //
 // Reglas de hora (pedido de gerencia):
-//  • ENTRADA: en el TAREO siempre se registra 07:30 para todos. PERO se guarda
-//    también la hora REAL de llegada (entradaReal) → registro de puntualidad.
+//  • ENTRADA con TOLERANCIA hasta 07:45:
+//      - llega ≤ 07:30        → tareo 07:30 (PUNTUAL)
+//      - llega 07:31–07:45    → tareo 07:30, pero marcado TARDE (dentro de tolerancia)
+//      - llega  > 07:45 (8,9,10,11:10…) → esa HORA REAL es su entrada del tareo
+//        (las HH se cuentan desde su llegada real, no desde 07:30).
+//    Siempre se guarda entradaReal (hora exacta) para el registro de puntualidad.
 //  • SALIDA: el TAREO usa la hora EN PUNTO hacia abajo (piso). 17:00–17:59→17:00,
 //    18:35→18:00, 19:35→19:00. Se guarda también la hora REAL (salidaReal).
-//  • horasTrabajadas se calcula con las horas NORMALIZADAS (07:30 → salida-piso),
-//    así el tareo del capataz hereda HH coherentes.
+//  • horasTrabajadas = salida-piso − entrada DEL TAREO (07:30 o la real si llegó
+//    pasada la tolerancia) − refrigerio, así el tareo del capataz hereda HH coherentes.
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -33,8 +37,12 @@ const minutos = (hhmm) => {
 };
 
 // ── Normalización de horas para el TAREO ──
-const ENTRADA_TAREO = '07:30';   // entrada oficial fija en el tareo (la REAL se guarda aparte)
-const DESCANSO_MIN  = 60;        // refrigerio (min)
+const ENTRADA_TAREO = '07:30';        // entrada oficial cuando se llega a tiempo / dentro de tolerancia
+const TOLERANCIA_ENTRADA = '07:45';   // tope de tolerancia: hasta aquí el tareo cuenta 07:30
+const DESCANSO_MIN  = 60;             // refrigerio (min)
+// Entrada que va al TAREO según la hora REAL de llegada (regla de tolerancia 07:45).
+const entradaTareoDe = (horaReal) =>
+  minutos(horaReal) <= minutos(TOLERANCIA_ENTRADA) ? ENTRADA_TAREO : horaReal;
 // Salida del tareo = hora EN PUNTO hacia abajo (piso). Salen a esa hora pero se
 // cambian/asean; el tareo cuenta hasta la hora cumplida. 17:35→17:00, 19:35→19:00.
 const salidaTareoDe = (hhmm) => {
@@ -94,6 +102,7 @@ export default function MarcadorAsistencia({ showToast }) {
         if (x.personalId) m[x.personalId] = {
           entrada: x.entrada || null, entradaReal: x.entradaReal || null,
           salida: x.salida || null, salidaReal: x.salidaReal || null,
+          tarde: !!x.tarde, fueraTolerancia: !!x.fueraTolerancia,
         };
       });
       setHoy(m);
@@ -189,16 +198,24 @@ export default function MarcadorAsistencia({ showToast }) {
           registradoPor: user?.email || 'kiosko', actualizadoEn: serverTimestamp(),
         };
         if (mt.accion === 'entrada') {
+          const entradaT = entradaTareoDe(hora);             // 07:30 si ≤07:45; si no, la hora real
+          const tarde = minutos(hora) > minutos(ENTRADA_TAREO);
           batch.set(docRef, {
             ...base,
-            entrada: ENTRADA_TAREO,   // TAREO: siempre 07:30
-            entradaReal: hora,        // hora REAL de llegada (puntualidad)
+            entrada: entradaT,                                // TAREO (con tolerancia 07:45)
+            entradaReal: hora,                                // hora REAL de llegada (puntualidad)
+            tarde,                                            // llegó después de 07:30
+            minTarde: Math.max(0, minutos(hora) - minutos(ENTRADA_TAREO)),
+            fueraTolerancia: minutos(hora) > minutos(TOLERANCIA_ENTRADA),
             descanso: DESCANSO_MIN,
             fotoEvidencia: fotoUrl,
           }, { merge: true });
         } else {
           const salidaT = salidaTareoDe(hora);
-          const horas = Math.max(0, (minutos(salidaT) - minutos(ENTRADA_TAREO) - DESCANSO_MIN) / 60);
+          // Las HH se cuentan desde la ENTRADA del tareo ya registrada (07:30 o la
+          // hora real si llegó pasada la tolerancia), no desde un 07:30 fijo.
+          const entradaBase = hoy[personalId]?.entrada || ENTRADA_TAREO;
+          const horas = Math.max(0, (minutos(salidaT) - minutos(entradaBase) - DESCANSO_MIN) / 60);
           batch.set(docRef, {
             ...base,
             salida: salidaT,          // TAREO: hora en punto (piso)
@@ -471,9 +488,10 @@ export default function MarcadorAsistencia({ showToast }) {
                     {p.nombre}
                   </span>
                   {r?.entrada && (
-                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#15803d', fontFamily: 'monospace' }}
-                      title={r.entradaReal ? `Llegada real ${r.entradaReal}` : ''}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 800, color: r.tarde ? '#b45309' : '#15803d', fontFamily: 'monospace' }}
+                      title={r.entradaReal ? `Llegada real ${r.entradaReal}${r.tarde ? (r.fueraTolerancia ? ' · fuera de tolerancia (>07:45)' : ' · tarde (dentro de tolerancia)') : ' · puntual'}` : ''}>
                       ▸ {r.entrada}{r.entradaReal && r.entradaReal !== r.entrada ? <span style={{ color: BASE.mutedSoft, fontWeight: 700 }}> ({r.entradaReal})</span> : null}
+                      {r.tarde && <span style={{ fontSize: '8.5px', fontWeight: 900, letterSpacing: '0.4px', color: '#fff', background: r.fueraTolerancia ? '#b91c1c' : '#d97706', padding: '1px 5px', borderRadius: '5px' }}>{r.fueraTolerancia ? 'TARDE' : 'TOL.'}</span>}
                     </span>
                   )}
                   {r?.salida && (
@@ -490,7 +508,7 @@ export default function MarcadorAsistencia({ showToast }) {
             })}
           </div>
           <p style={{ fontSize: '10.5px', color: BASE.muted, marginTop: '10px', textAlign: 'center', fontStyle: 'italic' }}>
-            Reconoce hasta 10+ personas a la vez. 1ª marca = ENTRADA (tareo 07:30), 2ª = SALIDA (hora en punto). La hora real se guarda para puntualidad. Solo se acepta con similitud ≥ {SIMILITUD_MIN}%.
+            Reconoce hasta 10+ personas a la vez. 1ª marca = ENTRADA, 2ª = SALIDA (hora en punto). Tolerancia 07:45: si llega hasta 07:45 el tareo cuenta 07:30 (tarde si pasó de 07:30); si llega después, esa hora real es su entrada. Solo se acepta con similitud ≥ {SIMILITUD_MIN}%.
           </p>
         </div>
       </div>
