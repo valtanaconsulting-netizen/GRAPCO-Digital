@@ -546,6 +546,108 @@ service cloud.firestore {
     }
 
     // ════════════════════════════════════════════════════════════════
+    // CRONOGRAMA (CPM por proyecto — Cronograma Pro / generación + sync avance)
+    // ════════════════════════════════════════════════════════════════
+    match /Cronogramas/{docId} {
+      allow read: if isAuth();
+      allow write: if isIngeniero() || isAdmin() || isPlaneamiento();
+    }
+
+    // /Historial — historial de actividad/registros usado por varios módulos
+    match /Historial/{docId} {
+      allow read: if isAuth();
+      allow create, update: if isAuthorized();
+      allow delete: if isIngeniero() || isAdmin();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // RESULTADO OPERATIVO — costo real (importadores in-app de Facturas / GG /
+    // Subcontratos) + Deductivos. Misma política que Adicionales.
+    // ════════════════════════════════════════════════════════════════
+    match /Registro_Facturas/{docId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin() || (isAuth() && getRol() == 'logistica');
+      allow delete: if isIngeniero() || isAdmin();
+    }
+    match /GG_Oficina/{docId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin();
+      allow delete: if isIngeniero() || isAdmin();
+    }
+    match /ValorizacionesSubcontratistas/{docId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin();
+      allow delete: if isIngeniero() || isAdmin();
+    }
+    match /Deductivos/{docId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // LAST PLANNER SYSTEM — ciclo semanal por proyecto (compromisos, marcas,
+    // restricciones, cumplimiento) + plazos de Pull Planning.
+    // ════════════════════════════════════════════════════════════════
+    match /LPS/{docId} {
+      allow read: if isAuth();
+      allow write: if isIngeniero() || isAdmin() || isPlaneamiento() || isCapataz();
+    }
+    match /LPS_Plazos/{docId} {
+      allow read: if isAuth();
+      allow write: if isIngeniero() || isAdmin() || isPlaneamiento();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // SEGURIDAD — ATS (análisis de trabajo seguro) e inspecciones.
+    // ════════════════════════════════════════════════════════════════
+    match /ATS/{docId} {
+      allow read: if isAuth();
+      allow create, update: if isAuthorized();
+      allow delete: if isIngeniero() || isAdmin();
+    }
+    match /InspeccionesSeguridad/{docId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin() || (isAuth() && getRol() == 'seguridad');
+      allow delete: if isIngeniero() || isAdmin();
+    }
+
+    // /CuadrillasActivas — composición de cuadrilla del día (marcador/tareo)
+    match /CuadrillasActivas/{docId} {
+      allow read: if isAuth();
+      allow write: if isAuthorized();
+    }
+
+    // /PlanDiario — programación diaria (variante usada por PlanDiario.jsx)
+    match /PlanDiario/{docId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin() || isPlaneamiento() || isCapataz();
+      allow delete: if isIngeniero() || isAdmin();
+    }
+
+    // /ProtocolosCALFOR — protocolos de calidad (formato CAL-FOR)
+    match /ProtocolosCALFOR/{docId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin() ||
+                               (isAuth() && (getRol() == 'calidad' || getRol() == 'supervisor_cliente'));
+      allow delete: if isAdmin();
+    }
+
+    // /SustentoMetrados — sustento de metrados (oficina técnica)
+    match /SustentoMetrados/{docId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin() || (isAuth() && getRol() == 'oficina_tecnica');
+      allow delete: if isIngeniero() || isAdmin();
+    }
+
+    // /VDC_Evidencias — evidencias fotográficas del LPS/VDC
+    match /VDC_Evidencias/{docId} {
+      allow read: if isAuth();
+      allow create, update: if isAuthorized();
+      allow delete: if isIngeniero() || isAdmin();
+    }
+
+    // ════════════════════════════════════════════════════════════════
     // DENEGAR TODO LO DEMÁS
     // Cualquier colección no listada arriba está bloqueada.
     // ════════════════════════════════════════════════════════════════

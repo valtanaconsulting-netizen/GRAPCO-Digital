@@ -15,12 +15,13 @@ import { normActividad } from './normalizacion';
  *          ip: clave normActividad → IP real (solo actividades con avance).
  */
 export async function calcularIPRealProyecto(projId, { proyectoDefaultId } = {}) {
+  // Fuente real de tareos = Registros_Campo (igual que useHistorial / el CPI).
   let docs = [];
   if (projId && projId === proyectoDefaultId) {
-    const snap = await getDocs(collection(db, 'Historial'));
+    const snap = await getDocs(collection(db, 'Registros_Campo'));
     docs = snap.docs.map(d => d.data()).filter(r => r.proyectoId === projId || !r.proyectoId);
   } else {
-    const snap = await getDocs(query(collection(db, 'Historial'), where('proyectoId', '==', projId)));
+    const snap = await getDocs(query(collection(db, 'Registros_Campo'), where('proyectoId', '==', projId)));
     docs = snap.docs.map(d => d.data());
   }
   const agg = {};
