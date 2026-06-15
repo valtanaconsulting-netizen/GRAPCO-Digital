@@ -1,0 +1,405 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Plataforma digital integrada VDC-Lean (EVM + biometría, offline-first)</title>
+<style>:root{--navy:#0B1F39;--navy2:#0F2A47;--gold:#E5A82F;--goldd:#C8901F;--ink:#1c2733;--muted:#5b6b7f;--line:#e3e9f0;--soft:#f6f9fc;}
+*{box-sizing:border-box}html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.55;margin:0;background:#fff;font-size:13px}
+main{max-width:900px;margin:0 auto;padding:20px 34px 70px}
+.brand{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;padding:28px 34px;border-bottom:5px solid var(--gold)}
+.brand .kicker{color:var(--gold);font-weight:800;letter-spacing:2px;font-size:11px;text-transform:uppercase}
+.brand h1{margin:6px 0 3px;font-size:27px;line-height:1.15;color:#fff;border:none;padding:0}
+.brand .sub{opacity:.9;font-size:13px}.brand .meta{margin-top:12px;font-size:11px;opacity:.72}
+h1,h2,h3,h4{color:var(--navy);line-height:1.22}
+main h1{font-size:22px;border-bottom:3px solid var(--gold);padding-bottom:6px;margin-top:34px}
+h2{font-size:18px;margin-top:30px;border-left:5px solid var(--gold);padding-left:11px}
+h3{font-size:15px;margin-top:20px;color:var(--navy2)}h4{font-size:13px;margin-top:15px;color:var(--goldd)}
+p{margin:8px 0}code{font-family:Consolas,'Cascadia Mono',monospace;background:#eef2f7;color:#0b3b66;padding:1px 5px;border-radius:4px;font-size:.88em}
+strong{color:var(--navy)}a{color:#0b66c2}
+table{border-collapse:collapse;width:100%;margin:12px 0;font-size:12px}
+th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
+thead th{background:var(--navy);color:#fff;font-size:11px;letter-spacing:.3px}
+tbody tr:nth-child(even){background:var(--soft)}
+blockquote,.callout{background:var(--soft);border-left:5px solid var(--gold);padding:10px 16px;margin:14px 0;border-radius:0 8px 8px 0}
+blockquote p{margin:5px 0}ul,ol{margin:8px 0 8px 2px;padding-left:24px}li{margin:4px 0}
+hr{border:none;border-top:1px dashed var(--line);margin:22px 0}
+.diagram{background:#0b1f39;border-radius:10px;padding:12px 14px;margin:14px 0;overflow-x:auto}
+.diagram pre{margin:0;color:#e8eef6;font-family:Consolas,'Cascadia Mono',monospace;font-size:9px;line-height:1.25;white-space:pre}
+.ficha{border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:8px;padding:10px 15px;margin:12px 0;background:#fff}
+.kpi-grid{display:flex;flex-wrap:wrap;gap:12px;margin:14px 0}
+.kpi{flex:1 1 130px;background:var(--soft);border:1px solid var(--line);border-top:4px solid var(--gold);border-radius:8px;padding:12px;text-align:center}
+.kpi-num{display:block;font-size:24px;font-weight:900;color:var(--navy)}
+.kpi-lbl{display:block;font-size:11px;color:var(--muted);margin-top:3px}
+figure{margin:16px 0;text-align:center}figcaption{font-size:11px;color:var(--muted);margin-top:6px;font-style:italic}
+.printbtn{position:fixed;top:14px;right:14px;z-index:99;background:var(--gold);color:var(--navy);border:none;padding:10px 16px;border-radius:8px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25);font-family:inherit}
+@media print{.no-print{display:none!important}main{max-width:none;padding:0 4mm}.brand{padding:16px 8mm}
+.diagram{break-inside:avoid}.diagram pre{font-size:7px}.ficha,table,figure,.kpi-grid{break-inside:avoid}h2,h3,h4{break-after:avoid}
+@page{size:A4;margin:12mm 0}}
+</style></head><body>
+<button class="printbtn no-print" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+<header class="brand"><div class="kicker">Paper académico · Congreso internacional</div><h1>Plataforma digital integrada VDC-Lean (EVM + biometría, offline-first)</h1><div class="sub">Control de producción, planeamiento y costos en obra · Caso CREDITEX-PTAR</div>
+<div class="meta">Valtana Consulting · GRAPCO S.A.C. · Plataforma de Gestión de Proyectos VDC · 2026-06-15</div></header>
+<main><header>
+<p><strong>XX Congreso Internacional de Ingeniería Civil y Construcción Lean, 2026</strong></p>
+<h1>Plataforma digital integrada VDC–Lean para el control de producción, planeamiento y costos (EVM) en obras de construcción: arquitectura <em>offline-first</em> de costo cero y biometría facial. Caso CREDITEX–PTAR</h1>
+
+<p><strong>Autores:</strong> F. Rosas<sup>1</sup>, Equipo de Ingeniería de Valtana Consulting<sup>1</sup>, GRAPCO S.A.C.<sup>2</sup></p>
+<p><sup>1</sup> Valtana Consulting — Transformación Digital de la Construcción, Lima, Perú.<br/>
+<sup>2</sup> GRAPCO S.A.C. — Contratista General de Obras Civiles, Lima, Perú.</p>
+<p><em>Autor de correspondencia:</em> <code>valtanaconsulting@gmail.com</code></p>
+<p><strong>Eje temático:</strong> Lean Construction · Virtual Design and Construction (VDC) · Gestión del Valor Ganado (EVM) · Transformación digital de MYPE constructoras.</p>
+</header>
+
+<hr/>
+
+<h2>Resumen</h2>
+<p>El control de la productividad y de los costos en obra sigue siendo el principal foco de pérdida de las empresas constructoras peruanas, en especial de las micro y pequeñas empresas (MYPE), donde la información se registra en papel o en hojas de cálculo desconectadas, se digita varias veces y llega tarde al ingeniero residente. Este trabajo presenta el diseño, la implementación y la validación de campo de <strong>GRAPCO 2026</strong>, una plataforma digital integrada que articula los principios de <em>Lean Construction</em> y <em>Virtual Design and Construction</em> (VDC) con la <em>Gestión del Valor Ganado</em> (<em>Earned Value Management</em>, EVM) bajo una arquitectura web progresiva (PWA) <em>offline-first</em> y de <strong>costo cero de operación</strong> (sin servicios facturables del proveedor de nube). El aporte metodológico central es el principio de las <strong>tres fuentes únicas de la verdad</strong> —estructura de la obra (<code>Catalogo_WBS</code>), producción real de campo (<code>Registros_Campo</code>) y plan valorizado (<code>PlanMaestro</code>)— que garantiza que cada dato se escriba una sola vez en su origen y se lea desde múltiples tableros sin re-digitación. El capataz registra el tareo en obra; un marcador de <strong>biometría facial</strong> (descriptores de 128 dimensiones, enrolamiento de 5 fotografías, umbral de similitud del 75 %, operación sin conexión) alimenta automáticamente las horas-hombre (HH); y el sistema recalcula, en vivo, el avance físico del cronograma (método de la ruta crítica, CPM), los indicadores EVM (CPI, SPI, EAC, VAC) y el Resultado Operativo, con un <strong>costo-hora único de S/ 25,50</strong>. Se reporta el caso de aplicación <strong>CREDITEX–PTAR</strong> (planta de tratamiento de aguas residuales), con cerca de <strong>1 104 registros de producción</strong> trazados, donde la plataforma sustituyó la conciliación manual mensual por un recálculo automático del valor ganado, con aislamiento estricto de datos por proyecto. Los resultados muestran que la integración producción → avance → EVM, soportada por una única escritura del dato, reduce la latencia de control de semanas a minutos y hace operativo el ciclo <em>Last Planner</em> (PPC/CNC) sin sobrecarga administrativa.</p>
+
+<p><strong>Palabras clave:</strong> Lean Construction; Last Planner System; VDC; Earned Value Management; biometría facial; PWA <em>offline-first</em>; productividad en obra; MYPE constructoras.</p>
+
+<h2>Abstract</h2>
+<p>Productivity and cost control on site remain the main source of waste for Peruvian construction companies, particularly micro and small enterprises (MSEs), where data is captured on paper or in disconnected spreadsheets, entered several times, and reaches the site engineer too late. This paper presents the design, implementation, and field validation of <strong>GRAPCO 2026</strong>, an integrated digital platform that couples <em>Lean Construction</em> and <em>Virtual Design and Construction</em> (VDC) principles with <em>Earned Value Management</em> (EVM) on a <em>offline-first</em> Progressive Web App (PWA) architecture with <strong>zero operating cost</strong> (no billable cloud services). The core methodological contribution is the principle of the <strong>three single sources of truth</strong> —project structure (<code>Catalogo_WBS</code>), actual field production (<code>Registros_Campo</code>), and the valued master plan (<code>PlanMaestro</code>)— ensuring each datum is written once at its origin and read by many dashboards without re-entry. The foreman records the daily labor report on site; a <strong>facial biometrics</strong> time clock (128-dimensional descriptors, 5-photo enrollment, 75 % similarity threshold, offline operation) automatically feeds man-hours (MH); and the system recomputes, live, the physical schedule progress (Critical Path Method, CPM), the EVM indices (CPI, SPI, EAC, VAC), and the Operating Result, using a <strong>single labor unit cost of S/ 25.50</strong>. The <strong>CREDITEX–PTAR</strong> case (wastewater treatment plant) is reported, with about <strong>1,104 traced production records</strong>, where the platform replaced manual monthly reconciliation with automatic earned-value recomputation, under strict per-project data isolation. Results show that the production → progress → EVM integration, backed by a single write of the datum, cuts control latency from weeks to minutes and operationalizes the <em>Last Planner</em> cycle (PPC/CNC) without administrative overhead.</p>
+
+<p><strong>Keywords:</strong> Lean Construction; Last Planner System; VDC; Earned Value Management; facial biometrics; offline-first PWA; on-site productivity; construction MSEs.</p>
+
+<hr/>
+
+<h2>1. Introducción</h2>
+
+<h3>1.1 El problema de la productividad y el control de costos en obra</h3>
+<p>La industria de la construcción exhibe, de manera persistente, un rezago de productividad respecto de otros sectores productivos. La literatura sobre <em>Lean Construction</em> atribuye buena parte de este rezago a la enorme proporción de <strong>actividad que no agrega valor</strong> —esperas, transportes, retrabajos, sobreproducción de información— que el modelo de conversión clásico vuelve invisible [Koskela, 1992; Koskela, 2000]. En el plano del control, el problema se agrava porque el dato de producción (¿qué se hizo hoy?, ¿con cuántas horas-hombre?) y el dato de costo (¿cuánto costó?) viven en sistemas distintos, se concilian a fin de mes y, cuando el ingeniero residente recibe el indicador, la oportunidad de corregir ya pasó. El <em>Earned Value Management</em> existe precisamente para integrar alcance, tiempo y costo en una sola métrica de desempeño [Fleming &amp; Koppelman, 2010; PMI, 2017], pero su aplicación práctica en obra suele tropezar con la misma barrera: requiere datos de avance físico y de costo real <strong>consistentes y oportunos</strong>, algo que el flujo manual no garantiza.</p>
+
+<h3>1.2 La brecha digital de las MYPE constructoras peruanas</h3>
+<p>En el Perú, el grueso de la actividad constructora se ejecuta a través de micro y pequeñas empresas. Para ellas, las herramientas de control de proyectos consolidadas (suites de gestión 4D/5D, ERP de construcción, módulos EVM corporativos) resultan inalcanzables por tres motivos combinados: <strong>(i)</strong> costo de licenciamiento y de infraestructura; <strong>(ii)</strong> complejidad de implantación y dependencia de especialistas; y <strong>(iii)</strong> <strong>conectividad intermitente o nula</strong> en el frente de obra, que invalida cualquier herramienta que exija estar siempre en línea. El resultado es una <em>brecha digital</em>: la MYPE conoce los principios <em>Lean</em> y EVM, pero no dispone de un instrumento que los vuelva operativos en su realidad. Esta brecha es el problema que motiva el presente trabajo.</p>
+
+<h3>1.3 Propuesta y contribución</h3>
+<p>Se propone que la barrera puede romperse con una plataforma que cumpla simultáneamente cuatro condiciones de diseño, normalmente tratadas por separado:</p>
+<ol>
+<li><strong>Integración nativa producción → avance → EVM</strong>, de modo que el tareo del capataz alimente, sin re-digitación, el cronograma y los indicadores de costo.</li>
+<li><strong>Operación <em>offline-first</em></strong>, para que la captura en obra no dependa de la señal.</li>
+<li><strong>Costo cero de operación</strong>, evitando todo servicio facturable del proveedor de nube.</li>
+<li><strong>Captura biométrica de bajo rozamiento</strong> (reconocimiento facial) que vuelva confiable y barato el registro de horas-hombre.</li>
+</ol>
+<p>La contribución de este artículo es describir cómo estas cuatro condiciones se materializan en una arquitectura coherente —cuyo eje es el principio de las <strong>tres fuentes únicas de la verdad</strong>— y validar el enfoque con el caso CREDITEX–PTAR.</p>
+
+<div class="callout">
+<p><strong>Idea-fuerza.</strong> Un dato se escribe <strong>una sola vez en su fuente</strong> y todos los tableros lo <strong>leen</strong> de ahí. Así nunca coexisten dos verdades, y el valor ganado puede recalcularse en vivo sobre datos consistentes.</p>
+</div>
+
+<hr/>
+
+<h2>2. Estado del arte y marco teórico</h2>
+
+<h3>2.1 Lean Construction y la teoría de la producción</h3>
+<p>El marco <em>Lean Construction</em> reformula la obra como un flujo de transformación, flujo y valor (modelo TFV), frente a la visión tradicional que solo ve conversiones de insumos en productos [Koskela, 1992; Koskela, 2000]. Bajo esta óptica, la gestión debe reducir sistemáticamente la <strong>variabilidad</strong> y las actividades que no agregan valor. El control de la productividad, por tanto, no se limita a medir rendimientos: busca exponer las <em>pérdidas</em> (esperas, retrabajos) para atacarlas. Instrumentos como la <strong>Carta Balance</strong> y el <strong>Labor Utilization Factor</strong> (LUF) operacionalizan esta medición a nivel de cuadrilla [Serpell, 2002].</p>
+
+<h3>2.2 Last Planner System (LPS)</h3>
+<p>El <em>Last Planner System</em> [Ballard, 2000; Ballard &amp; Howell, 2003] es el sistema de planificación y control que materializa <em>Lean</em> en la operación. Sus piezas son el <em>lookahead</em> (programación intermedia que libera restricciones), el plan semanal de compromisos del «último planificador», el indicador <strong>PPC</strong> (<em>Plan Percent Complete</em> = compromisos cumplidos ÷ compromisos totales) y el análisis de <strong>causas de no cumplimiento</strong> (CNC/RNC). El LPS mejora la <em>confiabilidad del flujo</em> de trabajo, condición previa para que cualquier control de costo sea creíble: no tiene sentido medir el valor ganado si el plan no es estable.</p>
+
+<h3>2.3 Virtual Design and Construction (VDC) y BIM 4D/5D</h3>
+<p>El paradigma <em>Virtual Design and Construction</em> [Kunz &amp; Fischer, 2012] integra modelos del producto, de la organización y del proceso (POP) para gestionar proyectos a partir de métricas controlables. La dimensión temporal (<strong>BIM 4D</strong>) liga el modelo al cronograma, y la dimensión de costo (<strong>BIM 5D</strong>) lo liga al presupuesto [Eastman et al., 2011; Sacks et al., 2018]. La práctica de la <strong>sectorización</strong> y los <em>trenes de actividades</em> —flujo continuo de cuadrillas a través de sectores de igual carga de trabajo— es una expresión <em>Lean</em>/VDC del control de producción [Ghio, 2001].</p>
+
+<h3>2.4 Earned Value Management (EVM)</h3>
+<p>El EVM integra alcance, cronograma y costo en tres magnitudes base —Valor Planificado (PV), Valor Ganado (EV) y Costo Real (AC)— de las que se derivan los índices de desempeño de costo (<strong>CPI = EV/AC</strong>) y de cronograma (<strong>SPI = EV/PV</strong>), así como las proyecciones a término <strong>EAC</strong> y <strong>VAC</strong> [Fleming &amp; Koppelman, 2010; PMI, 2017; Anbari, 2003]. Su precondición es una estructura de desglose del trabajo (<strong>WBS</strong>) con paquetes medibles. La crítica recurrente al EVM —que el SPI clásico pierde sentido al final del proyecto y que mide el cronograma en unidades de costo— motivó extensiones como el <em>Earned Schedule</em> [Lipke, 2003]; en este trabajo se adopta el EVM canónico por su transparencia y su trazabilidad directa al dato de campo.</p>
+
+<h3>2.5 Brecha identificada</h3>
+<p>La literatura trata LPS, VDC/BIM y EVM como cuerpos maduros pero, en la práctica de la MYPE, <strong>desacoplados</strong>: el avance físico que alimenta el EV se estima a mano y a destiempo, y las herramientas que los integran asumen conectividad permanente y presupuesto de licenciamiento. La brecha no es teórica sino de <strong>implementación integrada y asequible</strong>. El sistema aquí descrito se ubica exactamente en ese vacío.</p>
+
+<hr/>
+
+<h2>3. Objetivos e hipótesis</h2>
+
+<h3>3.1 Objetivo general</h3>
+<p>Diseñar, implementar y validar en obra una plataforma digital integrada que articule <em>Lean</em>/LPS, VDC y EVM, capaz de recalcular en vivo el avance físico y los indicadores de costo a partir de una única escritura del dato de campo, bajo arquitectura <em>offline-first</em> de costo cero.</p>
+
+<h3>3.2 Objetivos específicos</h3>
+<ul>
+<li><strong>OE1.</strong> Formalizar el principio de las <strong>tres fuentes únicas de la verdad</strong> y su flujo producción → avance → EVM.</li>
+<li><strong>OE2.</strong> Implementar el modelo EVM completo (BAC, PV, EV, AC con sus cuatro patas, GG, adicionales/deductivos, CPI/SPI/EAC/VAC) con un costo-hora único de S/ 25,50.</li>
+<li><strong>OE3.</strong> Operacionalizar el ciclo <em>Last Planner</em> (PPC/CNC) y la medición de productividad por cuadrilla (LUF, Pareto de TNC).</li>
+<li><strong>OE4.</strong> Integrar biometría facial para la captura automática de HH, funcionando sin conexión.</li>
+<li><strong>OE5.</strong> Garantizar el aislamiento de datos por proyecto y la operación a costo cero.</li>
+</ul>
+
+<h3>3.3 Hipótesis</h3>
+<blockquote>
+<p><strong>H1.</strong> Una arquitectura de fuente única que vincula el tareo con el cronograma y el EVM <strong>elimina la re-digitación</strong> y reduce la latencia de control de semanas a minutos.</p>
+<p><strong>H2.</strong> La captura biométrica de HH y el recálculo en vivo del valor ganado <strong>mejoran la confiabilidad y oportunidad</strong> del CPI/SPI frente al flujo manual mensual.</p>
+<p><strong>H3.</strong> El conjunto puede sostenerse a <strong>costo cero de operación</strong> y <em>offline-first</em>, condición necesaria para su adopción por MYPE constructoras.</p>
+</blockquote>
+
+<hr/>
+
+<h2>4. Metodología y arquitectura del sistema</h2>
+
+<h3>4.1 Las tres fuentes únicas de la verdad</h3>
+<p>El eje metodológico es la regla de oro: <em>cada dato se escribe una sola vez en su fuente y todos lo leen de ahí</em>. La plataforma define tres orígenes canónicos, cada uno con un responsable de escritura claro.</p>
+
+<table>
+<thead>
+<tr><th>Tema (verdad)</th><th>Colección (Firestore)</th><th>Quién escribe</th><th>Quién lee</th></tr>
+</thead>
+<tbody>
+<tr><td>Estructura de la obra + metas (WBS, metrado, IP meta)</td><td><code>Catalogo_WBS</code></td><td>Oficina Técnica / Planeamiento</td><td>Todo el sistema (vía <code>useCatalogoWBS</code>)</td></tr>
+<tr><td>Producción real de campo (tareo, metrado, HH)</td><td><code>Registros_Campo</code></td><td>Capataz (en obra)</td><td>Cronograma, RO, dashboards</td></tr>
+<tr><td>Plan de ejecución mensual y valorizado</td><td><code>PlanMaestro</code></td><td>Planeamiento / Costos</td><td><code>useRO</code>, Cronograma, <em>analytics</em></td></tr>
+</tbody>
+</table>
+
+<p>De estas fuentes se derivan colecciones de apoyo (<code>Cronogramas</code>, <code>Asistencia_Diaria</code>, <code>LPS</code>, <code>VDC_Restricciones</code>, <code>Cartas_Balance</code>, <code>Kardex_Movimientos</code>, etc.), pero ninguna duplica la verdad: solo la consumen o la registran en su dominio.</p>
+
+<h3>4.2 El flujo de datos: de la producción al tablero</h3>
+<p>Existen dos sentidos de circulación de la información. Hacia abajo se <em>planifica</em>; hacia arriba el campo <em>retroalimenta</em> el avance. La Figura 1 resume ambos sentidos y la posición de cada fuente única.</p>
+
+<figure>
+<div class="diagram">
+<pre>
+        DE ARRIBA HACIA ABAJO (se planea)
+   EditorWbsIsp ──► [Catalogo_WBS] ──► autoprograma.js ──► CronogramaPro+cpm.js
+                         │  (FUENTE 1)        (metrado×IP=HH)   (ES/EF/LS/LF, ruta crítica)
+                         │                                            │ escribe
+                         │                                            ▼
+                         │                                     [Cronogramas]
+                         │                                       │        │
+                         │                              LastPlannerPro   PlanDiario(F06)
+                         │                              (lookahead,PPC)  (programado vs real)
+                         ▼
+        =================================================================
+        DE ABAJO HACIA ARRIBA (el campo retroalimenta)
+
+   MarcadorAsistencia(rostro→HH)        Capataz.jsx + EditorActividad
+        │ escribe                            │ importa HH (match nombre)
+        ▼                                     ▼  escribe (UPSERT)
+   [Asistencia_Diaria] ───────────────►  [Registros_Campo]  (FUENTE 2 · "la sangre")
+                                              │  lee                  │ lee (onSnapshot)
+                                              ▼                       ▼
+                              CronogramaPro.sincronizarAvance   Ingeniero (CPI/SPI sem.)
+                              (% = metrado ejec ÷ metrado tot)        │
+                                              │                       ▼
+                                              ▼            useRO  ──►  [PlanMaestro] (FUENTE 3)
+                              planMaestroAnalytics.calcularROMensual()
+                              AC=HH×25.5+Kardex+Facturas+SC | EV | BAC | PV
+                              CPI=EV/AC  SPI=EV/PV  EAC=BAC/CPI  VAC=BAC−EAC
+                                              │ sube KPIs
+                                              ▼
+                              Dashboard / RO Oficial · WarRoom · Optimizador
+</pre>
+</div>
+<figcaption>Figura 1. Flujo bidireccional de la información sobre las tres fuentes únicas de la verdad: planificación (arriba→abajo) y retroalimentación de producción y costo (abajo→arriba).</figcaption>
+</figure>
+
+<h3>4.3 El modelo EVM implementado</h3>
+<p>El motor de cálculo (<code>planMaestroAnalytics.js</code>, función <code>calcularROMensual()</code>) itera <strong>solo sobre las partidas hoja</strong> del WBS y, para cada una, construye las magnitudes EVM. La Tabla 1 fija las fórmulas y la fuente de cada indicador.</p>
+
+<table>
+<thead>
+<tr><th>Indicador</th><th>Fórmula</th><th>Insumos (fuente)</th><th>Lectura</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>BAC</strong> (presupuesto a término)</td><td>metrado contractual × PU</td><td><code>PlanMaestro</code> (± <code>Adicionales</code>/<code>Deductivos</code>)</td><td>lo vendido</td></tr>
+<tr><td><strong>PV</strong> (valor planificado)</td><td>BAC × (días transcurridos ÷ días totales)</td><td>fechas programadas (<code>PlanMaestro</code>)</td><td>lo que debería ir gastado</td></tr>
+<tr><td><strong>EV</strong> (valor ganado)</td><td>valorización real al cliente, o avance × PU</td><td><code>ValorizacionesContractuales</code> o <code>Registros_Campo</code></td><td>lo realmente ganado</td></tr>
+<tr><td><strong>AC</strong> (costo real)</td><td>MO + Materiales + Subcontratos + Facturas (+ GG aparte)</td><td>4 patas (ver Tabla 2)</td><td>lo que de verdad costó</td></tr>
+<tr><td><strong>CPI</strong></td><td>EV ÷ AC</td><td>derivado</td><td>≥1 ahorro · &lt;0,85 crítico</td></tr>
+<tr><td><strong>SPI</strong></td><td>EV ÷ PV</td><td>derivado</td><td>≥1 adelantado · &lt;0,85 atrasado</td></tr>
+<tr><td><strong>EAC</strong></td><td>BAC ÷ CPI</td><td>derivado</td><td>costo final proyectado</td></tr>
+<tr><td><strong>VAC</strong></td><td>BAC − EAC</td><td>derivado</td><td>+ ganancia · − pérdida al cierre</td></tr>
+<tr><td><strong>CV</strong></td><td>EV − AC</td><td>derivado</td><td>margen en dinero hoy</td></tr>
+<tr><td><strong>SV</strong></td><td>EV − PV</td><td>derivado</td><td>adelanto/atraso en dinero hoy</td></tr>
+</tbody>
+</table>
+<figcaption><strong>Tabla 1.</strong> Indicadores EVM implementados, su fórmula y su fuente única de datos.</figcaption>
+
+<h4>4.3.1 El Costo Real (AC) y sus cuatro patas</h4>
+<p>El AC se compone de cuatro «patas» imputadas a la <strong>misma partida hoja</strong> (regla de cuadratura), más los Gastos Generales que se suman aparte por ser de nivel obra y no de partida.</p>
+
+<table>
+<thead>
+<tr><th>Pata</th><th>Concepto</th><th>Fuente (colección)</th><th>Fórmula</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>1</strong></td><td>Mano de obra (MO)</td><td><code>Registros_Campo</code> (tareos, HH)</td><td>Σ(HH) × 25,5</td></tr>
+<tr><td><strong>2</strong></td><td>Materiales</td><td><code>Kardex_Movimientos</code> (solo <code>SALIDA</code>)</td><td>Σ(costoTotal) por partida</td></tr>
+<tr><td><strong>3</strong></td><td>Facturas (proveedores)</td><td><code>Registro_Facturas</code></td><td>Σ(montoSinIGV), no anuladas</td></tr>
+<tr><td><strong>4</strong></td><td>Subcontratos (F10)</td><td><code>ValorizacionesSubcontratistas</code></td><td>Σ(cdValorizado) por partida</td></tr>
+<tr><td><em>aparte</em></td><td>Gastos Generales (GG)</td><td><code>GG_Oficina</code></td><td>Σ(monto) vigentes — no va a partida</td></tr>
+</tbody>
+</table>
+<figcaption><strong>Tabla 2.</strong> Las cuatro patas del Costo Real (AC) más los Gastos Generales.</figcaption>
+
+<div class="callout">
+<p><strong>Costo-hora único.</strong> Toda la mano de obra se costea con una tarifa única <code>COSTO_HORA_RO = 25.5</code> S/h, igual para Capataz, Operario, Oficial y Ayudante. Esto hace que el AC cuadre con el Control de Tareos oficial. Las tarifas por cargo solo se usan en el APU <em>teórico</em>, nunca en el costo real.</p>
+</div>
+
+<p>El hook <code>useRO</code> orquesta el cálculo abriendo suscripciones en vivo (<code>onSnapshot</code>) sobre <strong>once colecciones</strong> en paralelo; cada cambio re-dispara el motor sin recargar la página. La Figura 2 muestra la convergencia de los caños de datos hacia el «tanque central» y las tres vistas de salida.</p>
+
+<figure>
+<div class="diagram">
+<pre>
+   ====== DATOS QUE ENTRAN (11 colecciones, ya aisladas por proyecto) ======
+  ┌────────────┐ ┌──────┐ ┌────────────────┐ ┌───────────────────┐
+  │PlanMaestro │ │ APUs │ │ Registros_Campo│ │ Kardex_Movimientos│
+  │(WBS,PU,fech)│ │teóric│ │ (TAREOS→pata 1)│ │ (SALIDA→pata 2)  │
+  └─────┬──────┘ └──┬───┘ └───────┬────────┘ └─────────┬─────────┘
+  ┌─────┴──────┐ ┌──┴────────┐ ┌──┴──────────────┐ ┌───┴─────────┐
+  │Valorizac.  │ │Registro_  │ │Valorizaciones   │ │ GG_Oficina  │
+  │Contractuales│ │Facturas   │ │Subcontratistas  │ │ (no a       │
+  │(→ EV real) │ │(→ pata 3) │ │(F10 → pata 4)   │ │  partida)   │
+  └─────┬──────┘ └──┬────────┘ └──┬──────────────┘ └───┬─────────┘
+  ┌─────┴──────┐ ┌──┴────────┐    │                    │
+  │Adicionales │ │Deductivos │    │  (+ Historial, hoy de respaldo)
+  │(F05 → +BAC)│ │(F05 → −BAC)│   │                    │
+  └─────┬──────┘ └──┬────────┘    │                    │
+        └──────┬────┴──────┬──────┴─────────┬──────────┘
+               ▼           ▼                ▼
+        ============= TANQUE CENTRAL: useRO() =============
+        onSnapshot en 11 colecciones · contador 11→0 · loading=false
+               │ entrega los 11 arrays YA FILTRADOS
+               ▼
+        ====== MOTOR: calcularROMensual() (por partida hoja) ======
+        AC(4 patas) · BAC=metrado×PU · EV · PV · CPI·SPI·EAC·VAC · severidad
+               │ retorna objeto "ro"
+               ▼
+   ┌────────────────────┐ ┌─────────────────────┐ ┌──────────────────┐
+   │ RO Oficial (F06)   │ │ Control Registros CR │ │ ROFrentes        │
+   │ tabla EVM + KPIs   │ │ AC en sus 4 patas +  │ │ compara F1 vs F2 │
+   │ + PDF              │ │ importador Excel/CSV │ │ (GG no se reparte)│
+   └────────────────────┘ └─────────────────────┘ └──────────────────┘
+</pre>
+</div>
+<figcaption>Figura 2. Arquitectura del cálculo del Resultado Operativo (EVM): once colecciones convergen en <code>useRO</code>, el motor calcula por partida hoja y entrega tres vistas. Todo recalcula en vivo ante cualquier cambio.</figcaption>
+</figure>
+
+<h4>4.3.2 Ajustes contractuales y márgenes</h4>
+<p>Los cambios de orden formalizados (formato F05) ajustan el contrato: un <strong>adicional</strong> incrementa BAC y EV; un <strong>deductivo</strong> los reduce.</p>
+<div class="diagram">
+<pre>
+bacContractual = BAC base + Σ(adicionales) − Σ(deductivos)
+evContractual  = EV  base + Σ(adic. valorizado) − Σ(deduc. valorizado)
+margenReal(con GG) = (EV − (AC + GG)) ÷ EV × 100
+</pre>
+</div>
+<p>La <strong>severidad</strong> por partida actúa como semáforo de salud: <em>crítica</em> si margen &lt; 0; <em>alta</em> si margen &lt; 50 % de la meta; <em>media</em> si margen &lt; meta (15 %); el resto es sana o «estrella».</p>
+
+<h3>4.4 Last Planner: PPC y causas de no cumplimiento</h3>
+<p>El módulo de planificación intermedia genera el <em>lookahead</em> de cuatro semanas a partir de las tareas CPM del cronograma y registra los compromisos semanales en la colección <code>LPS</code>. El indicador se calcula como:</p>
+<div class="diagram">
+<pre>
+PPC = compromisos cumplidos ÷ compromisos totales × 100
+RNC → Pareto de causas (MO, MAT, EQ, ING, CLIMA…) que suman el 80 %
+</pre>
+</div>
+<p>La ejecución de restricciones (destrabe) vive en <code>VDC_Restricciones</code> con estados <em>pendiente → en progreso → liberada</em>, y el cierre semanal produce el Pareto de razones de no cumplimiento. A nivel de cuadrilla, la <strong>Carta Balance</strong> alimenta el <em>War Room</em>: <code>LUF = (horas trabajadas − horas observadas) ÷ horas trabajadas × 100</code> y el <code>TNC %</code> (trabajo no conforme) ordenan el ranking de causas y disparan recomendaciones de composición de cuadrilla (optimizador <em>greedy</em>).</p>
+
+<h3>4.5 Biometría facial para captura de HH</h3>
+<p>El registro de horas-hombre, históricamente la fuente de mayor error y fricción, se automatiza con reconocimiento facial que corre <strong>íntegramente en el dispositivo</strong>. La ficha resume el subsistema.</p>
+
+<div class="ficha">
+<p><strong>ENTRA</strong> — Rostro en vivo del trabajador (cámara) + hora del sistema; personal enrolado con <code>faceDescriptors</code>.</p>
+<p><strong>SE PROCESA</strong> — <strong>Enrolamiento</strong> de 5 fotografías por persona (antes 3), desde ángulos distintos, calculando descriptores de <strong>128 dimensiones</strong> que se promedian en una huella biométrica robusta. En el marcado: similitud facial ≥ <strong>75 %</strong>, <em>cooldown</em> de 12 s, entrada de tareo fija a 07:30 (la hora real se guarda en <code>entradaReal</code> para puntualidad) y salida redondeada a la hora en punto hacia abajo; <code>horasTrabajadas = (salida − 07:30) − 60 min de descanso</code>.</p>
+<p><strong>SALE</strong> — <code>Asistencia_Diaria</code> con entrada/salida real y normalizada y <code>horasTrabajadas</code>; el capataz importa esas HH al tareo por coincidencia de nombre.</p>
+</div>
+
+<p>El cómputo de descriptores y la comparación se realizan con modelos de IA cargados localmente, sin enviar imágenes a un servicio externo; esto preserva la <strong>privacidad</strong>, elimina costo de inferencia en nube y permite operar <strong>sin conexión</strong>. El enrolamiento está aislado por proyecto: la identidad biométrica de una obra no se mezcla con la de otra.</p>
+
+<h3>4.6 PWA <em>offline-first</em> y aislamiento multiproyecto</h3>
+<p>La plataforma es una <em>Progressive Web App</em> con persistencia local (IndexedDB) y <em>service worker</em>: el capataz captura el tareo aunque no haya señal y la información se sincroniza cuando la conectividad vuelve. El <strong>aislamiento por proyecto</strong> se logra con un contexto activo (<code>proyectoActivoId</code> + <code>frenteActivoId</code>) y un filtro de cliente (<code>filtrarPorContexto</code>) que asegura que cada usuario <em>solo vea y escriba</em> su propia obra; los registros legacy sin identificador de proyecto se atribuyen al proyecto por defecto <code>creditex-ptar</code>.</p>
+
+<h3>4.7 Costo cero de operación</h3>
+<p>El diseño excluye deliberadamente todo servicio facturable del proveedor de nube (planes de pago por uso, motores de inferencia gestionados, contenedores administrados). El reconocimiento facial corre en el cliente; el cómputo EVM es matemática pura en el navegador; y la persistencia usa el plan gratuito de la base de datos en tiempo real con cuotas suficientes para una obra. Así se sostiene la condición de adopción por MYPE: <strong>sin tarjeta y sin factura recurrente</strong>.</p>
+
+<hr/>
+
+<h2>5. Implementación</h2>
+
+<h3>5.1 Stack tecnológico</h3>
+<p>El cliente es una aplicación <strong>React</strong> empaquetada como PWA; la persistencia, autenticación, almacenamiento de imágenes y la sincronización en tiempo real se apoyan en <strong>Firebase</strong> (Firestore con persistencia <em>offline</em>, Storage y Hosting). El reconocimiento facial usa una biblioteca de detección y descriptores faciales ejecutada en el navegador. La generación de reportes (PDF del RO) se hace en cliente. Para sostener el rendimiento, los <em>chunks</em> pesados (PDF, modelos faciales, hojas de cálculo) se aíslan y no se precargan.</p>
+
+<h3>5.2 Módulos principales</h3>
+<ul>
+<li><strong>Planeamiento:</strong> <code>EditorWbsIsp</code> (catálogo WBS), <code>autoprograma.js</code> (genera el cronograma desde metrados), <code>CronogramaPro</code> + <code>cpm.js</code> (CPM, línea base, Curva S, <code>sincronizarAvance</code>).</li>
+<li><strong>Last Planner / VDC:</strong> <code>LastPlannerPro</code> (lookahead, PPC, CNC), <code>VDC.jsx</code> (restricciones, Pareto RNC), <code>PullPlanning</code> y <code>SectorizacionTren</code> (tren Lean).</li>
+<li><strong>Producción:</strong> <code>Capataz.jsx</code> + <code>EditorActividad</code> (tareo y registro real), <code>MarcadorAsistencia</code> y <code>EnrolamientoFacial</code> (biometría).</li>
+<li><strong>Costos / RO:</strong> <code>useRO.js</code> (orquestador de 11 colecciones), <code>planMaestroAnalytics.js</code> (motor EVM/RO/Curva S), <code>ResultadoOperativoOficial</code> (F06), <code>ControlRegistros</code> (desglose del AC e importador Excel/CSV), <code>ROFrentes</code> (comparativa por frente).</li>
+<li><strong>Productividad:</strong> <code>WarRoomCuadrillas</code> (LUF, TNC, Pareto) y <code>OptimizadorCuadrillas</code> (composición óptima).</li>
+</ul>
+
+<h3>5.3 El viaje de un dato (resumen operativo)</h3>
+<ol>
+<li>El marcador facial registra entrada/salida en <code>Asistencia_Diaria</code>.</li>
+<li>El capataz crea actividades, define WBS + metrado e <strong>importa las HH</strong> desde la asistencia (coincidencia por nombre); adjunta fotos.</li>
+<li>Al pulsar «Subir» se escribe (UPSERT) en <code>Registros_Campo</code>.</li>
+<li>El cronograma <strong>sincroniza el % de avance</strong> automáticamente (metrado ejecutado ÷ metrado total).</li>
+<li><code>useRO</code> carga las 11 colecciones y <code>planMaestroAnalytics</code> calcula CPI, SPI, EAC y márgenes.</li>
+<li>Los semáforos suben al Dashboard; el ciclo se repite cada día.</li>
+</ol>
+
+<hr/>
+
+<h2>6. Resultados y discusión</h2>
+
+<h3>6.1 Caso de aplicación: CREDITEX–PTAR</h3>
+<p>La plataforma se validó en la ejecución de una <strong>planta de tratamiento de aguas residuales (PTAR)</strong> para el cliente CREDITEX, organizada en frentes (PTARI y nave). El proyecto sirvió como banco de pruebas completo del flujo producción → avance → EVM y como base de datos por defecto del sistema (<code>creditex-ptar</code>).</p>
+
+<div class="kpi-grid">
+<div class="kpi"><span class="kpi-num">~1 104</span><span class="kpi-lbl">registros de producción trazados (<code>Registros_Campo</code>)</span></div>
+<div class="kpi"><span class="kpi-num">11</span><span class="kpi-lbl">colecciones integradas en vivo para el RO</span></div>
+<div class="kpi"><span class="kpi-num">S/ 25,50</span><span class="kpi-lbl">costo-hora único de MO para todo el costeo</span></div>
+<div class="kpi"><span class="kpi-num">5 fotos</span><span class="kpi-lbl">enrolamiento facial · umbral 75 %</span></div>
+</div>
+
+<h3>6.2 Integración y eliminación de la re-digitación (H1)</h3>
+<p>El resultado central es cualitativo y estructural: con la fuente única <code>Registros_Campo</code>, una sola escritura del tareo alimenta simultáneamente el avance del cronograma (vía <code>sincronizarAvance</code>), el costo de mano de obra (pata 1 del AC) y el valor ganado estimado (avance × PU). Se eliminó la triple digitación tradicional (parte de campo → cronograma → costos) y, con ella, las discrepancias entre verdades paralelas. El recálculo es <strong>en vivo</strong>: cualquier tareo, salida de almacén o factura importada dispara <code>onSnapshot</code> y el RO se recompone sin recargar, llevando la latencia de control de la escala mensual a la de minutos.</p>
+
+<h3>6.3 Indicadores EVM y productividad por cuadrilla (H2)</h3>
+<p>Sobre los ~1 104 registros, el sistema produjo de forma automática el CPI y el SPI por partida y globales, con codificación cromática (CPI ≥ 1 verde; 0,9–1 naranja; &lt; 0,9 rojo) y la clasificación de severidad que distingue <em>partidas estrella</em> de <em>partidas críticas</em>. El IP real (HH ÷ metrado) por actividad se contrastó contra el IP meta del catálogo, habilitando la regla de control de calidad del dato: cuando el IP real supera el meta en más de 5 %, el sistema obliga a observación y fotografía. A nivel de cuadrilla, el <em>War Room</em> calculó el LUF y el Pareto de TNC, y el optimizador recomendó composiciones de cuadrilla a partir del histórico de productividad. La biometría facial, al fijar las HH desde la asistencia real, mejoró la confiabilidad del insumo más sensible del CPI.</p>
+
+<h3>6.4 Costo cero y operación sin señal (H3)</h3>
+<p>La obra operó con captura <em>offline-first</em>: el tareo se registró en el frente sin depender de la conectividad y se sincronizó al recuperar señal. No se incurrió en servicios facturables de nube: el reconocimiento facial y el cómputo EVM corrieron en el cliente. Esto confirma la viabilidad del modelo de costo cero como condición de adopción.</p>
+
+<h3>6.5 Discusión</h3>
+<p>Los resultados respaldan que el desacople histórico entre LPS, VDC y EVM —señalado en §2.5— es, en gran medida, un problema de <strong>arquitectura del dato</strong> más que de teoría. Al imponer la fuente única y la imputación a la partida hoja (regla de cuadratura), el valor ganado deja de estimarse a destiempo y pasa a derivarse del mismo acto productivo que el capataz ya realiza. El enfoque dialoga con la visión <em>Lean</em> de reducir desperdicio de información [Koskela, 2000] y con la exigencia EVM de datos consistentes [Fleming &amp; Koppelman, 2010]: la confiabilidad del flujo que persigue el LPS [Ballard, 2000] se vuelve, aquí, también la confiabilidad de la métrica de costo.</p>
+
+<hr/>
+
+<h2>7. Limitaciones</h2>
+<ul>
+<li><strong>Validación de un solo caso.</strong> Los resultados provienen de una obra (CREDITEX–PTAR); se requieren réplicas para establecer generalidad estadística.</li>
+<li><strong>EV estimado.</strong> Cuando no existe valorización contractual real, el EV se aproxima por avance × PU (<code>evReal=false</code>); el indicador es entonces un <em>proxy</em>, no el valor ganado certificado.</li>
+<li><strong>SPI clásico.</strong> El SPi basado en costo pierde sensibilidad cerca del cierre; integrar <em>Earned Schedule</em> [Lipke, 2003] queda pendiente.</li>
+<li><strong>Pata de Equipos.</strong> El AC contempla cuatro patas activas; el costo de equipos aún se trata como 0 (fase siguiente).</li>
+<li><strong>Biometría.</strong> El reconocimiento facial depende de iluminación y calidad de cámara; el umbral del 75 % equilibra falsos positivos/negativos, pero requiere buen enrolamiento.</li>
+<li><strong>Calidad del dato origen.</strong> La cuadratura del AC exige imputar las cuatro patas a la misma partida hoja; errores de imputación rompen el cruce.</li>
+</ul>
+
+<hr/>
+
+<h2>8. Conclusiones y trabajo futuro</h2>
+<p>Se presentó GRAPCO 2026, una plataforma que integra <em>Lean</em>/LPS, VDC y EVM sobre el principio de <strong>tres fuentes únicas de la verdad</strong>, con arquitectura <em>offline-first</em> de costo cero y biometría facial para la captura de HH. La validación en el caso CREDITEX–PTAR (~1 104 registros) muestra que una sola escritura del tareo del capataz alimenta, sin re-digitación, el avance del cronograma y el cálculo del valor ganado, recalculado en vivo. Las tres hipótesis se sostienen: se eliminó la re-digitación y se redujo la latencia de control (H1); la biometría y el recálculo en vivo mejoraron la oportunidad del CPI/SPI (H2); y el conjunto operó a costo cero y sin señal (H3).</p>
+<p><strong>Trabajo futuro:</strong> (i) incorporar <em>Earned Schedule</em> para robustecer el control de cronograma; (ii) activar la pata de equipos en el AC; (iii) ligar el modelo BIM 4D/5D al avance sincronizado para visualización 5D en vivo; (iv) replicar el estudio en una cartera de obras para cuantificar estadísticamente los beneficios; y (v) explorar predicción de productividad por cuadrilla a partir del histórico de Cartas Balance.</p>
+
+<hr/>
+
+<h2>Referencias</h2>
+<ol>
+<li>Ballard, G. (2000). <em>The Last Planner System of Production Control</em> (Tesis doctoral). University of Birmingham, Reino Unido.</li>
+<li>Ballard, G., &amp; Howell, G. (2003). An update to the Last Planner. <em>Proceedings of the 11th Annual Conference of the International Group for Lean Construction (IGLC-11)</em>, Virginia, EE. UU.</li>
+<li>Koskela, L. (1992). <em>Application of the New Production Philosophy to Construction</em> (CIFE Technical Report 72). Stanford University, EE. UU.</li>
+<li>Koskela, L. (2000). <em>An Exploration Towards a Production Theory and its Application to Construction</em> (Tesis doctoral). VTT Technical Research Centre of Finland, Espoo.</li>
+<li>Kunz, J., &amp; Fischer, M. (2012). <em>Virtual Design and Construction: Themes, Case Studies and Implementation Suggestions</em> (CIFE Working Paper 097). Stanford University, EE. UU.</li>
+<li>Fleming, Q. W., &amp; Koppelman, J. M. (2010). <em>Earned Value Project Management</em> (4.ª ed.). Project Management Institute, Newtown Square, PA.</li>
+<li>Project Management Institute. (2017). <em>A Guide to the Project Management Body of Knowledge (PMBOK Guide)</em> (6.ª ed.). PMI, Newtown Square, PA.</li>
+<li>Anbari, F. T. (2003). Earned Value Project Management Method and Extensions. <em>Project Management Journal</em>, 34(4), 12–23.</li>
+<li>Lipke, W. (2003). Schedule is different. <em>The Measurable News</em>, College of Performance Management, primavera/verano, 31–34.</li>
+<li>Eastman, C., Teicholz, P., Sacks, R., &amp; Liston, K. (2011). <em>BIM Handbook: A Guide to Building Information Modeling for Owners, Managers, Designers, Engineers and Contractors</em> (2.ª ed.). Wiley, Hoboken, NJ.</li>
+<li>Sacks, R., Eastman, C., Lee, G., &amp; Teicholz, P. (2018). <em>BIM Handbook</em> (3.ª ed.). Wiley, Hoboken, NJ.</li>
+<li>Serpell, A. (2002). <em>Administración de operaciones de construcción</em> (2.ª ed.). Alfaomega — Ediciones Universidad Católica de Chile, Santiago.</li>
+<li>Ghio Castillo, V. (2001). <em>Productividad en obras de construcción: diagnóstico, crítica y propuesta</em>. Fondo Editorial de la Pontificia Universidad Católica del Perú, Lima.</li>
+<li>Howell, G. A. (1999). What is Lean Construction. <em>Proceedings of the 7th Annual Conference of the International Group for Lean Construction (IGLC-7)</em>, Berkeley, CA, 1–10.</li>
+<li>Womack, J. P., &amp; Jones, D. T. (2003). <em>Lean Thinking: Banish Waste and Create Wealth in Your Corporation</em> (ed. revisada). Free Press, Nueva York.</li>
+<li>Kerzner, H. (2017). <em>Project Management: A Systems Approach to Planning, Scheduling, and Controlling</em> (12.ª ed.). Wiley, Hoboken, NJ.</li>
+<li>Hamzeh, F., Ballard, G., &amp; Tommelein, I. D. (2012). Rethinking Lookahead Planning to Optimize Construction Workflow. <em>Lean Construction Journal</em>, 2012, 15–34.</li>
+<li>King, D. E. (2009). Dlib-ml: A Machine Learning Toolkit. <em>Journal of Machine Learning Research</em>, 10, 1755–1758.</li>
+</ol>
+
+<hr/>
+
+<p><em>Declaración de los autores.</em> El sistema descrito fue desarrollado por Valtana Consulting para GRAPCO S.A.C. y validado en obra real. Los nombres de módulos en <code>código</code> y de colecciones corresponden a la implementación de producción de la plataforma GRAPCO 2026.</p></main></body></html>

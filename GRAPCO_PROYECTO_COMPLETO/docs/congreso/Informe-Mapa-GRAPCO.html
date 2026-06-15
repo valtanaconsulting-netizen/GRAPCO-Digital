@@ -1,0 +1,1965 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Mapa de la Información — GRAPCO 2026</title>
+<style>:root{--navy:#0B1F39;--navy2:#0F2A47;--gold:#E5A82F;--goldd:#C8901F;--ink:#1c2733;--muted:#5b6b7f;--line:#e3e9f0;--soft:#f6f9fc;}
+*{box-sizing:border-box}html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.55;margin:0;background:#fff;font-size:13px}
+main{max-width:900px;margin:0 auto;padding:20px 34px 70px}
+.brand{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;padding:28px 34px;border-bottom:5px solid var(--gold)}
+.brand .kicker{color:var(--gold);font-weight:800;letter-spacing:2px;font-size:11px;text-transform:uppercase}
+.brand h1{margin:6px 0 3px;font-size:27px;line-height:1.15;color:#fff;border:none;padding:0}
+.brand .sub{opacity:.9;font-size:13px}.brand .meta{margin-top:12px;font-size:11px;opacity:.72}
+h1,h2,h3,h4{color:var(--navy);line-height:1.22}
+main h1{font-size:22px;border-bottom:3px solid var(--gold);padding-bottom:6px;margin-top:34px}
+h2{font-size:18px;margin-top:30px;border-left:5px solid var(--gold);padding-left:11px}
+h3{font-size:15px;margin-top:20px;color:var(--navy2)}h4{font-size:13px;margin-top:15px;color:var(--goldd)}
+p{margin:8px 0}code{font-family:Consolas,'Cascadia Mono',monospace;background:#eef2f7;color:#0b3b66;padding:1px 5px;border-radius:4px;font-size:.88em}
+strong{color:var(--navy)}a{color:#0b66c2}
+table{border-collapse:collapse;width:100%;margin:12px 0;font-size:12px}
+th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
+thead th{background:var(--navy);color:#fff;font-size:11px;letter-spacing:.3px}
+tbody tr:nth-child(even){background:var(--soft)}
+blockquote,.callout{background:var(--soft);border-left:5px solid var(--gold);padding:10px 16px;margin:14px 0;border-radius:0 8px 8px 0}
+blockquote p{margin:5px 0}ul,ol{margin:8px 0 8px 2px;padding-left:24px}li{margin:4px 0}
+hr{border:none;border-top:1px dashed var(--line);margin:22px 0}
+.diagram{background:#0b1f39;border-radius:10px;padding:12px 14px;margin:14px 0;overflow-x:auto}
+.diagram pre{margin:0;color:#e8eef6;font-family:Consolas,'Cascadia Mono',monospace;font-size:9px;line-height:1.25;white-space:pre}
+.ficha{border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:8px;padding:10px 15px;margin:12px 0;background:#fff}
+.kpi-grid{display:flex;flex-wrap:wrap;gap:12px;margin:14px 0}
+.kpi{flex:1 1 130px;background:var(--soft);border:1px solid var(--line);border-top:4px solid var(--gold);border-radius:8px;padding:12px;text-align:center}
+.kpi-num{display:block;font-size:24px;font-weight:900;color:var(--navy)}
+.kpi-lbl{display:block;font-size:11px;color:var(--muted);margin-top:3px}
+figure{margin:16px 0;text-align:center}figcaption{font-size:11px;color:var(--muted);margin-top:6px;font-style:italic}
+.printbtn{position:fixed;top:14px;right:14px;z-index:99;background:var(--gold);color:var(--navy);border:none;padding:10px 16px;border-radius:8px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25);font-family:inherit}
+@media print{.no-print{display:none!important}main{max-width:none;padding:0 4mm}.brand{padding:16px 8mm}
+.diagram{break-inside:avoid}.diagram pre{font-size:7px}.ficha,table,figure,.kpi-grid{break-inside:avoid}h2,h3,h4{break-after:avoid}
+@page{size:A4;margin:12mm 0}}
+</style></head><body>
+<button class="printbtn no-print" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+<header class="brand"><div class="kicker">Informe técnico · Mapa de la información</div><h1>Mapa de la Información — GRAPCO 2026</h1><div class="sub">Cómo viaja un dato: de la obra al tablero (Producción · Planeamiento · Costos)</div>
+<div class="meta">Valtana Consulting · GRAPCO S.A.C. · Plataforma de Gestión de Proyectos VDC · 2026-06-15</div></header>
+<main><h1>🗺️ MAPA DE LA INFORMACIÓN — GRAPCO 2026</h1>
+<h3>Cómo viaja un dato: de la obra al tablero (Producción · Planeamiento · Costos)</h3>
+
+<blockquote>
+<p><strong>Para qué sirve este documento.</strong> Es un mapa para <em>explicarle a cualquier trabajador</em> de dónde sale y a dónde llega cada número de la plataforma. No hace falta saber programar: cada módulo tiene una ficha <strong>ENTRA → SE PROCESA → SALE</strong> y se indica <strong>de qué módulo/base de datos jala</strong> cada dato. Los nombres en <code>código</code> son los módulos reales (archivos) y las <strong>COLECCIONES</strong> son las "carpetas" de la base de datos (Firestore).</p>
+
+<p><strong>Las 3 fuentes únicas de la verdad</strong> (todo nace de aquí):</p>
+
+<table>
+<thead>
+<tr>
+<th>Qué</th>
+<th>Colección</th>
+<th>Quién la llena</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Estructura de la obra + metas (WBS, metrado, IP meta)</td>
+<td><code>Catalogo_WBS</code></td>
+<td>Oficina Técnica / Planeamiento</td>
+</tr>
+<tr>
+<td>Lo que de verdad se hizo en el campo (tareo, metrado, horas)</td>
+<td><code>Registros_Campo</code></td>
+<td>Capataz (en obra)</td>
+</tr>
+<tr>
+<td>El plan de ejecución mensual y valorizado</td>
+<td><code>PlanMaestro</code></td>
+<td>Planeamiento / Costos</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>Regla de oro:</strong> un dato se escribe <strong>una sola vez en su fuente</strong> y todos los tableros lo <strong>leen</strong> de ahí. Así nunca hay dos verdades.</p>
+
+<p><strong>Cómo está organizado:</strong> <strong>PARTE A</strong> = Producción & Planeamiento (cómo se planea y cómo el campo retroalimenta el avance). <strong>PARTE B</strong> = Costos, Resultado Operativo y Valorizaciones (de dónde jala cada sol).</p>
+</blockquote>
+
+<hr>
+
+<h1>MAPA DEL FLUJO DE INFORMACIÓN — PARTE A</h1>
+<h2>PRODUCCIÓN & PLANEAMIENTO (Plataforma GRAPCO 2026)</h2>
+
+<blockquote>
+<p><strong>¿Qué es esto?</strong> Un mapa que muestra el "viaje" de un dato desde que el capataz lo escribe en la obra hasta que se convierte en un semáforo (verde/rojo) en el tablero del ingeniero. Está escrito para que cualquier trabajador entienda <strong>de dónde sale</strong> y <strong>a dónde llega</strong> cada número, sin perder los nombres reales de los módulos y las colecciones de la base de datos (Firestore).</p>
+</blockquote>
+
+<hr>
+
+<h2>0. LA IDEA EN UNA FRASE</h2>
+
+<p>La obra funciona como un <strong>cuerpo humano</strong>:</p>
+<ul>
+<li>El <strong>cerebro que planifica</strong> (Catálogo WBS + Cronograma) decide qué hacer y cuándo.</li>
+<li>Las <strong>manos que trabajan</strong> (Capataz + Marcador facial) registran lo que de verdad pasó.</li>
+<li>La <strong>sangre</strong> que lleva la información de las manos al cerebro es la colección <strong><code>Registros_Campo</code></strong> (los tareos).</li>
+<li>El <strong>panel de control</strong> (RO / Dashboard del Ingeniero) lee la sangre y enciende semáforos.</li>
+</ul>
+
+<p>Hay dos sentidos de circulación:</p>
+<ol>
+<li><strong>DE ARRIBA HACIA ABAJO (se planea):</strong> Catálogo WBS → Cronograma CPM → Last Planner → Plan Diario.</li>
+<li><strong>DE ABAJO HACIA ARRIBA (se retroalimenta):</strong> Tareos del campo → avance % automático → Curva S → CPI/SPI → alertas.</li>
+</ol>
+
+<hr>
+
+<h2>1. DIAGRAMA DE FLUJO EN BLOQUES (ASCII)</h2>
+
+<h3>1.1 Planificación (DE ARRIBA HACIA ABAJO)</h3>
+
+<div class="diagram"><pre>   +-------------------------------+
+   |  EditorWbsIsp.jsx             |   El ingeniero ingresa partidas,
+   |  (Catálogo WBS - Editor)      |   subpartidas, actividades,
+   |  ENTRA: nombres, metrados, IP |   metrados e IP meta.
+   +---------------+---------------+
+                   |  escribe
+                   v
+   +-------------------------------+
+   |  COLECCIÓN: Catalogo_WBS/      |  <==== FUENTE ÚNICA de la estructura
+   |  {proyectoId}                 |        (INFO_MAP, CATALOGO_MASTER)
+   +---------------+---------------+
+                   | lee (useCatalogoWBS hook)
+                   v
+   +-------------------------------+
+   |  autoprograma.js              |   Convierte metrados -> HH ->
+   |  (Generador automático)       |   duración por cuadrilla ->
+   |  metrado x IP = HH            |   tren SS+lag
+   +---------------+---------------+
+                   |  genera tareas
+                   v
+   +-------------------------------+        +------------------------+
+   |  CronogramaPro.jsx + cpm.js   |------->| Curva S (program. vs   |
+   |  (CPM: ES/EF/LS/LF, ruta      |        | baseline vs real)      |
+   |   crítica, holguras, baseline)|        +------------------------+
+   +---------------+---------------+
+                   |  escribe
+                   v
+   +-------------------------------+
+   |  COLECCIÓN: Cronogramas/       |  <==== FUENTE ÚNICA del cronograma
+   |  {proyectoId}                 |
+   +-------+---------------+-------+
+           | lee           | lee
+           v               v
+  +-----------------+   +-----------------------+
+  | LastPlannerPro  |   | PlanDiario.jsx        |
+  | (LOOKAHEAD 4sem,|   | (rubro-responsable:   |
+  |  plan semanal,  |   |  metrado x IP = HH    |
+  |  PPC, CNC)      |   |  programado)          |
+  +--------+--------+   +-----------------------+
+           | escribe
+           v
+  +-----------------+      +------------------------+
+  | LPS/{proyectoId}|<---->| VDC.jsx                |
+  | (compromisos,   |      | (VDC_Restricciones,    |
+  |  PPC, causas)   |      |  cierre semanal,       |
+  +-----------------+      |  Pareto RNC)           |
+                          +------------------------+</pre></div>
+
+<h3>1.2 Producción del campo y retroalimentación (DE ABAJO HACIA ARRIBA)</h3>
+
+<div class="diagram"><pre>   +----------------------------+        +-----------------------------+
+   | MarcadorAsistencia.jsx     |        | Capataz.jsx + EditorActividad|
+   | (cámara, rostro -> HH)     |        | (cuadrilla, WBS, metrado,    |
+   | ENTRA: rostro + hora       |        |  HN/HE por trabajador)       |
+   +-------------+--------------+        +--------------+--------------+
+                 | escribe                              | importa HH (match nombre)
+                 v                                      |
+   +----------------------------+                       |
+   | COLECCIÓN: Asistencia_Diaria| <---------------------+
+   | (entrada/salida real +     |
+   |  normalizada, horasTrabaj.)|
+   +----------------------------+
+                                                        | escribe (UPSERT)
+                                                        v
+                                  +----------------------------------------+
+                                  | COLECCIÓN: Registros_Campo             | <=== LA "SANGRE"
+                                  | {fecha, semana, partida, actividad,    |      Fuente ÚNICA de
+                                  |  metrado, totalHH, ipReal,             |      metrado + HH reales
+                                  |  detalleTareo[], fotos[], proyectoId}  |
+                                  +-----+------------------+---------------+
+                                        | lee              | lee (onSnapshot)
+                                        v                  v
+              +--------------------------------+   +---------------------------+
+              | CronogramaPro.sincronizarAvance|   | Ingeniero.jsx             |
+              | % = metrado ejec / metrado tot |   | (auditoría, CPI/SPI sem., |
+              | (RETROALIMENTA el cronograma)  |   |  IP real vs meta, fotos)  |
+              +--------------------------------+   +-------------+-------------+
+                                                                 |
+                                                                 v
+   +-----------------------------------------------------------------------------+
+   | useRO.js (hook) carga 11 COLECCIONES en paralelo:                           |
+   | PlanMaestro · APUs · Registros_Campo · Kardex_Movimientos ·                 |
+   | ValorizacionesContractuales · Registro_Facturas ·                          |
+   | ValorizacionesSubcontratistas · GG_Oficina · Adicionales · Deductivos      |
+   +------------------------------------+----------------------------------------+
+                                        | llama
+                                        v
+   +-----------------------------------------------------------------------------+
+   | planMaestroAnalytics.js -> calcularROMensual() / calcularEVM()              |
+   | AC = HHx25.5 + Kardex + Facturas + SC | EV = valorizado o avance x PU       |
+   | BAC = metrado x PU | CPI = EV/AC | SPI = EV/PV | EAC = BAC/CPI              |
+   +------------------------------------+----------------------------------------+
+                                        | sube KPIs
+                                        v
+   +----------------------------+   +----------------------------+
+   | Dashboard / RO Oficial     |   | WarRoomCuadrillas.jsx      |
+   | (CPI/SPI, margen, severidad)|   | (lee Cartas_Balance ->     |
+   +----------------------------+   |  LUF, Pareto TNC)          |
+                                    +-------------+--------------+
+                                                  v
+                                    +----------------------------+
+                                    | OptimizadorCuadrillas.jsx  |
+                                    | (greedy -> cuadrilla óptima)|
+                                    +----------------------------+</pre></div>
+
+<hr>
+
+<h2>2. MINI-FICHAS POR MÓDULO (ENTRA → SE PROCESA → SALE)</h2>
+
+<blockquote>
+<p>Cada ficha dice qué <strong>entra</strong> (input), qué <strong>cálculo</strong> se hace, qué <strong>sale</strong> (output), y <strong>de dónde jala</strong> cada dato (colección Firestore).</p>
+</blockquote>
+
+<h3>2.1 PLANEAMIENTO (se define la obra)</h3>
+
+<hr>
+
+<h4>🧱 Catálogo WBS — Editor (<code>EditorWbsIsp.jsx</code>)</h4>
+<p><em>Es el "plano maestro": aquí se define TODA la obra en pedacitos.</em></p>
+
+<div class="ficha">
+<table>
+<tr>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><strong>ENTRA</strong></td>
+<td>Partidas / subpartidas / actividades, unidades, <strong>metrados por frente</strong>, <strong>IP de presupuesto</strong>. Frentes del proyecto.</td>
+</tr>
+<tr>
+<td><strong>SE PROCESA</strong></td>
+<td><code>HH contractual = Σ(metrado frente × IP frente)</code> · <code>HH meta = metrado × IP meta</code> · <code>IP contractual = HH contractual ÷ metrado</code></td>
+</tr>
+<tr>
+<td><strong>SALE</strong></td>
+<td>Árbol WBS + <strong>INFO_MAP</strong> (nombre → {unidad, metrado, IP, terminada}) + <strong>CATALOGO_MASTER</strong></td>
+</tr>
+</table>
+</div>
+
+<p><strong>De dónde jala cada dato:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Dato</th>
+<th>De dónde</th>
+<th>A dónde</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Estructura/metrados</td>
+<td>escribe en <code>Catalogo_WBS/{proyectoId}</code></td>
+<td>la lee TODO el sistema</td>
+</tr>
+<tr>
+<td>Nombre/plazo/fechas</td>
+<td>colección <code>Proyectos</code></td>
+<td>columnas del editor</td>
+</tr>
+<tr>
+<td>Frentes</td>
+<td>colección <code>Frentes</code></td>
+<td>columnas de oferta</td>
+</tr>
+<tr>
+<td>Catálogo legacy</td>
+<td><code>CATALOGO_MASTER</code> (hardcoded) si el proyecto no tiene catálogo propio</td>
+<td>respaldo CREDITEX</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h4>🔌 useCatalogoWBS (hook) (<code>src/hooks/useCatalogoWBS.js</code>)</h4>
+<p><em>El "repartidor" que entrega el plano maestro a todos los módulos.</em></p>
+
+<div class="ficha">
+<table>
+<tr>
+<td><strong>ENTRA</strong></td>
+<td><code>proyectoId</code> del contexto activo</td>
+</tr>
+<tr>
+<td><strong>SE PROCESA</strong></td>
+<td><code>arbolACatalogoMaster()</code> y <code>arbolAInfoMap()</code> (índice por nombre normalizado para cruzar tareo↔catálogo)</td>
+</tr>
+<tr>
+<td><strong>SALE</strong></td>
+<td><code>{ loading, arbol, existe, catalogoMaster, infoMap }</code></td>
+</tr>
+<tr>
+<td><strong>Jala de</strong></td>
+<td><code>Catalogo_WBS/{proyectoId}</code> (snapshot en vivo); si no existe → catálogo hardcoded legacy</td>
+</tr>
+</table>
+</div>
+
+<hr>
+
+<h4>🤖 autoprograma.js (Generador automático)</h4>
+<p><em>Convierte metrados en un cronograma listo, sin armarlo a mano.</em></p>
+
+<div class="ficha">
+<table>
+<tr>
+<td><strong>ENTRA</strong></td>
+<td>Árbol WBS con metrados; opciones (<code>horasDia=8</code>, <code>cuadrillaDefault=4</code>, <code>ritmoFrac=0.5</code>, <code>duracionObjetivoDias</code>)</td>
+</tr>
+<tr>
+<td><strong>SE PROCESA</strong></td>
+<td><code>HH = metrado × IP</code> · <code>Duración(días) = ceil(HH ÷ (nº obreros × horas/día))</code> · <code>Lag = round(duracionPrevia × ritmoFrac)</code> (tren SS+lag) · compresión a plazo objetivo</td>
+</tr>
+<tr>
+<td><strong>SALE</strong></td>
+<td><code>{ tareas, resumen }</code> listo para CronogramaPro</td>
+</tr>
+<tr>
+<td><strong>Jala de</strong></td>
+<td>Catálogo WBS (HH), <code>SECTORIZACION</code> (cuadrillas reales por actividad), <code>CUADRILLA_POR_TIPO</code> (cuadrilla típica por patrón)</td>
+</tr>
+</table>
+</div>
+
+<hr>
+
+<h4>📅 CronogramaPro (<code>CronogramaPro.jsx</code>) + cpm.js</h4>
+<p><em>El "MS Project" de GRAPCO: calcula fechas, ruta crítica y avance automático.</em></p>
+
+<div class="ficha">
+<table>
+<tr>
+<td><strong>ENTRA</strong></td>
+<td>Tareas <code>{id, nombre, nivel, duracion, predecesoras, avance}</code>, fecha de inicio, <code>Registros_Campo</code> (para sincronizar avance), INFO_MAP del catálogo</td>
+</tr>
+<tr>
+<td><strong>SE PROCESA</strong></td>
+<td><strong>CPM Forward Pass</strong> (ES/EF) · <strong>Backward Pass</strong> (LS/LF) · <code>Holgura = LS − ES</code> · <code>Ruta crítica = holgura ≤ 0</code> · Roll-up de resúmenes · <strong><code>sincronizarAvance</code>: % = (metrado ejecutado ÷ metrado total) × 100</strong></td>
+</tr>
+<tr>
+<td><strong>SALE</strong></td>
+<td>Cronograma editado, % de avance sincronizado <strong>sin doble digitación</strong>, Curva S, baseline congelada</td>
+</tr>
+</table>
+</div>
+
+<p><strong>De dónde jala cada dato:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Dato</th>
+<th>De dónde</th>
+<th>A dónde</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tareas/baseline</td>
+<td><code>Cronogramas/{proyectoId}</code></td>
+<td>el propio Gantt</td>
+</tr>
+<tr>
+<td>Metrado ejecutado</td>
+<td><code>Registros_Campo</code> (filtro proyectoId)</td>
+<td>sincronizar avance</td>
+</tr>
+<tr>
+<td>Metrado total</td>
+<td><code>Catalogo_WBS</code> (vía useCatalogoWBS / infoMap)</td>
+<td>regla de 3 del %</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h4>🎯 LastPlannerPro (<code>LastPlannerPro.jsx</code>)</h4>
+<p><em>El "compromiso semanal": qué prometemos hacer y si lo cumplimos.</em></p>
+
+<div class="ficha">
+<table>
+<tr>
+<td><strong>ENTRA</strong></td>
+<td><code>Cronogramas/{proyectoId}</code> (para el LOOKAHEAD), <code>LPS/{proyectoId}</code> (restricciones, compromisos, PPC)</td>
+</tr>
+<tr>
+<td><strong>SE PROCESA</strong></td>
+<td>LOOKAHEAD = tareas CPM de las próximas 4 semanas · <strong><code>PPC = compromisos cumplidos ÷ compromisos totales × 100</code></strong> · Pareto de causas CNC</td>
+</tr>
+<tr>
+<td><strong>SALE</strong></td>
+<td><code>LPS/{proyectoId}</code>: restricciones, compromisos (<code>cumplido</code> null/true/false), causa CNC · tendencia PPC · Pareto RNC</td>
+</tr>
+<tr>
+<td><strong>Jala de</strong></td>
+<td><code>Cronogramas</code> (LOOKAHEAD) y <code>LPS</code> (estado de compromisos)</td>
+</tr>
+</table>
+</div>
+
+<hr>
+
+<h4>🗂️ PlanDiario (<code>PlanDiario.jsx</code>) — formato F06</h4>
+<p><em>El parte del día: lo programado contra lo ejecutado.</em></p>
+
+<div class="ficha">
+<table>
+<tr>
+<td><strong>ENTRA</strong></td>
+<td>Planes del día, cuadrillas activas, catálogo base (CATALOGO_MASTER / INFO_MAP)</td>
+</tr>
+<tr>
+<td><strong>SE PROCESA</strong></td>
+<td><code>HH programado = metrado × IP</code> · <code>IP real = HH ejecutado ÷ metrado ejecutado</code> · <code>% avance = (metrado ejecutado ÷ metrado programado) × 100</code></td>
+</tr>
+<tr>
+<td><strong>SALE</strong></td>
+<td>Plan diario guardado: grupos <code>[{titulo, items[]}]</code>, obra, residente, producción, fecha</td>
+</tr>
+<tr>
+<td><strong>Jala de</strong></td>
+<td>Planes diarios históricos + CATALOGO_MASTER/INFO_MAP (sugerencias de actividades)</td>
+</tr>
+</table>
+</div>
+
+<hr>
+
+<h4>🚦 VDC.jsx (Last Planner — ejecución de restricciones)</h4>
+<p><em>El "destrabe": qué bloquea la obra y cómo se libera.</em></p>
+
+<div class="ficha">
+<table>
+<tr>
+<td><strong>ENTRA</strong></td>
+<td><code>VDC_Restricciones</code> (estados pendiente/en progreso/liberada), <code>VDC_Lecciones</code>, LAP base (<code>lapCreditex</code>), AR base (<code>arCreditex</code>)</td>
+</tr>
+<tr>
+<td><strong>SE PROCESA</strong></td>
+<td>Restricciones activas = AR base (menos borradas) + Firestore · lookup por actividad normalizada · PPC + Pareto RNC</td>
+</tr>
+<tr>
+<td><strong>SALE</strong></td>
+<td><code>VDC_Restricciones</code> (crear/editar/eliminar), <code>Configuracion/arEdits_{proyectoId}</code> (overrides del usuario), tablero PPC/Pareto</td>
+</tr>
+<tr>
+<td><strong>Jala de</strong></td>
+<td><code>VDC_Restricciones</code>, <code>VDC_Lecciones</code>, data hardcoded LAP/AR, <code>Configuracion/arEdits_{proyectoId}</code></td>
+</tr>
+</table>
+</div>
+
+<hr>
+
+<h4>📐 PullPlanning (<code>PullPlanning.jsx</code>, F14) y SectorizacionTren (<code>SectorizacionTren.jsx</code>, F09)</h4>
+<p><em>Vistas de "tren Lean" — solo lectura, data estática de CREDITEX.</em></p>
+
+<div class="ficha">
+<table>
+<tr>
+<td><strong>ENTRA</strong></td>
+<td><code>PULLPLANNING</code> / <code>SECTORIZACION</code> (estructuras hardcoded)</td>
+</tr>
+<tr>
+<td><strong>SE PROCESA</strong></td>
+<td>KPIs (actividades, días, HH, MO) · colorización por sector/anillo (A1→azul, A3→dorado, etc.)</td>
+</tr>
+<tr>
+<td><strong>SALE</strong></td>
+<td>Matriz visual del tren (no editable); la diagonal representa el flujo continuo</td>
+</tr>
+<tr>
+<td><strong>Jala de</strong></td>
+<td><code>src/data/pullPlanningCreditex.js</code> y <code>src/data/sectorizacionCreditex.js</code></td>
+</tr>
+</table>
+</div>
+
+<hr>
+
+<h3>2.2 PRODUCCIÓN (el campo)</h3>
+
+<hr>
+
+<h4>👷 Capataz — Registro de Actividades (<code>Capataz.jsx</code>)</h4>
+<p><em>La "puerta de entrada" del dato real. Aquí nace el tareo.</em></p>
+
+<div class="ficha">
+<table>
+<tr>
+<td><strong>ENTRA</strong></td>
+<td>Cuadrillas, personal de la cuadrilla, catálogo WBS, asistencia facial del día, borradores guardados</td>
+</tr>
+<tr>
+<td><strong>SE PROCESA</strong></td>
+<td><code>totalHH = Σ(hn + he)</code> del <code>detalleTareo</code> · <code>ipReal = metrado ÷ totalHH</code> · validación de jornada legal (L-V ≤ 8.5h, sábado sin tope, domingo 0h) · split HN/HE desde asistencia</td>
+</tr>
+<tr>
+<td><strong>SALE</strong></td>
+<td>Registro de actividad → <strong><code>Registros_Campo</code></strong> (UPSERT por actividad-capataz-fecha) · borrador → <code>Borradores_Capataz</code> · fotos → Firebase Storage</td>
+</tr>
+</table>
+</div>
+
+<p><strong>De dónde jala cada dato:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Dato</th>
+<th>De dónde</th>
+<th>A dónde</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cuadrilla / personas</td>
+<td><code>Cuadrillas</code>, <code>Personal</code></td>
+<td>selector del tareo</td>
+</tr>
+<tr>
+<td>Lista de actividades</td>
+<td><code>Catalogo_WBS</code> / <code>Plan_Maestro</code></td>
+<td>WBS del registro</td>
+</tr>
+<tr>
+<td>HH por persona</td>
+<td><code>Asistencia_Diaria</code> (botón "Importar HH desde Marcador Facial")</td>
+<td><code>detalleTareo[]</code></td>
+</tr>
+<tr>
+<td>Día anterior</td>
+<td><code>Borradores_Capataz</code></td>
+<td>reanudar</td>
+</tr>
+<tr>
+<td>Resultado final</td>
+<td>escribe en <strong><code>Registros_Campo</code></strong></td>
+<td>useRO / Ingeniero / Cronograma</td>
+</tr>
+</tbody>
+</table>
+
+<blockquote>
+<p><strong>Payload de <code>Registros_Campo</code>:</strong> <code>{fecha, semana, partida, subpartida, actividad, capataz, metrado, totalHH, ipReal, detalleTareo[{nombre,cargo,dni,hn,he}], fotos[], proyectoId, frenteId, timestamp}</code></p>
+</blockquote>
+
+<hr>
+
+<h4>✏️ EditorActividad (<code>capataz/secciones/EditorActividad.jsx</code>)</h4>
+<p><em>La "lupa" sobre UNA actividad: WBS, metrado, fotos y HH persona por persona.</em></p>
+
+<div class="ficha">
+<table>
+<tr>
+<td><strong>ENTRA</strong></td>
+<td>Actividad activa del plan, trabajadores de la cuadrilla, HH ya acumuladas del trabajador (para no pasar el límite)</td>
+</tr>
+<tr>
+<td><strong>SE PROCESA</strong></td>
+<td>Búsqueda WBS jerárquica (partida→subpartida→actividad) · unidad por defecto desde INFO_MAP · <strong>regla: si <code>IP real > IP meta × 1.05</code> → obliga observación + foto</strong></td>
+</tr>
+<tr>
+<td><strong>SALE</strong></td>
+<td>Actividad con <code>{partida, subpartida, metrado, unidad, observación}</code> + <code>detalleTareo[]</code> actualizado + fotos a Storage</td>
+</tr>
+<tr>
+<td><strong>Jala de</strong></td>
+<td>Catálogo en memoria (CATALOGO_MASTER); escribe en estado local (<code>setActividades</code>) que luego sube Capataz.jsx</td>
+</tr>
+</table>
+</div>
+
+<hr>
+
+<h4>📷 MarcadorAsistencia (<code>MarcadorAsistencia.jsx</code>)</h4>
+<p><em>El "reloj con cara": reconoce al trabajador y calcula sus horas.</em></p>
+
+<div class="ficha">
+<table>
+<tr>
+<td><strong>ENTRA</strong></td>
+<td>Personal enrolado (con <code>faceDescriptors</code>), cámara en vivo, hora del sistema</td>
+</tr>
+<tr>
+<td><strong>SE PROCESA</strong></td>
+<td><strong>Entrada tareo = 07:30 fijo</strong> (la real va en <code>entradaReal</code> para puntualidad) · <strong>salida tareo = hora en punto hacia abajo</strong> (17:35→17:00) · <code>horasTrabajadas = (salidaPiso − 07:30) − 60 min descanso</code> · similitud facial ≥ 75% · cooldown 12 s</td>
+</tr>
+<tr>
+<td><strong>SALE</strong></td>
+<td><code>Asistencia_Diaria</code>: <code>{fecha, personalId, entrada, entradaReal, salida, salidaReal, horasTrabajadas}</code></td>
+</tr>
+<tr>
+<td><strong>Jala de</strong></td>
+<td><code>Personal</code> (solo con descriptores activos), <code>Asistencia_Diaria</code> del día (estado actual)</td>
+</tr>
+</table>
+</div>
+
+<hr>
+
+<h4>🔎 Ingeniero (<code>Ingeniero.jsx</code>)</h4>
+<p><em>El "auditor": revisa, valida y mira los semáforos.</em></p>
+
+<div class="ficha">
+<table>
+<tr>
+<td><strong>ENTRA</strong></td>
+<td><code>Registros_Campo</code> (vía <code>onSnapshot</code>, filtrado proyecto+frente), Plan Maestro, Catálogo WBS, Planes Diarios, Configuración</td>
+</tr>
+<tr>
+<td><strong>SE PROCESA</strong></td>
+<td><code>CPI semanal = ΣHH meta (PV) ÷ ΣHH real (AC)</code> · <code>IP real = HH real ÷ metrado</code> (comparado vs IP meta del catálogo) · <code>% avance físico = avanceMetradoAcum ÷ metradoContractual</code> · HE total por trabajador</td>
+</tr>
+<tr>
+<td><strong>SALE</strong></td>
+<td>Tabla de auditoría (estado, CPI, IP real vs meta), gráficos CPI/SPI semanal, alertas, reportes Excel, eliminación de registros</td>
+</tr>
+<tr>
+<td><strong>Jala de</strong></td>
+<td><code>Registros_Campo</code>, <code>PlanMaestro</code>, <code>Catalogo_WBS</code>, <code>Planes_Diarios</code>, <code>Configuracion</code></td>
+</tr>
+</table>
+</div>
+
+<hr>
+
+<h4>🧮 useRO (hook) (<code>modulos/resultadoOperativo/useRO.js</code>)</h4>
+<p><em>El "mezclador": junta las 11 colecciones para sacar el Resultado Operativo.</em></p>
+
+<div class="ficha">
+<table>
+<tr>
+<td><strong>ENTRA (11 fuentes)</strong></td>
+<td>Plan Maestro, APUs, <code>Registros_Campo</code>, <code>Kardex_Movimientos</code>, <code>ValorizacionesContractuales</code>, <code>Registro_Facturas</code>, <code>ValorizacionesSubcontratistas</code>, <code>GG_Oficina</code>, <code>Adicionales</code>, <code>Deductivos</code></td>
+</tr>
+<tr>
+<td><strong>SE PROCESA</strong></td>
+<td><code>AC = Σ(HH×25.5) + Materiales(Kardex) + Facturas + SC</code> · <code>EV = valorización al cliente, o avance×PU</code> · <code>BAC = metrado × PU</code> · <code>CPI = EV÷AC</code> · <code>SPI = EV÷PV</code> · <code>EAC = BAC÷CPI</code> · <code>Margen real % = (EV−AC)÷EV</code></td>
+</tr>
+<tr>
+<td><strong>SALE</strong></td>
+<td>RO completo: <code>{detallePartidas, totales, indicadoresGlobales, gastosGenerales, ajustes, partidasCriticas}</code></td>
+</tr>
+<tr>
+<td><strong>Jala de</strong></td>
+<td>las 11 colecciones listadas (no escribe nada — solo lee y calcula)</td>
+</tr>
+</table>
+</div>
+
+<hr>
+
+<h4>⚙️ planMaestroAnalytics.js (motor de cálculo)</h4>
+<p><em>El "cerebro matemático": fórmulas EVM, RO, árbol WBS y Curva S.</em></p>
+
+<div class="ficha">
+<table>
+<tr>
+<td><strong>ENTRA</strong></td>
+<td>Actividades del plan, APUs, tareos, Kardex/facturas, valorizaciones al cliente</td>
+</tr>
+<tr>
+<td><strong>SE PROCESA</strong></td>
+<td><code>construirArbolWBS()</code> · <code>calcularEVM()</code> → {CPI, SPI, EAC, VAC} · <code>calcularROMensual()</code> · <code>calcularCurvaS()</code> · <strong>Costo MO = HH × 25.5</strong> (costo-hora ÚNICO)</td>
+</tr>
+<tr>
+<td><strong>SALE</strong></td>
+<td>Árbol jerárquico, EVM por actividad/partida, RO mensual, Curva S (programado vs real)</td>
+</tr>
+<tr>
+<td><strong>Niveles WBS</strong></td>
+<td>partida <code>01.00.00</code> → subpartida <code>01.01.00</code> → actividad hoja <code>01.01.001</code></td>
+</tr>
+<tr>
+<td><strong>Severidad</strong></td>
+<td>crítica si margen<0 · alta si margen<meta×0.5 · media si margen<meta</td>
+</tr>
+</table>
+</div>
+
+<hr>
+
+<h4>📊 WarRoomCuadrillas (<code>WarRoomCuadrillas.jsx</code>)</h4>
+<p><em>El "tablero de productividad": qué cuadrilla rinde y qué la frena.</em></p>
+
+<div class="ficha">
+<table>
+<tr>
+<td><strong>ENTRA</strong></td>
+<td><code>Cartas_Balance</code> (observaciones TNC, retrabajos, paros), <code>Cuadrillas</code>, IP meta del catálogo</td>
+</tr>
+<tr>
+<td><strong>SE PROCESA</strong></td>
+<td><code>LUF = (horas trabajadas − horas observadas) ÷ horas trabajadas × 100</code> · <code>TNC % = (paros + retrabajos) ÷ total obs</code> · Pareto (causas que suman 80% del TNC)</td>
+</tr>
+<tr>
+<td><strong>SALE</strong></td>
+<td>KPIs por cuadrilla (LUF %, TNC %, ranking de causas), semáforo (rojo LUF<40%, naranja <50%, verde ≥50%), alertas, recomendaciones</td>
+</tr>
+<tr>
+<td><strong>Jala de</strong></td>
+<td><code>Cartas_Balance</code>, <code>Cuadrillas</code></td>
+</tr>
+</table>
+</div>
+
+<hr>
+
+<h4>🧩 OptimizadorCuadrillas (<code>OptimizadorCuadrillas.jsx</code>)</h4>
+<p><em>El "armador de equipos": recomienda la mejor cuadrilla según el histórico.</em></p>
+
+<div class="ficha">
+<table>
+<tr>
+<td><strong>ENTRA</strong></td>
+<td><code>Cartas_Balance</code> (LUF histórico por persona/actividad), <code>Personal</code>, actividad objetivo + tamaño deseado</td>
+</tr>
+<tr>
+<td><strong>SE PROCESA</strong></td>
+<td><code>optimizarCuadrilla()</code> greedy (elige N personas con mayor LUF promedio) · boost por parejas productivas · penalización a "drag performers"</td>
+</tr>
+<tr>
+<td><strong>SALE</strong></td>
+<td>Cuadrilla recomendada <code>{personas, lufEstimado}</code>, parejas productivas, ranking histórico (aviso si <10 observaciones)</td>
+</tr>
+<tr>
+<td><strong>Jala de</strong></td>
+<td><code>Cartas_Balance</code>, <code>Personal</code></td>
+</tr>
+</table>
+</div>
+
+<hr>
+
+<h2>3. TABLAS RESUMEN DE TRAZABILIDAD</h2>
+
+<h3>3.1 ¿De dónde sale cada costo del AC (Costo Real)?</h3>
+
+<table>
+<thead>
+<tr>
+<th>Dato</th>
+<th>De dónde (colección)</th>
+<th>Cómo se calcula</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Costo MO (mano de obra)</td>
+<td><code>Registros_Campo.totalHH</code></td>
+<td><code>Σ HH × 25.5 S/h</code> (costo-hora ÚNICO)</td>
+</tr>
+<tr>
+<td>Costo Materiales</td>
+<td><code>Kardex_Movimientos</code></td>
+<td><code>Σ(SALIDAS a la partida)</code> sin anuladas</td>
+</tr>
+<tr>
+<td>Costo Subcontratos</td>
+<td><code>Registro_Facturas</code> + <code>ValorizacionesSubcontratistas</code></td>
+<td><code>Σ(monto sin IGV)</code> no anulado</td>
+</tr>
+<tr>
+<td>Gastos Generales</td>
+<td><code>GG_Oficina</code></td>
+<td><code>Σ(monto)</code> no anulado → se suma aparte al AC total</td>
+</tr>
+</tbody>
+</table>
+
+<h3>3.2 ¿De dónde sale cada indicador EVM?</h3>
+
+<table>
+<thead>
+<tr>
+<th>Indicador</th>
+<th>Fórmula</th>
+<th>Insumos (de dónde)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>BAC</strong></td>
+<td>metrado contractual × PU</td>
+<td><code>PlanMaestro</code> (+ ajuste <code>Adicionales</code>/<code>Deductivos</code>)</td>
+</tr>
+<tr>
+<td><strong>PV</strong></td>
+<td>BAC × (días transcurridos ÷ días totales)</td>
+<td>fechas programadas (<code>PlanMaestro</code>/Cronograma)</td>
+</tr>
+<tr>
+<td><strong>EV</strong></td>
+<td>valorización real al cliente, o avance × PU</td>
+<td><code>ValorizacionesContractuales</code> (o avance de <code>Registros_Campo</code>)</td>
+</tr>
+<tr>
+<td><strong>AC</strong></td>
+<td>MO + Mat + SC + GG</td>
+<td>ver tabla 3.1</td>
+</tr>
+<tr>
+<td><strong>CPI</strong></td>
+<td>EV ÷ AC</td>
+<td>derivado</td>
+</tr>
+<tr>
+<td><strong>SPI</strong></td>
+<td>EV ÷ PV</td>
+<td>derivado</td>
+</tr>
+<tr>
+<td><strong>EAC</strong></td>
+<td>BAC ÷ CPI</td>
+<td>derivado</td>
+</tr>
+<tr>
+<td><strong>VAC</strong></td>
+<td>BAC − EAC</td>
+<td>derivado</td>
+</tr>
+</tbody>
+</table>
+
+<h3>3.3 Las "fuentes únicas" (una sola verdad por tema)</h3>
+
+<table>
+<thead>
+<tr>
+<th>Tema</th>
+<th>Fuente ÚNICA</th>
+<th>Quién ESCRIBE</th>
+<th>Quién LEE</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Estructura / metrados / IP meta</td>
+<td><code>Catalogo_WBS/{proyectoId}</code></td>
+<td>EditorWbsIsp</td>
+<td>todo el sistema (useCatalogoWBS)</td>
+</tr>
+<tr>
+<td>Plan / presupuesto WBS</td>
+<td><code>PlanMaestro</code></td>
+<td>Ingeniero</td>
+<td>useRO, Cronograma, Analytics</td>
+</tr>
+<tr>
+<td>Cronograma CPM + baseline</td>
+<td><code>Cronogramas/{proyectoId}</code></td>
+<td>CronogramaPro</td>
+<td>LastPlannerPro, Curva S</td>
+</tr>
+<tr>
+<td>Tareos / avance real</td>
+<td><strong><code>Registros_Campo</code></strong></td>
+<td>Capataz / Ingeniero</td>
+<td>RO, Dashboard, Cronograma (sincronizar)</td>
+</tr>
+<tr>
+<td>Asistencia real</td>
+<td><code>Asistencia_Diaria</code></td>
+<td>MarcadorAsistencia</td>
+<td>Capataz (importar HH), dashboards</td>
+</tr>
+<tr>
+<td>Plan semanal LPS</td>
+<td><code>LPS/{proyectoId}</code></td>
+<td>LastPlannerPro</td>
+<td>VDC.jsx</td>
+</tr>
+<tr>
+<td>Restricciones</td>
+<td><code>VDC_Restricciones</code> (+ <code>Configuracion/arEdits_*</code>)</td>
+<td>VDC.jsx</td>
+<td>LastPlannerPro (LOOKAHEAD)</td>
+</tr>
+<tr>
+<td>Productividad/observaciones</td>
+<td><code>Cartas_Balance</code></td>
+<td>CartaBalance / Importar</td>
+<td>WarRoom, Optimizador</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>4. EL VIAJE DE UN DATO — PASO A PASO (versión corta)</h2>
+
+<ol>
+<li><strong>Capataz</strong> abre <code>Capataz.jsx</code>, elige cuadrilla y fecha.</li>
+<li>Crea actividades o carga un <strong>borrador</strong> (<code>Borradores_Capataz</code>).</li>
+<li>Por actividad define <strong>WBS + metrado</strong>.</li>
+<li>Ingresa <strong>HH (HN/HE)</strong> a mano <strong>o</strong> importa desde <strong><code>Asistencia_Diaria</code></strong>.</li>
+<li>El <strong>Marcador facial</strong> ya había guardado entrada/salida en <code>Asistencia_Diaria</code>.</li>
+<li>Capataz importa HH (match por nombre), sube <strong>fotos</strong> (Storage) y valida (IP bajo → observación + foto).</li>
+<li>Pulsa <strong>SUBIR</strong> → se escribe en <strong><code>Registros_Campo</code></strong> (UPSERT).</li>
+<li><strong>CronogramaPro</strong> lee ese registro y <strong>sincroniza el % de avance</strong> automáticamente.</li>
+<li><strong>Ingeniero</strong> ve el historial en vivo (<code>onSnapshot</code>).</li>
+<li><strong>useRO</strong> carga las <strong>11 colecciones</strong> y <code>planMaestroAnalytics</code> calcula <strong>CPI, SPI, EAC, margen</strong>.</li>
+<li><strong>WarRoom</strong> y <strong>Optimizador</strong> leen <code>Cartas_Balance</code> para LUF, Pareto y cuadrilla óptima.</li>
+<li>Los <strong>semáforos</strong> suben al Dashboard. El ciclo se repite cada día.</li>
+</ol>
+
+<blockquote>
+<p><strong>Aislamiento por proyecto:</strong> <code>ProyectoActivoContext</code> guarda <code>proyectoActivoId</code> + <code>frenteActivoId</code>; <code>filtrarPorContexto()</code> filtra en el cliente (<code>data.proyectoId === proyectoActivoId</code>). Un capataz NO puede escribir a otro proyecto. Registros legacy sin <code>proyectoId</code> cuentan como del proyecto <strong><code>creditex-ptar</code></strong> (DEFAULT).</p>
+</blockquote>
+
+<hr>
+
+<h2>5. GLOSARIO DE SIGLAS</h2>
+
+<table>
+<thead>
+<tr>
+<th>Sigla</th>
+<th>Significado</th>
+<th>En criollo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>WBS</strong></td>
+<td>Work Breakdown Structure</td>
+<td>El árbol de la obra: partida → subpartida → actividad</td>
+</tr>
+<tr>
+<td><strong>HH</strong></td>
+<td>Horas Hombre</td>
+<td><code>metrado × IP</code>; el "tiempo de gente" que cuesta una tarea</td>
+</tr>
+<tr>
+<td><strong>HN / HE</strong></td>
+<td>Horas Normales / Horas Extra</td>
+<td>Jornada legal (L-V ≤8.5h, sáb sin tope, dom 0h) / sobretiempo</td>
+</tr>
+<tr>
+<td><strong>IP</strong></td>
+<td>Índice de Productividad</td>
+<td><code>HH ÷ metrado</code>. <strong>Menor es mejor</strong> (1.5 HH/m² mejor que 2.0)</td>
+</tr>
+<tr>
+<td><strong>CPM</strong></td>
+<td>Critical Path Method</td>
+<td>Algoritmo de fechas, holguras y ruta crítica</td>
+</tr>
+<tr>
+<td><strong>LPS</strong></td>
+<td>Last Planner System</td>
+<td>Sistema de compromisos semanales (LOOKAHEAD, PPC, CNC)</td>
+</tr>
+<tr>
+<td><strong>PPC</strong></td>
+<td>Plan Percent Complete</td>
+<td>% de compromisos de la semana que SÍ se cumplieron</td>
+</tr>
+<tr>
+<td><strong>CNC / RNC</strong></td>
+<td>Causa / Razón de No Cumplimiento</td>
+<td>Por qué falló un compromiso (MO, MAT, EQ, ING, CLIMA…)</td>
+</tr>
+<tr>
+<td><strong>LUF</strong></td>
+<td>Labor Utilization Factor</td>
+<td>% de horas productivas de una cuadrilla</td>
+</tr>
+<tr>
+<td><strong>TNC</strong></td>
+<td>Trabajo No Conforme</td>
+<td>Paros, retrabajos, accidentes (de <code>Cartas_Balance</code>)</td>
+</tr>
+<tr>
+<td><strong>EVM</strong></td>
+<td>Earned Value Management</td>
+<td>Sistema PMI que cruza plan físico ↔ dinero</td>
+</tr>
+<tr>
+<td><strong>BAC</strong></td>
+<td>Budget at Completion</td>
+<td>Presupuesto total: <code>metrado × PU</code></td>
+</tr>
+<tr>
+<td><strong>PV</strong></td>
+<td>Planned Value</td>
+<td>Lo que <strong>debería</strong> estar avanzado según cronograma</td>
+</tr>
+<tr>
+<td><strong>EV</strong></td>
+<td>Earned Value</td>
+<td>Lo <strong>ganado/valorizado</strong> (facturado al cliente o avance×PU)</td>
+</tr>
+<tr>
+<td><strong>AC</strong></td>
+<td>Actual Cost</td>
+<td>Lo que <strong>de verdad costó</strong> (MO + Mat + SC + GG)</td>
+</tr>
+<tr>
+<td><strong>CPI</strong></td>
+<td>Cost Performance Index</td>
+<td><code>EV ÷ AC</code>. ≥1 dentro de presupuesto; <0.85 crítico</td>
+</tr>
+<tr>
+<td><strong>SPI</strong></td>
+<td>Schedule Performance Index</td>
+<td><code>EV ÷ PV</code>. ≥1 adelantado; <0.85 atrasado</td>
+</tr>
+<tr>
+<td><strong>EAC</strong></td>
+<td>Estimate at Completion</td>
+<td><code>BAC ÷ CPI</code>. Cuánto costará al final</td>
+</tr>
+<tr>
+<td><strong>VAC</strong></td>
+<td>Variance at Completion</td>
+<td><code>BAC − EAC</code>. Ganancia/pérdida proyectada</td>
+</tr>
+<tr>
+<td><strong>APU</strong></td>
+<td>Análisis de Precios Unitarios</td>
+<td>Costo teórico por actividad (MO/Mat/Eq/SC), aportes 1.40</td>
+</tr>
+<tr>
+<td><strong>RO</strong></td>
+<td>Resultado Operativo</td>
+<td>Reporte mensual: vendido − costo aplicado − costo real = margen</td>
+</tr>
+<tr>
+<td><strong>Curva S</strong></td>
+<td>—</td>
+<td>Gráfico de avance acumulado: programado vs baseline vs real</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>6. CÓMO EXPLICARLO EN 1 MINUTO (analogía)</h2>
+
+<blockquote>
+<p><strong>La obra es como cocinar en un restaurante grande.</strong></p>
+
+<p>La <strong>receta</strong> es el <strong>Catálogo WBS</strong>: dice cuántos kilos (metrado) y cuántos minutos por kilo (IP) lleva cada plato. Es la única verdad; todos cocinan con ESA receta.</p>
+
+<p>El <strong>horario de la cocina</strong> es el <strong>Cronograma CPM</strong>: qué plato va primero, cuál puede ir en paralelo, y cuáles son los platos que NO pueden atrasarse (la <strong>ruta crítica</strong>).</p>
+
+<p>Cada noche, el <strong>mozo jefe (capataz)</strong> anota en una <strong>comanda</strong> (la colección <strong><code>Registros_Campo</code></strong>) qué se cocinó de verdad, cuántas horas tomó (HH) y le toma una <strong>foto</strong> al plato.</p>
+
+<p>El <strong>reloj con cámara (Marcador facial)</strong> ya había fichado a cada cocinero al entrar y salir → eso llena las horas solo.</p>
+
+<p>Esa comanda viaja sola: el <strong>horario se actualiza</strong> (avance %) sin que nadie lo reescriba, y el <strong>contador (useRO)</strong> suma lo que costó (<code>HH × 25.5</code> + materiales + facturas) contra lo que se vendió al cliente.</p>
+
+<p>Al final, el <strong>gerente (Ingeniero)</strong> ve un <strong>tablero de semáforos</strong>: verde = ganamos plata y vamos a tiempo (CPI y SPI ≥ 1); rojo = un plato salió más caro o más lento de lo previsto.</p>
+
+<p><strong>En una frase:</strong> el capataz escribe UNA comanda (<code>Registros_Campo</code>), y de esa sola comanda salen, automáticamente, el avance del cronograma, el costo real y los semáforos del jefe. <strong>Una sola verdad, escrita una sola vez, leída por todos.</strong></p>
+</blockquote>
+
+<hr>
+
+<p><em>Fin de la PARTE A — Producción & Planeamiento. (Las áreas de Costos/RO en profundidad, Materiales/Kardex, Seguridad/Calidad y BIM se desarrollan en las partes siguientes del informe-mapa.)</em></p>
+
+<hr>
+
+<h1>PARTE B — COSTOS, RESULTADO OPERATIVO (RO) & VALORIZACIONES</h1>
+<h3>Mapa del viaje de la información: ¿de dónde sale cada número del RO?</h3>
+
+<blockquote>
+<p><strong>Lee esto como un plano de tuberías.</strong> El agua (los datos) entra por muchos caños (campo, almacén, contabilidad, cliente), todos desembocan en un tanque central (el motor <code>calcularROMensual</code>), y de ahí sale el "termómetro" del proyecto: <strong>¿estamos ganando o perdiendo plata?</strong></p>
+</blockquote>
+
+<hr>
+
+<h2>0. EL VIAJE EN UNA SOLA IMAGEN (diagrama ASCII)</h2>
+
+<div class="diagram"><pre>                          ┌──────────────────────────────────────────────┐
+                          │   PASO 0: EL USUARIO ELIGE PROYECTO + FRENTE   │
+                          │   (ProyectoActivoContext → localStorage)       │
+                          │   filtrarPorContexto() = "solo veo lo MÍO"     │
+                          └───────────────────────┬──────────────────────┘
+                                                  │
+   ====================== DATOS QUE ENTRAN (11 caños / colecciones) ======================
+                                                  │
+  ┌─────────────┐  ┌─────────────┐  ┌──────────────────┐  ┌──────────────────┐
+  │ PlanMaestro │  │    APUs     │  │ Registros_Campo  │  │ Kardex_Movimientos│
+  │ (WBS, metr, │  │ (costo      │  │ (TAREOS = HH)    │  │ (SALIDA material)│
+  │  PU, fechas)│  │  teórico)   │  │  → pata 1 del AC │  │  → pata 2 del AC │
+  └──────┬──────┘  └──────┬──────┘  └────────┬─────────┘  └────────┬─────────┘
+         │                │                  │                     │
+  ┌──────┴───────┐  ┌─────┴──────────┐ ┌─────┴──────────────┐ ┌────┴─────────────┐
+  │Valorizaciones│  │Registro_       │ │Valorizaciones      │ │  GG_Oficina      │
+  │Contractuales │  │Facturas        │ │Subcontratistas(F10)│ │ (gastos generales│
+  │ → EV REAL    │  │ → pata 3 AC    │ │ → pata 4 del AC    │ │  NO van a partida│
+  └──────┬───────┘  └─────┬──────────┘ └─────┬──────────────┘ └────┬─────────────┘
+         │                │                  │                     │
+  ┌──────┴───────┐  ┌─────┴──────────┐       │                     │
+  │ Adicionales  │  │  Deductivos    │       │                     │
+  │ (F05 → +BAC) │  │ (F05 → −BAC)   │       │   (Historial: se carga, hoy NO se usa)
+  └──────┬───────┘  └─────┬──────────┘       │                     │
+         │                │                  │                     │
+         └────────┬───────┴─────────┬────────┴──────────┬──────────┘
+                  │                 │                    │
+                  ▼                 ▼                    ▼
+   ============== EL TANQUE CENTRAL: useRO() ==============
+   ┌────────────────────────────────────────────────────────┐
+   │ useRO.js                                                │
+   │  • onSnapshot() en las 11 colecciones (EN VIVO)         │
+   │  • contador 11 → 0 ; cuando llega a 0 → loading=false   │
+   │  • entrega los 11 arrays YA FILTRADOS al motor          │
+   └───────────────────────┬────────────────────────────────┘
+                           │
+                           ▼
+   ============== EL MOTOR: calcularROMensual() ==============
+   ┌────────────────────────────────────────────────────────┐
+   │ planMaestroAnalytics.js  (líneas 474–701)               │
+   │                                                         │
+   │  Por CADA partida hoja (obtenerActividadesHoja):        │
+   │   1) AC = Tareos×25.5 + Almacén + Facturas + Subcontr.  │
+   │   2) BAC = metrado × PU                                  │
+   │   3) EV  = valorizado real al cliente  Ó  avance×PU     │
+   │   4) PV  = BAC × (tiempo transcurrido / tiempo total)   │
+   │   5) CPI=EV÷AC  SPI=EV÷PV  EAC=BAC÷CPI  VAC=BAC−EAC      │
+   │   6) Márgenes (aplicado, real, pendiente) + Severidad   │
+   │                                                         │
+   │  Luego SUMA todo + GG aparte + ajustes F05              │
+   └───────────────────────┬────────────────────────────────┘
+                           │ retorna el objeto "ro"
+                           ▼
+   ====================== LO QUE SALE (3 vistas) ======================
+  ┌──────────────────────┐ ┌──────────────────────┐ ┌─────────────────────┐
+  │ResultadoOperativo    │ │ControlRegistros (CR) │ │ ROFrentes           │
+  │Oficial (F06)         │ │ desglosa el AC en    │ │ compara F1 vs F2    │
+  │ Tabla EVM 9 columnas │ │ sus 4 PATAS + importa│ │ lado a lado         │
+  │ + KPIs globales + PDF│ │ Facturas/GG/Subcontr.│ │ (GG no se reparte)  │
+  └──────────────────────┘ └──────────────────────┘ └─────────────────────┘</pre></div>
+
+<blockquote>
+<p><strong>Clave del dibujo:</strong> todo lo de la izquierda <strong>suma plata que GANAMOS</strong> (BAC/EV, lo que vendemos al cliente). Todo lo del centro-derecha <strong>suma plata que GASTAMOS</strong> (AC, las 4 patas + GG). El RO es simplemente: <strong>lo que ganamos − lo que gastamos</strong>.</p>
+</blockquote>
+
+<hr>
+
+<h2>1. LAS DOS PILAS DE PLATA (entender esto y entendiste el RO)</h2>
+
+<p>El Resultado Operativo es una balanza con <strong>dos platillos</strong>:</p>
+
+<table>
+<thead>
+<tr>
+<th>Platillo</th>
+<th>Qué es</th>
+<th>De dónde sale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Lo que GANAMOS</strong> (la venta)</td>
+<td>BAC, EV, valorizaciones al cliente</td>
+<td><code>PlanMaestro</code> (metrado×PU) + <code>ValorizacionesContractuales</code> + ajustes <code>Adicionales/Deductivos</code></td>
+</tr>
+<tr>
+<td><strong>Lo que GASTAMOS</strong> (el costo real, AC)</td>
+<td>Las <strong>4 patas</strong> + Gastos Generales</td>
+<td><code>Registros_Campo</code> + <code>Kardex_Movimientos</code> + <code>Registro_Facturas</code> + <code>ValorizacionesSubcontratistas</code> + <code>GG_Oficina</code></td>
+</tr>
+</tbody>
+</table>
+
+<p>Si el platillo de "ganamos" pesa más que el de "gastamos" → <strong>margen positivo, hay utilidad</strong>. Si pesa menos → <strong>estamos perdiendo plata en esa partida</strong> (severidad crítica).</p>
+
+<hr>
+
+<h2>2. EL COSTO REAL (AC) Y SUS 4 PATAS</h2>
+
+<blockquote>
+<p><strong>Analogía:</strong> el AC es como la cuenta total de una comida grupal. Tiene <strong>4 platos</strong> que pagaste por separado y se suman: la mano de obra (mozos), los materiales (la comida del almacén), las facturas (lo que pediste a proveedores) y los subcontratos (lo que pagaste a otro que cocinó por ti). <strong>Los Gastos Generales son la propina y el cubierto</strong> — no van en ningún plato específico, se suman aparte al final.</p>
+</blockquote>
+
+<h3>Fórmula maestra</h3>
+<pre><code>AC (Actual Cost) = Pata 1 (Tareos)  +  Pata 2 (Almacén)
+                 + Pata 3 (Facturas) +  Pata 4 (Subcontratos)
+                 (Equipos = 0 por ahora, fase siguiente)
+
+Total Costo de Obra = AC directo  +  GG_Oficina</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Pata</th>
+<th>Dato</th>
+<th>De dónde JALA (colección)</th>
+<th>Fórmula</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1. MO (mano de obra)</strong></td>
+<td><code>costoMO</code></td>
+<td><code>Registros_Campo</code> (tareos, HH)</td>
+<td><code>Σ(HH) × 25.5</code> (COSTO_HORA_RO)</td>
+</tr>
+<tr>
+<td><strong>2. Materiales</strong></td>
+<td><code>costoMat</code></td>
+<td><code>Kardex_Movimientos</code> (solo tipo=<code>SALIDA</code>)</td>
+<td><code>Σ(costoTotal)</code> por partida</td>
+</tr>
+<tr>
+<td><strong>3. Facturas</strong></td>
+<td><code>costoFacturas</code></td>
+<td><code>Registro_Facturas</code></td>
+<td><code>Σ(montoSinIGV)</code> por partida (sin anuladas)</td>
+</tr>
+<tr>
+<td><strong>4. Subcontratos</strong></td>
+<td><code>costoSC</code></td>
+<td><code>ValorizacionesSubcontratistas</code> (F10)</td>
+<td><code>Σ(cdValorizado)</code> por partida</td>
+</tr>
+<tr>
+<td><em>(aparte) GG</em></td>
+<td><code>ggTotal</code></td>
+<td><code>GG_Oficina</code></td>
+<td><code>Σ(monto)</code> vigentes — NO va a partida</td>
+</tr>
+</tbody>
+</table>
+
+<blockquote>
+<p><strong>REGLA DE ORO (cuadratura):</strong> las 4 patas <strong>deben estar imputadas a la MISMA partida (código WBS hoja)</strong> para que el AC cuadre. Si un tareo va a <code>02.01.003</code> y la factura va a <code>02.01.00</code> (el padre), <strong>no se cruzan</strong>. Siempre imputar a la <strong>partida hoja</strong>.</p>
+
+<p><strong>¿Por qué S/ 25.50 fijo para TODA la mano de obra?</strong> Porque el RO costea con una <strong>tarifa única</strong> (<code>COSTO_HORA_RO = 25.5</code>, línea 37 de <code>planMaestroAnalytics.js</code>), igual para capataz, operario, oficial y ayudante. Esto cuadra con el Control de Tareos (hoja CR del F06). Las tarifas por cargo (capataz 28, operario 22.5, etc.) <strong>solo se usan en el APU teórico</strong>, nunca en el costo real.</p>
+</blockquote>
+
+<hr>
+
+<h2>3. MINI-FICHAS POR MÓDULO (ENTRA → SE PROCESA → SALE)</h2>
+
+<h3>3.1 <code>useRO</code> — El tanque que junta todo</h3>
+<p><strong>Archivo:</strong> <code>/src/views/modulos/resultadoOperativo/useRO.js</code></p>
+
+<div class="ficha">
+<table>
+<tr>
+<td><strong>ENTRA</strong></td>
+<td>Proyecto activo (vía <code>filtrarPorContexto</code>), <code>ignorarFrente</code> (para comparar F1 vs F2), <code>margenMeta=15%</code>, <code>fechaActual</code></td>
+</tr>
+<tr>
+<td><strong>SE PROCESA</strong></td>
+<td>Abre <code>onSnapshot()</code> en <strong>11 colecciones</strong> en vivo; cada cambio re-dispara; cuenta regresiva 11→0; al llegar a 0 corre el motor</td>
+</tr>
+<tr>
+<td><strong>SALE</strong></td>
+<td>Objeto <code>ro</code> completo + <code>loading</code> + las colecciones crudas (facturas, valorizacionesSC, gastosGenerales) para que CR las muestre</td>
+</tr>
+<tr>
+<td><strong>De dónde jala</strong></td>
+<td>PlanMaestro, APUs, Registros_Campo, Kardex_Movimientos, ValorizacionesContractuales, Registro_Facturas, ValorizacionesSubcontratistas, GG_Oficina, Adicionales, Deductivos, Historial</td>
+</tr>
+<tr>
+<td><strong>Escribe</strong></td>
+<td>Nada (solo lee)</td>
+</tr>
+</table>
+</div>
+
+<hr>
+
+<h3>3.2 <code>calcularROMensual</code> — El motor (corazón del sistema)</h3>
+<p><strong>Archivo:</strong> <code>/src/utils/planMaestroAnalytics.js</code> (líneas 474–701)</p>
+
+<div class="ficha">
+<table>
+<tr>
+<td><strong>ENTRA</strong></td>
+<td>Los 11 arrays ya filtrados + <code>salariosPorCategoria</code> (legacy, no se usa para AC) + <code>fechaActual</code> + <code>margenMeta</code></td>
+</tr>
+<tr>
+<td><strong>SE PROCESA</strong></td>
+<td>Itera <strong>solo partidas hoja</strong> (<code>obtenerActividadesHoja</code>); por cada una calcula AC (4 patas), BAC, EV, PV, y los 11 indicadores EVM; luego totaliza, agrega GG aparte y aplica ajustes F05</td>
+</tr>
+<tr>
+<td><strong>SALE</strong></td>
+<td><code>detallePartidas[]</code>, <code>totales</code>, <code>indicadoresGlobales</code>, <code>gastosGenerales</code>, <code>ajustes</code>, <code>partidasCriticas</code>, <code>partidasEstrella</code>, flag <code>evReal</code></td>
+</tr>
+<tr>
+<td><strong>De dónde jala</strong></td>
+<td>Recibe todo de <code>useRO</code> (no lee Firestore directo)</td>
+</tr>
+<tr>
+<td><strong>Escribe</strong></td>
+<td>Nada (es matemática pura)</td>
+</tr>
+</table>
+</div>
+
+<hr>
+
+<h3>3.3 <code>ResultadoOperativoOficial</code> — La vista RO (F06)</h3>
+<p><strong>Archivo:</strong> <code>/src/views/modulos/resultadoOperativo/ResultadoOperativoOficial.jsx</code></p>
+
+<div class="ficha">
+<table>
+<tr>
+<td><strong>ENTRA</strong></td>
+<td><code>useRO()</code> → <code>ro</code>, <code>loading</code>, proyecto/frente activo + <code>proyectoActivo.presupuestoContractual</code></td>
+</tr>
+<tr>
+<td><strong>SE PROCESA</strong></td>
+<td>Renderiza tabla EVM de 9 columnas; calcula <strong>% cobertura BAC</strong> = (BAC partidas ÷ presupuesto contractual)×100; pinta colores por CPI/CV</td>
+</tr>
+<tr>
+<td><strong>SALE</strong></td>
+<td>Tabla EVM con fila azul <strong>TOTAL COSTO DE OBRA</strong> (KPIs), filas de partidas ordenadas por WBS, fila naranja <strong>GASTOS GENERALES</strong>, filas <strong>ADICIONALES/DEDUCTIVOS</strong> + <strong>PDF (jsPDF)</strong></td>
+</tr>
+<tr>
+<td><strong>De dónde jala</strong></td>
+<td><code>ro.detallePartidas</code>, <code>ro.indicadoresGlobales</code>, <code>ro.totales</code>, <code>ro.gastosGenerales</code>, <code>ro.ajustes</code>, <code>ro.evReal</code>, <code>proyectoActivo.presupuestoContractual</code></td>
+</tr>
+</table>
+</div>
+
+<hr>
+
+<h3>3.4 <code>ControlRegistros</code> (CR) — Desglose del AC + importador</h3>
+<p><strong>Archivo:</strong> <code>/src/views/modulos/resultadoOperativo/ControlRegistros.jsx</code></p>
+
+<div class="ficha">
+<table>
+<tr>
+<td><strong>ENTRA</strong></td>
+<td><code>useRO()</code> → <code>ro</code>, <code>facturas</code>, <code>valorizacionesSC</code>, <code>gastosGenerales</code></td>
+</tr>
+<tr>
+<td><strong>SE PROCESA</strong></td>
+<td>Por partida descompone el AC en sus 4 patas; <code>%MO = Tareos÷AC×100</code>; suma <strong>Costo Directo</strong>; añade GG; calcula <strong>Total Costo de Obra</strong></td>
+</tr>
+<tr>
+<td><strong>SALE</strong></td>
+<td>Tabla <code>Partida | Tareos | Almacén | Facturas | Subcontr. | AC | %MO</code> + sub-vistas de <strong>importación</strong> (Excel/CSV)</td>
+</tr>
+<tr>
+<td><strong>De dónde jala</strong></td>
+<td><code>ro.detallePartidas</code> (costoMORealAct, costoMatRealAct), <code>facturas</code> (no anuladas), <code>valorizacionesSC</code>, <code>gastosGenerales</code></td>
+</tr>
+<tr>
+<td><strong>Escribe</strong> (vía hijo <code>ImportadorRegistros</code>)</td>
+<td><code>Registro_Facturas</code>, <code>ValorizacionesSubcontratistas</code>, <code>GG_Oficina</code></td>
+</tr>
+</table>
+</div>
+
+<hr>
+
+<h3>3.5 <code>ROFrentes</code> — Comparativa F1 PTARI vs F2 NAVE</h3>
+<p><strong>Archivo:</strong> <code>/src/views/modulos/resultadoOperativo/ROFrentes.jsx</code></p>
+
+<div class="ficha">
+<table>
+<tr>
+<td><strong>ENTRA</strong></td>
+<td><code>useRO({ ignorarFrente: true })</code> (carga TODA la obra) + <code>frentesDelProyecto[]</code> + helper <code>byFr()</code></td>
+</tr>
+<tr>
+<td><strong>SE PROCESA</strong></td>
+<td>Para CADA frente filtra actividades/datos y corre <code>calcularROMensual</code> por separado; <strong>GG NO se reparte</strong> (es nivel obra)</td>
+</tr>
+<tr>
+<td><strong>SALE</strong></td>
+<td>Cards comparativas por frente + tabla <code>Frente | BAC | EV | AC | CV | CPI | Margen%</code> + fila <strong>TOTAL OBRA</strong> + PDF</td>
+</tr>
+<tr>
+<td><strong>De dónde jala</strong></td>
+<td><code>actividades</code> filtradas por <code>frenteId</code>; <code>apus/tareos/kardex/valorizaciones</code> sin filtro; <code>facturas/SC/adicionales/deductivos</code> por frente; <code>gastosGenerales = []</code></td>
+</tr>
+</table>
+</div>
+
+<hr>
+
+<h3>3.6 <code>planMaestroAnalytics</code> (líneas 1–463) — Librería matemática</h3>
+<p><strong>Archivo:</strong> <code>/src/utils/planMaestroAnalytics.js</code></p>
+
+<div class="ficha">
+<table>
+<tr>
+<td><strong>ENTRA</strong></td>
+<td>Actividades, APUs y arrays de datos reales</td>
+</tr>
+<tr>
+<td><strong>SE PROCESA / SALE</strong></td>
+<td>Funciones reutilizables: <code>construirArbolWBS</code>, <code>obtenerActividadesHoja</code>, <code>calcularCostoAPU</code>, <code>calcularCostoRealActividad</code>, <code>calcularEVM</code>, <code>calcularROMensual</code>, <code>calcularCurvaS</code> + constantes <code>COSTO_HORA_RO=25.5</code>, <code>FACTOR_APORTES_PE=1.40</code></td>
+</tr>
+</table>
+</div>
+
+<hr>
+
+<h2>4. CÓMO SE FORMAN LOS NÚMEROS GRANDES</h2>
+
+<h3>4.1 BAC — el presupuesto total (lo vendido)</h3>
+<blockquote>
+<p><strong>Analogía:</strong> el BAC es el <strong>precio cerrado</strong> que el cliente aceptó pagar por todo el trabajo.</p>
+</blockquote>
+
+<pre><code>BAC (por partida) = metradoContractual × precioUnitario
+BAC (proyecto)    = Σ BAC de todas las partidas hoja</code></pre>
+<ul>
+<li><strong>De dónde jala:</strong> <code>PlanMaestro</code> (metrado y PU contractual).</li>
+<li><strong>Verificación:</strong> <code>% cobertura BAC = BAC partidas ÷ proyectoActivo.presupuestoContractual × 100</code>. Sano si ≥ ~98%. Si es muy bajo, faltan partidas para cubrir la venta del contrato.</li>
+</ul>
+
+<h3>4.2 EV — lo que REALMENTE ganamos (Earned Value)</h3>
+<blockquote>
+<p><strong>Analogía:</strong> el EV es <strong>lo que ya te ganaste de verdad</strong> porque el cliente reconoció (valorizó) el avance.</p>
+</blockquote>
+
+<pre><code>SI hay ValorizacionesContractuales con esa partida:
+   EV = valorizado REAL al cliente (montoBruto)      → flag evReal=true
+SI NO:
+   EV = avanceMetradoAcum × precioUnitario (estimado) → flag evReal=false</code></pre>
+<ul>
+<li><strong>De dónde jala:</strong> <code>ValorizacionesContractuales</code> (real) o <code>PlanMaestro</code> (avance×PU, proxy).</li>
+<li><strong>Por qué importa el flag <code>evReal</code>:</strong> si es estimado, el número es aproximado. Lo ideal es tener la valorización real al cliente.</li>
+</ul>
+
+<h3>4.3 AC — lo que gastamos (ver sección 2). 4 patas + GG aparte.</h3>
+
+<h3>4.4 PV — lo que DEBERÍAMOS llevar gastado según el calendario</h3>
+<blockquote>
+<p><strong>Analogía:</strong> si la obra dura 10 meses y van 3, "deberías" llevar el 30% del presupuesto ejecutado. Eso es el PV.</p>
+</blockquote>
+
+<pre><code>PV = BAC × (tiempo transcurrido ÷ tiempo total)   [si hay fechas]
+PV = BAC                                            [si NO hay fechas]</code></pre>
+<ul>
+<li><strong>De dónde jala:</strong> fechas de <code>PlanMaestro</code> (<code>fechaInicioProgramada</code>/<code>fechaFinProgramada</code>) + <code>fechaActual</code>.</li>
+</ul>
+
+<hr>
+
+<h2>5. LOS ÍNDICES (CPI, SPI, EAC, VAC) — el termómetro</h2>
+
+<blockquote>
+<p><strong>Analogía del taxímetro:</strong> el <strong>CPI</strong> te dice si gastas más o menos de lo que cobras por cada metro de avance. El <strong>SPI</strong> te dice si vas adelantado o atrasado en el calendario. El <strong>EAC</strong> proyecta cuánto costará al final si sigues a este ritmo. El <strong>VAC</strong> dice cuánta plata ganarás o perderás al cierre.</p>
+</blockquote>
+
+<table>
+<thead>
+<tr>
+<th>Sigla</th>
+<th>Fórmula</th>
+<th>Cómo se lee</th>
+<th>De dónde salen los ingredientes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CPI</strong></td>
+<td><code>EV ÷ AC</code></td>
+<td><strong>&gt;1</strong> dentro de presupuesto (ahorro) · <strong>&lt;1</strong> sobrecosto</td>
+<td>EV (valoriz./avance) · AC (4 patas)</td>
+</tr>
+<tr>
+<td><strong>SPI</strong></td>
+<td><code>EV ÷ PV</code></td>
+<td><strong>&gt;1</strong> adelantado · <strong>&lt;1</strong> atrasado</td>
+<td>EV · PV (fechas PlanMaestro)</td>
+</tr>
+<tr>
+<td><strong>EAC</strong></td>
+<td><code>BAC ÷ CPI</code></td>
+<td>Costo final proyectado</td>
+<td>BAC (metrado×PU) · CPI</td>
+</tr>
+<tr>
+<td><strong>VAC</strong></td>
+<td><code>BAC − EAC</code></td>
+<td><strong>+</strong> ganancia al cierre · <strong>−</strong> pérdida al cierre</td>
+<td>BAC · EAC</td>
+</tr>
+<tr>
+<td><strong>CV</strong></td>
+<td><code>EV − AC</code></td>
+<td>Ganancia en efectivo HOY</td>
+<td>EV · AC</td>
+</tr>
+<tr>
+<td><strong>SV</strong></td>
+<td><code>EV − PV</code></td>
+<td>Adelanto/atraso en dinero HOY</td>
+<td>EV · PV</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>KPIs globales (todo el proyecto):</strong></p>
+<pre><code>CPI_global = EV total ÷ AC total
+SPI_global = EV total ÷ PV total
+VAC_global = BAC − (BAC ÷ CPI_global)
+margenProyectadoCierre = VAC ÷ BAC × 100</code></pre>
+
+<p><strong>Colores en la tabla:</strong> CPI ≥ 1 verde · 0.9–1 naranja · < 0.9 rojo · CV positivo verde · negativo rojo.</p>
+
+<hr>
+
+<h2>6. LOS MÁRGENES (¿estamos ganando?)</h2>
+
+<blockquote>
+<p><strong>Analogía:</strong> vendes un pan a S/1. El <strong>margen aplicado</strong> es lo que GANARÍAS si el pan te costara lo del recetario (APU teórico). El <strong>margen real</strong> es lo que GANAS de verdad después de pagar harina cara, mano de obra lenta, etc. (el costo real, AC).</p>
+</blockquote>
+
+<table>
+<thead>
+<tr>
+<th>Margen</th>
+<th>Fórmula</th>
+<th>Qué compara</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Costo Aplicado</strong></td>
+<td><code>avanceMetradoAcum × costoUnitarioTeórico (APU)</code></td>
+<td>Lo que DEBERÍA costar</td>
+</tr>
+<tr>
+<td><strong>Margen Aplicado</strong></td>
+<td><code>(Vendido − Aplicado) ÷ Vendido × 100</code></td>
+<td>Ganancia teórica (ideal)</td>
+</tr>
+<tr>
+<td><strong>Margen Real</strong></td>
+<td><code>(Vendido − CostoReal) ÷ Vendido × 100</code></td>
+<td>Ganancia REAL (la que cuenta)</td>
+</tr>
+<tr>
+<td><strong>Margen Pendiente</strong></td>
+<td><code>(VentaSaldo − CostoTeóricoSaldo) ÷ VentaSaldo × 100</code></td>
+<td>Margen por ganar en lo que falta</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>Margen Real con GG:</strong> <code>(EV − (AC + GG)) ÷ EV × 100</code> — el de verdad de verdad, incluyendo oficina.</p>
+
+<p><strong>Severidad (semáforo de salud por partida):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Condición</th>
+<th>Severidad</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>margenReal < 0</code></td>
+<td><strong>crítica</strong> (perdiendo plata)</td>
+</tr>
+<tr>
+<td><code>margenReal < 50% de la meta</code></td>
+<td><strong>alta</strong></td>
+</tr>
+<tr>
+<td><code>margenReal < meta (15%)</code></td>
+<td><strong>media</strong></td>
+</tr>
+<tr>
+<td>Resto</td>
+<td><strong>ok</strong> (partida sana / estrella)</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>7. AJUSTES CONTRACTUALES (Adicionales / Deductivos F05)</h2>
+
+<blockquote>
+<p><strong>Analogía:</strong> el cliente te pidió "hazme además este muro extra" (<strong>Adicional</strong> → sube el presupuesto y la venta) o "ya no hagas esa loza" (<strong>Deductivo</strong> → baja el presupuesto y la venta). Son cambios de orden formalizados (formato F05, con PQ-01 y PQ-02).</p>
+</blockquote>
+
+<pre><code>bacContractual = BAC base + Σ(adicionales.presupuesto) − Σ(deductivos.presupuesto)
+evContractual  = EV base  + Σ(adicionales.valorizado)  − Σ(deductivos.valorizado)
+
+donde sumarPQ = Σ(camposPQ01 + camposPQ02)</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>Dato</th>
+<th>De dónde</th>
+<th>A dónde</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>presupuestoPQ01/PQ02</code></td>
+<td><code>Adicionales</code> / <code>Deductivos</code></td>
+<td>ajusta <strong>BAC contractual</strong></td>
+</tr>
+<tr>
+<td><code>valorizadoPQ01/PQ02</code></td>
+<td><code>Adicionales</code> / <code>Deductivos</code></td>
+<td>ajusta <strong>EV contractual</strong></td>
+</tr>
+</tbody>
+</table>
+
+<ul>
+<li><strong>Escribe:</strong> <code>PartidasExtras.jsx</code> (formulario in-app) → colecciones <code>Adicionales</code> y <code>Deductivos</code>.</li>
+</ul>
+
+<hr>
+
+<h2>8. ¿QUIÉN ALIMENTA EL RO? (valorizaciones, facturas, subcontratos)</h2>
+
+<h3>8.1 Valorizaciones Contractuales (al cliente) → define el <strong>EV REAL</strong></h3>
+<p><strong>Archivo:</strong> <code>src/views/oficinatecnica/ValorizacionesView.jsx</code></p>
+
+<div class="ficha">
+<table>
+<tr>
+<td><strong>ENTRA</strong></td>
+<td><code>Historial</code> (producción real) + <code>PartidasContractuales</code> (metrado/PU) + período + factor reajuste + % adelanto</td>
+</tr>
+<tr>
+<td><strong>SE PROCESA</strong></td>
+<td><code>EV = avance del periodo × PU × Factor Reajuste</code>; <code>Neto = EV − adelanto amortizado</code>; <code>Total = Neto + IGV 18%</code></td>
+</tr>
+<tr>
+<td><strong>SALE</strong></td>
+<td><code>ValorizacionesContractuales</code> con <code>partidasValorizadas[].montoBruto</code> → esto <strong>manda</strong> como EV real en el motor</td>
+</tr>
+<tr>
+<td><strong>Estado</strong></td>
+<td>borrador → enviada → aprobada → pagada</td>
+</tr>
+</table>
+</div>
+
+<h3>8.2 Registro de Facturas (proveedores) → pata 3 del <strong>AC</strong></h3>
+<p><strong>Importa vía:</strong> <code>ImportadorRegistros.jsx</code> (Excel/CSV) → <code>Registro_Facturas</code></p>
+<ul>
+<li>Campos: partida (WBS), proveedor, documento, fecha, glosa, <code>montoSinIGV</code>, estado.</li>
+<li>Cálculo: <code>Costo Facturas por partida = Σ(montoSinIGV)</code> donde <code>partida = códigoWBS</code> y <code>estado ≠ anulado</code>.</li>
+</ul>
+
+<h3>8.3 Valorizaciones a Subcontratistas (F10) → pata 4 del <strong>AC</strong></h3>
+<p><strong>Importa vía:</strong> <code>ImportadorRegistros.jsx</code> → <code>ValorizacionesSubcontratistas</code></p>
+<ul>
+<li>Campos: partida, subcontratista, valorización (nro), <code>cdValorizado</code> (costo directo).</li>
+<li>Cálculo: <code>Costo SC por partida = Σ(cdValorizado)</code> por partida.</li>
+</ul>
+
+<h3>8.4 Gastos Generales (GG) → <strong>sección aparte</strong>, NO va a partida</h3>
+<p><strong>Importa vía:</strong> <code>ImportadorRegistros.jsx</code> → <code>GG_Oficina</code></p>
+<ul>
+<li>Campos: concepto, categoría, fecha, monto.</li>
+<li>Cálculo: <code>GG Total = Σ(monto)</code> vigentes → se suma DESPUÉS de los márgenes por partida.</li>
+</ul>
+
+<h3>8.5 Importador Genérico (el "traductor" de Excel)</h3>
+<p><strong>Archivo:</strong> <code>src/views/modulos/resultadoOperativo/ImportadorRegistros.jsx</code></p>
+<ul>
+<li><code>parseNumero</code>: entiende <code>S/ 1.234,56</code>, <code>1,234.56</code>, <code>1234</code> → número.</li>
+<li><code>detectarColumnas</code>: match exacto, luego parcial, de las etiquetas.</li>
+<li>Escribe en lotes de 400 con <code>proyectoId + frenteId + estado:'vigente' + creadoEn + origenImport</code>.</li>
+<li>Al escribir → <code>onSnapshot</code> dispara → el RO <strong>se recalcula solo</strong> (sin recargar).</li>
+</ul>
+
+<hr>
+
+<h2>9. TABLA RESUMEN: DATO → DE DÓNDE → A DÓNDE</h2>
+
+<table>
+<thead>
+<tr>
+<th>Dato</th>
+<th>De dónde JALA (colección)</th>
+<th>A dónde va (en el RO)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Metrado + PU contractual</td>
+<td><code>PlanMaestro</code></td>
+<td><strong>BAC</strong> = metrado × PU</td>
+</tr>
+<tr>
+<td>Costo teórico (4 comp.)</td>
+<td><code>APUs</code></td>
+<td><strong>Costo Aplicado</strong> = avance × costo APU</td>
+</tr>
+<tr>
+<td>Tareos (HH)</td>
+<td><code>Registros_Campo</code></td>
+<td><strong>AC pata 1</strong> = HH × 25.5</td>
+</tr>
+<tr>
+<td>Salidas de almacén</td>
+<td><code>Kardex_Movimientos</code> (SALIDA)</td>
+<td><strong>AC pata 2</strong> = Σ costoTotal</td>
+</tr>
+<tr>
+<td>Facturas proveedores</td>
+<td><code>Registro_Facturas</code></td>
+<td><strong>AC pata 3</strong> = Σ montoSinIGV</td>
+</tr>
+<tr>
+<td>Valorización a SC (F10)</td>
+<td><code>ValorizacionesSubcontratistas</code></td>
+<td><strong>AC pata 4</strong> = Σ cdValorizado</td>
+</tr>
+<tr>
+<td>Gastos de oficina</td>
+<td><code>GG_Oficina</code></td>
+<td><strong>GG</strong> (aparte) → Total Costo Obra</td>
+</tr>
+<tr>
+<td>Valorización al cliente</td>
+<td><code>ValorizacionesContractuales</code></td>
+<td><strong>EV real</strong> (montoBruto)</td>
+</tr>
+<tr>
+<td>Avance metrado</td>
+<td><code>PlanMaestro</code> / <code>Historial</code></td>
+<td><strong>EV estimado</strong> (si no hay valoriz.)</td>
+</tr>
+<tr>
+<td>Fechas programadas</td>
+<td><code>PlanMaestro</code> (Cronograma)</td>
+<td><strong>PV</strong> = BAC × (t transcurrido / t total)</td>
+</tr>
+<tr>
+<td>Adicionales F05</td>
+<td><code>Adicionales</code></td>
+<td><strong>+BAC contractual / +EV contractual</strong></td>
+</tr>
+<tr>
+<td>Deductivos F05</td>
+<td><code>Deductivos</code></td>
+<td><strong>−BAC contractual / −EV contractual</strong></td>
+</tr>
+<tr>
+<td>Presupuesto del contrato</td>
+<td><code>Proyectos.presupuestoContractual</code></td>
+<td><strong>% cobertura BAC</strong> (verificación)</td>
+</tr>
+<tr>
+<td>Frentes</td>
+<td><code>Frentes</code></td>
+<td>filtra datos en comparativa F1/F2</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>10. GLOSARIO DE SIGLAS</h2>
+
+<table>
+<thead>
+<tr>
+<th>Sigla</th>
+<th>Significado</th>
+<th>Fórmula / Definición</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>RO</strong></td>
+<td>Resultado Operativo</td>
+<td>Estado financiero mensual: márgenes, costos y rendimiento (formato GP-GCE-FOR-<strong>F06</strong>)</td>
+</tr>
+<tr>
+<td><strong>CR</strong></td>
+<td>Control de Registros</td>
+<td>Tabla que desglosa el AC en sus 4 patas por partida</td>
+</tr>
+<tr>
+<td><strong>WBS</strong></td>
+<td>Work Breakdown Structure</td>
+<td>Jerarquía de partidas: <code>02.00.00</code> → <code>02.01.00</code> → <code>02.01.003</code></td>
+</tr>
+<tr>
+<td><strong>BAC</strong></td>
+<td>Budget At Completion</td>
+<td>Presupuesto total = <strong>metrado × PU</strong></td>
+</tr>
+<tr>
+<td><strong>PV</strong></td>
+<td>Planned Value</td>
+<td>Lo que "debería" ir gastado = <strong>BAC × (t transcurrido / t total)</strong></td>
+</tr>
+<tr>
+<td><strong>EV</strong></td>
+<td>Earned Value</td>
+<td>Lo realmente ganado = <strong>valorizado real</strong> o <strong>avance × PU</strong></td>
+</tr>
+<tr>
+<td><strong>AC</strong></td>
+<td>Actual Cost</td>
+<td>Costo real = <strong>Tareos×25.5 + Almacén + Facturas + Subcontratos</strong> (sin GG)</td>
+</tr>
+<tr>
+<td><strong>CPI</strong></td>
+<td>Cost Performance Index</td>
+<td><strong>EV ÷ AC</strong> (>1 ahorro, <1 sobrecosto)</td>
+</tr>
+<tr>
+<td><strong>SPI</strong></td>
+<td>Schedule Performance Index</td>
+<td><strong>EV ÷ PV</strong> (>1 adelantado, <1 atrasado)</td>
+</tr>
+<tr>
+<td><strong>EAC</strong></td>
+<td>Estimate At Completion</td>
+<td>Costo final proyectado = <strong>BAC ÷ CPI</strong></td>
+</tr>
+<tr>
+<td><strong>VAC</strong></td>
+<td>Variance At Completion</td>
+<td>Ganancia/pérdida al cierre = <strong>BAC − EAC</strong></td>
+</tr>
+<tr>
+<td><strong>CV</strong></td>
+<td>Cost Variance</td>
+<td>Margen en dinero HOY = <strong>EV − AC</strong></td>
+</tr>
+<tr>
+<td><strong>SV</strong></td>
+<td>Schedule Variance</td>
+<td>Adelanto/atraso en dinero HOY = <strong>EV − PV</strong></td>
+</tr>
+<tr>
+<td><strong>APU</strong></td>
+<td>Análisis de Precio Unitario</td>
+<td>Costo teórico en 4 patas: MO, MAT (materiales), EQ (equipos), SC (subcontratos)</td>
+</tr>
+<tr>
+<td><strong>HH</strong></td>
+<td>Horas-Hombre</td>
+<td>Tiempo de mano de obra trabajado (de los tareos)</td>
+</tr>
+<tr>
+<td><strong>MO</strong></td>
+<td>Mano de Obra</td>
+<td>Pata 1 del costo</td>
+</tr>
+<tr>
+<td><strong>SC</strong></td>
+<td>Subcontratos</td>
+<td>Pata 4 del costo (F10)</td>
+</tr>
+<tr>
+<td><strong>GG</strong></td>
+<td>Gastos Generales</td>
+<td>Administración, seguros, financieros; NO van a partida</td>
+</tr>
+<tr>
+<td><strong>IP</strong></td>
+<td>Índice de Productividad</td>
+<td><strong>HH ÷ metrado</strong> (menor es mejor)</td>
+</tr>
+<tr>
+<td><strong>PQ</strong></td>
+<td>Presupuesto de Obra</td>
+<td>Adicional/Deductivo aprobado (trae PQ-01 y PQ-02)</td>
+</tr>
+<tr>
+<td><strong>F05</strong></td>
+<td>Formato Adicionales/Deductivos</td>
+<td>Cambios de orden</td>
+</tr>
+<tr>
+<td><strong>F06</strong></td>
+<td>Formato RO</td>
+<td>Resultado Operativo mensual</td>
+</tr>
+<tr>
+<td><strong>F10</strong></td>
+<td>Formato Valorización a SC</td>
+<td>Lo devengado al subcontratista</td>
+</tr>
+<tr>
+<td><strong>IGV</strong></td>
+<td>Impuesto General a las Ventas</td>
+<td><strong>18%</strong> (en valorizaciones al cliente)</td>
+</tr>
+<tr>
+<td><strong>Curva S</strong></td>
+<td>—</td>
+<td>Gráfico acumulado PV vs EV en el tiempo</td>
+</tr>
+<tr>
+<td><strong>Costo Aplicado</strong></td>
+<td>—</td>
+<td><strong>avance × costo APU</strong> (lo que DEBERÍA costar)</td>
+</tr>
+<tr>
+<td><strong>COSTO_HORA_RO</strong></td>
+<td>—</td>
+<td><strong>S/ 25.50/h</strong> — tarifa única de MO para todo el RO</td>
+</tr>
+<tr>
+<td><strong>FACTOR_APORTES_PE</strong></td>
+<td>—</td>
+<td><strong>1.40</strong> — aportes legales (CTS, vacaciones, ESSALUD) en el APU teórico</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>11. CÓMO EXPLICARLO EN 1 MINUTO</h2>
+
+<blockquote>
+<p><strong>"Imagina que la obra es un puesto de comida en una feria.</strong></p>
+
+<p>El <strong>BAC</strong> es el precio cerrado que acordaste cobrar por todos los platos del día (lo que vendes).</p>
+
+<p>El <strong>EV</strong> es lo que ya te ganaste de verdad, porque ya serviste esos platos y el cliente los aceptó (las valorizaciones).</p>
+
+<p>El <strong>AC</strong> es lo que te costó cocinar: el sueldo de los cocineros (<strong>Tareos × S/25.50</strong>), la comida del almacén (<strong>Kardex</strong>), lo que pediste a proveedores (<strong>Facturas</strong>) y lo que pagaste al de la parrilla de al lado que cocinó por ti (<strong>Subcontratos</strong>). La luz y el alquiler del puesto son los <strong>Gastos Generales</strong>, que pagas aparte.</p>
+
+<p>El <strong>CPI</strong> es tu termómetro: si por cada sol que cobras gastaste menos de un sol, vas bien (CPI mayor que 1). Si gastaste más, estás perdiendo (CPI menor que 1).</p>
+
+<p>Cada vez que alguien anota un tareo, registra una salida de almacén o sube una factura, <strong>el sistema recalcula todo solito</strong> (<code>onSnapshot</code> en vivo) y te dice, partida por partida, <strong>dónde estás ganando (partidas estrella) y dónde se te está yendo la plata (partidas críticas, en rojo)</strong> — para apagar el incendio antes de que sea tarde."</p>
+</blockquote>
+
+<hr>
+
+<h3>Archivos clave referenciados (rutas absolutas dentro del repo)</h3>
+<ul>
+<li>Motor y librería: <code>/src/utils/planMaestroAnalytics.js</code> (líneas 474–701 = <code>calcularROMensual</code>; 1–463 = helpers; línea 37 = <code>COSTO_HORA_RO=25.5</code>)</li>
+<li>Hook orquestador: <code>/src/views/modulos/resultadoOperativo/useRO.js</code></li>
+<li>Vista RO oficial (F06): <code>/src/views/modulos/resultadoOperativo/ResultadoOperativoOficial.jsx</code></li>
+<li>Control de Registros (CR): <code>/src/views/modulos/resultadoOperativo/ControlRegistros.jsx</code></li>
+<li>Comparativa por frente: <code>/src/views/modulos/resultadoOperativo/ROFrentes.jsx</code></li>
+<li>Importador Excel/CSV: <code>/src/views/modulos/resultadoOperativo/ImportadorRegistros.jsx</code></li>
+<li>Adicionales/Deductivos (F05): <code>/src/views/modulos/resultadoOperativo/PartidasExtras.jsx</code></li>
+<li>Valorizaciones al cliente: <code>/src/views/oficinatecnica/ValorizacionesView.jsx</code></li>
+</ul>
+
+<hr>
+
+<blockquote>
+<p><em>Documento generado trazando el código real de la plataforma (módulos, hooks y colecciones Firestore) — 2026-06-15.</em>
+<em>Si un módulo cambia, este mapa debe re-generarse para seguir siendo la única verdad.</em></p>
+</blockquote></main></body></html>

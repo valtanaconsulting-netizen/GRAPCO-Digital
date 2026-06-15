@@ -1,0 +1,198 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Póster — GRAPCO VDC-Lean</title>
+<style>:root{--navy:#0B1F39;--navy2:#0F2A47;--gold:#E5A82F;--goldd:#C8901F;--ink:#1c2733;--muted:#5b6b7f;--line:#e3e9f0;--soft:#f6f9fc;}
+*{box-sizing:border-box}html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font-family:'Segoe UI',Arial,sans-serif;margin:0;background:#dfe5ec;color:var(--ink)}
+.poster{width:594mm;min-height:841mm;margin:0 auto;background:#fff;padding:22mm 18mm 16mm}
+.poster>header{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;border-bottom:8px solid var(--gold);border-radius:14px;padding:26mm 22mm;margin-bottom:14mm;text-align:center}
+.poster>header .kicker{color:var(--gold);font-weight:800;letter-spacing:4px;font-size:20px;text-transform:uppercase}
+.poster>header h1{color:#fff;font-size:62px;line-height:1.1;margin:14px 0;border:none}
+.poster>header .authors{font-size:26px;opacity:.92;margin-top:10px}
+.poster>header .aff{font-size:20px;opacity:.75;margin-top:6px}
+.cols{column-count:2;column-gap:16mm}
+.poster section{break-inside:avoid;margin:0 0 14mm;border:1px solid var(--line);border-top:8px solid var(--gold);border-radius:12px;padding:18px 22px;background:#fff;box-shadow:0 6px 20px rgba(11,31,57,.06)}
+.poster h2{color:var(--navy);font-size:32px;margin:0 0 10px;border:none;padding:0}
+.poster h3{font-size:24px;color:var(--navy2)}
+.poster p,.poster li{font-size:19px;line-height:1.45}
+.poster ul,.poster ol{padding-left:26px}
+.poster strong{color:var(--navy)}
+.poster code{font-family:Consolas,monospace;background:#eef2f7;color:#0b3b66;padding:1px 6px;border-radius:4px;font-size:.9em}
+.poster table{border-collapse:collapse;width:100%;font-size:18px}
+.poster th,.poster td{border:1px solid var(--line);padding:8px 10px}.poster thead th{background:var(--navy);color:#fff}
+.diagram{background:#0b1f39;border-radius:10px;padding:14px;overflow:auto}
+.diagram pre{margin:0;color:#e8eef6;font-family:Consolas,monospace;font-size:13px;line-height:1.3;white-space:pre}
+.kpi-grid{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0}
+.kpi{flex:1 1 40%;background:var(--soft);border:1px solid var(--line);border-top:6px solid var(--gold);border-radius:10px;padding:16px;text-align:center}
+.kpi-num{display:block;font-size:54px;font-weight:900;color:var(--navy);line-height:1}
+.kpi-lbl{display:block;font-size:17px;color:var(--muted);margin-top:8px}
+.printbtn{position:fixed;top:14px;right:14px;z-index:99;background:var(--gold);color:var(--navy);border:none;padding:10px 16px;border-radius:8px;font-weight:800;cursor:pointer;font-family:inherit}
+@media print{.no-print{display:none!important}body{background:#fff}.poster{margin:0;box-shadow:none}@page{size:594mm 841mm;margin:0}}
+</style></head><body>
+<button class="printbtn no-print" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+<div class="poster"><header>
+<h1>GRAPCO VDC-Lean: una sola verdad que viaja sola desde la obra hasta el tablero financiero</h1>
+<h3>Plataforma integrada VDC + Lean Construction + Earned Value que convierte el tareo del capataz en avance de cronograma, costo real y semáforos de gestión, en tiempo real y a costo de operación cero</h3>
+<p><strong>Valtana Consulting</strong> · <strong>GRAPCO S.A.C.</strong> — Ingeniería, Construcción y Gestión de Proyectos</p>
+<p><em>Área de Innovación Digital en Construcción · Lima, Perú</em></p>
+<p><strong>XX Congreso Internacional de Ingeniería Civil y Construcción Lean — 2026</strong></p>
+</header><div class="cols">
+
+<hr>
+
+<h2>Problema</h2>
+
+<div class="callout">
+<p><strong>El dato muere tres veces.</strong> En la obra tradicional el mismo número se re-escribe en tres mundos que no se hablan: producción, planeamiento y costos.</p>
+</div>
+
+<ul>
+<li><strong>Doble y triple digitación.</strong> El tareo se anota en papel, se re-teclea en el cronograma y se vuelve a teclear en el costeo. Cada copia es un error nuevo.</li>
+<li><strong>Dos (o tres) verdades.</strong> El avance del residente, el del planner y el del costos <em>nunca</em> coinciden. Nadie sabe cuál creer.</li>
+<li><strong>Reportes a destiempo.</strong> El Resultado Operativo llega <em>semanas tarde</em>: cuando se ve la partida en rojo, la plata ya se fue.</li>
+<li><strong>Productividad invisible.</strong> No se mide cuánta hora-hombre es trabajo productivo y cuánta es espera, retrabajo o paro.</li>
+<li><strong>Software caro y desconectado.</strong> Licencias de cronograma + ERP de costos + control de campo, cada uno por su lado, fuera del alcance de la obra peruana promedio.</li>
+</ul>
+
+<h2>Objetivo</h2>
+
+<div class="callout">
+<p><strong>Que el capataz escriba UNA sola comanda — y de ahí salga TODO, solo.</strong></p>
+</div>
+
+<ul>
+<li>Establecer <strong>3 fuentes únicas de la verdad</strong>: estructura (<code>Catalogo_WBS</code>), campo (<code>Registros_Campo</code>), plan valorizado (<code>PlanMaestro</code>).</li>
+<li><strong>Regla de oro:</strong> un dato se escribe una sola vez en su fuente; todos los tableros lo <em>leen</em> de ahí. Nunca dos verdades.</li>
+<li>Cerrar el ciclo <strong>VDC + Last Planner + Earned Value</strong> en una sola plataforma, viva y en tiempo real.</li>
+<li>Lograrlo a <strong>costo de operación S/ 0</strong>, sin tarjeta de crédito, funcionando incluso <em>sin señal</em> (offline-first).</li>
+</ul>
+
+<h2>Metodología / Arquitectura</h2>
+
+<p>El dato circula en <strong>dos sentidos</strong>. <strong>De arriba hacia abajo se planifica</strong> (WBS → CPM → Last Planner → Plan Diario). <strong>De abajo hacia arriba se retroalimenta</strong> (tareo del campo → avance % automático → Curva S → CPI/SPI → semáforos). La <em>sangre</em> que une ambos sentidos es la colección <code>Registros_Campo</code>.</p>
+
+<div class="diagram"><pre>
+   ============ SE PLANIFICA (de arriba hacia abajo) ============
+
+   EditorWbsIsp ──► [ Catalogo_WBS ]  ◄== FUENTE ÚNICA: estructura + IP meta
+                          │  HH = metrado × IP
+                          ▼
+                    autoprograma ──► CronogramaPro + cpm.js ──► Curva S
+                          │           (ES/EF/LS/LF · ruta crítica · baseline)
+                          ▼
+                    [ Cronogramas ] ──► LastPlannerPro (LOOKAHEAD · PPC · CNC)
+                                            │
+                                            ▼  VDC.jsx (restricciones · Pareto RNC)
+
+   ============ EL CAMPO (la obra real) ============
+
+   MarcadorAsistencia          Capataz.jsx + EditorActividad
+   (rostro ──► HH)             (cuadrilla · WBS · metrado · HN/HE)
+        │                                │  importa HH (match por nombre)
+        ▼                                ▼
+   [ Asistencia_Diaria ] ───────► [ Registros_Campo ]  ◄=== LA "SANGRE"
+                                    {metrado, totalHH, ipReal, fotos, proyectoId}
+                                          │
+        ┌─────────────────────────────────┼─────────────────────────────┐
+        ▼                                 ▼                              ▼
+  CronogramaPro                     Ingeniero.jsx                  useRO.js
+  .sincronizarAvance()             (auditoría · CPI/SPI            (carga 11 colecciones
+  % = metrado ejec ÷ total          semanal · IP real vs meta)     EN VIVO, onSnapshot)
+  (RETROALIMENTA el plan)                                                │
+                                                                        ▼
+                                              planMaestroAnalytics.calcularROMensual()
+                                              AC = HH×25.5 + Kardex + Facturas + SC
+                                              EV = valorizado ó avance×PU · BAC = metr×PU
+                                              CPI=EV/AC · SPI=EV/PV · EAC=BAC/CPI
+                                                                        │
+                                  ┌──────────────────┬──────────────────┘
+                                  ▼                  ▼
+                         RO Oficial (F06)     WarRoom + Optimizador
+                         CPI/SPI · margen     (Cartas_Balance ──► LUF · Pareto TNC
+                         · severidad · PDF      ──► cuadrilla óptima greedy)
+</pre></div>
+
+<h3>Las tres fuentes únicas de la verdad</h3>
+
+<div class="ficha">
+<h4>ENTRA — La estructura</h4>
+<p><code>Catalogo_WBS</code>: partidas, metrados e IP meta. Lo llena Oficina Técnica. De aquí nace toda la obra: <code>HH = metrado × IP</code>.</p>
+</div>
+
+<div class="ficha">
+<h4>PROCESA — El campo</h4>
+<p><code>Registros_Campo</code>: el tareo que escribe el capataz (metrado real, HH, fotos). Una sola escritura (UPSERT por actividad-capataz-fecha) alimenta avance, costo y auditoría.</p>
+</div>
+
+<div class="ficha">
+<h4>SALE — Plan valorizado</h4>
+<p><code>PlanMaestro</code> + <code>useRO</code> leen y cruzan; el motor devuelve EVM, Resultado Operativo, Curva S y semáforos. <strong>Cero re-tecleo.</strong></p>
+</div>
+
+<p><strong>Aislamiento por proyecto:</strong> <code>ProyectoActivoContext</code> + <code>filtrarPorContexto()</code> garantizan que cada proyecto vea <em>solo</em> su data. Un capataz no puede escribir en otro proyecto. <strong>Offline-first:</strong> persistencia Firestore (IndexedDB) + service worker — la plataforma marca asistencia, registra tareos y muestra tableros <em>sin señal</em>.</p>
+
+<h2>El modelo EVM</h2>
+
+<p>El Resultado Operativo es una balanza de dos platillos: <strong>lo que GANAMOS</strong> (BAC / EV, la venta al cliente) contra <strong>lo que GASTAMOS</strong> (AC, las 4 patas del costo real + Gastos Generales).</p>
+
+<div class="diagram"><pre>
+  AC (Costo Real) = Pata 1 Tareos (HH × S/25.50)  +  Pata 2 Almacén (Kardex)
+                  + Pata 3 Facturas (montoSinIGV)  +  Pata 4 Subcontratos (cdValorizado)
+  Total Costo de Obra = AC directo  +  GG_Oficina (aparte, NO va a partida)
+</pre></div>
+
+<table>
+<thead>
+<tr><th>Índice</th><th>Fórmula</th><th>Cómo se lee</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>BAC</strong></td><td>metrado × PU</td><td>El precio cerrado: lo vendido al cliente</td></tr>
+<tr><td><strong>EV</strong></td><td>valorizado real ó avance × PU</td><td>Lo realmente ganado / reconocido</td></tr>
+<tr><td><strong>AC</strong></td><td>4 patas + GG</td><td>Lo que de verdad costó</td></tr>
+<tr><td><strong>PV</strong></td><td>BAC × (t transcurrido ÷ t total)</td><td>Lo que se debería llevar gastado</td></tr>
+<tr><td><strong>CPI</strong></td><td><strong>EV ÷ AC</strong></td><td>≥1 ahorro · &lt;0.85 sobrecosto crítico</td></tr>
+<tr><td><strong>SPI</strong></td><td><strong>EV ÷ PV</strong></td><td>≥1 adelantado · &lt;0.85 atrasado</td></tr>
+<tr><td><strong>EAC</strong></td><td><strong>BAC ÷ CPI</strong></td><td>Cuánto costará al final a este ritmo</td></tr>
+<tr><td><strong>VAC</strong></td><td>BAC − EAC</td><td>Ganancia (+) o pérdida (−) proyectada al cierre</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<p><strong>Costo-hora único de S/ 25.50.</strong> Toda la mano de obra (capataz, operario, oficial, ayudante) se costea con una sola tarifa <code>COSTO_HORA_RO = 25.5</code>, que cuadra exactamente con el Control de Tareos del RO oficial (F06). Las tarifas por cargo solo viven en el APU teórico.</p>
+</div>
+
+<p><strong>Productividad Lean.</strong> Del lado del campo, las Cartas Balance calculan el <code>LUF</code> (Labor Utilization Factor = horas productivas ÷ horas trabajadas) y el <code>TNC</code> (paros + retrabajos), con Pareto de las causas que suman el 80% de la pérdida. El Optimizador arma la cuadrilla óptima por histórico de productividad.</p>
+
+<h2>Resultados (CREDITEX-PTAR)</h2>
+
+<p>Plataforma desplegada y viva en el proyecto <strong>CREDITEX-PTAR</strong> (planta de tratamiento, frentes F1 PTARI y F2 NAVE). El Resultado Operativo es <strong>automático</strong>: el motor consolida <strong>11 colecciones en vivo</strong> y recalcula CPI, SPI, EAC y margen <em>solo</em>, en cuanto entra un tareo, una salida de almacén o una factura.</p>
+
+<div class="kpi-grid">
+<div class="kpi"><span class="kpi-num">1</span><span class="kpi-lbl">comanda que escribe el capataz — y de ella sale avance + costo + semáforos</span></div>
+<div class="kpi"><span class="kpi-num">11</span><span class="kpi-lbl">colecciones consolidadas en vivo por <code>useRO</code> (onSnapshot)</span></div>
+<div class="kpi"><span class="kpi-num">3</span><span class="kpi-lbl">fuentes únicas de la verdad: WBS · Campo · PlanMaestro</span></div>
+<div class="kpi"><span class="kpi-num">S/ 25.50</span><span class="kpi-lbl">costo-hora único de MO — cuadra 1:1 con el RO oficial F06</span></div>
+<div class="kpi"><span class="kpi-num">0</span><span class="kpi-lbl">re-digitaciones: el % de avance del cronograma se sincroniza solo desde el tareo</span></div>
+<div class="kpi"><span class="kpi-num">S/ 0</span><span class="kpi-lbl">costo de operación garantizado: stack gratuito, sin tarjeta, offline-first</span></div>
+</div>
+
+<p><strong>Trazabilidad total.</strong> Cada sol del costo real es auditable hasta su origen: el costo de MO viene de <code>Registros_Campo.totalHH × 25.5</code>; los materiales de las salidas de <code>Kardex_Movimientos</code>; los subcontratos de <code>ValorizacionesSubcontratistas</code> (F10). El motor distingue partidas <strong>estrella</strong> (margen sano) de partidas <strong>críticas</strong> (en rojo, margen &lt; 0) para apagar el incendio antes de que sea tarde.</p>
+
+<h2>Conclusiones</h2>
+
+<ul>
+<li><strong>El dato se escribe una vez y lo lee todo el sistema.</strong> Producción, planeamiento y costos dejan de ser islas: comparten una única verdad.</li>
+<li><strong>El cronograma se retroalimenta solo.</strong> El % de avance CPM se sincroniza desde el tareo real (<code>metrado ejecutado ÷ metrado total</code>), sin doble digitación.</li>
+<li><strong>El Resultado Operativo deja de llegar tarde.</strong> CPI, SPI, EAC y margen se recalculan en vivo; la partida roja se ve hoy, no a fin de mes.</li>
+<li><strong>VDC + Lean + EVM en una sola plataforma:</strong> Last Planner (PPC, restricciones, Pareto RNC) y Earned Value conviven sobre el mismo dato.</li>
+<li><strong>Tecnología al alcance de la obra peruana:</strong> costo de operación S/ 0, offline-first y reconocimiento facial para asistencia — ejecutable desde un celular en campo.</li>
+</ul>
+
+<blockquote>
+<p>La obra es como cocinar en un restaurante grande: el capataz anota una sola comanda (<code>Registros_Campo</code>) y de esa comanda salen, automáticamente, el avance del cronograma, el costo real y los semáforos del jefe. <strong>Una sola verdad, escrita una sola vez, leída por todos.</strong></p>
+</blockquote>
+
+<h2>Contacto</h2>
+
+<p><strong>Valtana Consulting</strong> · <strong>GRAPCO S.A.C.</strong></p>
+<p>Correo: <code>valtanaconsulting@gmail.com</code></p>
+<p>Plataforma GRAPCO VDC-Lean 2026 — <em>Innovación digital para Construcción Lean y gestión del Valor Ganado</em></p>
+<p><em>Demostración en vivo disponible frente al poster: escanee, registre un tareo y vea cómo el CPI se mueve en tiempo real.</em></p></div></div></body></html>
