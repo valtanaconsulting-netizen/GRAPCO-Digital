@@ -90,6 +90,19 @@ export default function CronogramaPro() {
   // blanca a la derecha cuando el plazo es corto o el zoom es pequeño).
   const ganttPanelRef = useRef(null);
   const [ganttPanelW, setGanttPanelW] = useState(0);
+  // Sincroniza el scroll VERTICAL de la grilla y el Gantt (cada uno es su propio
+  // contenedor de scroll). Como ambos tienen idéntica altura de cabecera (32px) y de
+  // fila (ALTO_FILA), el scrollTop calza 1:1 → las filas y sus barras bajan JUNTAS.
+  const scrollLockRef = useRef(false);
+  const syncScroll = useCallback((origen) => {
+    if (scrollLockRef.current) return;
+    const g = gridRef.current, t = ganttPanelRef.current;
+    if (!g || !t) return;
+    scrollLockRef.current = true;
+    if (origen === 'grid') t.scrollTop = g.scrollTop;
+    else g.scrollTop = t.scrollTop;
+    requestAnimationFrame(() => { scrollLockRef.current = false; });
+  }, []);
   // Catálogo WBS del proyecto: metrados totales por actividad (fuente única)
   const { infoMap } = useCatalogoWBS(proyectoActivoId);
 
@@ -604,10 +617,17 @@ export default function CronogramaPro() {
                 </button>
               </div>
             )}
-            <div style={{ display: 'flex', maxHeight: fullscreen ? '100vh' : '62vh', overflowY: 'auto' }}>
+            {/* Oculta la barra de scroll de la grilla (el scroll visible es el del Gantt);
+                ambos paneles se mueven juntos por syncScroll. */}
+            <style>{`.crono-grid-sb{scrollbar-width:none;-ms-overflow-style:none}.crono-grid-sb::-webkit-scrollbar{width:0;height:0}`}</style>
+            {/* El contenedor NO scrollea; cada panel tiene su propio scroll vertical (sincronizado). */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', overflow: 'hidden' }}>
 
               {/* ── Panel izquierdo: grilla tipo Excel ── */}
-              <div ref={gridRef} style={{ flexShrink: 0, borderRight: `2px solid ${BASE.navy}22`, zIndex: 2, background: BASE.white, ...(gridW != null ? { width: `${gridW}px`, overflowX: 'auto' } : {}) }}>
+              <div ref={gridRef} className="crono-grid-sb" onScroll={() => syncScroll('grid')}
+                style={{ flexShrink: 0, borderRight: `2px solid ${BASE.navy}22`, zIndex: 2, background: BASE.white,
+                  maxHeight: fullscreen ? '100vh' : '62vh', overflowY: 'auto',
+                  ...(gridW != null ? { width: `${gridW}px`, overflowX: 'auto' } : {}) }}>
                 <table style={{ borderCollapse: 'collapse', tableLayout: 'fixed' }}>
                   <thead>
                     <tr>
@@ -690,13 +710,14 @@ export default function CronogramaPro() {
 
               {/* Divisor ARRASTRABLE: arrastra hacia la izquierda para ver más cronograma */}
               <div onMouseDown={onResizerDown} title="Arrastra para ver más o menos del cronograma"
-                style={{ width: '8px', flexShrink: 0, cursor: 'col-resize', background: `${BASE.navy}0d`, borderLeft: `1px solid ${BASE.border}`, position: 'relative' }}>
+                style={{ width: '8px', flexShrink: 0, alignSelf: 'stretch', cursor: 'col-resize', background: `${BASE.navy}0d`, borderLeft: `1px solid ${BASE.border}`, position: 'relative' }}>
                 <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '3px', height: '30px', borderRadius: '3px', background: `${BASE.navy}40` }} />
               </div>
 
               {/* ── Panel derecho: GANTT ── */}
               {gantt && (
-                <div ref={ganttPanelRef} style={{ overflowX: 'auto', flex: 1, minWidth: 0 }}>
+                <div ref={ganttPanelRef} onScroll={() => syncScroll('gantt')}
+                  style={{ overflow: 'auto', flex: 1, minWidth: 0, maxHeight: fullscreen ? '100vh' : '62vh' }}>
                   <div style={{ width: `${gantt.anchoRender}px`, position: 'relative' }}>
                     {/* Cabecera semanas (sticky) */}
                     <div style={{
