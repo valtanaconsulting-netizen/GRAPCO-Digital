@@ -23,7 +23,7 @@ const ROL_ITEMS = {
   calidad:           [{ key: 'calidad',  label: 'Gestión de Calidad',      iconName: 'shield',     color: '#ec4899', group: 'MI ÁREA' }],
   supervisor_cliente:[{ key: 'calidad',  label: 'Supervisión del Cliente', iconName: 'shield',     color: '#0ea5e9', group: 'MI ÁREA' }],
   oficina_tecnica:   [{ key: 'ot',       label: 'Oficina Técnica',         iconName: 'fileText',   color: '#6366f1', group: 'MI ÁREA' }],
-  seguridad:         [{ key: 'seguridad',label: 'Seguridad y Medio Ambiente', iconName: 'alert',   color: '#dc2626', group: 'MI ÁREA' }],
+  // SSOMA (Seguridad y Medio Ambiente) movido a la plataforma independiente SIGMA (2026-06-15).
   planeamiento:      [
     { key: 'apus',        label: 'Análisis de Precios (APU)', iconName: 'calculator', color: '#6366f1',    group: 'PLANEAMIENTO' },
     { key: 'lps',         label: 'Last Planner System',       iconName: 'target',     color: '#0d9488',    group: 'PLANEAMIENTO' },
@@ -75,7 +75,6 @@ const PRELOAD_BY_KEY = {
   portfolio:   () => import('./views/modulos/portfolio/PortfolioPanel'),
   bim:         () => import('./views/BIM'),
   capataz:     () => import('./views/capataz/CapatazPanel'),
-  seguridad:   () => import('./views/seguridad/SeguridadPanel'),
   lps:         () => import('./views/planeamiento/LastPlannerPro'),
   // Planeamiento (faltaban → por eso se demoraban al cambiar de módulo)
   flujo:          () => import('./views/planeamiento/FlujoPlaneamiento'),
@@ -113,7 +112,6 @@ const DashboardEjecutivo  = lazy(() => import('./views/modulos/dashboardEjecutiv
 const RadarProduccion     = lazy(() => import('./views/modulos/radarProduccion/RadarProduccion'));
 const BIM                 = lazy(() => import('./views/BIM'));
 const CapatazPanel        = lazy(() => import('./views/capataz/CapatazPanel'));
-const SeguridadPanel      = lazy(() => import('./views/seguridad/SeguridadPanel'));
 const EstadoObra          = lazy(() => import('./views/modulos/estadoObra/EstadoObra'));
 
 // ── Alcance de módulos por ÁREA (sidebar del shell ingeniero/admin/planeamiento) ──
@@ -607,8 +605,7 @@ function AppInner() {
             { key: 'bim',         label: 'Coordinación BIM',        iconName: 'layers',      color: '#38bdf8',    group: 'BIM' },
             { key: 'calidad',     label: 'Gestión de Calidad',      iconName: 'checkSquare', color: '#f9a8d4',    group: 'GESTIÓN DE CALIDAD' },
             { key: 'ot',          label: 'Oficina Técnica',         iconName: 'ruler',       color: '#a5b4fc',    group: 'OFICINA TÉCNICA' },
-            // SSOMA — seguridad y medio ambiente
-            { key: 'seguridad',   label: 'Seguridad y Medio Ambiente', iconName: 'alert',    color: '#f87171',    group: 'SSOMA' },
+            // SSOMA (Seguridad y Medio Ambiente) movido a la plataforma independiente SIGMA (2026-06-15).
             // GERENCIA — vista ejecutiva multi-proyecto
             { key: 'gerencia',    label: 'Tablero Ejecutivo',       iconName: 'pulse',       color: '#fbbf24',    group: 'GERENCIA' },
             { key: 'proyectos',   label: 'Cartera de Proyectos',    iconName: 'mapPin',      color: '#5eead4',    group: 'GERENCIA' },
@@ -984,10 +981,7 @@ function AppInner() {
               <OficinaTecnicaPanel showToast={showToast} isMobile={isMobile} />
             )}
 
-            {/* SSOMA — Seguridad y Medio Ambiente */}
-            {moduloIngeniero === 'seguridad' && (
-              <SeguridadPanel showToast={showToast} isMobile={isMobile} />
-            )}
+            {/* SSOMA movido a la plataforma independiente SIGMA (2026-06-15). */}
 
             {/* Panel Admin (solo si rol === admin) */}
             {moduloIngeniero === 'admin' && rol === 'admin' && (
@@ -1018,13 +1012,10 @@ function AppInner() {
           <OficinaTecnicaPanel showToast={showToast} isMobile={isMobile} />
         )}
 
-        {/* ── ROL: SEGURIDAD / SSOMA ── */}
-        {rol === 'seguridad' && (
-          <SeguridadPanel showToast={showToast} isMobile={isMobile} />
-        )}
+        {/* ── ROL: SEGURIDAD / SSOMA → movido a la plataforma independiente SIGMA (2026-06-15) ── */}
 
         {/* ── ROL NO RECONOCIDO ── */}
-        {rol && !['capataz', 'carta_balance', 'ingeniero', 'admin', 'almacenero', 'logistica', 'calidad', 'supervisor_cliente', 'oficina_tecnica', 'seguridad'].includes(rol) && (
+        {rol && !['capataz', 'carta_balance', 'ingeniero', 'admin', 'almacenero', 'logistica', 'calidad', 'supervisor_cliente', 'oficina_tecnica'].includes(rol) && (
           <div style={{
             maxWidth: '400px',
             margin: '60px auto',

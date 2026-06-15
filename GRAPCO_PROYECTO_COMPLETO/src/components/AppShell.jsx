@@ -30,7 +30,6 @@ const ROL_META = {
   capataz:          { titulo: 'Registro de Produccion', icono: '👷', badge: 'CAPATAZ',   color: BASE.green },
   calidad:          { titulo: 'Gestión de Calidad',   icono: '🦺', badge: 'CALIDAD',    color: '#ec4899' },
   oficina_tecnica:  { titulo: 'Oficina Tecnica',      icono: '📐', badge: 'OT',         color: '#6366f1' },
-  seguridad:        { titulo: 'Seguridad SSOMA',      icono: '⚠️', badge: 'SSOMA',      color: BASE.red },
   almacenero:       { titulo: 'Almacen',              icono: '📦', badge: 'ALMACEN',    color: '#7c3aed' },
   logistica:        { titulo: 'Logistica',            icono: '🚛', badge: 'LOGISTICA',  color: '#7c3aed' },
   supervisor_cliente:{ titulo: 'Supervision',         icono: '🔍', badge: 'SUPERVISION', color: '#0ea5e9' },

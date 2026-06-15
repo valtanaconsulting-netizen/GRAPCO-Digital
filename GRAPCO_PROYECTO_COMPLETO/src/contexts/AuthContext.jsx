@@ -91,8 +91,8 @@ const ROLES_PERMITIDOS = {
   ingeniero: null,
   oficina_tecnica: ['oficina_tecnica', 'planeamiento', 'calidad'],
   planeamiento: ['planeamiento', 'oficina_tecnica'],
-  calidad: ['calidad', 'seguridad'],
-  seguridad: ['seguridad', 'calidad'],
+  calidad: ['calidad'],
+  // SSOMA (rol 'seguridad') movido a la plataforma independiente SIGMA (2026-06-15).
 };
 const rolEsValido = (rolPermitido, rolElegido) => {
   if (rolPermitido === 'admin' || rolPermitido === 'ingeniero') return true;

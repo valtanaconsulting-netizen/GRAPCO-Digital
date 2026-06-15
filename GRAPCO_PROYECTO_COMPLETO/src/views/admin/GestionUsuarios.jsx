@@ -18,7 +18,7 @@ const ROLES_INFO = {
   ingeniero:          { label: 'Ingeniero',                color: BASE.gold,   icon: '📊', desc: 'Producción (Auditoría + CPI/EAC + Control Gerencial), residente, admin de obra' },
   oficina_tecnica:    { label: 'Oficina Técnica',          color: CHART_PALETTE[5],  icon: '📐', desc: 'RDO, valorizaciones, partidas contractuales' },
   calidad:            { label: 'Gestión de Calidad',      color: '#ec4899',   icon: '🦺', desc: 'Protocolos, PETs, NCs, ensayos' },
-  seguridad:          { label: 'SSOMA / Seguridad',        color: BASE.red,    icon: '⚠️', desc: 'PETs, ATS, inspecciones, incidencias' },
+  // SSOMA / Seguridad movido a la plataforma independiente SIGMA (2026-06-15).
   almacenero:         { label: 'Almacenero',               color: CHART_PALETTE[3],  icon: '📦', desc: 'Almacén, kardex, vales, recepciones' },
   logistica:          { label: 'Logística / Compras',      color: CHART_PALETTE[5],  icon: '🚛', desc: 'OCs, OSs, proveedores' },
   capataz:            { label: 'Capataz',                  color: BASE.green,  icon: '👷', desc: 'Tareo, registro de producción, fotos' },
