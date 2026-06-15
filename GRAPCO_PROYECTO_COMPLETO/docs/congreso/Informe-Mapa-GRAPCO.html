@@ -33,7 +33,7 @@ figure{margin:16px 0;text-align:center}figcaption{font-size:11px;color:var(--mut
 @media print{.no-print{display:none!important}main{max-width:none;padding:0 4mm}.brand{padding:16px 8mm}
 .diagram{break-inside:avoid}.diagram pre{font-size:7px}.ficha,table,figure,.kpi-grid{break-inside:avoid}h2,h3,h4{break-after:avoid}
 @page{size:A4;margin:12mm 0}}
-</style></head><body>
+.svgfig{margin:18px 0;text-align:center;break-inside:avoid}.svgfig svg{max-width:100%;height:auto;display:inline-block;border:1px solid #e3e9f0;border-radius:12px;box-shadow:0 6px 20px rgba(11,31,57,.08)}</style></head><body>
 <button class="printbtn no-print" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
 <header class="brand"><div class="kicker">Informe técnico · Mapa de la información</div><h1>Mapa de la Información — GRAPCO 2026</h1><div class="sub">Cómo viaja un dato: de la obra al tablero (Producción · Planeamiento · Costos)</div>
 <div class="meta">Valtana Consulting · GRAPCO S.A.C. · Plataforma de Gestión de Proyectos VDC · 2026-06-15</div></header>
@@ -110,110 +110,23 @@ figure{margin:16px 0;text-align:center}figcaption{font-size:11px;color:var(--mut
 
 <h3>1.1 Planificación (DE ARRIBA HACIA ABAJO)</h3>
 
-<div class="diagram"><pre>   +-------------------------------+
-   |  EditorWbsIsp.jsx             |   El ingeniero ingresa partidas,
-   |  (Catálogo WBS - Editor)      |   subpartidas, actividades,
-   |  ENTRA: nombres, metrados, IP |   metrados e IP meta.
-   +---------------+---------------+
-                   |  escribe
-                   v
-   +-------------------------------+
-   |  COLECCIÓN: Catalogo_WBS/      |  <==== FUENTE ÚNICA de la estructura
-   |  {proyectoId}                 |        (INFO_MAP, CATALOGO_MASTER)
-   +---------------+---------------+
-                   | lee (useCatalogoWBS hook)
-                   v
-   +-------------------------------+
-   |  autoprograma.js              |   Convierte metrados -> HH ->
-   |  (Generador automático)       |   duración por cuadrilla ->
-   |  metrado x IP = HH            |   tren SS+lag
-   +---------------+---------------+
-                   |  genera tareas
-                   v
-   +-------------------------------+        +------------------------+
-   |  CronogramaPro.jsx + cpm.js   |------->| Curva S (program. vs   |
-   |  (CPM: ES/EF/LS/LF, ruta      |        | baseline vs real)      |
-   |   crítica, holguras, baseline)|        +------------------------+
-   +---------------+---------------+
-                   |  escribe
-                   v
-   +-------------------------------+
-   |  COLECCIÓN: Cronogramas/       |  <==== FUENTE ÚNICA del cronograma
-   |  {proyectoId}                 |
-   +-------+---------------+-------+
-           | lee           | lee
-           v               v
-  +-----------------+   +-----------------------+
-  | LastPlannerPro  |   | PlanDiario.jsx        |
-  | (LOOKAHEAD 4sem,|   | (rubro-responsable:   |
-  |  plan semanal,  |   |  metrado x IP = HH    |
-  |  PPC, CNC)      |   |  programado)          |
-  +--------+--------+   +-----------------------+
-           | escribe
-           v
-  +-----------------+      +------------------------+
-  | LPS/{proyectoId}|<---->| VDC.jsx                |
-  | (compromisos,   |      | (VDC_Restricciones,    |
-  |  PPC, causas)   |      |  cierre semanal,       |
-  +-----------------+      |  Pareto RNC)           |
-                          +------------------------+</pre></div>
+<div class="svgfig"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 837" width="900" height="837" font-family="Segoe UI,Arial" role="img"><defs>
+    <linearGradient id="gNavy" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#173a63"/><stop offset="1" stop-color="#0B1F39"/></linearGradient>
+    <linearGradient id="gGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F6C45A"/><stop offset="1" stop-color="#E5A82F"/></linearGradient>
+    <linearGradient id="gTeal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#13a6c0"/><stop offset="1" stop-color="#0E8AA0"/></linearGradient>
+    <linearGradient id="gGreen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#27b265"/><stop offset="1" stop-color="#1f9d57"/></linearGradient>
+    <filter id="shadow" x="-8%" y="-8%" width="116%" height="130%"><feDropShadow dx="0" dy="2.2" stdDeviation="2.6" flood-color="#0b1f39" flood-opacity="0.18"/></filter>
+  </defs><rect x="0" y="0" width="900" height="837" fill="#ffffff"/><rect x="0" y="0" width="900" height="44" rx="0" fill="#0B1F39"/><rect x="0" y="0" width="6" height="44" fill="#E5A82F"/><text x="20" y="28" font-family="Segoe UI,Arial" font-size="16" font-weight="800" fill="#fff">Planificación — de arriba hacia abajo (cómo se define el plan)</text><text x="884" y="27" text-anchor="end" font-family="Segoe UI,Arial" font-size="10.5" font-weight="800" letter-spacing="2" fill="#E5A82F">GRAPCO · VDC</text><path d="M450,140 L450,186" fill="none" stroke="#E5A82F" stroke-width="2"  marker-end="url(#mGold)" opacity="0.9"/><rect x="423.05" y="154" width="53.9" height="17" rx="8" fill="#fff" stroke="#E5A82F" stroke-width="0.9"/><text x="450" y="166.5" text-anchor="middle" font-family="Segoe UI,Arial" font-size="9.5" font-weight="700" fill="#E5A82F">escribe</text><path d="M450,260 L450,306" fill="none" stroke="#16386a" stroke-width="2"  marker-end="url(#mNavy)" opacity="0.9"/><rect x="434.45" y="274" width="31.1" height="17" rx="8" fill="#fff" stroke="#16386a" stroke-width="0.9"/><text x="450" y="286.5" text-anchor="middle" font-family="Segoe UI,Arial" font-size="9.5" font-weight="700" fill="#16386a">lee</text><path d="M450,374 L450,420" fill="none" stroke="#16386a" stroke-width="2"  marker-end="url(#mNavy)" opacity="0.9"/><rect x="425.9" y="388" width="48.2" height="17" rx="8" fill="#fff" stroke="#16386a" stroke-width="0.9"/><text x="450" y="400.5" text-anchor="middle" font-family="Segoe UI,Arial" font-size="9.5" font-weight="700" fill="#16386a">genera</text><path d="M450,488 L450,534" fill="none" stroke="#E5A82F" stroke-width="2"  marker-end="url(#mGold)" opacity="0.9"/><rect x="423.05" y="502" width="53.9" height="17" rx="8" fill="#fff" stroke="#E5A82F" stroke-width="0.9"/><text x="450" y="514.5" text-anchor="middle" font-family="Segoe UI,Arial" font-size="9.5" font-weight="700" fill="#E5A82F">escribe</text><path d="M438,592 L438,615 L238,615 L238,638" fill="none" stroke="#16386a" stroke-width="2"  marker-end="url(#mNavy)" opacity="0.9"/><rect x="322.45" y="606" width="31.1" height="17" rx="8" fill="#fff" stroke="#16386a" stroke-width="0.9"/><text x="338" y="618.5" text-anchor="middle" font-family="Segoe UI,Arial" font-size="9.5" font-weight="700" fill="#16386a">lee</text><path d="M462,592 L462,615 L662,615 L662,638" fill="none" stroke="#16386a" stroke-width="2"  marker-end="url(#mNavy)" opacity="0.9"/><rect x="546.45" y="606" width="31.1" height="17" rx="8" fill="#fff" stroke="#16386a" stroke-width="0.9"/><text x="562" y="618.5" text-anchor="middle" font-family="Segoe UI,Arial" font-size="9.5" font-weight="700" fill="#16386a">lee</text><path d="M238,693 L238,739" fill="none" stroke="#E5A82F" stroke-width="2"  marker-end="url(#mGold)" opacity="0.9"/><rect x="211.05" y="707" width="53.9" height="17" rx="8" fill="#fff" stroke="#E5A82F" stroke-width="0.9"/><text x="238" y="719.5" text-anchor="middle" font-family="Segoe UI,Arial" font-size="9.5" font-weight="700" fill="#E5A82F">escribe</text><path d="M238,797 L238,768 L662,768 L662,739" fill="none" stroke="#16386a" stroke-width="2"  marker-end="url(#mNavy)" opacity="0.9"/><rect x="420.2" y="759" width="59.6" height="17" rx="8" fill="#fff" stroke="#16386a" stroke-width="0.9"/><text x="450" y="771.5" text-anchor="middle" font-family="Segoe UI,Arial" font-size="9.5" font-weight="700" fill="#16386a">alimenta</text><g filter="url(#shadow)"><rect x="300" y="72" width="300" height="68" rx="11" fill="#ffffff" stroke="#16386a" stroke-width="1.5"/><text x="450" y="96" text-anchor="middle" font-family="Segoe UI,Arial" font-size="12.5" font-weight="700" fill="#0B1F39">EditorWbsIsp.jsx</text><text x="450" y="113" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">Oficina Técnica ingresa partidas, metrados e</text><text x="450" y="126" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">IP meta</text></g><g filter="url(#shadow)"><rect x="300" y="186" width="300" height="74" rx="11" fill="url(#gGold)" stroke="#B7820F" stroke-width="2"/><rect x="300" y="186" width="5" height="74" rx="2.5" fill="#E5A82F"/><text x="450" y="210" text-anchor="middle" font-family="Segoe UI,Arial" font-size="12.5" font-weight="700" fill="#0B1F39">Catálogo WBS</text><text x="450" y="227" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#6b551f">FUENTE ÚNICA · estructura + metas</text><rect x="403.6" y="238" width="92.80000000000001" height="17" rx="8.5" fill="rgba(255,255,255,0.16)" stroke="#0B1F39" stroke-width="0.8"/><text x="450" y="250.5" text-anchor="middle" font-family="Consolas,monospace" font-size="9.5" font-weight="700" fill="#0B1F39">Catalogo_WBS</text></g><g filter="url(#shadow)"><rect x="300" y="306" width="300" height="68" rx="11" fill="#ffffff" stroke="#16386a" stroke-width="1.5"/><text x="450" y="330" text-anchor="middle" font-family="Segoe UI,Arial" font-size="12.5" font-weight="700" fill="#0B1F39">autoprograma.js</text><text x="450" y="347" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">metrado × IP = HH → duración por cuadrilla</text><text x="450" y="360" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">(tren SS+lag)</text></g><g filter="url(#shadow)"><rect x="300" y="420" width="300" height="68" rx="11" fill="#ffffff" stroke="#16386a" stroke-width="1.5"/><text x="450" y="444" text-anchor="middle" font-family="Segoe UI,Arial" font-size="12.5" font-weight="700" fill="#0B1F39">CronogramaPro + cpm.js</text><text x="450" y="461" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">CPM (ES/EF, ruta crítica, holguras) · línea</text><text x="450" y="474" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">base · Curva S</text></g><g filter="url(#shadow)"><rect x="300" y="534" width="300" height="58" rx="11" fill="url(#gNavy)" stroke="#0B1F39" stroke-width="1.5"/><text x="450" y="558" text-anchor="middle" font-family="Segoe UI,Arial" font-size="12.5" font-weight="700" fill="#fff">Cronograma del proyecto</text><rect x="406.8" y="570" width="86.4" height="17" rx="8.5" fill="rgba(255,255,255,0.16)" stroke="#E5A82F" stroke-width="0.8"/><text x="450" y="582.5" text-anchor="middle" font-family="Consolas,monospace" font-size="9.5" font-weight="700" fill="#E5A82F">Cronogramas</text></g><g filter="url(#shadow)"><rect x="88" y="638" width="300" height="55" rx="11" fill="#ffffff" stroke="#16386a" stroke-width="1.5"/><text x="238" y="662" text-anchor="middle" font-family="Segoe UI,Arial" font-size="12.5" font-weight="700" fill="#0B1F39">Last Planner (LastPlannerPro)</text><text x="238" y="679" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">Lookahead 4 sem · plan semanal · PPC / CNC</text></g><g filter="url(#shadow)"><rect x="512" y="638" width="300" height="55" rx="11" fill="#ffffff" stroke="#16386a" stroke-width="1.5"/><text x="662" y="662" text-anchor="middle" font-family="Segoe UI,Arial" font-size="12.5" font-weight="700" fill="#0B1F39">PlanDiario.jsx</text><text x="662" y="679" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">metrado × IP = HH programado del día</text></g><g filter="url(#shadow)"><rect x="88" y="739" width="300" height="58" rx="11" fill="url(#gNavy)" stroke="#0B1F39" stroke-width="1.5"/><text x="238" y="763" text-anchor="middle" font-family="Segoe UI,Arial" font-size="12.5" font-weight="700" fill="#fff">Compromisos semanales</text><rect x="220.4" y="775" width="35.2" height="17" rx="8.5" fill="rgba(255,255,255,0.16)" stroke="#E5A82F" stroke-width="0.8"/><text x="238" y="787.5" text-anchor="middle" font-family="Consolas,monospace" font-size="9.5" font-weight="700" fill="#E5A82F">LPS</text></g><g filter="url(#shadow)"><rect x="512" y="739" width="300" height="55" rx="11" fill="#ffffff" stroke="#16386a" stroke-width="1.5"/><text x="662" y="763" text-anchor="middle" font-family="Segoe UI,Arial" font-size="12.5" font-weight="700" fill="#0B1F39">VDC.jsx</text><text x="662" y="780" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">restricciones · cierre semanal · Pareto</text></g><g><rect x="22" y="798" width="15" height="12" rx="3" fill="#ffffff" stroke="#16386a" stroke-width="1"/><text x="42" y="808" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">Módulo / proceso</text><rect x="158" y="798" width="15" height="12" rx="3" fill="url(#gGold)" stroke="#B7820F" stroke-width="1"/><text x="178" y="808" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">Fuente única</text><rect x="270" y="798" width="15" height="12" rx="3" fill="url(#gNavy)" stroke="#0B1F39" stroke-width="1"/><text x="290" y="808" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">Colección (base de datos)</text></g></svg></div>
 
 <h3>1.2 Producción del campo y retroalimentación (DE ABAJO HACIA ARRIBA)</h3>
 
-<div class="diagram"><pre>   +----------------------------+        +-----------------------------+
-   | MarcadorAsistencia.jsx     |        | Capataz.jsx + EditorActividad|
-   | (cámara, rostro -> HH)     |        | (cuadrilla, WBS, metrado,    |
-   | ENTRA: rostro + hora       |        |  HN/HE por trabajador)       |
-   +-------------+--------------+        +--------------+--------------+
-                 | escribe                              | importa HH (match nombre)
-                 v                                      |
-   +----------------------------+                       |
-   | COLECCIÓN: Asistencia_Diaria| <---------------------+
-   | (entrada/salida real +     |
-   |  normalizada, horasTrabaj.)|
-   +----------------------------+
-                                                        | escribe (UPSERT)
-                                                        v
-                                  +----------------------------------------+
-                                  | COLECCIÓN: Registros_Campo             | <=== LA "SANGRE"
-                                  | {fecha, semana, partida, actividad,    |      Fuente ÚNICA de
-                                  |  metrado, totalHH, ipReal,             |      metrado + HH reales
-                                  |  detalleTareo[], fotos[], proyectoId}  |
-                                  +-----+------------------+---------------+
-                                        | lee              | lee (onSnapshot)
-                                        v                  v
-              +--------------------------------+   +---------------------------+
-              | CronogramaPro.sincronizarAvance|   | Ingeniero.jsx             |
-              | % = metrado ejec / metrado tot |   | (auditoría, CPI/SPI sem., |
-              | (RETROALIMENTA el cronograma)  |   |  IP real vs meta, fotos)  |
-              +--------------------------------+   +-------------+-------------+
-                                                                 |
-                                                                 v
-   +-----------------------------------------------------------------------------+
-   | useRO.js (hook) carga 11 COLECCIONES en paralelo:                           |
-   | PlanMaestro · APUs · Registros_Campo · Kardex_Movimientos ·                 |
-   | ValorizacionesContractuales · Registro_Facturas ·                          |
-   | ValorizacionesSubcontratistas · GG_Oficina · Adicionales · Deductivos      |
-   +------------------------------------+----------------------------------------+
-                                        | llama
-                                        v
-   +-----------------------------------------------------------------------------+
-   | planMaestroAnalytics.js -> calcularROMensual() / calcularEVM()              |
-   | AC = HHx25.5 + Kardex + Facturas + SC | EV = valorizado o avance x PU       |
-   | BAC = metrado x PU | CPI = EV/AC | SPI = EV/PV | EAC = BAC/CPI              |
-   +------------------------------------+----------------------------------------+
-                                        | sube KPIs
-                                        v
-   +----------------------------+   +----------------------------+
-   | Dashboard / RO Oficial     |   | WarRoomCuadrillas.jsx      |
-   | (CPI/SPI, margen, severidad)|   | (lee Cartas_Balance ->     |
-   +----------------------------+   |  LUF, Pareto TNC)          |
-                                    +-------------+--------------+
-                                                  v
-                                    +----------------------------+
-                                    | OptimizadorCuadrillas.jsx  |
-                                    | (greedy -> cuadrilla óptima)|
-                                    +----------------------------+</pre></div>
+<div class="svgfig"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 527" width="980" height="527" font-family="Segoe UI,Arial" role="img"><defs>
+    <linearGradient id="gNavy" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#173a63"/><stop offset="1" stop-color="#0B1F39"/></linearGradient>
+    <linearGradient id="gGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F6C45A"/><stop offset="1" stop-color="#E5A82F"/></linearGradient>
+    <linearGradient id="gTeal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#13a6c0"/><stop offset="1" stop-color="#0E8AA0"/></linearGradient>
+    <linearGradient id="gGreen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#27b265"/><stop offset="1" stop-color="#1f9d57"/></linearGradient>
+    <filter id="shadow" x="-8%" y="-8%" width="116%" height="130%"><feDropShadow dx="0" dy="2.2" stdDeviation="2.6" flood-color="#0b1f39" flood-opacity="0.18"/></filter>
+  </defs><rect x="0" y="0" width="980" height="527" fill="#ffffff"/><rect x="0" y="0" width="980" height="44" rx="0" fill="#0B1F39"/><rect x="0" y="0" width="6" height="44" fill="#E5A82F"/><text x="20" y="28" font-family="Segoe UI,Arial" font-size="16" font-weight="800" fill="#fff">Producción — de abajo hacia arriba (el campo retroalimenta el avance)</text><text x="964" y="27" text-anchor="end" font-family="Segoe UI,Arial" font-size="10.5" font-weight="800" letter-spacing="2" fill="#E5A82F">GRAPCO · VDC</text><path d="M258,127 L258,190" fill="none" stroke="#E5A82F" stroke-width="2"  marker-end="url(#mGold)" opacity="0.9"/><rect x="231.05" y="149.5" width="53.9" height="17" rx="8" fill="#fff" stroke="#E5A82F" stroke-width="0.9"/><text x="258" y="162" text-anchor="middle" font-family="Segoe UI,Arial" font-size="9.5" font-weight="700" fill="#E5A82F">escribe</text><path d="M722,140 L722,190" fill="none" stroke="#E5A82F" stroke-width="2"  marker-end="url(#mGold)" opacity="0.9"/><rect x="695.05" y="156" width="53.9" height="17" rx="8" fill="#fff" stroke="#E5A82F" stroke-width="0.9"/><text x="722" y="168.5" text-anchor="middle" font-family="Segoe UI,Arial" font-size="9.5" font-weight="700" fill="#E5A82F">escribe</text><path d="M258,190 L258,165 L722,165 L722,140" fill="none" stroke="#8aa0bb" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#mGrey)" opacity="0.9"/><rect x="454.5" y="156" width="71" height="17" rx="8" fill="#fff" stroke="#8aa0bb" stroke-width="0.9"/><text x="490" y="168.5" text-anchor="middle" font-family="Segoe UI,Arial" font-size="9.5" font-weight="700" fill="#8aa0bb">importa HH</text><path d="M710,264 L710,289 L258,289 L258,314" fill="none" stroke="#16386a" stroke-width="2"  marker-end="url(#mNavy)" opacity="0.9"/><rect x="468.45" y="280" width="31.1" height="17" rx="8" fill="#fff" stroke="#16386a" stroke-width="0.9"/><text x="484" y="292.5" text-anchor="middle" font-family="Segoe UI,Arial" font-size="9.5" font-weight="700" fill="#16386a">lee</text><path d="M734,264 L734,289 L722,289 L722,314" fill="none" stroke="#16386a" stroke-width="2"  marker-end="url(#mNavy)" opacity="0.9"/><rect x="712.45" y="280" width="31.1" height="17" rx="8" fill="#fff" stroke="#16386a" stroke-width="0.9"/><text x="728" y="292.5" text-anchor="middle" font-family="Segoe UI,Arial" font-size="9.5" font-weight="700" fill="#16386a">lee</text><path d="M258,382 L258,432" fill="none" stroke="#0E8AA0" stroke-width="2"  marker-end="url(#mTeal)" opacity="0.9"/><path d="M722,369 L722,432" fill="none" stroke="#0E8AA0" stroke-width="2"  marker-end="url(#mTeal)" opacity="0.9"/><g filter="url(#shadow)"><rect x="108" y="72" width="300" height="55" rx="11" fill="#ffffff" stroke="#16386a" stroke-width="1.5"/><text x="258" y="96" text-anchor="middle" font-family="Segoe UI,Arial" font-size="12.5" font-weight="700" fill="#0B1F39">MarcadorAsistencia.jsx</text><text x="258" y="113" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">cámara: rostro → identidad + hora real</text></g><g filter="url(#shadow)"><rect x="572" y="72" width="300" height="68" rx="11" fill="#ffffff" stroke="#16386a" stroke-width="1.5"/><text x="722" y="96" text-anchor="middle" font-family="Segoe UI,Arial" font-size="12.5" font-weight="700" fill="#0B1F39">Capataz.jsx</text><text x="722" y="113" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">cuadrilla · WBS · metrado · HN/HE por</text><text x="722" y="126" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">trabajador</text></g><g filter="url(#shadow)"><rect x="108" y="190" width="300" height="74" rx="11" fill="url(#gNavy)" stroke="#0B1F39" stroke-width="1.5"/><text x="258" y="214" text-anchor="middle" font-family="Segoe UI,Arial" font-size="12.5" font-weight="700" fill="#fff">Asistencia diaria</text><text x="258" y="231" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#c7d6ea">entrada/salida real + normalizada</text><rect x="195.6" y="242" width="124.80000000000001" height="17" rx="8.5" fill="rgba(255,255,255,0.16)" stroke="#E5A82F" stroke-width="0.8"/><text x="258" y="254.5" text-anchor="middle" font-family="Consolas,monospace" font-size="9.5" font-weight="700" fill="#E5A82F">Asistencia_Diaria</text></g><g filter="url(#shadow)"><rect x="572" y="190" width="300" height="74" rx="11" fill="url(#gGold)" stroke="#B7820F" stroke-width="2"/><rect x="572" y="190" width="5" height="74" rx="2.5" fill="#E5A82F"/><text x="722" y="214" text-anchor="middle" font-family="Segoe UI,Arial" font-size="12.5" font-weight="700" fill="#0B1F39">Registros de Campo · LA “SANGRE”</text><text x="722" y="231" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#6b551f">metrado ejecutado + HH reales (una sola vez)</text><rect x="666" y="242" width="112" height="17" rx="8.5" fill="rgba(255,255,255,0.16)" stroke="#0B1F39" stroke-width="0.8"/><text x="722" y="254.5" text-anchor="middle" font-family="Consolas,monospace" font-size="9.5" font-weight="700" fill="#0B1F39">Registros_Campo</text></g><g filter="url(#shadow)"><rect x="108" y="314" width="300" height="68" rx="11" fill="#ffffff" stroke="#16386a" stroke-width="1.5"/><text x="258" y="338" text-anchor="middle" font-family="Segoe UI,Arial" font-size="12.5" font-weight="700" fill="#0B1F39">sincronizarAvance()</text><text x="258" y="355" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">% = metrado ejecutado ÷ metrado total → Curva</text><text x="258" y="368" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">S</text></g><g filter="url(#shadow)"><rect x="572" y="314" width="300" height="55" rx="11" fill="#ffffff" stroke="#16386a" stroke-width="1.5"/><text x="722" y="338" text-anchor="middle" font-family="Segoe UI,Arial" font-size="12.5" font-weight="700" fill="#0B1F39">Ingeniero.jsx</text><text x="722" y="355" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">auditoría · CPI/SPI semanal · IP real vs meta</text></g><g filter="url(#shadow)"><rect x="108" y="432" width="300" height="55" rx="11" fill="url(#gTeal)" stroke="#0a6576" stroke-width="1.5"/><text x="258" y="456" text-anchor="middle" font-family="Segoe UI,Arial" font-size="12.5" font-weight="700" fill="#fff">Cronograma actualizado</text><text x="258" y="473" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#dff3f7">avance real en el Gantt y la Curva S</text></g><g filter="url(#shadow)"><rect x="572" y="432" width="300" height="55" rx="11" fill="url(#gTeal)" stroke="#0a6576" stroke-width="1.5"/><text x="722" y="456" text-anchor="middle" font-family="Segoe UI,Arial" font-size="12.5" font-weight="700" fill="#fff">Resultado Operativo / Tableros</text><text x="722" y="473" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#dff3f7">CPI/SPI · márgenes · semáforos</text></g><g><rect x="22" y="488" width="15" height="12" rx="3" fill="#ffffff" stroke="#16386a" stroke-width="1"/><text x="42" y="498" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">Módulo / proceso</text><rect x="158" y="488" width="15" height="12" rx="3" fill="url(#gGold)" stroke="#B7820F" stroke-width="1"/><text x="178" y="498" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">Fuente única (la “sangre”)</text><rect x="354" y="488" width="15" height="12" rx="3" fill="url(#gNavy)" stroke="#0B1F39" stroke-width="1"/><text x="374" y="498" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">Colección</text><rect x="448" y="488" width="15" height="12" rx="3" fill="url(#gTeal)" stroke="#0a6576" stroke-width="1"/><text x="468" y="498" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">Tablero / salida</text></g></svg></div>
 
 <hr>
 
@@ -1087,66 +1000,13 @@ figure{margin:16px 0;text-align:center}figcaption{font-size:11px;color:var(--mut
 
 <h2>0. EL VIAJE EN UNA SOLA IMAGEN (diagrama ASCII)</h2>
 
-<div class="diagram"><pre>                          ┌──────────────────────────────────────────────┐
-                          │   PASO 0: EL USUARIO ELIGE PROYECTO + FRENTE   │
-                          │   (ProyectoActivoContext → localStorage)       │
-                          │   filtrarPorContexto() = "solo veo lo MÍO"     │
-                          └───────────────────────┬──────────────────────┘
-                                                  │
-   ====================== DATOS QUE ENTRAN (11 caños / colecciones) ======================
-                                                  │
-  ┌─────────────┐  ┌─────────────┐  ┌──────────────────┐  ┌──────────────────┐
-  │ PlanMaestro │  │    APUs     │  │ Registros_Campo  │  │ Kardex_Movimientos│
-  │ (WBS, metr, │  │ (costo      │  │ (TAREOS = HH)    │  │ (SALIDA material)│
-  │  PU, fechas)│  │  teórico)   │  │  → pata 1 del AC │  │  → pata 2 del AC │
-  └──────┬──────┘  └──────┬──────┘  └────────┬─────────┘  └────────┬─────────┘
-         │                │                  │                     │
-  ┌──────┴───────┐  ┌─────┴──────────┐ ┌─────┴──────────────┐ ┌────┴─────────────┐
-  │Valorizaciones│  │Registro_       │ │Valorizaciones      │ │  GG_Oficina      │
-  │Contractuales │  │Facturas        │ │Subcontratistas(F10)│ │ (gastos generales│
-  │ → EV REAL    │  │ → pata 3 AC    │ │ → pata 4 del AC    │ │  NO van a partida│
-  └──────┬───────┘  └─────┬──────────┘ └─────┬──────────────┘ └────┬─────────────┘
-         │                │                  │                     │
-  ┌──────┴───────┐  ┌─────┴──────────┐       │                     │
-  │ Adicionales  │  │  Deductivos    │       │                     │
-  │ (F05 → +BAC) │  │ (F05 → −BAC)   │       │   (Historial: se carga, hoy NO se usa)
-  └──────┬───────┘  └─────┬──────────┘       │                     │
-         │                │                  │                     │
-         └────────┬───────┴─────────┬────────┴──────────┬──────────┘
-                  │                 │                    │
-                  ▼                 ▼                    ▼
-   ============== EL TANQUE CENTRAL: useRO() ==============
-   ┌────────────────────────────────────────────────────────┐
-   │ useRO.js                                                │
-   │  • onSnapshot() en las 11 colecciones (EN VIVO)         │
-   │  • contador 11 → 0 ; cuando llega a 0 → loading=false   │
-   │  • entrega los 11 arrays YA FILTRADOS al motor          │
-   └───────────────────────┬────────────────────────────────┘
-                           │
-                           ▼
-   ============== EL MOTOR: calcularROMensual() ==============
-   ┌────────────────────────────────────────────────────────┐
-   │ planMaestroAnalytics.js  (líneas 474–701)               │
-   │                                                         │
-   │  Por CADA partida hoja (obtenerActividadesHoja):        │
-   │   1) AC = Tareos×25.5 + Almacén + Facturas + Subcontr.  │
-   │   2) BAC = metrado × PU                                  │
-   │   3) EV  = valorizado real al cliente  Ó  avance×PU     │
-   │   4) PV  = BAC × (tiempo transcurrido / tiempo total)   │
-   │   5) CPI=EV÷AC  SPI=EV÷PV  EAC=BAC÷CPI  VAC=BAC−EAC      │
-   │   6) Márgenes (aplicado, real, pendiente) + Severidad   │
-   │                                                         │
-   │  Luego SUMA todo + GG aparte + ajustes F05              │
-   └───────────────────────┬────────────────────────────────┘
-                           │ retorna el objeto "ro"
-                           ▼
-   ====================== LO QUE SALE (3 vistas) ======================
-  ┌──────────────────────┐ ┌──────────────────────┐ ┌─────────────────────┐
-  │ResultadoOperativo    │ │ControlRegistros (CR) │ │ ROFrentes           │
-  │Oficial (F06)         │ │ desglosa el AC en    │ │ compara F1 vs F2    │
-  │ Tabla EVM 9 columnas │ │ sus 4 PATAS + importa│ │ lado a lado         │
-  │ + KPIs globales + PDF│ │ Facturas/GG/Subcontr.│ │ (GG no se reparte)  │
-  └──────────────────────┘ └──────────────────────┘ └─────────────────────┘</pre></div>
+<div class="svgfig"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 539" width="1080" height="539" font-family="Segoe UI,Arial" role="img"><defs>
+    <linearGradient id="gNavy" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#173a63"/><stop offset="1" stop-color="#0B1F39"/></linearGradient>
+    <linearGradient id="gGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F6C45A"/><stop offset="1" stop-color="#E5A82F"/></linearGradient>
+    <linearGradient id="gTeal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#13a6c0"/><stop offset="1" stop-color="#0E8AA0"/></linearGradient>
+    <linearGradient id="gGreen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#27b265"/><stop offset="1" stop-color="#1f9d57"/></linearGradient>
+    <filter id="shadow" x="-8%" y="-8%" width="116%" height="130%"><feDropShadow dx="0" dy="2.2" stdDeviation="2.6" flood-color="#0b1f39" flood-opacity="0.18"/></filter>
+  </defs><rect x="0" y="0" width="1080" height="539" fill="#ffffff"/><rect x="0" y="0" width="1080" height="44" rx="0" fill="#0B1F39"/><rect x="0" y="0" width="6" height="44" fill="#E5A82F"/><text x="20" y="28" font-family="Segoe UI,Arial" font-size="16" font-weight="800" fill="#fff">Resultado Operativo (EVM) — ¿de dónde sale cada sol?</text><text x="1064" y="27" text-anchor="end" font-family="Segoe UI,Arial" font-size="10.5" font-weight="800" letter-spacing="2" fill="#E5A82F">GRAPCO · VDC</text><path d="M154.5,140 L154.5,176.5 L504,176.5 L504,213" fill="none" stroke="#16386a" stroke-width="2"  marker-end="url(#mNavy)" opacity="0.9"/><path d="M411.5,159 L411.5,186 L528,186 L528,213" fill="none" stroke="#16386a" stroke-width="2"  marker-end="url(#mNavy)" opacity="0.9"/><path d="M668.5,140 L668.5,176.5 L552,176.5 L552,213" fill="none" stroke="#16386a" stroke-width="2"  marker-end="url(#mNavy)" opacity="0.9"/><path d="M925.5,140 L925.5,176.5 L576,176.5 L576,213" fill="none" stroke="#16386a" stroke-width="2"  marker-end="url(#mNavy)" opacity="0.9"/><path d="M540,268 L540,322" fill="none" stroke="#E5A82F" stroke-width="2.4"  marker-end="url(#mGold)" opacity="0.9"/><rect x="510.2" y="286" width="59.6" height="17" rx="8" fill="#fff" stroke="#E5A82F" stroke-width="0.9"/><text x="540" y="298.5" text-anchor="middle" font-family="Segoe UI,Arial" font-size="9.5" font-weight="700" fill="#E5A82F">alimenta</text><path d="M516,390 L516,417 L197.33333333333334,417 L197.33333333333334,444" fill="none" stroke="#0E8AA0" stroke-width="2"  marker-end="url(#mTeal)" opacity="0.9"/><path d="M540,390 L540,444" fill="none" stroke="#0E8AA0" stroke-width="2"  marker-end="url(#mTeal)" opacity="0.9"/><path d="M564,390 L564,417 L882.6666666666667,417 L882.6666666666667,444" fill="none" stroke="#0E8AA0" stroke-width="2"  marker-end="url(#mTeal)" opacity="0.9"/><g filter="url(#shadow)"><rect x="36.5" y="72" width="236" height="68" rx="11" fill="url(#gNavy)" stroke="#0B1F39" stroke-width="1.5"/><text x="154.5" y="96" text-anchor="middle" font-family="Segoe UI,Arial" font-size="12.5" font-weight="700" fill="#fff">Plan &amp; Precios</text><text x="154.5" y="113" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#c7d6ea">PlanMaestro · APUs (metrado, PU,</text><text x="154.5" y="126" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#c7d6ea">costo teórico)</text></g><g filter="url(#shadow)"><rect x="287.5" y="72" width="248" height="87" rx="11" fill="url(#gNavy)" stroke="#0B1F39" stroke-width="1.5"/><text x="411.5" y="96" text-anchor="middle" font-family="Segoe UI,Arial" font-size="12.5" font-weight="700" fill="#fff">Costo Real (AC) — 4 patas</text><text x="411.5" y="113" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#c7d6ea">Registros_Campo×S/25.5 · Kardex ·</text><text x="411.5" y="126" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#c7d6ea">Facturas · Subcontratos</text><rect x="390.7" y="137" width="41.6" height="17" rx="8.5" fill="rgba(255,255,255,0.16)" stroke="#E5A82F" stroke-width="0.8"/><text x="411.5" y="149.5" text-anchor="middle" font-family="Consolas,monospace" font-size="9.5" font-weight="700" fill="#E5A82F">→ AC</text></g><g filter="url(#shadow)"><rect x="550.5" y="72" width="236" height="68" rx="11" fill="url(#gNavy)" stroke="#0B1F39" stroke-width="1.5"/><text x="668.5" y="96" text-anchor="middle" font-family="Segoe UI,Arial" font-size="12.5" font-weight="700" fill="#fff">Ingresos (EV)</text><text x="668.5" y="113" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#c7d6ea">ValorizacionesContractuales</text><text x="668.5" y="126" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#c7d6ea">(valorizado al cliente)</text></g><g filter="url(#shadow)"><rect x="807.5" y="72" width="236" height="68" rx="11" fill="url(#gNavy)" stroke="#0B1F39" stroke-width="1.5"/><text x="925.5" y="96" text-anchor="middle" font-family="Segoe UI,Arial" font-size="12.5" font-weight="700" fill="#fff">Ajustes &amp; GG</text><text x="925.5" y="113" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#c7d6ea">Adicionales/Deductivos (F05) ·</text><text x="925.5" y="126" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#c7d6ea">GG_Oficina</text></g><g filter="url(#shadow)"><rect x="230" y="213" width="620" height="55" rx="11" fill="url(#gNavy)" stroke="#E5A82F" stroke-width="3"/><rect x="230" y="213" width="5" height="55" rx="2.5" fill="#E5A82F"/><text x="540" y="237" text-anchor="middle" font-family="Segoe UI,Arial" font-size="12.5" font-weight="700" fill="#fff">useRO.js — carga 11 colecciones EN VIVO (onSnapshot)</text><text x="540" y="254" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#c7d6ea">entrega los arrays ya filtrados por proyecto al motor</text></g><g filter="url(#shadow)"><rect x="160" y="322" width="760" height="68" rx="11" fill="#ffffff" stroke="#16386a" stroke-width="1.5"/><text x="540" y="346" text-anchor="middle" font-family="Segoe UI,Arial" font-size="12.5" font-weight="700" fill="#0B1F39">calcularROMensual() (planMaestroAnalytics.js)</text><text x="540" y="363" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">AC = HH×25.5 + Kardex + Facturas + Subcontr. · BAC = metrado×PU · EV = valorizado · PV = BAC×%tiempo · CPI=EV÷AC SPI=EV÷PV</text><text x="540" y="376" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">EAC=BAC÷CPI</text></g><g filter="url(#shadow)"><rect x="82.33333333333334" y="444" width="230" height="55" rx="11" fill="url(#gTeal)" stroke="#0a6576" stroke-width="1.5"/><text x="197.33333333333334" y="468" text-anchor="middle" font-family="Segoe UI,Arial" font-size="12.5" font-weight="700" fill="#fff">RO Oficial (F06)</text><text x="197.33333333333334" y="485" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#dff3f7">tabla EVM + KPIs + PDF</text></g><g filter="url(#shadow)"><rect x="420" y="444" width="240" height="55" rx="11" fill="url(#gTeal)" stroke="#0a6576" stroke-width="1.5"/><text x="540" y="468" text-anchor="middle" font-family="Segoe UI,Arial" font-size="12.5" font-weight="700" fill="#fff">Control de Registros</text><text x="540" y="485" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#dff3f7">desglosa el AC en sus 4 patas</text></g><g filter="url(#shadow)"><rect x="767.6666666666667" y="444" width="230" height="55" rx="11" fill="url(#gTeal)" stroke="#0a6576" stroke-width="1.5"/><text x="882.6666666666667" y="468" text-anchor="middle" font-family="Segoe UI,Arial" font-size="12.5" font-weight="700" fill="#fff">RO por Frentes</text><text x="882.6666666666667" y="485" text-anchor="middle" font-family="Segoe UI,Arial" font-size="10.5" fill="#dff3f7">compara F1 vs F2</text></g><g><rect x="22" y="500" width="15" height="12" rx="3" fill="url(#gNavy)" stroke="#0B1F39" stroke-width="1"/><text x="42" y="510" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">Datos que entran (colecciones)</text><rect x="242" y="500" width="15" height="12" rx="3" fill="url(#gNavy)" stroke="#E5A82F" stroke-width="1"/><text x="262" y="510" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">useRO (motor de carga)</text><rect x="414" y="500" width="15" height="12" rx="3" fill="#ffffff" stroke="#16386a" stroke-width="1"/><text x="434" y="510" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">Cálculo</text><rect x="496" y="500" width="15" height="12" rx="3" fill="url(#gTeal)" stroke="#0a6576" stroke-width="1"/><text x="516" y="510" font-family="Segoe UI,Arial" font-size="10.5" fill="#64748b">Vistas de salida</text></g></svg></div>
 
 <blockquote>
 <p><strong>Clave del dibujo:</strong> todo lo de la izquierda <strong>suma plata que GANAMOS</strong> (BAC/EV, lo que vendemos al cliente). Todo lo del centro-derecha <strong>suma plata que GASTAMOS</strong> (AC, las 4 patas + GG). El RO es simplemente: <strong>lo que ganamos − lo que gastamos</strong>.</p>
