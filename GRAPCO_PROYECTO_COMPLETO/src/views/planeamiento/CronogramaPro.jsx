@@ -20,6 +20,7 @@ import ConfirmModal from '../../components/ConfirmModal';
 import SkeletonPantalla from '../../components/SkeletonPantalla';
 import { calcularCPM, renumerarEDT, nuevoId, fechaDeIso, isoDeFecha, indiceDeFecha } from '../../utils/cpm';
 import { comprimirCronograma } from '../../utils/autoprograma';
+import { exportarCronogramaExcel, importarCronogramaExcel } from '../../utils/cronogramaExcel';
 import { CRONOGRAMAOBRA } from '../../data/cronogramaObraCreditex';
 import { normActividad as normAct, normActSinParen } from '../../utils/normalizacion'; // idioma común
 import CronogramaObra from './CronogramaObra';
@@ -162,6 +163,25 @@ export default function CronogramaPro() {
     setSinGuardar(true);
     setSyncMsg(`📐 Cronograma ajustado al plazo del proyecto (~${plazoObjetivoDias} d). Revisa y pulsa Guardar.`);
   }, [plazoObjetivoDias, cpm, tareas, fechaInicioProyecto]);
+
+  // Exportar a Excel premium (estilo MS Project) e importar de vuelta (round-trip).
+  const fileExcelRef = useRef(null);
+  const exportarExcel = useCallback(async () => {
+    if (!cpm) return;
+    try {
+      const res = await exportarCronogramaExcel({ cpm, fechaInicio, proyectoNombre: proyectoActivo?.nombre || 'Proyecto', baseline });
+      setSyncMsg(`✅ Exportado a Excel (${res.tareas} tareas · ${res.semanas} semanas). Búscalo en tus descargas.`);
+    } catch (e) { setSyncMsg('⚠️ No se pudo exportar: ' + (e.message || e)); }
+  }, [cpm, fechaInicio, proyectoActivo, baseline]);
+  const importarExcel = useCallback(async (file) => {
+    if (!file) return;
+    try {
+      const { tareas: imp, total } = await importarCronogramaExcel(file);
+      setTareas(imp);
+      setSinGuardar(true);
+      setSyncMsg(`📥 Importadas ${total} tareas del Excel. El CPM ya recalculó fechas y ruta crítica — revisa y pulsa Guardar.`);
+    } catch (e) { setSyncMsg('⚠️ No se pudo importar: ' + (e.message || e)); }
+  }, []);
 
   const mutar = useCallback((fn) => {
     setTareas(prev => fn(prev));
@@ -560,6 +580,17 @@ export default function CronogramaPro() {
                     border: `1.5px solid ${BASE.gold}`, borderRadius: '8px', fontSize: '11.5px', fontWeight: 800, cursor: 'pointer',
                   }}>📐 Ajustar al plazo ({plazoObjetivoDias} d)</button>
               )}
+              {/* Exportar / Importar Excel (estilo MS Project, round-trip) */}
+              <input ref={fileExcelRef} type="file" accept=".xlsx" style={{ display: 'none' }}
+                onChange={(e) => { importarExcel(e.target.files?.[0]); e.target.value = ''; }} />
+              <button onClick={exportarExcel} title="Exporta el cronograma a un Excel premium estilo MS Project (tabla + Gantt de colores por semana)"
+                style={{ padding: '8px 14px', background: '#1D6F42', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '11.5px', fontWeight: 800, cursor: 'pointer' }}>
+                ⬇ Excel
+              </button>
+              <button onClick={() => fileExcelRef.current?.click()} title="Sube un Excel (exportado de la plataforma y editado) y reconstruye el cronograma — recalcula CPM, fechas y ruta crítica"
+                style={{ padding: '8px 14px', background: BASE.white, color: '#1D6F42', border: '1.5px solid #1D6F42', borderRadius: '8px', fontSize: '11.5px', fontWeight: 800, cursor: 'pointer' }}>
+                ⬆ Importar Excel
+              </button>
               <button onClick={fijarBaseline} title="Congela el plan actual para medir desvíos (como Set Baseline en MS Project)" style={{
                 padding: '8px 14px', background: BASE.white, color: baseline ? BASE.goldDark : BASE.navy,
                 border: `1.5px solid ${baseline ? BASE.gold : BASE.border}`,
