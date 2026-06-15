@@ -43,7 +43,7 @@ export default function Capataz({
   cuadrillasActivas, cuadrillasDB, personalDB, isMobile, showToast,
 }) {
   const { rol, user } = useAuth();
-  const { proyectoActivoId, frenteActivoId, modoTodosFrentes, FRENTE_DEFAULT_ID } = useProyectoActivo();
+  const { proyectoActivoId, frenteActivoId, modoTodosFrentes, FRENTE_DEFAULT_ID, filtrarPorContexto } = useProyectoActivo();
 
   // Override forzoso: si el usuario tiene proyectoIdAsignado en /Usuarios, ESE es el proyectoId
   // que se persiste — no el del contexto activo. Garantiza que un capataz nunca pueda escribir
@@ -120,13 +120,20 @@ export default function Capataz({
     return () => { cancel = true; };
   }, []);
 
-  // El selector de CAPATAZ se arma con los datos REALES de Firestore
-  // (cuadrillasDB en vivo o la consulta directa), ignorando el filtro por
-  // proyecto: el capataz debe poder verse SIEMPRE.
+  // El selector de CAPATAZ se arma con los datos REALES de Firestore, pero SOLO
+  // las cuadrillas del PROYECTO ACTIVO (filtrarPorContexto). Antes ignoraba el
+  // filtro y mostraba cuadrillas de otros proyectos (CREDITEX en TEXTIL). Si el
+  // usuario es capataz y su cuadrilla no está en este proyecto, igual se muestra
+  // a sí mismo por el fallback de abajo.
   const cuadrillasParaSelect = useMemo(() => {
+    // Filtra un mapa {id: cuadrilla} dejando solo las del proyecto/contexto activo.
+    const soloDeEsteProyecto = (src) => {
+      const lista = Object.entries(src || {}).map(([id, c]) => ({ id, ...(c || {}) }));
+      return filtrarPorContexto(lista);
+    };
     const construir = (src) => {
       const r = {};
-      Object.values(src || {}).forEach(c => {
+      soloDeEsteProyecto(src).forEach(c => {
         if (!c) return;
         // Nombre del capataz: campo directo, o resuelto vía capatazId → Personal
         // (algunas cuadrillas se guardaron con `capataz` vacío y solo capatazId).
@@ -153,7 +160,7 @@ export default function Capataz({
     // usuario — eso generaba un capataz fantasma cuando su nombre de cuenta
     // (ej. "marcelinoaraya26") no coincidía con su cuadrilla real.
     return r;
-  }, [cuadrillasDB, cuadrillasDirectas, cuadrillasActivas, personalDB, rol, nombreUsuario]);
+  }, [cuadrillasDB, cuadrillasDirectas, cuadrillasActivas, personalDB, rol, nombreUsuario, filtrarPorContexto]);
 
   // ── Miembros de la cuadrilla ──
   // Incluye al capataz como primer miembro (también puede realizar actividades y registrar sus HH)
@@ -261,21 +268,22 @@ export default function Capataz({
           return;
         }
 
-        // Sin borrador — buscar registros ya subidos
+        // Sin borrador — buscar registros ya subidos (SOLO de este proyecto: un
+        // mismo capataz puede existir en dos obras, no cruzar sus registros).
         const q = query(
           collection(db, 'Registros_Campo'),
           where('fecha', '==', fecha),
           where('capataz', '==', capataz),
         );
-        const subidosSnap = await getDocs(q);
+        const subidosSnapRaw = await getDocs(q);
         if (cancelado) return;
+        const subidosDocs = filtrarPorContexto(subidosSnapRaw.docs.map(d => ({ id: d.id, ...d.data() })));
 
-        if (!subidosSnap.empty) {
-          const acts = subidosSnap.docs.map(d => {
-            const r = d.data();
+        if (subidosDocs.length) {
+          const acts = subidosDocs.map(r => {
             return {
               ...newActividadItem(),
-              _registroExistenteId: d.id,
+              _registroExistenteId: r.id,
               partida: r.partida, subpartida: r.subpartida, actividad: r.actividad,
               unidad: r.unidad || 'UND', metrado: String(r.metrado || ''),
               observacion: r.observacion || '',
@@ -688,8 +696,8 @@ export default function Capataz({
 
       const qR = query(collection(db, 'Registros_Campo'), where('capataz', '==', capataz));
       const snapR = await getDocs(qR);
-      snapR.docs.forEach(d => {
-        const r = d.data();
+      // SOLO registros de este proyecto (un capataz homónimo en otra obra no debe cruzar).
+      filtrarPorContexto(snapR.docs.map(d => ({ id: d.id, ...d.data() }))).forEach(r => {
         if (fechasPermitidas && !fechasPermitidas.has(r.fecha)) return;
         if (!fechasMap[r.fecha]) fechasMap[r.fecha] = { fecha: r.fecha };
         fechasMap[r.fecha].tieneRegistro = true;

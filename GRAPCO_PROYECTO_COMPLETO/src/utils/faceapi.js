@@ -5,35 +5,53 @@
 
 import * as faceapi from 'face-api.js';
 
-// CDN público con los modelos pre-entrenados (~7MB total, cacheable).
-// Apunta al repo principal de face-api.js (carpeta /weights/), no al repo
-// face-api.js-models que jsDelivr bloquea con 403.
-const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights/';
+// Pesos pre-entrenados (~7 MB total). Se sirven DESDE LA PROPIA APP (public/models)
+// para que el reconocimiento funcione SIN señal (offline-first de obra) y sin depender
+// de un CDN que puede ir lento, dar 403 o entregar un shard corrupto → el síntoma de
+// eso era "0 rostros" aunque la cara estuviera nítida. El CDN queda solo como respaldo
+// por si en algún despliegue faltaran los archivos locales.
+const LOCAL_URL = '/models';
+const CDN_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
 
 let cargados = false;
 let cargando = null;
+let origenModelos = null; // 'local' | 'cdn' — para diagnóstico
 
-/** Carga los modelos necesarios la primera vez (idempotente). */
+const cargarDesde = (url) => Promise.all([
+  faceapi.nets.tinyFaceDetector.loadFromUri(url),     // ~190 KB
+  faceapi.nets.faceLandmark68Net.loadFromUri(url),    // ~350 KB
+  faceapi.nets.faceRecognitionNet.loadFromUri(url),   // ~6 MB
+]);
+
+/** Carga los modelos la primera vez (idempotente): local primero, CDN de respaldo. */
 export async function cargarModelos() {
   if (cargados) return true;
   if (cargando) return cargando;
   cargando = (async () => {
     try {
-      await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),     // ~190 KB
-        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),    // ~350 KB
-        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),   // ~6 MB
-      ]);
+      await cargarDesde(LOCAL_URL);
+      origenModelos = 'local';
       cargados = true;
       return true;
-    } catch (e) {
-      console.error('[faceapi] error cargando modelos', e);
-      cargando = null;
-      throw e;
+    } catch (eLocal) {
+      console.warn('[faceapi] modelos locales no disponibles, probando CDN…', eLocal?.message || eLocal);
+      try {
+        await cargarDesde(CDN_URL);
+        origenModelos = 'cdn';
+        cargados = true;
+        return true;
+      } catch (eCdn) {
+        console.error('[faceapi] error cargando modelos (local y CDN)', eCdn);
+        cargando = null;
+        throw eCdn;
+      }
     }
   })();
   return cargando;
 }
+
+/** De dónde se cargaron los pesos ('local' | 'cdn' | null si aún no). */
+export const origenDeModelos = () => origenModelos;
 
 // Detección a mayor resolución (inputSize 512, múltiplo de 32) → el recorte y los
 // 68 landmarks quedan mejor alineados, y el descriptor de 128 floats es más estable.

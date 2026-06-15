@@ -7,6 +7,7 @@ import { db } from '../firebaseConfig';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { BASE, CHART, CHART_PALETTE } from '../utils/styles';
 import { subirModeloAPS, esperarTraduccion, eliminarModeloAPS } from '../utils/apsClient';
+import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 
 const FORMATOS_ACEPTADOS = '.rvt,.rfa,.ifc,.dwg,.dwfx,.nwd,.nwc,.3dm,.skp';
 
@@ -22,6 +23,8 @@ export const ESPECIALIDADES = [
 ];
 
 export default function BimUploader({ onModeloListo, showToast }) {
+  // Aislamiento por proyecto: solo se listan/suben modelos del proyecto activo.
+  const { filtrarPorContexto, proyectoActivoId } = useProyectoActivo();
   const inputRef = useRef(null);
   const [arrastrando, setArrastrando] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
@@ -38,11 +41,11 @@ export default function BimUploader({ onModeloListo, showToast }) {
   useEffect(() => {
     const q = query(collection(db, 'BIM_Modelos'), orderBy('subidoEn', 'desc'));
     const unsub = onSnapshot(q,
-      snap => setModelos(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+      snap => setModelos(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
       err => console.error('[BIM_Modelos]', err)
     );
     return () => unsub();
-  }, []);
+  }, [filtrarPorContexto]);
 
   // ── HANDLERS DE DRAG&DROP ──
   const onDragOver = (e) => { e.preventDefault(); setArrastrando(true); };
@@ -71,7 +74,7 @@ export default function BimUploader({ onModeloListo, showToast }) {
         setProgreso(p);
         if (p < 95) setEstado(`⬆️ Subiendo a Autodesk... ${Math.round(p)}%`);
         else setEstado('🔄 Iniciando traducción a SVF2...');
-      }, { especialidad, revision });
+      }, { especialidad, revision, proyectoActivoId });  // sella el modelo con el proyecto activo
 
       setEstado('✅ Subida completa. Traduciendo modelo (esto toma 5-30 min)...');
       setProgreso(100);

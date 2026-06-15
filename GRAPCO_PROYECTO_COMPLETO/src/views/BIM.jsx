@@ -24,6 +24,10 @@ import { CostoNexus, SectorizacionNexus, PlazosNexus } from './BimNexusModulos';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 
 export default function BIM({ historialEnriquecido = [], showToast }) {
+  // Aislamiento por proyecto: cada proyecto tiene SUS propios modelos y vínculos BIM.
+  // filtrarPorContexto oculta los de otros proyectos (y los legacy sin proyectoId
+  // solo se ven en el proyecto default). proyectoActivoId sella cada doc nuevo.
+  const { filtrarPorContexto, proyectoActivoId } = useProyectoActivo();
   const [tab, setTab] = useState('costo');  // costo | sectorizacion | plazos
   const [urnSeleccionado, setUrnSeleccionado] = useState('');
   // Federación: lista de URNs cargados simultáneamente en el visor
@@ -33,13 +37,13 @@ export default function BIM({ historialEnriquecido = [], showToast }) {
   useEffect(() => {
     const q = query(collection(db, 'BIM_Modelos'), orderBy('subidoEn', 'desc'));
     const unsub = onSnapshot(q, snap => {
-      setModelosDisponibles(snap.docs
+      const todos = snap.docs
         .map(d => ({ id: d.id, ...d.data() }))
-        .filter(m => m.urn && (m.traduccionStatus === 'success' || m.traduccionStatus === 'inprogress'))
-      );
+        .filter(m => m.urn && (m.traduccionStatus === 'success' || m.traduccionStatus === 'inprogress'));
+      setModelosDisponibles(filtrarPorContexto(todos));  // solo modelos de ESTE proyecto
     });
     return () => unsub();
-  }, []);
+  }, [filtrarPorContexto]);
   const [elementoSeleccionado, setElementoSeleccionado] = useState(null);
   const [vinculos, setVinculos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -58,7 +62,6 @@ export default function BIM({ historialEnriquecido = [], showToast }) {
 
   // ── CARGAR VÍNCULOS ──
   // Filtra por proyecto/frente activo: cada proyecto tiene sus propios modelos BIM y vínculos
-  const { filtrarPorContexto } = useProyectoActivo();
   useEffect(() => {
     setLoading(true);
     const q = query(collection(db, 'BIM_Vinculos'), orderBy('actualizadoEn', 'desc'));
@@ -111,6 +114,7 @@ export default function BIM({ historialEnriquecido = [], showToast }) {
       actividad: formVin.actividad,
       bimGuids: formVin.bimGuids,
       comentario: formVin.comentario || '',
+      proyectoId: proyectoActivoId,   // aislamiento: el vínculo pertenece a este proyecto
       actualizadoEn: new Date(),
     };
     try {

@@ -59,13 +59,14 @@ const JORNADA_MIN_MIN = 60;   // SALIDA solo si pasó ≥ 60 min desde la entrad
 
 export default function MarcadorAsistencia({ showToast }) {
   const { user } = useAuth();
-  const { proyectoActivoId, frenteActivoId, modoTodosFrentes } = useProyectoActivo();
+  const { proyectoActivoId, frenteActivoId, modoTodosFrentes, filtrarPorContexto } = useProyectoActivo();
   const personalDB = usePersonal();
 
-  // Buscar en TODO el personal activo enrolado (identidad biométrica global).
+  // Reconocemos SOLO al personal enrolado de ESTE proyecto (aislamiento): el marcador
+  // no debe identificar ni marcar a obreros de otra obra.
   const personalEnrolado = useMemo(() => {
     if (!Array.isArray(personalDB)) return [];
-    return personalDB
+    return filtrarPorContexto(personalDB)
       .filter(p => p.activo !== false)
       .map(p => {
         const raw = p.faceDescriptors;
@@ -75,7 +76,7 @@ export default function MarcadorAsistencia({ showToast }) {
         return { ...p, faceDescriptors: descArrays.map(arrayToDescriptor) };
       })
       .filter(p => p.faceDescriptors.length > 0);
-  }, [personalDB]);
+  }, [personalDB, filtrarPorContexto]);
 
   // Asistencias de hoy: { personalId: { entrada, entradaReal, salida, salidaReal } }
   const [hoy, setHoy] = useState({});
@@ -112,6 +113,7 @@ export default function MarcadorAsistencia({ showToast }) {
   const [analizando, setAnalizando] = useState(false);
   const [detectados, setDetectados] = useState(0);   // caras vistas en el último frame
   const [reconocidos, setReconocidos] = useState(0); // de esas, cuántas superan el piso
+  const [hintCandidato, setHintCandidato] = useState(null); // { nombre, sim } mejor parecido bajo el piso
   const [recientes, setRecientes] = useState([]);    // [{ nombre, accion, hora, ts }] feedback
   const videoRef = useRef(null);
   const rachaRef = useRef(new Map());     // personalId → { hits, t, dist }
@@ -146,7 +148,7 @@ export default function MarcadorAsistencia({ showToast }) {
   const cerrarCamara = () => {
     if (stream) stream.getTracks().forEach(t => t.stop());
     setStream(null);
-    setDetectados(0); setReconocidos(0);
+    setDetectados(0); setReconocidos(0); setHintCandidato(null);
     rachaRef.current.clear();
   };
 
@@ -240,10 +242,14 @@ export default function MarcadorAsistencia({ showToast }) {
         for (const [id, rr] of rachaRef.current) if (now - rr.t > RACHA_TTL_MS) rachaRef.current.delete(id);
 
         let reconoc = 0;
+        let mejorGlobal = { dist: Infinity, nombre: null };  // mejor parecido del frame (para feedback)
         const lote = [];
         const enLote = new Set();
         for (const det of dets) {
           const best = buscarMatch(det.descriptor, personalEnrolado, Infinity);
+          if (best?.obrero && best.distancia < mejorGlobal.dist) {
+            mejorGlobal = { dist: best.distancia, nombre: best.obrero.nombre };
+          }
           if (!best?.obrero || best.distancia > DIST_MAX) continue;  // bajo el piso 75% → ignora
           reconoc++;
           const id = best.obrero.id;
@@ -272,6 +278,14 @@ export default function MarcadorAsistencia({ showToast }) {
         }
         setDetectados(dets.length);
         setReconocidos(reconoc);
+        // Feedback: si hay caras pero NINGUNA superó el piso, mostramos al más parecido
+        // con su % real ("te veo como X al 68%") para que se acerque/mejore la luz en vez
+        // de quedarse sin saber por qué no marca.
+        if (dets.length > 0 && reconoc === 0 && mejorGlobal.nombre) {
+          setHintCandidato({ nombre: mejorGlobal.nombre, sim: similitudPct(mejorGlobal.dist) });
+        } else {
+          setHintCandidato(null);
+        }
 
         if (lote.length) {
           const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
@@ -368,6 +382,13 @@ export default function MarcadorAsistencia({ showToast }) {
                 {reconocidos > 0 && (
                   <span style={{ background: 'rgba(21,128,61,0.82)', color: '#fff', padding: '6px 13px', borderRadius: '999px', fontSize: '12px', fontWeight: 800 }}>
                     ✓ {reconocidos} reconocido{reconocidos === 1 ? '' : 's'}
+                  </span>
+                )}
+                {/* Pista cuando hay cara pero no llega al piso de 75% */}
+                {hintCandidato && (
+                  <span style={{ background: 'rgba(217,119,6,0.92)', color: '#fff', padding: '6px 13px', borderRadius: '999px', fontSize: '12px', fontWeight: 800 }}
+                    title={`Acércate, mira de frente y mejora la luz para superar el ${SIMILITUD_MIN}% mínimo`}>
+                    ≈ {hintCandidato.nombre} · {hintCandidato.sim}% (acércate / +luz)
                   </span>
                 )}
               </div>

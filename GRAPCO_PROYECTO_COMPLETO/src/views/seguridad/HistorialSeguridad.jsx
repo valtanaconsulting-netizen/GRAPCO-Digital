@@ -5,24 +5,28 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { collection, onSnapshot, query, orderBy, limit, where } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { useAuth } from '../../contexts/AuthContext';
+import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import { BASE } from '../../utils/styles';
 import EmptyState from '../../components/EmptyState';
 
 export default function HistorialSeguridad() {
   const { user } = useAuth();
+  const { filtrarPorContexto } = useProyectoActivo();
   const [reportes, setReportes] = useState([]);
   const [inspecciones, setInspecciones] = useState([]);
   const [filtro, setFiltro] = useState('todos'); // todos | reportes | inspecciones
 
   useEffect(() => {
+    // Solo del proyecto activo (no cruzar NCs/inspecciones de otra obra del mismo usuario).
+    const ctx = (arr) => filtrarPorContexto(arr, { ignorarFrente: true });
     const unsubs = [
       onSnapshot(query(collection(db, 'NoConformidades'), orderBy('detectadoEn', 'desc'), limit(50)),
-        (snap) => setReportes(snap.docs.map(d => ({ id: d.id, ...d.data(), _coll: 'NoConformidades' })))),
+        (snap) => setReportes(ctx(snap.docs.map(d => ({ id: d.id, ...d.data(), _coll: 'NoConformidades' }))))),
       onSnapshot(query(collection(db, 'InspeccionesSeguridad'), orderBy('creadoEn', 'desc'), limit(50)),
-        (snap) => setInspecciones(snap.docs.map(d => ({ id: d.id, ...d.data(), _coll: 'InspeccionesSeguridad' })))),
+        (snap) => setInspecciones(ctx(snap.docs.map(d => ({ id: d.id, ...d.data(), _coll: 'InspeccionesSeguridad' }))))),
     ];
     return () => unsubs.forEach(u => u());
-  }, []);
+  }, [filtrarPorContexto]);
 
   const items = useMemo(() => {
     const mios = (a) => a.filter(x => x.reportadoPor === user?.email || x.creadoPor === user?.email);

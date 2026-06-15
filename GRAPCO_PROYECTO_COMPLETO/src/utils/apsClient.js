@@ -105,6 +105,11 @@ export const subirModeloAPS = async (file, onProgress, metadata = {}) => {
       // Metadatos BIM para federación: especialidad + revisión
       especialidad: metadata.especialidad || 'ARQ',
       revision: metadata.revision || 'R0',
+      // AISLAMIENTO POR PROYECTO: cada modelo pertenece al proyecto activo donde se
+      // sube. Sin esto, los modelos de un proyecto (p.ej. CREDITEX) aparecían en
+      // otro (TEXTIL). Los modelos legacy sin este campo solo se ven en el proyecto
+      // default (creditex-ptar), vía filtrarPorContexto.
+      proyectoId: metadata.proyectoActivoId || null,
     });
   } catch (err) {
     console.warn('[apsClient] No pude registrar BIM_Modelos en Firestore:', err);

@@ -9,6 +9,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { useAuth } from '../../contexts/AuthContext';
+import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import { BASE, CHART_PALETTE } from '../../utils/styles';
 import Modal from '../../components/Modal';
 import EmptyState from '../../components/EmptyState';
@@ -30,6 +31,7 @@ const FORM_INICIAL = {
 
 export default function ATSGaleria({ showToast }) {
   const { user } = useAuth();
+  const { proyectoActivoId, filtrarPorContexto } = useProyectoActivo();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null);
@@ -39,10 +41,11 @@ export default function ATSGaleria({ showToast }) {
 
   useEffect(() => {
     const unsub = onSnapshot(query(collection(db, 'ATS'), orderBy('fecha', 'desc'), limit(120)),
-      (snap) => { setItems(snap.docs.map(d => ({ id: d.id, ...d.data() }))); setLoading(false); },
+      // Solo ATS del proyecto activo (no mezclar seguridad entre obras).
+      (snap) => { setItems(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true })); setLoading(false); },
       () => setLoading(false));
     return () => unsub();
-  }, []);
+  }, [filtrarPorContexto]);
 
   const filtrados = useMemo(() => {
     if (!filtroFecha) return items;
@@ -73,7 +76,8 @@ export default function ATSGaleria({ showToast }) {
       };
       if (modal === 'NUEVO') {
         await addDoc(collection(db, 'ATS'), {
-          ...payload, creadoEn: serverTimestamp(), creadoPor: user?.email || 'desconocido',
+          ...payload, proyectoId: proyectoActivoId || null,
+          creadoEn: serverTimestamp(), creadoPor: user?.email || 'desconocido',
         });
         showToast?.('ATS guardado', 'success');
       } else {

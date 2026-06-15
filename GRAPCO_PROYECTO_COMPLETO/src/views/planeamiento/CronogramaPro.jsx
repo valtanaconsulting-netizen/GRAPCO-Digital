@@ -85,6 +85,10 @@ export default function CronogramaPro() {
   const [fullscreen, setFullscreen] = useState(false);  // pantalla completa del cronograma
   const [gridW, setGridW] = useState(null);             // ancho del panel-grilla (null = natural); arrastrable
   const gridRef = useRef(null);
+  // Ancho real del panel del Gantt → el dibujo llena AL MENOS ese ancho (sin franja
+  // blanca a la derecha cuando el plazo es corto o el zoom es pequeño).
+  const ganttPanelRef = useRef(null);
+  const [ganttPanelW, setGanttPanelW] = useState(0);
   // Catálogo WBS del proyecto: metrados totales por actividad (fuente única)
   const { infoMap } = useCatalogoWBS(proyectoActivoId);
 
@@ -146,6 +150,23 @@ export default function CronogramaPro() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [fullscreen]);
+
+  // Mide el ancho disponible del panel del Gantt (se re-mide al cambiar de tamaño,
+  // entrar/salir de pantalla completa o arrastrar el divisor) → el dibujo llena ese ancho.
+  useEffect(() => {
+    const el = ganttPanelRef.current;
+    if (!el) return;
+    const medir = () => setGanttPanelW(el.clientWidth || 0);
+    medir();
+    let ro;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(medir);
+      ro.observe(el);
+    } else {
+      window.addEventListener('resize', medir);
+    }
+    return () => { if (ro) ro.disconnect(); else window.removeEventListener('resize', medir); };
+  }, [fullscreen, gridW]);
 
   const insertarDebajo = (idx) => mutar(prev => {
     const id = nuevoId(prev);
@@ -349,11 +370,17 @@ export default function CronogramaPro() {
     if (!cpm) return null;
     const totalDias = Math.max(cpm.duracionProyecto + 12, 30);
     const ancho = totalDias * pxDia;
+    // anchoRender = lo que realmente se dibuja: nunca menor que el panel visible, así
+    // las filas (zebra) llegan hasta el borde derecho y no queda franja blanca.
+    const anchoRender = Math.max(ancho, ganttPanelW || 0);
+    // Las semanas (cabecera + rejilla) se extienden hasta el borde visible para que el
+    // calendario sea continuo (sin hueco) aunque el proyecto sea más corto que el panel.
+    const diasRender = Math.ceil(anchoRender / pxDia);
     const semanas = [];
-    for (let d = 0; d < totalDias; d += 6) semanas.push(d);
+    for (let d = 0; d < diasRender; d += 6) semanas.push(d);
     const idxHoy = indiceDeFecha(fechaInicio, hoyIso());
-    return { totalDias, ancho, semanas, idxHoy };
-  }, [cpm, pxDia, fechaInicio]);
+    return { totalDias, ancho, anchoRender, semanas, idxHoy };
+  }, [cpm, pxDia, fechaInicio, ganttPanelW]);
 
   if (tareas === null) {
     return <SkeletonPantalla titulo="Cargando cronograma" />;
@@ -626,12 +653,13 @@ export default function CronogramaPro() {
 
               {/* ── Panel derecho: GANTT ── */}
               {gantt && (
-                <div style={{ overflowX: 'auto', flex: 1 }}>
-                  <div style={{ width: `${gantt.ancho}px`, position: 'relative' }}>
+                <div ref={ganttPanelRef} style={{ overflowX: 'auto', flex: 1, minWidth: 0 }}>
+                  <div style={{ width: `${gantt.anchoRender}px`, position: 'relative' }}>
                     {/* Cabecera semanas (sticky) */}
                     <div style={{
                       position: 'sticky', top: 0, zIndex: 2, display: 'flex',
                       background: BASE.navy, height: '32px', alignItems: 'stretch',
+                      width: `${gantt.anchoRender}px`,
                     }}>
                       {gantt.semanas.map(d => (
                         <div key={d} style={{
@@ -647,10 +675,10 @@ export default function CronogramaPro() {
                     </div>
 
                     {/* Cuerpo SVG */}
-                    <svg width={gantt.ancho} height={(cpm.tareas.length) * ALTO_FILA} style={{ display: 'block' }}>
-                      {/* Rejilla semanal + zebra */}
+                    <svg width={gantt.anchoRender} height={(cpm.tareas.length) * ALTO_FILA} style={{ display: 'block' }}>
+                      {/* Rejilla semanal + zebra (llega hasta el borde: sin franja blanca) */}
                       {cpm.tareas.map((t, i) => (
-                        <rect key={`z${i}`} x={0} y={i * ALTO_FILA} width={gantt.ancho} height={ALTO_FILA}
+                        <rect key={`z${i}`} x={0} y={i * ALTO_FILA} width={gantt.anchoRender} height={ALTO_FILA}
                           fill={sel === i ? `${BASE.gold}1a` : (i % 2 ? BASE.bgSoft : '#fff')}
                           onMouseEnter={() => setSel(i)} />
                       ))}

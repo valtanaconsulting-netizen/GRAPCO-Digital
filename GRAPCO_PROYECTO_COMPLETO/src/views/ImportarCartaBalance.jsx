@@ -453,7 +453,7 @@ const n = (v) => parseInt(v, 10) || 0;
 
 export default function ImportarCartaBalance({ showToast }) {
   const { user } = useAuth();
-  const { proyectoActivoId, frenteActivoId, modoTodosFrentes } = useProyectoActivo();
+  const { proyectoActivoId, frenteActivoId, modoTodosFrentes, filtrarPorContexto } = useProyectoActivo();
 
   const [ficha, setFicha] = useState({
     obra: PRECARGA.obra, fecha: PRECARGA.fecha, actividad: PRECARGA.actividad,
@@ -603,12 +603,13 @@ export default function ImportarCartaBalance({ showToast }) {
       PLANTILLAS.forEach((p) => { if ((p.data.conclusiones || '').trim()) fuente[`${p.data.fecha}|${(p.data.actividad || '').toUpperCase()}`] = p.data.conclusiones.trim(); });
       let actualizadas = 0, sinFuente = 0;
       const snap = await getDocs(collection(db, 'Cartas_Balance'));
-      for (const d of snap.docs) {
-        const x = d.data() || {};
+      // Solo cartas de ESTE proyecto (filtrarPorContexto respeta legacy sin proyectoId en el default).
+      const delProyecto = filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true });
+      for (const x of delProyecto) {
         if ((x.conclusiones || '').trim()) continue; // ya tiene
         const texto = fuente[`${x.fecha}|${(x.actividad || '').toUpperCase()}`];
         if (!texto) { sinFuente++; continue; }
-        try { await updateDoc(doc(db, 'Cartas_Balance', d.id), { conclusiones: texto }); actualizadas++; } catch (e) { console.warn('[reparar]', e); }
+        try { await updateDoc(doc(db, 'Cartas_Balance', x.id), { conclusiones: texto }); actualizadas++; } catch (e) { console.warn('[reparar]', e); }
       }
       const msg = actualizadas > 0
         ? `Conclusiones reparadas ✓ · ${actualizadas} carta(s) actualizada(s)${sinFuente ? ` · ${sinFuente} sin plantilla de referencia` : ''}`
@@ -620,7 +621,7 @@ export default function ImportarCartaBalance({ showToast }) {
       console.error('[ImportarCB reparar]', e);
       showToast?.('Error al reparar: ' + (e?.message || e), 'error');
     } finally { setReparando(false); }
-  }, [user, showToast]);
+  }, [user, showToast, filtrarPorContexto]);
 
   // Sube TODAS las plantillas a la base de una vez (cada una con su catálogo de
   // códigos según su tipo). Si una ya existe (misma fecha+actividad+proyecto), la

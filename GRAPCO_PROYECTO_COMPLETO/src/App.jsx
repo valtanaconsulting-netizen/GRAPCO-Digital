@@ -2,7 +2,8 @@
 import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ProyectoActivoProvider, useProyectoActivo } from './contexts/ProyectoActivoContext';
-import { CUADRILLAS_MAESTRAS as CUADRILLAS_DEFAULT } from './utils/constants';
+// CUADRILLAS_MAESTRAS (defaults genéricos) ya NO se usan: las cuadrillas salen 100% del
+// proyecto activo. Un proyecto nuevo arranca sin cuadrillas hasta crear las suyas.
 import { BASE, LOGO } from './utils/styles';
 import { hoy } from './utils/helpers';
 import { leerRutaHash, escribirRutaHash } from './utils/urlNav';
@@ -314,20 +315,16 @@ function AppInner() {
       return result;
     };
     try {
-      // 1) Cuadrillas del proyecto activo (filtradas por contexto).
-      let r = construir(cuadrillasDBFiltrado);
-      if (Object.keys(r).length > 0) return r;
-      // 2) Si el filtro no devolvió nada pero SÍ hay cuadrillas reales
-      //    (ej. cuadrillas legacy sin proyectoId), las usamos igual — así
-      //    el capataz aparece para todos sin tener que re-editar la cuadrilla.
-      r = construir(cuadrillasDB);
-      if (Object.keys(r).length > 0) return r;
+      // SOLO cuadrillas del proyecto activo (filtradas por contexto). Un proyecto nuevo
+      // arranca SIN cuadrillas (objeto vacío) hasta que se creen las suyas — ya NO caemos
+      // a un fallback con TODAS las cuadrillas (eso mostraba cuadrillas de CREDITEX en
+      // TEXTIL) ni a defaults genéricos "Capataz 1/2/3".
+      return construir(cuadrillasDBFiltrado);
     } catch (e) {
       console.warn('[cuadrillasActivas] error', e);
+      return {};
     }
-    // 3) Último recurso: defaults genéricos (solo si no hay NINGUNA cuadrilla).
-    return CUADRILLAS_DEFAULT || {};
-  }, [cuadrillasDBFiltrado, cuadrillasDB]);
+  }, [cuadrillasDBFiltrado]);
 
   // ── Pantalla de carga inicial (acabado ultra-premium navy + oro) ──
   if (loading) {

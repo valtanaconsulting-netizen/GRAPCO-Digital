@@ -19,7 +19,7 @@ import {
 } from '../utils/cartaBalanceAnalytics';
 
 export default function OptimizadorCuadrillas({ showToast, actividadInicial = '', tamanoInicial = 4, onCuadrillaSeleccionada = null }) {
-  const { proyectoActivoId } = useProyectoActivo();
+  const { proyectoActivoId, filtrarPorContexto } = useProyectoActivo();
   const [cartas, setCartas] = useState([]);
   const [personalDB, setPersonalDB] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,17 +40,19 @@ export default function OptimizadorCuadrillas({ showToast, actividadInicial = ''
     const unsub1 = onSnapshot(
       query(collection(db, 'Cartas_Balance'), orderBy('fecha', 'desc')),
       (snap) => {
-        // Aislamiento: solo las Cartas Balance del proyecto activo.
-        setCartas(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.proyectoId === proyectoActivoId));
+        // Aislamiento: solo las Cartas Balance del proyecto activo. Usamos filtrarPorContexto
+        // (no === estricto) para no perder las cartas legacy sin proyectoId en el proyecto default.
+        setCartas(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true }));
         setLoading(false);
       }
     );
     const unsub2 = onSnapshot(
       collection(db, 'Personal'),
-      (snap) => setPersonalDB(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+      // Solo personal del proyecto activo (legacy sin proyectoId visible solo en el default).
+      (snap) => setPersonalDB(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true }))
     );
     return () => { unsub1(); unsub2(); };
-  }, []);
+  }, [proyectoActivoId, filtrarPorContexto]);
 
   // Actividades únicas detectadas en el historial
   const actividadesDetectadas = useMemo(() => {

@@ -10,15 +10,21 @@ import { BASE, RADIUS, SPACING, CHART_PALETTE } from '../../utils/styles';
 import { usePersonal } from '../../hooks/useFirebaseData';
 import { cargarModelos, obtenerDescriptor, descriptorToArray, promediarDescriptores } from '../../utils/faceapi';
 import { CARGOS_STAFF } from '../../utils/styles';
+import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
+
+// Nº de fotos de referencia por obrero. Subido de 3 → 5: más capturas desde ángulos
+// distintos = huella biométrica más rica → reconoce MEJOR y a la persona correcta.
+const N_FOTOS = 5;
 
 export default function EnrolamientoFacial({ showToast }) {
   const personalDB = usePersonal();
-  // Enrolamiento es identidad biométrica (global, no por proyecto).
-  // Mostramos TODO el personal activo y luego lo separamos en Obreros / Staff.
+  const { filtrarPorContexto } = useProyectoActivo();
+  // Enrolamos SOLO al personal de ESTE proyecto (aislamiento): así no se mezcla la
+  // identidad biométrica con obreros de otras obras. Luego se separa en Obreros / Staff.
   const personalFiltrado = useMemo(() => {
     if (!Array.isArray(personalDB)) return [];
-    return personalDB.filter(p => p.activo !== false);
-  }, [personalDB]);
+    return filtrarPorContexto(personalDB).filter(p => p.activo !== false);
+  }, [personalDB, filtrarPorContexto]);
   const grupos = useMemo(() => ({
     obreros: personalFiltrado.filter(p => !CARGOS_STAFF.includes(p.cargo)),
     staff:   personalFiltrado.filter(p => CARGOS_STAFF.includes(p.cargo)),
@@ -107,8 +113,8 @@ export default function EnrolamientoFacial({ showToast }) {
   };
 
   const guardar = async () => {
-    if (!seleccionado || capturas.length < 3) {
-      showToast?.('Necesitas las 3 capturas antes de guardar', 'warning');
+    if (!seleccionado || capturas.length < N_FOTOS) {
+      showToast?.(`Necesitas las ${N_FOTOS} capturas antes de guardar`, 'warning');
       return;
     }
     setBusy(true);
@@ -134,7 +140,7 @@ export default function EnrolamientoFacial({ showToast }) {
         faceFotosRef: fotosUrls,
         faceEnroladoEn: serverTimestamp(),
       }, { merge: true });
-      showToast?.(`✅ ${seleccionado.nombre} enrolado con 3 fotos`, 'success');
+      showToast?.(`✅ ${seleccionado.nombre} enrolado con ${N_FOTOS} fotos`, 'success');
       setCapturas([]);
       setSeleccionado(null);
       cerrarCamara();
@@ -170,7 +176,7 @@ export default function EnrolamientoFacial({ showToast }) {
           Enrolamiento Facial · Identidad Biométrica
         </span>
         <span style={{ fontSize: '11px', color: BASE.muted, fontWeight: '600' }}>
-          3 fotos por obrero · descriptores en /Personal para reconocer al marcar asistencia
+          {N_FOTOS} fotos por obrero · descriptores en /Personal para reconocer al marcar asistencia
         </span>
       </div>
 
@@ -203,7 +209,7 @@ export default function EnrolamientoFacial({ showToast }) {
             <div>
               <p style={{ fontSize: '10px', color: BASE.muted, fontWeight: '800', letterSpacing: '0.6px' }}>ENROLANDO</p>
               <h3 style={{ fontSize: '18px', fontWeight: '900', color: BASE.navy, marginTop: '2px' }}>{seleccionado.nombre}</h3>
-              <p style={{ fontSize: '11.5px', color: BASE.muted }}>Capturas: <strong>{capturas.length} / 3</strong></p>
+              <p style={{ fontSize: '11.5px', color: BASE.muted }}>Capturas: <strong>{capturas.length} / {N_FOTOS}</strong></p>
             </div>
             <button onClick={cancelar}
               style={{ padding: '8px 14px', background: 'transparent', color: BASE.muted, border: `1px solid ${BASE.border}`, borderRadius: '8px', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}>
@@ -234,8 +240,8 @@ export default function EnrolamientoFacial({ showToast }) {
 
             {/* Galería de capturas */}
             <div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '8px' }}>
-                {[0,1,2].map(i => {
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${N_FOTOS},1fr)`, gap: '8px' }}>
+                {Array.from({ length: N_FOTOS }, (_, i) => i).map(i => {
                   const c = capturas[i];
                   return (
                     <div key={i} style={{
@@ -250,14 +256,14 @@ export default function EnrolamientoFacial({ showToast }) {
               </div>
 
               <div style={{ display: 'flex', gap: '8px', marginTop: SPACING.md }}>
-                <button onClick={capturar} disabled={!stream || !modelosOK || busy || capturas.length >= 3}
+                <button onClick={capturar} disabled={!stream || !modelosOK || busy || capturas.length >= N_FOTOS}
                   style={{
                     flex: 1, padding: '12px',
-                    background: !stream || !modelosOK || busy || capturas.length >= 3 ? BASE.muted : BASE.gold,
-                    color: !stream || !modelosOK || busy || capturas.length >= 3 ? '#fff' : BASE.navy,
+                    background: !stream || !modelosOK || busy || capturas.length >= N_FOTOS ? BASE.muted : BASE.gold,
+                    color: !stream || !modelosOK || busy || capturas.length >= N_FOTOS ? '#fff' : BASE.navy,
                     border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '900',
-                    cursor: capturas.length >= 3 ? 'default' : 'pointer',
-                  }}>📸 Capturar ({capturas.length}/3)</button>
+                    cursor: capturas.length >= N_FOTOS ? 'default' : 'pointer',
+                  }}>📸 Capturar ({capturas.length}/{N_FOTOS})</button>
                 {capturas.length > 0 && (
                   <button onClick={() => setCapturas(prev => prev.slice(0, -1))}
                     style={{ padding: '12px 14px', background: '#fff', color: BASE.red, border: `1px solid ${BASE.red}55`, borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>
@@ -266,7 +272,7 @@ export default function EnrolamientoFacial({ showToast }) {
                 )}
               </div>
 
-              {capturas.length === 3 && (
+              {capturas.length === N_FOTOS && (
                 <button onClick={guardar} disabled={busy}
                   style={{ marginTop: SPACING.md, width: '100%', padding: '12px', background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '900', cursor: 'pointer' }}>
                   {busy ? 'Guardando…' : `💾 Guardar enrolamiento de ${seleccionado.nombre}`}
@@ -276,7 +282,7 @@ export default function EnrolamientoFacial({ showToast }) {
           </div>
 
           <div style={{ background: BASE.bgSoft, padding: '10px 14px', borderRadius: RADIUS.md, fontSize: '11px', color: BASE.muted }}>
-            💡 <strong>Tip:</strong> toma las 3 fotos desde ángulos ligeramente distintos (frontal, un poco a la izquierda, un poco a la derecha). Mantén la pose <strong>~1 segundo</strong> tras pulsar: cada captura promedia 5 lecturas nítidas para una huella biométrica más exacta.
+            💡 <strong>Tip:</strong> toma las {N_FOTOS} fotos desde ángulos distintos (frontal, izquierda, derecha, un poco arriba, un poco abajo). Mantén la pose <strong>~1 segundo</strong> tras pulsar: cada captura promedia 5 lecturas nítidas. Más ángulos = reconoce mejor y a la persona correcta.
           </div>
         </div>
       )}

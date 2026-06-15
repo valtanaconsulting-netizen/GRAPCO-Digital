@@ -19,6 +19,7 @@ import { FECHA_INICIO_PROYECTO, CATALOGO_MASTER, INFO_MAP } from '../utils/const
 import { BASE, inp } from '../utils/styles';
 import { hoy, fmtFecha, obtenerSemana as obtSem, mismaActividad } from '../utils/helpers';
 import DateInput from '../components/DateInput';
+import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 
 // Catálogo base del proyecto (estático) → { ACTIVIDAD: { ip, und, partida } }
 const CAT_BASE = (() => {
@@ -112,6 +113,7 @@ function normalizarGrupos(plan) {
 }
 
 export default function PlanDiario({ planesDiarios, cuadrillasActivas, cuadrillasDB, historial, isMobile, showToast }) {
+  const { filtrarPorContexto } = useProyectoActivo();
   const [pdFecha, setPdFecha] = useState(hoy());
   const [pdObra, setPdObra] = useState('PRECOTEX LAS MORERAS');
   const [pdResidente, setPdResidente] = useState('');
@@ -181,10 +183,11 @@ export default function PlanDiario({ planesDiarios, cuadrillasActivas, cuadrilla
   const [pmActs, setPmActs] = useState([]);
   useEffect(() => {
     const unsub = onSnapshot(query(collection(db, 'PlanMaestro')),
-      (snap) => setPmActs(snap.docs.map(d => d.data())),
+      // Solo las actividades del proyecto activo (no mezclar IP/metas de otra obra).
+      (snap) => setPmActs(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true })),
       (e) => console.warn('[PlanDiario/PlanMaestro]', e));
     return () => unsub();
-  }, []);
+  }, [filtrarPorContexto]);
 
   // Catálogo combinado: Plan Maestro del proyecto + catálogo base estático.
   // IP en cascada: ipMeta → (HH presup / Metrado contractual) → catálogo base.

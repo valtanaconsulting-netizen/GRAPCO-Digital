@@ -44,7 +44,7 @@ export default function SalidaMaterial({ showToast, onSaved }) {
     const u3 = onSnapshot(query(collection(db, 'Kardex_Movimientos'), orderBy('fecha', 'desc')),
       (snap) => setMovimientos(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true })));
     const u4 = onSnapshot(collection(db, 'Personal'),
-      (snap) => setPersonalDB(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+      (snap) => setPersonalDB(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true })));
     const u5 = onSnapshot(query(collection(db, 'Historial'), orderBy('fecha', 'desc')),
       (snap) => setHistorial(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     const u6 = onSnapshot(collection(db, 'Partidas'),

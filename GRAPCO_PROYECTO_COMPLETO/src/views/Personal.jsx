@@ -10,19 +10,30 @@ import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 import Modal from '../components/Modal';
 import PersonalBaseDatos from './PersonalBaseDatos';
 
-export default function Personal({ cuadrillasDB, personalDB: personalTodos, configuracion, showToast }) {
+export default function Personal({ cuadrillasDB: cuadrillasTodas, personalDB: personalTodos, configuracion, showToast }) {
   const { proyectoActivoId, filtrarPorContexto, proyectos } = useProyectoActivo();
   // `personalDB` = SOLO el personal de ESTE proyecto (un proyecto nuevo arranca vacío).
   // `personalTodos` = roster GLOBAL de GRAPCO (todos los que han trabajado), para el
   // buscador "base de datos" que permite traer gente de otras obras a este proyecto.
   const personalDB = useMemo(() => filtrarPorContexto(personalTodos || []), [personalTodos, filtrarPorContexto]);
+  // `cuadrillasDB` = SOLO las cuadrillas de ESTE proyecto. Las cuadrillas vienen globales
+  // del hook; sin filtrar, un proyecto nuevo (TEXTIL) mostraba cuadrillas de otro (CREDITEX).
+  // filtrarPorContexto trabaja sobre arrays → convertimos objeto↔array. Una cuadrilla legacy
+  // sin proyectoId solo se ve en el proyecto default (creditex-ptar).
+  const cuadrillasDB = useMemo(() => {
+    const lista = Object.entries(cuadrillasTodas || {}).map(([id, c]) => ({ id, ...(c || {}) }));
+    const out = {};
+    // Guardamos el valor ORIGINAL (sin inyectar `id`) para no contaminar el doc al re-guardar.
+    filtrarPorContexto(lista).forEach(c => { out[c.id] = cuadrillasTodas[c.id]; });
+    return out;
+  }, [cuadrillasTodas, filtrarPorContexto]);
   const [modalBaseDatos, setModalBaseDatos] = useState(false);
   const [gTab,            setGTab]            = useState('trabajadores');
   const [modalCuadrilla,  setModalCuadrilla]  = useState(null);
   const [modalTrabajador, setModalTrabajador] = useState(null);
   const [modalTarifas,    setModalTarifas]    = useState(false);
   const [formCuadrilla,   setFormCuadrilla]   = useState({capatazId:'',especialidad:'Albañilería',miembros:[]});
-  const [formTrabajador,  setFormTrabajador]  = useState({nombre:'',dni:'',fechaNac:'',cargo:'Operario',cuadrillaId:'',fechaIngreso:'',fechaSalida:'',fechaLiquidacion:''});
+  const [formTrabajador,  setFormTrabajador]  = useState({nombre:'',dni:'',telefono:'',fechaNac:'',cargo:'Operario',cuadrillaId:'',fechaIngreso:'',fechaSalida:'',fechaLiquidacion:''});
   const [formTarifas,     setFormTarifas]     = useState({});
   const [savingTarifas,   setSavingTarifas]   = useState(false);
   const [filtroCargo,     setFiltroCargo]     = useState('');
@@ -135,6 +146,7 @@ export default function Personal({ cuadrillasDB, personalDB: personalTodos, conf
       await setDoc(doc(db, 'Personal', id), {
         nombre: nombreFinal,
         dni: formTrabajador.dni.trim(),
+        telefono: (formTrabajador.telefono || '').trim(),
         fechaNac: formTrabajador.fechaNac,
         cargo: formTrabajador.cargo,
         tipo: tipoDeCargo(formTrabajador.cargo),
@@ -203,12 +215,13 @@ export default function Personal({ cuadrillasDB, personalDB: personalTodos, conf
 
   const abrirModalTrabajador = item => {
     if (item === 'nuevo') {
-      setFormTrabajador({nombre:'',dni:'',fechaNac:'',cargo:'Operario',cuadrillaId:'',fechaIngreso:'',fechaSalida:'',fechaLiquidacion:''});
+      setFormTrabajador({nombre:'',dni:'',telefono:'',fechaNac:'',cargo:'Operario',cuadrillaId:'',fechaIngreso:'',fechaSalida:'',fechaLiquidacion:''});
     } else {
       const cuadEntry = cuadrillaDeTrab(item.nombre);
       setFormTrabajador({
         nombre: item.nombre,
         dni: item.dni||'',
+        telefono: item.telefono||'',
         fechaNac: item.fechaNac||'',
         cargo: item.cargo||'Operario',
         cuadrillaId: cuadEntry ? cuadEntry[0] : '',
@@ -388,9 +401,15 @@ export default function Personal({ cuadrillasDB, personalDB: personalTodos, conf
               <label style={{fontSize:'10px',fontWeight:'700',color:BASE.muted,letterSpacing:'0.6px',display:'block',marginBottom:'5px'}}>NOMBRE COMPLETO *</label>
               <input type="text" value={formTrabajador.nombre} placeholder="Apellidos y nombres" onChange={e=>setFormTrabajador(p=>({...p,nombre:e.target.value}))} style={inp()}/>
             </div>
-            <div>
-              <label style={{fontSize:'10px',fontWeight:'700',color:BASE.muted,letterSpacing:'0.6px',display:'block',marginBottom:'5px'}}>DNI</label>
-              <input type="text" value={formTrabajador.dni} placeholder="Número de DNI" onChange={e=>setFormTrabajador(p=>({...p,dni:e.target.value}))} style={inp()}/>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px'}}>
+              <div>
+                <label style={{fontSize:'10px',fontWeight:'700',color:BASE.muted,letterSpacing:'0.6px',display:'block',marginBottom:'5px'}}>DNI</label>
+                <input type="text" value={formTrabajador.dni} placeholder="Número de DNI" onChange={e=>setFormTrabajador(p=>({...p,dni:e.target.value}))} style={inp()}/>
+              </div>
+              <div>
+                <label style={{fontSize:'10px',fontWeight:'700',color:BASE.muted,letterSpacing:'0.6px',display:'block',marginBottom:'5px'}}>📱 TELÉFONO</label>
+                <input type="tel" inputMode="numeric" value={formTrabajador.telefono} placeholder="Celular de contacto" onChange={e=>setFormTrabajador(p=>({...p,telefono:e.target.value}))} style={inp()}/>
+              </div>
             </div>
             <div>
               <label style={{fontSize:'10px',fontWeight:'700',color:BASE.muted,letterSpacing:'0.6px',display:'block',marginBottom:'6px'}}>
@@ -673,7 +692,7 @@ export default function Personal({ cuadrillasDB, personalDB: personalTodos, conf
       {modalBaseDatos && (
         <PersonalBaseDatos
           personalTodos={personalTodos}
-          cuadrillasDB={cuadrillasDB}
+          cuadrillasDB={cuadrillasTodas}
           proyectos={proyectos}
           proyectoActivoId={proyectoActivoId}
           onClose={() => setModalBaseDatos(false)}

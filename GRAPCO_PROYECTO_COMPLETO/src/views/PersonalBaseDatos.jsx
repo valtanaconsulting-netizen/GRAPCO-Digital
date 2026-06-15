@@ -28,6 +28,7 @@ const fmtTiempo = (d) => {
 export default function PersonalBaseDatos({ personalTodos = [], cuadrillasDB = {}, proyectos = [], proyectoActivoId, onClose, showToast }) {
   const [asisDocs, setAsisDocs] = useState(null); // null = cargando
   const [busq, setBusq] = useState('');
+  const [filtroFuncion, setFiltroFuncion] = useState(''); // '' = todas las funciones/especialidades
   const [trayendo, setTrayendo] = useState('');
 
   // Asistencia de TODA la empresa (una sola lectura) → agregada por personalId.
@@ -66,9 +67,10 @@ export default function PersonalBaseDatos({ personalTodos = [], cuadrillasDB = {
     (personalTodos || []).forEach(p => {
       const key = (p.dni || p.nombre || p.id || '').toString().trim().toUpperCase();
       if (!key) return;
-      if (!map[key]) map[key] = { nombre: p.nombre || '—', dni: p.dni || '', cargo: p.cargo || 'Operario', fechaNac: p.fechaNac || '', proyIds: new Set(), docIds: [], ingreso: p.fechaIngreso || '', salida: p.fechaSalida || '' };
+      if (!map[key]) map[key] = { nombre: p.nombre || '—', dni: p.dni || '', telefono: p.telefono || '', cargo: p.cargo || 'Operario', fechaNac: p.fechaNac || '', proyIds: new Set(), docIds: [], ingreso: p.fechaIngreso || '', salida: p.fechaSalida || '' };
       const r = map[key];
       r.docIds.push(p.id);
+      if (!r.telefono && p.telefono) r.telefono = p.telefono;
       if (p.proyectoId) r.proyIds.add(p.proyectoId);
       if (p.fechaIngreso && (!r.ingreso || p.fechaIngreso < r.ingreso)) r.ingreso = p.fechaIngreso;
       if (p.fechaSalida && p.fechaSalida > r.salida) r.salida = p.fechaSalida;
@@ -88,17 +90,29 @@ export default function PersonalBaseDatos({ personalTodos = [], cuadrillasDB = {
     }).sort((x, y) => (x.nombre || '').localeCompare(y.nombre || '', 'es'));
   }, [personalTodos, asisPorId, proyectoActivoId, cuadrillasDB]);
 
+  // Funciones/especialidades presentes en la base (para el filtro desplegable).
+  const funcionesDisponibles = useMemo(() => {
+    const set = new Set();
+    personas.forEach(p => { if (p.especialidad) set.add(p.especialidad); });
+    return [...set].sort((a, b) => a.localeCompare(b, 'es'));
+  }, [personas]);
+
   const filtradas = useMemo(() => {
     const b = busq.trim().toLowerCase();
-    if (!b) return personas;
-    return personas.filter(p =>
-      (p.nombre || '').toLowerCase().includes(b) ||
-      (p.dni || '').toLowerCase().includes(b) ||
-      (p.cargo || '').toLowerCase().includes(b) ||
-      (p.especialidad || '').toLowerCase().includes(b) ||
-      [...p.proyIds].some(id => nombreProy(id).toLowerCase().includes(b))
-    );
-  }, [personas, busq]);
+    const f = filtroFuncion.trim().toLowerCase();
+    return personas.filter(p => {
+      if (f && (p.especialidad || '').toLowerCase() !== f) return false;
+      if (!b) return true;
+      return (
+        (p.nombre || '').toLowerCase().includes(b) ||
+        (p.dni || '').toLowerCase().includes(b) ||
+        (p.telefono || '').toLowerCase().includes(b) ||
+        (p.cargo || '').toLowerCase().includes(b) ||
+        (p.especialidad || '').toLowerCase().includes(b) ||
+        [...p.proyIds].some(id => nombreProy(id).toLowerCase().includes(b))
+      );
+    });
+  }, [personas, busq, filtroFuncion]);
 
   const traer = async (p) => {
     if (p.enEsteProyecto) { showToast?.('Ya está en este proyecto', 'info'); return; }
@@ -107,7 +121,7 @@ export default function PersonalBaseDatos({ personalTodos = [], cuadrillasDB = {
     try {
       const id = `pers_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
       await setDoc(doc(db, 'Personal', id), {
-        nombre: p.nombre, dni: p.dni || '', cargo: p.cargo || 'Operario', fechaNac: p.fechaNac || '',
+        nombre: p.nombre, dni: p.dni || '', telefono: p.telefono || '', cargo: p.cargo || 'Operario', fechaNac: p.fechaNac || '',
         cuadrillaId: '', fechaIngreso: new Date().toISOString().slice(0, 10), fechaSalida: '',
         proyectoId: proyectoActivoId, activo: true,
         creadoEn: serverTimestamp(), origen: 'base-datos-grapco',
@@ -130,10 +144,16 @@ export default function PersonalBaseDatos({ personalTodos = [], cuadrillasDB = {
           <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.18)', color: '#fff', border: 'none', width: '34px', height: '34px', borderRadius: '50%', cursor: 'pointer', fontSize: '18px', fontWeight: 900, flexShrink: 0 }}>✕</button>
         </div>
 
-        {/* Búsqueda */}
-        <div style={{ padding: '12px 22px', borderBottom: `1px solid ${BASE.border}` }}>
-          <input value={busq} onChange={e => setBusq(e.target.value)} placeholder="🔍 Buscar por nombre, DNI, cuadrilla/especialidad o proyecto…"
-            style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: `1.5px solid ${BASE.border}`, fontSize: '13px', fontWeight: 600, boxSizing: 'border-box' }} />
+        {/* Búsqueda + filtro por función */}
+        <div style={{ padding: '12px 22px', borderBottom: `1px solid ${BASE.border}`, display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <input value={busq} onChange={e => setBusq(e.target.value)} placeholder="🔍 Buscar por nombre, DNI, teléfono o proyecto…"
+            style={{ flex: '1 1 280px', minWidth: 0, padding: '10px 14px', borderRadius: '10px', border: `1.5px solid ${BASE.border}`, fontSize: '13px', fontWeight: 600, boxSizing: 'border-box' }} />
+          <select value={filtroFuncion} onChange={e => setFiltroFuncion(e.target.value)}
+            title="Filtrar por tipo de función (especialidad de cuadrilla)"
+            style={{ flex: '0 0 auto', padding: '10px 12px', borderRadius: '10px', border: `1.5px solid ${filtroFuncion ? BASE.gold : BASE.border}`, fontSize: '13px', fontWeight: 700, color: BASE.navy, background: '#fff', cursor: 'pointer' }}>
+            <option value="">🔧 Todas las funciones</option>
+            {funcionesDisponibles.map(f => <option key={f} value={f}>{f}</option>)}
+          </select>
         </div>
 
         {/* Lista */}
@@ -148,6 +168,9 @@ export default function PersonalBaseDatos({ personalTodos = [], cuadrillasDB = {
                   {p.dni ? `DNI ${p.dni} · ` : ''}{CARGOS_CORTO?.[p.cargo] || p.cargo}{p.especialidad ? ` · ${p.especialidad}` : ''}
                 </p>
                 <p style={{ fontSize: '10.5px', color: BASE.muted, marginTop: '2px' }}>
+                  {p.telefono
+                    ? <>📱 <a href={`tel:${p.telefono}`} onClick={e => e.stopPropagation()} style={{ color: BASE.navy, fontWeight: 700, textDecoration: 'none' }}>{p.telefono}</a> · </>
+                    : ''}
                   Proyectos: {[...p.proyIds].map(nombreProy).join(', ') || '—'}
                 </p>
               </div>
