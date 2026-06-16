@@ -26,7 +26,6 @@ const optKiosk = { color: '#0F2A47', background: '#ffffff', fontWeight: 700 };
 // venir de Firestore (`Configuracion/pins`), pero para campo es suficiente.
 const PINS_OBRA = {
   '1234': 'capataz',
-  '2025': 'seguridad',
   '5050': 'calidad',
   '7777': 'ingeniero',
   '9999': 'admin',
@@ -65,14 +64,7 @@ const PERFILES = [
     descripcion: 'Administración integral de protocolos, ensayos, liberaciones y no conformidades para asegurar el cumplimiento de estándares, especificaciones y requisitos del proyecto.',
     accesos: ['Protocolos', 'PETs', 'No Conformidades', 'Ensayos', 'BIM'],
   },
-  {
-    rol: 'seguridad',
-    titulo: 'Seguridad, Salud y Medio Ambiente',
-    iconName: 'alert',
-    color: '#BE123C',
-    descripcion: 'Gestión preventiva de riesgos mediante inspecciones, reportes y seguimiento de acciones correctivas, fortaleciendo una cultura de seguridad, cumplimiento y mejora continua.',
-    accesos: ['Reportar', 'Inspección', 'Historial'],
-  },
+  // SSOMA (Seguridad, Salud y Medio Ambiente) movido a la plataforma independiente SIGMA (2026-06-15).
   {
     rol: 'admin',
     titulo: 'Administración del Sistema',
@@ -87,14 +79,14 @@ const PERFILES = [
 // Mapeo de rolPermitido (almacenado en /Usuarios) → cards visibles en el selector.
 // admin / ingeniero ven TODAS las áreas (perfiles senior multi-área).
 // Roles específicos solo ven su propia área (más una de soporte cuando aplica).
-const TODAS = ['ingeniero','oficina_tecnica','calidad','seguridad','almacenero','admin'];
+const TODAS = ['ingeniero','oficina_tecnica','calidad','almacenero','admin'];
 const ROL_CARDS_PERMITIDAS = {
   admin:              TODAS,
   ingeniero:          TODAS,
   oficina_tecnica:    ['oficina_tecnica','ingeniero','calidad'],
   planeamiento:       ['ingeniero','oficina_tecnica'],
-  calidad:            ['calidad','seguridad'],
-  seguridad:          ['seguridad','calidad'],
+  calidad:            ['calidad'],
+  // SSOMA (rol 'seguridad') movido a la plataforma independiente SIGMA (2026-06-15).
   almacenero:         ['almacenero'],
   logistica:          ['almacenero'],
   capataz:            ['capataz'],
