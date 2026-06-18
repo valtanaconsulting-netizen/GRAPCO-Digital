@@ -87,10 +87,10 @@ function NotificationStack({ activas, onClose }) {
       aria-live="polite"
       style={{
         position: 'fixed',
-        top: '80px', right: '16px',
-        display: 'flex', flexDirection: 'column', gap: '10px',
+        top: '72px', left: '50%', transform: 'translateX(-50%)',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px',
         zIndex: 9000,
-        maxWidth: '380px',
+        width: 'max-content', maxWidth: 'min(380px, 92vw)',
         pointerEvents: 'none',
       }}>
       {activas.map((n) => (
