@@ -350,13 +350,52 @@ export default function Capataz({
     setActActivaId(nueva.id);
   };
 
-  const eliminarActividad = (id) => {
-    if (!window.confirm('¿Eliminar esta actividad del borrador?')) return;
-    setActividades(prev => {
-      const next = prev.filter(a => a.id !== id);
-      if (actActivaId === id) setActActivaId(next[0]?.id || null);
-      return next;
-    });
+  // Eliminar actividad. Si ya estaba SUBIDA, se borra de verdad: se elimina su
+  // registro de Registros_Campo (desaparece del dashboard) y se persiste el
+  // borrador sin ella, para que NO reaparezca al recargar el día.
+  const eliminarActividad = async (id) => {
+    const act = actividades.find(a => a.id === id);
+    const yaSubida = !!act?._registroExistenteId;
+    const msg = yaSubida
+      ? '¿Eliminar esta actividad? También se borrará el registro YA SUBIDO de este día — desaparece del dashboard/CPI. No se puede deshacer.'
+      : '¿Eliminar esta actividad del borrador?';
+    if (!window.confirm(msg)) return;
+
+    // 1) Quitar del estado local (la UI responde de inmediato)
+    const next = actividades.filter(a => a.id !== id);
+    setActividades(next);
+    if (actActivaId === id) setActActivaId(next[0]?.id || null);
+
+    try {
+      // 2) Borrar el registro subido si existía — pero SOLO si pertenece a este
+      //    proyecto/frente. El borrador se llavea por fecha+capataz (sin proyecto),
+      //    así que un capataz homónimo en otra obra podría compartir borrador y
+      //    su _registroExistenteId apuntar a data ajena: NUNCA borrar fuera de contexto.
+      let registroBorrado = false;
+      if (yaSubida) {
+        const ref = doc(db, 'Registros_Campo', act._registroExistenteId);
+        const reg = await getDoc(ref);
+        if (reg.exists() && filtrarPorContexto([{ id: reg.id, ...reg.data() }]).length > 0) {
+          await deleteDoc(ref);
+          registroBorrado = true;
+        }
+      }
+
+      // 3) Persistir el cambio en el borrador: sin actividades se elimina el
+      //    borrador; si quedan, se reescribe sin la actividad borrada.
+      const bId = borradorDocId || borradorId(fecha, capataz);
+      if (next.length === 0) {
+        await deleteDoc(doc(db, 'Borradores_Capataz', bId)).catch(() => {});
+        setUltSubida(null);
+        setEstadoBorrador('vacio');
+      } else {
+        await reescribirBorrador(next);
+      }
+      if (registroBorrado) showToast('Actividad y su registro subido eliminados', 'info');
+    } catch (err) {
+      console.error('[eliminarActividad]', err);
+      showToast(`Error al eliminar: ${err.message}`, 'error');
+    }
   };
 
   const updActividad = (id, campo, valor) => {
@@ -472,6 +511,30 @@ export default function Capataz({
     }
     setShowWbs(false);
     showToast(`✓ ${actividad}`, 'success');
+  };
+
+  // Reescribe el borrador del día con una lista dada (silencioso, sin toast).
+  // Se usa al eliminar actividades para que el cambio PERSISTA y el día no
+  // recargue lo borrado al volver a abrirlo.
+  const reescribirBorrador = async (lista) => {
+    const bId = borradorDocId || borradorId(fecha, capataz);
+    await setDoc(doc(db, 'Borradores_Capataz', bId), {
+      fecha, capataz, semana: obtenerSemana(fecha),
+      actividades: lista.map(a => ({
+        id: a.id, partida: a.partida, subpartida: a.subpartida,
+        actividad: a.actividad, unidad: a.unidad, metrado: a.metrado,
+        observacion: a.observacion,
+        _registroExistenteId: a._registroExistenteId || null,
+        fotos: a.fotos || [],
+        detalleTareo: (a.detalleTareo || []).filter(t => (t.hn + t.he) > 0).map(t => ({
+          nombre: t.nombre, cargo: t.cargo || 'Operario', dni: t.dni || '',
+          hn: t.hn, he: t.he,
+        })),
+      })),
+      ultActualizacion: Date.now(),
+      ultSubida: ultSubida || null,
+    });
+    setBorradorDocId(bId);
   };
 
   // ── GUARDAR BORRADOR ──
@@ -714,15 +777,34 @@ export default function Capataz({
     }
   };
 
+  // Limpiar el día por completo: borra el borrador Y todos los registros ya
+  // subidos de este día (de este proyecto), para que el día quede en blanco y
+  // no reaparezca nada al recargar.
   const eliminarBorrador = async () => {
-    if (!borradorDocId) return;
-    if (!window.confirm('¿Eliminar el borrador del día? (los registros ya subidos no se borran)')) return;
+    const bId = borradorDocId || borradorId(fecha, capataz);
+    if (!window.confirm('¿Limpiar el día por completo? Se borrará el borrador y los registros ya subidos de este día en este proyecto/frente — desaparecen del dashboard/CPI. No se puede deshacer.')) return;
     try {
-      await deleteDoc(doc(db, 'Borradores_Capataz', borradorDocId));
+      // Borrar TODOS los registros subidos del día (solo de este proyecto)
+      const snap = await getDocs(query(
+        collection(db, 'Registros_Campo'),
+        where('fecha', '==', fecha),
+        where('capataz', '==', capataz),
+      ));
+      const delProyecto = filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      if (delProyecto.length) {
+        const batch = writeBatch(db);
+        delProyecto.forEach(r => batch.delete(doc(db, 'Registros_Campo', r.id)));
+        await batch.commit();
+      }
+      // Borrar el borrador del día
+      await deleteDoc(doc(db, 'Borradores_Capataz', bId)).catch(() => {});
       setActividades([]); setActActivaId(null);
       setUltSubida(null); setEstadoBorrador('vacio');
-      showToast('Borrador eliminado', 'info');
+      showToast(delProyecto.length
+        ? `Día limpiado · ${delProyecto.length} registro(s) eliminados`
+        : 'Borrador eliminado', 'info');
     } catch (err) {
+      console.error('[eliminarBorrador]', err);
       showToast(`Error: ${err.message}`, 'error');
     }
   };
