@@ -12,11 +12,18 @@ import Adicionales from './Adicionales';
 import Deductivos from './Deductivos';
 import ResultadoOperativoOficial from './ResultadoOperativoOficial';
 import CostoRealOficial from './CostoRealOficial';
+import CostoRealCR from './CostoRealCR';
+import RODesdeISP from './RODesdeISP';
 import ROFrentes from './ROFrentes';
+import useTareosProyecto from './useTareosProyecto';
 
 const TABS = [
-  { id: 'oficial',    l: 'RO Oficial (Excel)', icono: '📑', desc: 'Importado tal cual · EVM completo', color: '#0f1f3a' },
-  { id: 'crOficial',  l: 'CR Costo Real (Excel)', icono: '🧾', desc: 'Reporte de Tareos · alimenta el AC', color: '#0ea5e9' },
+  // Cuadros EN VIVO (los que ya jalan data de los tareos / ISP) — primero.
+  { id: 'crVivo',     l: 'CR · Costo Real',    icono: '🧾', desc: 'HH × S/25.5 desde los tareos (en vivo)', color: '#0ea5e9' },
+  { id: 'roISP',      l: 'RO desde ISP',       icono: '📥', desc: 'Sube el ISP → CR + CHH (HH Meta/Real/CPI)', color: '#0d9488' },
+  // Formato oficial F06 (se llena cuando haya presupuesto/precios por partida).
+  { id: 'oficial',    l: 'RO Oficial (F06)',   icono: '📑', desc: 'Formato Excel · EVM completo', color: '#0f1f3a' },
+  { id: 'crOficial',  l: 'CR Costo Real (EVM)', icono: '🧾', desc: 'AC por partida · EVM', color: '#0ea5e9' },
   { id: 'frentes',    l: 'Por Frente (F1/F2)', icono: '🎯', desc: 'PTARI vs NAVE · comparativo', color: '#0d9488' },
   { id: 'dashboard',  l: 'Dashboard RO',     icono: '📊', desc: 'KPIs ejecutivos',     color: '#f59e0b' },
   { id: 'partidas',   l: 'Por Partida',      icono: '📋', desc: 'Detalle CPI/Margen',  color: '#7c3aed' },
@@ -28,7 +35,10 @@ const TABS = [
 ];
 
 export default function ROPanel({ showToast }) {
-  const [tab, setTab] = useState('oficial');
+  // Arranca en el CR EN VIVO: muestra los cuadros poblados al instante desde los
+  // tareos del proyecto (sin esperar presupuesto ni subir nada).
+  const [tab, setTab] = useState('crVivo');
+  const { tareos } = useTareosProyecto();
 
   return (
     <RoleGuard rolesPermitidos={['admin', 'ingeniero', 'oficina_tecnica']}>
@@ -80,6 +90,8 @@ export default function ROPanel({ showToast }) {
         </div>
 
         <div className="anim-fade-in" key={tab}>
+          {tab === 'crVivo'      && <CostoRealCR historial={tareos} />}
+          {tab === 'roISP'       && <RODesdeISP />}
           {tab === 'oficial'     && <ResultadoOperativoOficial showToast={showToast} />}
           {tab === 'crOficial'   && <CostoRealOficial showToast={showToast} />}
           {tab === 'frentes'     && <ROFrentes />}
