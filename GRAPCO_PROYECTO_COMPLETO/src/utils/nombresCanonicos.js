@@ -151,10 +151,19 @@ export function crearResolverNombre(historial = [], personalDB = []) {
     canonicoPorRep[rep] = vs[0][0];
   });
 
+  // Formato de salida UNIFORME "APELLIDOS NOMBRES": quita la coma del formato de
+  // Personal ("APELLIDOS, NOMBRES") y colapsa espacios, para que en las listas
+  // todos los nombres se vean igual (no unos con coma y otros sin coma). Solo
+  // afecta el texto mostrado; la identidad/agrupación usa normNombreKey (que ya
+  // ignora comas), así que esto no cambia cómo se agrupan ni se cruzan.
+  const formatoSalida = (s) => String(s || '').replace(/\s*,\s*/g, ' ').replace(/\s+/g, ' ').trim();
+
   // Función resolver: (nombre) → nombre canónico.
   return function resolverNombre(nombre) {
     const k = normNombreKey(nombre);
-    if (!k) return limpiaNombre(nombre) || '—';
-    return canonicoPorRep[repDeKey[k] || k] || limpiaNombre(nombre) || '—';
+    const canon = !k
+      ? limpiaNombre(nombre)
+      : (canonicoPorRep[repDeKey[k] || k] || limpiaNombre(nombre));
+    return formatoSalida(canon) || '—';
   };
 }
