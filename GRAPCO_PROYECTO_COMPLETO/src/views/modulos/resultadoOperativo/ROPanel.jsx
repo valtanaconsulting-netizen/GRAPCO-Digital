@@ -13,14 +13,12 @@ import Deductivos from './Deductivos';
 import ResultadoOperativoOficial from './ResultadoOperativoOficial';
 import CostoRealOficial from './CostoRealOficial';
 import CostoRealCR from './CostoRealCR';
-import RODesdeISP from './RODesdeISP';
 import ROFrentes from './ROFrentes';
 import useTareosProyecto from './useTareosProyecto';
 
 const TABS = [
-  // Cuadros EN VIVO (los que ya jalan data de los tareos / ISP) — primero.
+  // Cuadro EN VIVO (jala data de los tareos del proyecto) — primero.
   { id: 'crVivo',     l: 'CR · Costo Real',    icono: '🧾', desc: 'HH × S/25.5 desde los tareos (en vivo)', color: '#0ea5e9' },
-  { id: 'roISP',      l: 'RO desde ISP',       icono: '📥', desc: 'Sube el ISP → CR + CHH (HH Meta/Real/CPI)', color: '#0d9488' },
   // Formato oficial F06 (se llena cuando haya presupuesto/precios por partida).
   { id: 'oficial',    l: 'RO Oficial (F06)',   icono: '📑', desc: 'Formato Excel · EVM completo', color: '#0f1f3a' },
   { id: 'crOficial',  l: 'CR Costo Real (EVM)', icono: '🧾', desc: 'AC por partida · EVM', color: '#0ea5e9' },
@@ -91,7 +89,6 @@ export default function ROPanel({ showToast }) {
 
         <div className="anim-fade-in" key={tab}>
           {tab === 'crVivo'      && <CostoRealCR historial={tareos} />}
-          {tab === 'roISP'       && <RODesdeISP />}
           {tab === 'oficial'     && <ResultadoOperativoOficial showToast={showToast} />}
           {tab === 'crOficial'   && <CostoRealOficial showToast={showToast} />}
           {tab === 'frentes'     && <ROFrentes />}

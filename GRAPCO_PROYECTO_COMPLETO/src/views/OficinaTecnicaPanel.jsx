@@ -9,7 +9,7 @@ import RoleGuard from '../components/RoleGuard';
 import DashboardOT from './oficinatecnica/DashboardOT';
 import RDOView from './oficinatecnica/RDOView';
 import ValorizacionesView from './oficinatecnica/ValorizacionesView';
-import PartidasContractuales from './oficinatecnica/PartidasContractuales';
+import PresupuestoView from './oficinatecnica/PresupuestoView';
 import SustentoMetrados from './oficinatecnica/SustentoMetrados';
 import RegistroFotografico from './oficinatecnica/RegistroFotografico';
 import InformeSustento from './oficinatecnica/InformeSustento';
@@ -31,13 +31,13 @@ const GRUPOS = {
     ],
   },
   contrato: {
-    label: 'PARTIDA CONTROL',
+    label: 'PRESUPUESTO',
     icono: '📋',
     icon: 'fileText',
     color: '#7c3aed',
-    tagline: 'Presupuesto y control de partidas',
+    tagline: 'Presupuesto contractual y control de partidas',
     items: [
-      { id: 'partidas', l: 'Partidas Control',   icono: '📋', icon: 'fileText', desc: 'Presupuesto contractual' },
+      { id: 'partidas', l: 'Presupuesto',   icono: '📋', icon: 'fileText', desc: 'PPTTO · CD · GG · Utilidad · IGV' },
     ],
   },
   ejecucion: {
@@ -232,7 +232,7 @@ export default function OficinaTecnicaPanel({ showToast, tabExterna, onChangeTab
           {tab === 'sustento'    && <SustentoMetrados showToast={showToast} />}
           {tab === 'fotografico' && <RegistroFotografico />}
           {tab === 'informe'     && <InformeSustento />}
-          {tab === 'partidas'    && <PartidasContractuales showToast={showToast} />}
+          {tab === 'partidas'    && <PresupuestoView showToast={showToast} />}
           {tab === 'rdo'         && <RDOView showToast={showToast} />}
           {tab === 'bim'         && <BIM showToast={showToast} />}
         </div>

@@ -23,8 +23,8 @@ const OT_SIDEBAR = {
   'RESUMEN': [
     { key: 'ot.dashboard', label: 'Dashboard',          iconName: 'dashboard',  color: BASE.gold },
   ],
-  'PARTIDA CONTROL': [
-    { key: 'ot.partidas',  label: 'Partidas Control',    iconName: 'fileText',   color: '#a78bfa' },
+  'PRESUPUESTO': [
+    { key: 'ot.partidas',  label: 'Presupuesto',         iconName: 'fileText',   color: '#a78bfa' },
   ],
   'EJECUCIÓN': [
     { key: 'ot.rdo',         label: 'RDO',                iconName: 'registro',  color: '#34d399' },
