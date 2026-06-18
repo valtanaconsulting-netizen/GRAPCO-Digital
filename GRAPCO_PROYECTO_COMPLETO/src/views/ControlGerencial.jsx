@@ -20,7 +20,7 @@ import {
 } from '../utils/helpers';
 import CostoRealCR from './modulos/resultadoOperativo/CostoRealCR';
 
-export default function ControlGerencial({ historialEnriquecido, personalDB, configuracion, isMobile, asistencia }) {
+export default function ControlGerencial({ historialEnriquecido, wbs, personalDB, configuracion, isMobile, asistencia }) {
   const [tab, setTab] = useState('tareos');
   const [partidaExpandida, setPartidaExpandida] = useState(null);
 
@@ -107,7 +107,7 @@ export default function ControlGerencial({ historialEnriquecido, personalDB, con
           isMobile={isMobile}
         />
       )}
-      {tab === 'crOficial' && <CostoRealCR historial={historialEnriquecido} />}
+      {tab === 'crOficial' && <CostoRealCR historial={historialEnriquecido} wbs={wbs} />}
       {tab === 'variaciones' && (
         <ControlVariaciones
           historial={historialEnriquecido}

@@ -1031,7 +1031,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
       {view==='auditoria'  && <Auditoria filtrados={filtrados} eliminar={eliminar} hhPorSemana={hhPorSemana} hhTotales={hhTotales} totalBaseDatos={(historial||[]).length}/>}
       {view==='analisis'   && <CpiEac wbs={wbs} historial={historialEnriquecido} filtrados={filtrados} infoMap={infoWbs} onModificarWBS={() => handleSetView('wbs-editor')} onActualizarFlags={actualizarFlagsActividad}/>}
       {view==='wbs-editor' && <EditorWbsIsp showToast={showToast}/>}
-      {view==='control'    && <ControlGerencial historialEnriquecido={historialEnriquecido} personalDB={personalDB} configuracion={configuracion} asistencia={asistencia} isMobile={isMobile}/>}
+      {view==='control'    && <ControlGerencial historialEnriquecido={historialEnriquecido} wbs={wbs} personalDB={personalDB} configuracion={configuracion} asistencia={asistencia} isMobile={isMobile}/>}
       {view==='vdc'        && <GateProyectoLegacy modulo="El VDC / LAP (lookahead del Excel)" icono="target"><VDC
                                 cuadrillasActivas={cuadrillasActivas}
                                 cuadrillasDB={cuadrillasDB}
