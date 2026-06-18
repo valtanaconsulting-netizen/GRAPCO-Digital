@@ -37,6 +37,7 @@ import EditorWbsIsp from './modulos/wbsEditor/EditorWbsIsp';
 import { useCatalogoWBS } from '../hooks/useCatalogoWBS';
 import { ALIAS_ACTIVIDADES } from '../data/aliasesActividades';
 import { normActividad } from '../utils/normalizacion'; // idioma común (cruce tareo↔catálogo)
+import { crearResolverNombre } from '../utils/nombresCanonicos'; // nombres canónicos (filtro por persona)
 
 export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, personalDB, planesDiarios, configuracion, asistencia, isMobile, showToast, vistaInicial, soloPlaneamiento }) {
   const [view, setView] = useState(vistaInicial || 'auditoria');
@@ -50,6 +51,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
   const [fDesde,      setFDesde]      = useState('');
   const [fHasta,      setFHasta]      = useState('');
   const [fCapataz,    setFCapataz]    = useState('');
+  const [fPersona,    setFPersona]    = useState('');
   const [modoAcum,    setModoAcum]    = useState(false);
 
   // Mapeo vista → grupo (para auto-seleccionar grupo si llega por deep-link)
@@ -224,6 +226,13 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
     });
   }, [historialProyecto, infoWbs]);
 
+  // Resolver de nombres canónicos: el MISMO obrero escrito distinto cuenta como
+  // UNA sola persona (mismo criterio que el Tareo) para el filtro por persona.
+  const resolverNombre = useMemo(
+    () => crearResolverNombre(historial || [], personalDB || []),
+    [historial, personalDB],
+  );
+
   // Filtrados — orden DESCENDENTE
   const filtrados = useMemo(() => {
     const res = historialEnriquecido.filter(r => {
@@ -234,11 +243,12 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
       const mP  = fPartida    ? partCanon === fPartida.toUpperCase()     : true;
       const mSP = fSubpartida ? subCanon === fSubpartida.toUpperCase()   : true;
       const mC  = fCapataz    ? r.capataz === fCapataz                   : true;
+      const mPer= fPersona    ? (r.detalleTareo || []).some(t => t?.nombre && resolverNombre(t.nombre) === fPersona) : true;
       const mD  = fDesde      ? r.fecha >= fDesde                        : true;
       const mH  = fHasta      ? r.fecha <= fHasta                        : true;
       let   mS  = true;
       if (fSemana) mS = modoAcum ? r.semana <= parseInt(fSemana) : r.semana === parseInt(fSemana);
-      return mP && mSP && mA && mS && mC && mD && mH;
+      return mP && mSP && mA && mS && mC && mPer && mD && mH;
     });
     res.sort((a, b) => {
       if (a.fecha !== b.fecha) return a.fecha < b.fecha ? 1 : -1;
@@ -246,7 +256,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
              getActivityOrder(b._actividadCanonica || b.actividad);
     });
     return res;
-  }, [historialEnriquecido, fPartida, fSubpartida, fActividad, fSemana, fCapataz, fDesde, fHasta, modoAcum]);
+  }, [historialEnriquecido, fPartida, fSubpartida, fActividad, fSemana, fCapataz, fPersona, fDesde, fHasta, modoAcum, resolverNombre]);
 
   const filtroAlcanceActivo = !!(fPartida || fSubpartida || fActividad);
   const metradoSumable = useMemo(() => metradoEsHomogeneo(filtrados, filtroAlcanceActivo), [filtrados, filtroAlcanceActivo]);
@@ -264,6 +274,17 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
     const max = Math.max(24, ...(set.size ? Array.from(set) : [0]));
     return Array.from({ length: max }, (_, i) => i + 1);
   }, [historialEnriquecido]);
+
+  // ── Personas disponibles para el filtro (nombres canónicos del tareo) ──
+  const personasFiltro = useMemo(() => {
+    const set = new Set();
+    (historialEnriquecido || []).forEach(r => {
+      (r.detalleTareo || []).forEach(t => {
+        if (t?.nombre) set.add(resolverNombre(t.nombre));
+      });
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'es'));
+  }, [historialEnriquecido, resolverNombre]);
 
   // WBS
   const wbs = useMemo(() => {
@@ -569,7 +590,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
   };
 
   const grupoCfg = GRUPOS[grupoActivo] || GRUPOS.produccion;
-  const tieneFiltrosActivos = !!(fPartida || fSubpartida || fActividad || fSemana || fDesde || fHasta || fCapataz);
+  const tieneFiltrosActivos = !!(fPartida || fSubpartida || fActividad || fSemana || fDesde || fHasta || fCapataz || fPersona);
   const cpiEstado = getEstado(stats.cpi);
   const totalAlertas = (alertas || []).length;
 
@@ -822,6 +843,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
           fActividad  && { lbl: `Actividad: ${fActividad}`,  clear: () => setFActividad('') },
           fSemana     && { lbl: `Semana ${fSemana}`,         clear: () => setFSemana('') },
           fCapataz    && { lbl: `Capataz: ${fCapataz.split(' ').slice(0, 2).join(' ')}`, clear: () => setFCapataz('') },
+          fPersona    && { lbl: `Persona: ${fPersona.split(' ').slice(0, 2).join(' ')}`, clear: () => setFPersona('') },
           fDesde      && { lbl: `Desde ${fDesde}`,           clear: () => setFDesde('') },
           fHasta      && { lbl: `Hasta ${fHasta}`,           clear: () => setFHasta('') },
         ].filter(Boolean);
@@ -904,7 +926,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
                     onMouseLeave={e => { e.currentTarget.style.color = BASE.mutedSoft; }}>×</button>
                 </span>
               ))}
-              <button onClick={() => { setFPartida(''); setFSubpartida(''); setFActividad(''); setFSemana(''); setFDesde(''); setFHasta(''); setFCapataz(''); }}
+              <button onClick={() => { setFPartida(''); setFSubpartida(''); setFActividad(''); setFSemana(''); setFDesde(''); setFHasta(''); setFCapataz(''); setFPersona(''); }}
                 style={{
                   marginLeft: 'auto', padding: '5px 12px', background: 'transparent', color: BASE.red,
                   border: `1px solid ${BASE.red}40`, borderRadius: '6px',
@@ -915,7 +937,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
             </div>
           )}
 
-          {/* Filtros en una sola fila: 5 selects + Desde/Hasta */}
+          {/* Filtros en una sola fila: 6 selects (incl. Persona) + Desde/Hasta */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: '12px', alignItems: 'end' }}>
             {[
               { label: 'Partida',    val: fPartida,    set: v => { setFPartida(v); setFSubpartida(''); setFActividad(''); }, opts: Object.keys(catWbs).map(p => ({ v: p, l: p })) },
@@ -923,6 +945,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
               { label: 'Actividad',  val: fActividad,  set: setFActividad, opts: fPartida && fSubpartida ? (catWbs[fPartida]?.[fSubpartida]?.map(a => ({ v: a, l: a })) || []) : [] },
               { label: 'Semana',     val: fSemana,     set: setFSemana,    opts: semanasFiltro.map(n => ({ v: n, l: `Semana ${n}` })) },
               { label: 'Capataz',    val: fCapataz,    set: setFCapataz,   opts: Object.keys(cuadrillasActivas).map(c => ({ v: c, l: c })) },
+              { label: 'Persona',    val: fPersona,    set: setFPersona,   opts: personasFiltro.map(n => ({ v: n, l: n })) },
             ].map((f, i) => (
               <div key={i} style={{ minWidth: 0 }}>
                 <label style={labelEstilo(!!f.val)}>{f.label}{f.val && puntoActivo}</label>
@@ -939,10 +962,6 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
               </div>
             ))}
           </div>
-
-          <p style={{ fontSize: '10.5px', color: BASE.mutedSoft, lineHeight: 1.5, marginTop: '12px', borderTop: `1px solid ${BASE.borderSoft}`, paddingTop: '10px' }}>
-            Los filtros se aplican a todo el dashboard, los gráficos y las exportaciones del Tareo (PDF y Excel).
-          </p>
         </div>
         );
       })()}

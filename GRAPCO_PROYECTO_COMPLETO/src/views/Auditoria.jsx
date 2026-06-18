@@ -30,15 +30,48 @@ export default function Auditoria({ filtrados, eliminar, hhPorSemana = [], hhTot
     }
   };
 
+  // Resumen de HH del set filtrado: total + desglose por día (más reciente primero).
+  // Suma la columna HH Tot de los registros visibles (mismo criterio que la tabla).
+  const hhPorDia = {};
+  let hhTotalFiltrado = 0;
+  (filtrados || []).forEach(r => {
+    const { total } = calcularHHRegistro(r);
+    hhTotalFiltrado += total;
+    const dia = r.fecha || '—';
+    hhPorDia[dia] = (hhPorDia[dia] || 0) + total;
+  });
+  const diasOrdenados = Object.keys(hhPorDia).sort((a, b) => (a < b ? 1 : -1)); // desc
+  const DIAS_VISIBLES = 10;
+  const diasMostrar = diasOrdenados.slice(0, DIAS_VISIBLES);
+  const diasOcultos = diasOrdenados.length - diasMostrar.length;
+  const fmtDia = (d) => (d && d.length >= 10 ? `${d.slice(8, 10)}/${d.slice(5, 7)}` : d);
+
   return (
     <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
 
       {/* TABLA AUDITORÍA — overflow:visible: el scroll lo maneja el contenedor único de
           Ingeniero, así el encabezado sticky se ancla a ÉL y queda fijo arriba al bajar. */}
       <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,overflow:'visible',boxShadow:BASE.shadowMd}}>
-        <div style={{padding:'10px 14px',display:'flex',justifyContent:'space-between',alignItems:'center',borderBottom:`1px solid ${BASE.border}`,background:BASE.bgSoft}}>
-          <span style={{fontSize:'12px',fontWeight:'700',color:BASE.navy}}>REGISTROS — Más reciente arriba</span>
-          <span style={{fontSize:'10px',color:BASE.muted}}>{filtrados.length} registros</span>
+        <div style={{padding:'10px 14px',display:'flex',justifyContent:'space-between',alignItems:'center',gap:'12px',flexWrap:'wrap',borderBottom:`1px solid ${BASE.border}`,background:BASE.bgSoft}}>
+          <span style={{fontSize:'12px',fontWeight:'700',color:BASE.navy,whiteSpace:'nowrap'}}>REGISTROS — Más reciente arriba</span>
+          <div style={{display:'flex',alignItems:'center',gap:'7px',flexWrap:'wrap',justifyContent:'flex-end'}}>
+            <span style={{fontSize:'10px',color:BASE.muted,whiteSpace:'nowrap'}}>{filtrados.length} registros</span>
+            {/* HH totales del set filtrado */}
+            <span style={{display:'inline-flex',alignItems:'baseline',gap:'5px',background:BASE.white,border:`1px solid ${BASE.border}`,borderRadius:'7px',padding:'3px 9px',whiteSpace:'nowrap'}}>
+              <span style={{fontSize:'9px',fontWeight:'800',color:BASE.muted,letterSpacing:'0.5px'}}>HH TOTALES</span>
+              <span style={{fontSize:'12px',fontWeight:'900',color:BASE.navy,fontFamily:'var(--grapco-font-mono, monospace)'}}>{fmt1(hhTotalFiltrado)}</span>
+            </span>
+            {/* HH por día (más reciente primero) */}
+            {diasMostrar.map(d => (
+              <span key={d} style={{display:'inline-flex',alignItems:'baseline',gap:'5px',background:BASE.white,border:`1px solid ${BASE.border}`,borderLeft:`3px solid ${BASE.gold}`,borderRadius:'7px',padding:'3px 8px',whiteSpace:'nowrap'}}>
+                <span style={{fontSize:'9.5px',fontWeight:'700',color:BASE.muted}}>{fmtDia(d)}</span>
+                <span style={{fontSize:'11px',fontWeight:'800',color:BASE.navy,fontFamily:'var(--grapco-font-mono, monospace)'}}>{fmt1(hhPorDia[d])} HH</span>
+              </span>
+            ))}
+            {diasOcultos > 0 && (
+              <span style={{fontSize:'10px',color:BASE.mutedSoft,fontWeight:'700',whiteSpace:'nowrap'}}>+{diasOcultos} días</span>
+            )}
+          </div>
         </div>
         {/* overflow:visible (NO 'auto'): un overflow:auto/scroll haría de este div un contenedor
             de scroll que "captura" el sticky e impide que el encabezado se ancle a la ventana.
