@@ -21,6 +21,7 @@ import { BASE } from '../../../utils/styles';
 import { calcularROMensual, COSTO_HORA_RO } from '../../../utils/planMaestroAnalytics';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
 import useRO from './useRO';
+import usePresupuestoContractual from '../../../hooks/usePresupuestoContractual';
 import EmptyState from '../../../components/EmptyState';
 
 // ── Formateadores ──
@@ -82,6 +83,11 @@ export default function ResultadoOperativoOficial({ showToast }) {
   } = useRO({ ignorarFrente: true });
   const { proyectoActivo, frentesDelProyecto } = useProyectoActivo();
 
+  // Presupuesto contractual (MISMA fuente que el módulo Presupuesto) → manda en las
+  // columnas PRESUPUESTO del F06 (Ppto F1 · Ppto F2 · BAC). Lo vivo (PV/EV/AC/CPI/SPI)
+  // se sigue calculando del motor. Así el F06 y el Presupuesto muestran los mismos montos.
+  const { mapaPorCodigo: pptoMapa, totales: pptoTot, hayPresupuesto } = usePresupuestoContractual();
+
   // Frentes → columnas F1 / F2 (los dos primeros del proyecto; el resto se agrega al total).
   const f1 = frentesDelProyecto?.[0] || null;
   const f2 = frentesDelProyecto?.[1] || null;
@@ -114,13 +120,24 @@ export default function ResultadoOperativoOficial({ showToast }) {
     return { f1: calcular(f1), f2: calcular(f2) };
   }, [actividades, apus, tareos, kardexMov, valorizaciones, facturas, valorizacionesSC, adicionales, deductivos, f1, f2]);
 
-  // Partidas con sustancia (presupuesto, valorizado o costo real) — ordenadas por código WBS.
+  // Partidas a mostrar = las del PRESUPUESTO contractual (1001-1018) ∪ las que tienen
+  // valorizado/costo real vivo. Así el F06 lista todas las partidas presupuestadas aunque
+  // aún no tengan avance, y conserva las que tienen movimiento aunque no estén en el ppto.
   const partidas = useMemo(() => {
-    if (!ro?.detallePartidas) return [];
-    return ro.detallePartidas
-      .filter(p => Math.abs(p.BAC || 0) > 0.005 || Math.abs(p.EV || 0) > 0.005 || Math.abs(p.AC || 0) > 0.005)
-      .sort((a, b) => (a.codigo || '').localeCompare(b.codigo || '', 'es', { numeric: true }));
-  }, [ro]);
+    const detalle = ro?.detallePartidas || [];
+    const byCode = new Map(detalle.map(p => [String(p.codigo), p]));
+    const codes = new Set();
+    if (hayPresupuesto) pptoMapa.forEach((b, c) => { if ((b.montoF1 + b.montoF2) > 0.005) codes.add(String(c)); });
+    detalle.forEach(p => { if (Math.abs(p.BAC || 0) > 0.005 || Math.abs(p.EV || 0) > 0.005 || Math.abs(p.AC || 0) > 0.005) codes.add(String(p.codigo)); });
+    const VACIO = { BAC: 0, PV: 0, EV: 0, AC: 0, CV: 0, CPI: 0, SPI: 0, SV: 0, ETC: 0, EAC: 0, VAC: 0, costoMORealAct: 0 };
+    return [...codes]
+      .sort((a, b) => a.localeCompare(b, 'es', { numeric: true }))
+      .map(c => {
+        const d = byCode.get(c);
+        const desc = d?.descripcion || pptoMapa.get(c)?.descripcion || c;
+        return d ? { ...d, codigo: c, descripcion: desc } : { ...VACIO, codigo: c, descripcion: desc };
+      });
+  }, [ro, pptoMapa, hayPresupuesto]);
 
   // Comentario automático breve según el desempeño de la partida.
   const comentarioAuto = (p) => {
@@ -139,7 +156,12 @@ export default function ResultadoOperativoOficial({ showToast }) {
     const aj = ro.ajustes || {};
     const hayGG = Math.abs(gg.total || 0) > 0.005;
     const acTotal = hayGG ? gg.acConGG : t.AC;
-    const bacTotal = aj.hayAjustes ? aj.bacContractual : t.BAC;
+    const adicP = aj.adicionales?.presupuesto || 0;
+    const dedP = aj.deductivos?.presupuesto || 0;
+    // BAC total: el Costo Directo CONTRACTUAL (± adicionales/deductivos) si hay presupuesto
+    // cargado; si no, el bottom-up del motor.
+    const bacTotal = hayPresupuesto ? +(pptoTot.cd + adicP - dedP).toFixed(2)
+                   : aj.hayAjustes ? aj.bacContractual : t.BAC;
     const evTotal = aj.hayAjustes ? aj.evContractual : t.EV;
     const cpiTotal = acTotal > 0 ? evTotal / acTotal : 0;
     const eacTotal = cpiTotal > 0 ? bacTotal / cpiTotal : bacTotal;
@@ -150,8 +172,8 @@ export default function ResultadoOperativoOficial({ showToast }) {
     const total = {
       key: '__TOTAL__', tipo: 'total', frente: '', codigo: '', descripcion: 'TOTAL COSTO DE OBRA',
       v: {
-        pptoF1: mapaPorFrente.f1.size ? [...mapaPorFrente.f1.values()].reduce((s, x) => s + (x.BAC || 0), 0) : null,
-        pptoF2: mapaPorFrente.f2.size ? [...mapaPorFrente.f2.values()].reduce((s, x) => s + (x.BAC || 0), 0) : null,
+        pptoF1: hayPresupuesto ? (pptoTot.totF1 || null) : (mapaPorFrente.f1.size ? [...mapaPorFrente.f1.values()].reduce((s, x) => s + (x.BAC || 0), 0) : null),
+        pptoF2: hayPresupuesto ? (pptoTot.totF2 || null) : (mapaPorFrente.f2.size ? [...mapaPorFrente.f2.values()].reduce((s, x) => s + (x.BAC || 0), 0) : null),
         deduct: -(aj.deductivos?.presupuesto || 0) || null,
         adic: (aj.adicionales?.presupuesto || 0) || null,
         bac: bacTotal,
@@ -175,25 +197,33 @@ export default function ResultadoOperativoOficial({ showToast }) {
     const filasPart = partidas.map(p => {
       const fr1 = mapaPorFrente.f1.get(p.codigo);
       const fr2 = mapaPorFrente.f2.get(p.codigo);
-      const frenteLabel = (fr1 && (fr1.BAC || fr1.EV)) && (fr2 && (fr2.BAC || fr2.EV)) ? `${l1}+${l2}`
-        : (fr1 && (fr1.BAC || fr1.EV)) ? l1
-        : (fr2 && (fr2.BAC || fr2.EV)) ? l2 : '';
+      const ppto = hayPresupuesto ? pptoMapa.get(p.codigo) : null;
+      // PRESUPUESTO por partida: contractual si existe; si no, BAC del motor por frente.
+      const pptoF1 = ppto ? (ppto.montoF1 || null) : (fr1?.BAC ?? null);
+      const pptoF2 = ppto ? (ppto.montoF2 || null) : (fr2?.BAC ?? null);
+      const bac = ppto ? +((ppto.montoF1 || 0) + (ppto.montoF2 || 0)).toFixed(2) : p.BAC;
+      // EAC/VAC/saldos recalculados sobre el BAC contractual con el CPI vivo.
+      const cpi = p.CPI;
+      const eac = (typeof cpi === 'number' && cpi > 0) ? +(bac / cpi).toFixed(2) : bac;
+      const hasF1 = (pptoF1 != null) || (fr1 && (fr1.BAC || fr1.EV));
+      const hasF2 = (pptoF2 != null) || (fr2 && (fr2.BAC || fr2.EV));
+      const frenteLabel = hasF1 && hasF2 ? `${l1}+${l2}` : hasF1 ? l1 : hasF2 ? l2 : '';
       return {
         key: p.codigo, tipo: 'partida', frente: frenteLabel, codigo: p.codigo, descripcion: p.descripcion,
         v: {
-          pptoF1: fr1?.BAC ?? null, pptoF2: fr2?.BAC ?? null, deduct: null, adic: null, bac: p.BAC,
+          pptoF1, pptoF2, deduct: null, adic: null, bac,
           pvF1: fr1?.PV ?? null, pvF2: fr2?.PV ?? null, pvDeduct: null, pvAdic: null, pv: p.PV,
           valF1: fr1?.EV ?? null, valF2: fr2?.EV ?? null, valDeduct: null, valAdic: null, ev: p.EV,
           hh: (p.costoMORealAct || 0) / COSTO_HORA_RO, ac: p.AC, cv: p.CV, cpi: p.CPI,
-          saldoTeorico: (p.BAC || 0) - (p.EV || 0), etc: p.ETC,
-          eac: p.EAC, vac: p.VAC, cpi2: p.CPI, sv: p.SV, spi: p.SPI,
+          saldoTeorico: (bac || 0) - (p.EV || 0), etc: +((eac || 0) - (p.AC || 0)).toFixed(2),
+          eac, vac: +((bac || 0) - (eac || 0)).toFixed(2), cpi2: p.CPI, sv: p.SV, spi: p.SPI,
         },
-        coment: comentarioAuto(p),
+        coment: comentarioAuto({ ...p, BAC: bac }),
       };
     });
 
     return [total, ...filasPart];
-  }, [ro, partidas, mapaPorFrente, l1, l2]);
+  }, [ro, partidas, mapaPorFrente, l1, l2, pptoMapa, pptoTot, hayPresupuesto]);
 
   if (loading) return <p style={{ padding: 30, textAlign: 'center', color: BASE.muted }}>⏳ Calculando el Resultado Operativo…</p>;
   if (!ro || partidas.length === 0) {

@@ -9,16 +9,14 @@
 //
 // Reglas: paleta BASE, % con Math.round, costo de obra (CD+GG) = meta de control del RO.
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { collection, onSnapshot, doc, setDoc, deleteDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import React, { useState } from 'react';
+import { doc, setDoc, deleteDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { BASE } from '../../utils/styles';
 import { useAuth } from '../../contexts/AuthContext';
-import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
-import { LEGACY_CREDITEX_IDS } from '../../hooks/useCatalogoWBS';
 import { fmtSoles, fmtNumero } from '../../utils/calidadOTAnalytics';
 import { parsePresupuestoExcel, PCT_DEFAULT, aNumero } from '../../utils/presupuestoParser';
-import { PRESUPUESTO_MONTOS_CREDITEX, PRESUPUESTO_MONTOS_CONFIG } from '../../data/presupuestoMontosCreditex';
+import usePresupuestoContractual from '../../hooks/usePresupuestoContractual';
 import Modal from '../../components/Modal';
 import EmptyState from '../../components/EmptyState';
 
@@ -31,72 +29,20 @@ const mF2 = (p) => Number(p.montoF2) || 0;
 
 export default function PresupuestoView({ showToast }) {
   const { user } = useAuth();
-  const { proyectoActivo } = useProyectoActivo();
-  const proyId = proyectoActivo?.id;
-  const isLegacy = LEGACY_CREDITEX_IDS.includes(proyId);
+  // Fuente única del presupuesto (compartida con el RO): base contractual + overrides.
+  const {
+    loading, proyId,
+    partidas: partidasEff,   // base + overrides de Firestore (para mostrar)
+    partidasReales,          // solo docs de Firestore (para importar / detectar edición)
+    usandoBase,
+    totales: t,
+  } = usePresupuestoContractual();
 
-  const [partidas, setPartidas] = useState([]);
-  const [config, setConfig] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [lente, setLente] = useState('resumen');
   const [importOpen, setImportOpen] = useState(false);
   const [editando, setEditando] = useState(null);
   const [form, setForm] = useState(FORM_INICIAL);
   const [guardando, setGuardando] = useState(false);
-
-  // ── Lectura aislada por proyecto ──────────────────────────────────
-  useEffect(() => {
-    if (!proyId) { setPartidas([]); setLoading(false); return; }
-    setLoading(true);
-    const unsub = onSnapshot(collection(db, 'PartidasContractuales'),
-      (snap) => {
-        const todas = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        const mias = todas.filter((p) => p.proyectoId === proyId || (!p.proyectoId && isLegacy));
-        mias.sort((a, b) => (a.orden || 0) - (b.orden || 0) || String(a.codigo).localeCompare(String(b.codigo)));
-        setPartidas(mias); setLoading(false);
-      },
-      (e) => { console.error('[Presupuesto]', e); setLoading(false); });
-    return () => unsub();
-  }, [proyId, isLegacy]);
-
-  useEffect(() => {
-    if (!proyId) { setConfig(null); return; }
-    const unsub = onSnapshot(doc(db, 'Presupuesto_Config', proyId),
-      (snap) => setConfig(snap.exists() ? snap.data() : null),
-      (e) => console.warn('[Presupuesto_Config]', e));
-    return () => unsub();
-  }, [proyId]);
-
-  // ── Base contractual (fallback offline) + overrides de Firestore ──
-  // En proyectos legacy CREDITEX el presupuesto real vive en código (base) y los
-  // docs de Firestore lo SOBRESCRIBEN por código (editar/importar no borra el resto).
-  const { partidasEff, configEff, usandoBase } = useMemo(() => {
-    if (!isLegacy) return { partidasEff: partidas, configEff: config, usandoBase: false };
-    const realByCod = new Map(partidas.map((p) => [String(p.codigo), p]));
-    const base = PRESUPUESTO_MONTOS_CREDITEX
-      .filter((b) => !realByCod.has(String(b.codigo)))
-      .map((b, i) => ({ id: `base-${b.codigo}`, unidad: 'GLB', orden: i, ...b }));
-    const merged = [...base, ...partidas].sort((a, b) => String(a.codigo).localeCompare(String(b.codigo)));
-    return { partidasEff: merged, configEff: config || PRESUPUESTO_MONTOS_CONFIG, usandoBase: base.length > 0 };
-  }, [partidas, config, isLegacy]);
-
-  // ── Totales y resumen comercial ───────────────────────────────────
-  const t = useMemo(() => {
-    const totF1 = partidasEff.reduce((s, p) => s + mF1(p), 0);
-    const totF2 = partidasEff.reduce((s, p) => s + mF2(p), 0);
-    const cd = configEff?.cd || +(totF1 + totF2).toFixed(2);
-    const ggPct = configEff?.ggPct ?? PCT_DEFAULT.ggPct;
-    const utilidadPct = configEff?.utilidadPct ?? PCT_DEFAULT.utilidadPct;
-    const igvPct = configEff?.igvPct ?? PCT_DEFAULT.igvPct;
-    const gg = configEff?.gg || +(cd * ggPct / 100).toFixed(2);
-    const descuento = configEff?.descuento || 0;
-    const utilidad = configEff?.utilidad || +(cd * utilidadPct / 100).toFixed(2);
-    const subtotal = configEff?.subtotal || +(cd + gg - descuento + utilidad).toFixed(2);
-    const igv = configEff?.igv || +(subtotal * igvPct / 100).toFixed(2);
-    const total = configEff?.total || +(subtotal + igv).toFixed(2);
-    const costoObra = configEff?.costoObra || +(cd + gg).toFixed(2);  // meta de control del RO
-    return { totF1, totF2, cd, ggPct, utilidadPct, igvPct, gg, descuento, utilidad, subtotal, igv, total, costoObra };
-  }, [partidasEff, configEff]);
 
   const hayDatos = partidasEff.length > 0;
 
@@ -237,7 +183,7 @@ export default function PresupuestoView({ showToast }) {
       {/* Modal importador */}
       {importOpen && (
         <Modal onClose={() => setImportOpen(false)} maxW="960px">
-          <ImportadorPPTO proyId={proyId} partidasActuales={partidas} user={user}
+          <ImportadorPPTO proyId={proyId} partidasActuales={partidasReales} user={user}
             onClose={() => setImportOpen(false)} showToast={showToast} />
         </Modal>
       )}
