@@ -12,7 +12,34 @@ import ErrorBoundary from './components/ErrorBoundary';
 import Navbar from './components/Navbar';
 import SelectorFrenteLateral from './components/SelectorFrenteLateral';
 import AppShell from './components/AppShell';
+import AreaSidebar from './components/AreaSidebar';
 import Icon from './components/Icon';
+
+// Menú lateral del área OFICINA TÉCNICA — mismas opciones que las pestañas internas
+// del panel (RESUMEN → PARTIDA CONTROL → EJECUCIÓN → VALORIZACIÓN → RO), pero en el
+// lado izquierdo como en "Producción y Planeamiento". Las keys mapean a KEY_TO_TAB_OT
+// dentro de OficinaTecnicaPanel (tabExterna).
+const OT_SIDEBAR = {
+  'RESUMEN': [
+    { key: 'ot.dashboard', label: 'Dashboard',          iconName: 'dashboard',  color: BASE.gold },
+  ],
+  'PARTIDA CONTROL': [
+    { key: 'ot.partidas',  label: 'Partidas Control',    iconName: 'fileText',   color: '#a78bfa' },
+  ],
+  'EJECUCIÓN': [
+    { key: 'ot.rdo',         label: 'RDO',                iconName: 'registro',  color: '#34d399' },
+    { key: 'ot.fotografico', label: 'Registro Fotográfico', iconName: 'layers',  color: '#38bdf8' },
+    { key: 'ot.bim',         label: 'Modelo BIM',         iconName: 'cube',      color: '#5eead4' },
+  ],
+  'VALORIZACIÓN': [
+    { key: 'ot.valoriz',   label: 'Valorizaciones',      iconName: 'coins',      color: BASE.gold },
+    { key: 'ot.sustento',  label: 'Sustento',            iconName: 'layers',     color: '#fbbf24' },
+    { key: 'ot.informe',   label: 'Informe PDF',         iconName: 'fileText',   color: '#c4b5fd' },
+  ],
+  'RESULTADO OPERATIVO': [
+    { key: 'ot.ro',        label: 'Resultado Operativo', iconName: 'trendingUp', color: '#fbbf24' },
+  ],
+};
 
 // Items del sidebar para roles que no son admin/ingeniero (estaticos)
 const ROL_ITEMS = {
@@ -184,6 +211,7 @@ function AppInner() {
   // Deep-link: el módulo inicial puede venir en la URL (#/area/modulo) —
   // así una pestaña nueva abre DIRECTO donde se le pidió (multi-pestaña).
   const [moduloIngeniero, setModuloIngeniero] = useState(() => leerRutaHash()?.modulo || 'dashboard');
+  const [moduloOT, setModuloOT] = useState('ot.dashboard'); // sub-módulo activo del área Oficina Técnica (menú lateral)
   const [drawerOpen, setDrawerOpen] = useState(false); // menú móvil (hamburguesa)
 
   // Si el módulo activo no está permitido para el área actual, salta al primero permitido.
@@ -1001,8 +1029,28 @@ function AppInner() {
         )}
 
         {/* ── ROL: OFICINA TÉCNICA ── */}
+        {/* Desktop: menú lateral navy (igual que Producción y Planeamiento) que maneja
+            las opciones del área; el panel ocupa todo el ancho restante. Móvil: el panel
+            usa sus pestañas internas (sin sidebar fijo que tape el contenido). */}
         {rol === 'oficina_tecnica' && (
-          <OficinaTecnicaPanel showToast={showToast} isMobile={isMobile} />
+          isMobile ? (
+            <OficinaTecnicaPanel showToast={showToast} isMobile={isMobile} />
+          ) : (
+            <div style={{ position: 'relative' }}>
+              <AreaSidebar
+                grupos={OT_SIDEBAR}
+                activeKey={moduloOT}
+                onSelect={setModuloOT}
+                collapsed={sidebarCollapsed}
+                onToggleCollapse={toggleSidebar}
+                sidebarWidth={SIDEBAR_W}
+                topSlot={<SelectorFrenteLateral collapsed={sidebarCollapsed} />}
+              />
+              <div style={{ minWidth: 0 }}>
+                <OficinaTecnicaPanel showToast={showToast} isMobile={isMobile} tabExterna={moduloOT} />
+              </div>
+            </div>
+          )
         )}
 
         {/* ── ROL: SEGURIDAD / SSOMA → movido a la plataforma independiente SIGMA (2026-06-15) ── */}
