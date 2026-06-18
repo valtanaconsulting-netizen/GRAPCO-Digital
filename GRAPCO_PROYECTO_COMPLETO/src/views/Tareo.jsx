@@ -47,13 +47,44 @@ export default function Tareo({ historial, filtrados, personalDB, cuadrillasActi
     };
   }, [tareoRegistros, fDesde, fHasta]);
 
+  // ── Dedup para exportar: el mismo día NO debe salir 2 veces ni contar HH de
+  //    más. (1) Une variantes del nombre del capataz (canónico) — p. ej.
+  //    "ARAYA QUISPE CONDORI…" y "ARAYA QUISPECONDORI…" son la misma persona.
+  //    (2) Deja UNA sola fila por (fecha · capataz · partida|subpartida|actividad),
+  //    quedándose con la del timestamp MÁS RECIENTE (la última corrección). Así,
+  //    si un día se subió y luego se corrigió, prevalece la versión final. ──
+  const tareoRegistrosDedup = useMemo(() => {
+    const tsMillis = (r) => {
+      const t = r && r.timestamp;
+      if (t == null) return null;
+      if (typeof t === 'number') return t;
+      if (typeof t === 'string') { const n = Date.parse(t); return Number.isNaN(n) ? null : n; }
+      if (typeof t.toMillis === 'function') return t.toMillis();
+      if (typeof t.toDate === 'function') { try { return t.toDate().getTime(); } catch { return null; } }
+      if (typeof t.seconds === 'number') return t.seconds * 1000;
+      if (t instanceof Date) return t.getTime();
+      return null;
+    };
+    const norm = (s) => String(s || '').trim().toUpperCase();
+    const porFila = new Map();
+    (tareoRegistros || []).forEach(r => {
+      if (!r) return;
+      const cap = resolverNombre(r.capataz);
+      const fk = `${r.fecha}__${cap}__${norm(r.partida)}|${norm(r.subpartida)}|${norm(r.actividad)}`;
+      const rr = { ...r, capataz: cap };
+      const prev = porFila.get(fk);
+      if (!prev || (tsMillis(rr) || 0) >= (tsMillis(prev) || 0)) porFila.set(fk, rr);
+    });
+    return Array.from(porFila.values());
+  }, [tareoRegistros, resolverNombre]);
+
   const tareoStats = useMemo(() => {
     const trabajadores = new Set();
     const capataces = new Set();
     let totHH = 0;
     const fechas = new Set();
     const actividades = new Set();
-    tareoRegistros.forEach(r => {
+    tareoRegistrosDedup.forEach(r => {
       capataces.add(r.capataz);
       fechas.add(r.fecha);
       actividades.add(r._actividadCanonica || r.actividad);
@@ -65,25 +96,26 @@ export default function Tareo({ historial, filtrados, personalDB, cuadrillasActi
       });
     });
     return {
-      registros: tareoRegistros.length,
+      registros: tareoRegistrosDedup.length,
       trabajadores: trabajadores.size,
       capataces: capataces.size,
       dias: fechas.size,
       actividades: actividades.size,
       totHH: totHH.toFixed(1),
     };
-  }, [tareoRegistros]);
+  }, [tareoRegistrosDedup]);
 
   // ✅ EXPORTAR TAREO DIARIO (Excel IDÉNTICO al F13_MPO oficial — usa el
   // propio archivo F13 como plantilla: estilos, grises, colores y logo exactos)
   const exportarTareoDiario = async () => {
     try {
-      if (!tareoRegistros.length) return showToast('No hay registros en el rango', 'warning');
+      if (!tareoRegistrosDedup.length) return showToast('No hay registros en el rango', 'warning');
       showToast('Generando Excel formato F13...', 'info');
 
-      // Agrupar por fecha + capataz (una hoja por día/cuadrilla)
+      // Agrupar por fecha + capataz (una hoja por día/cuadrilla). Ya viene
+      // deduplicado: capataz canónico y una fila por actividad (la última).
       const registrosPorDia = {};
-      tareoRegistros.forEach(r => {
+      tareoRegistrosDedup.forEach(r => {
         const key = `${r.fecha}__${r.capataz}`;
         if (!registrosPorDia[key]) registrosPorDia[key] = [];
         registrosPorDia[key].push(r);
@@ -102,13 +134,13 @@ export default function Tareo({ historial, filtrados, personalDB, cuadrillasActi
   // ✅ EXPORTAR PDF TAREO (formato profesional GRAPCO - una página por día/capataz)
   const exportarTareoPDF = async () => {
     try {
-      if (!tareoRegistros.length) return showToast('No hay registros en el rango', 'warning');
+      if (!tareoRegistrosDedup.length) return showToast('No hay registros en el rango', 'warning');
 
       showToast('Generando PDF en LANDSCAPE A4...', 'info');
 
-      // Agrupar por fecha + capataz
+      // Agrupar por fecha + capataz (deduplicado: 1 fila por actividad, la última)
       const registrosPorDia = {};
-      tareoRegistros.forEach(r => {
+      tareoRegistrosDedup.forEach(r => {
         const key = `${r.fecha}__${r.capataz}`;
         if (!registrosPorDia[key]) registrosPorDia[key] = [];
         registrosPorDia[key].push(r);
@@ -130,10 +162,10 @@ export default function Tareo({ historial, filtrados, personalDB, cuadrillasActi
   // Las 2 primeras horas extra del día pagan +60%; de la 3.ª en adelante +100%.
   const exportarTareoAdmin = async () => {
     try {
-      if (!tareoRegistros.length) return showToast('No hay registros en el rango', 'warning');
+      if (!tareoRegistrosDedup.length) return showToast('No hay registros en el rango', 'warning');
       showToast('Generando Tareo Admin...', 'info');
       const { generarTareoAdminExcel } = await import('../utils/tareoAdminExcel');
-      const res = await generarTareoAdminExcel(tareoRegistros, personalDB, tareoFechaIni, tareoFechaFin);
+      const res = await generarTareoAdminExcel(tareoRegistrosDedup, personalDB, tareoFechaIni, tareoFechaFin);
       showToast(`✅ Tareo admin exportado — ${res.trabajadores} trabajadores · ${res.semanas} semana(s)`, 'success');
     } catch (err) {
       console.error('[exportarTareoAdmin]', err);
