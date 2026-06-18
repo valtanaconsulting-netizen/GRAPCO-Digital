@@ -52,17 +52,6 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
   const [fCapataz,    setFCapataz]    = useState('');
   const [modoAcum,    setModoAcum]    = useState(false);
 
-  // Atajos de rango de fechas para los filtros (Hoy / Esta semana / 7 días / Mes)
-  const aplicarRangoRapido = (tipo) => {
-    const h = new Date();
-    const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    const hoyIso = iso(h);
-    if (tipo === 'hoy') { setFDesde(hoyIso); setFHasta(hoyIso); }
-    else if (tipo === 'semana') { const ini = new Date(h); ini.setDate(h.getDate() - ((h.getDay() + 6) % 7)); setFDesde(iso(ini)); setFHasta(hoyIso); }
-    else if (tipo === '7dias') { const ini = new Date(h); ini.setDate(h.getDate() - 6); setFDesde(iso(ini)); setFHasta(hoyIso); }
-    else if (tipo === 'mes') { setFDesde(iso(new Date(h.getFullYear(), h.getMonth(), 1))); setFHasta(hoyIso); }
-  };
-
   // Mapeo vista → grupo (para auto-seleccionar grupo si llega por deep-link)
   const VIEW_TO_GRUPO = {
     cockpit: 'ejecutivo',
@@ -905,8 +894,8 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
             </div>
           )}
 
-          {/* Selects principales */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: '12px' }}>
+          {/* Filtros en una sola fila: 5 selects + Desde/Hasta */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: '12px', alignItems: 'end' }}>
             {[
               { label: 'Partida',    val: fPartida,    set: v => { setFPartida(v); setFSubpartida(''); setFActividad(''); }, opts: Object.keys(catWbs).map(p => ({ v: p, l: p })) },
               { label: 'Subpartida', val: fSubpartida, set: v => { setFSubpartida(v); setFActividad(''); }, opts: fPartida ? Object.keys(catWbs[fPartida] || {}).map(s => ({ v: s, l: s })) : [] },
@@ -922,32 +911,8 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
                 </select>
               </div>
             ))}
-          </div>
-
-          {/* Período: atajos + desde/hasta */}
-          <div style={{
-            display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end',
-            marginTop: '16px', paddingTop: '14px', borderTop: `1px solid ${BASE.borderSoft}`,
-          }}>
-            <div style={{ flex: '1 1 300px', minWidth: 0 }}>
-              <label style={labelEstilo(false)}>Período</label>
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {[['Hoy', 'hoy'], ['Esta semana', 'semana'], ['Últimos 7 días', '7dias'], ['Este mes', 'mes']].map(([lbl, key]) => (
-                  <button key={key} onClick={() => aplicarRangoRapido(key)} style={{
-                    padding: '9px 16px', borderRadius: '8px', cursor: 'pointer',
-                    background: BASE.white, color: BASE.navy,
-                    border: `1.5px solid ${BASE.border}`,
-                    fontSize: '12px', fontWeight: '600', transition: 'all 0.15s ease',
-                  }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = BASE.navy; e.currentTarget.style.background = BASE.navySoft; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = BASE.border; e.currentTarget.style.background = BASE.white; }}>
-                    {lbl}
-                  </button>
-                ))}
-              </div>
-            </div>
             {[['Desde', fDesde, setFDesde], ['Hasta', fHasta, setFHasta]].map(([lab, val, set], i) => (
-              <div key={i} style={{ flex: '0 1 170px', minWidth: '150px' }}>
+              <div key={`fecha-${i}`} style={{ minWidth: 0 }}>
                 <label style={labelEstilo(!!val)}>{lab}{val && puntoActivo}</label>
                 <input type="date" value={val} onChange={e => set(e.target.value)} style={selEstilo(!!val)} />
               </div>
