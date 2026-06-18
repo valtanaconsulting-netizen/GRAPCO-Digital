@@ -596,15 +596,15 @@ export default function SelectorPerfil() {
         </div>
       )}
 
-      {/* Grid de perfiles (solo cuando NO está en modo PIN) */}
+      {/* Grid de perfiles (solo cuando NO está en modo PIN) — 3 arriba / 3 abajo.
+          Las columnas las fija la clase grapco-perfil-grid (responsive por media
+          query); aquí solo el posicionamiento y el ancho del contenedor. */}
       {!modoPin && (
-      <div style={{
+      <div className="grapco-perfil-grid" style={{
         position: 'relative', zIndex: 1,
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(248px, 1fr))',
-        gap: '12px',
+        gap: '14px',
         width: '100%',
-        maxWidth: '1180px',
+        maxWidth: '1100px',
       }}>
         {/* Registro facial — ahora es una tarjeta más (no el banner ancho) */}
         <button

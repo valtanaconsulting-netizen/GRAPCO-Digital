@@ -163,6 +163,20 @@
   }
 }
 
+/* Grilla del selector de perfil — 3 columnas en escritorio (3 arriba / 3 abajo
+ * para los 6 accesos), 2 en tablet y 1 en móvil. Va por clase (no inline) para
+ * poder usar media queries; el resto del estilo del contenedor sigue inline. */
+.grapco-perfil-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 900px) {
+  .grapco-perfil-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .grapco-perfil-grid { grid-template-columns: 1fr; }
+}
+
 /* === CARDS / TARJETAS DE SELECTOR DE PERFIL === */
 .grapco-perfil-card {
   cursor: pointer;
