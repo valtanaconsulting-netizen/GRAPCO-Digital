@@ -47,13 +47,22 @@ export default function Tareo({ historial, filtrados, personalDB, cuadrillasActi
     };
   }, [tareoRegistros, fDesde, fHasta]);
 
-  // ── Dedup para exportar: el mismo día NO debe salir 2 veces ni contar HH de
-  //    más. (1) Une variantes del nombre del capataz (canónico) — p. ej.
+  // ── Dedup para exportar: cada día sale UNA sola vez y solo con su ÚLTIMO
+  //    envío. (1) Une variantes del nombre del capataz (canónico) — p. ej.
   //    "ARAYA QUISPE CONDORI…" y "ARAYA QUISPECONDORI…" son la misma persona.
-  //    (2) Deja UNA sola fila por (fecha · capataz · partida|subpartida|actividad),
-  //    quedándose con la del timestamp MÁS RECIENTE (la última corrección). Así,
-  //    si un día se subió y luego se corrigió, prevalece la versión final. ──
+  //    (2) Por día se conserva SOLO el último envío: cada "SUBIR" reescribe todas
+  //    las actividades vigentes con timestamp nuevo (llegan juntas, en ms), así
+  //    que un registro claramente más viejo que el máximo del día es una versión
+  //    corregida/quitada y se descarta. Un registro SIN timestamp se conserva
+  //    (no se puede saber si es viejo → no se arriesga perder HH).
+  //    (3) Deja UNA fila por (partida|subpartida|actividad), la de timestamp mayor.
+  //    Nota: separar envíos por timestamp asume relojes razonables del dispositivo
+  //    del capataz; un desfase de reloj grande entre dispositivos podría descartar
+  //    de más (riesgo aceptado por preferir mostrar solo lo último). ──
   const tareoRegistrosDedup = useMemo(() => {
+    // Un mismo envío escribe sus filas en milisegundos; 2 min separa con holgura
+    // un envío de otro envío distinto del mismo día sin partir nunca un envío.
+    const MARGEN_SESION_MS = 2 * 60 * 1000;
     const tsMillis = (r) => {
       const t = r && r.timestamp;
       if (t == null) return null;
@@ -66,16 +75,37 @@ export default function Tareo({ historial, filtrados, personalDB, cuadrillasActi
       return null;
     };
     const norm = (s) => String(s || '').trim().toUpperCase();
-    const porFila = new Map();
+
+    // 1) Agrupar por fecha + capataz canónico
+    const porDiaCap = new Map();
     (tareoRegistros || []).forEach(r => {
       if (!r) return;
       const cap = resolverNombre(r.capataz);
-      const fk = `${r.fecha}__${cap}__${norm(r.partida)}|${norm(r.subpartida)}|${norm(r.actividad)}`;
-      const rr = { ...r, capataz: cap };
-      const prev = porFila.get(fk);
-      if (!prev || (tsMillis(rr) || 0) >= (tsMillis(prev) || 0)) porFila.set(fk, rr);
+      const key = `${r.fecha}__${cap}`;
+      if (!porDiaCap.has(key)) porDiaCap.set(key, []);
+      porDiaCap.get(key).push({ ...r, capataz: cap });
     });
-    return Array.from(porFila.values());
+
+    const out = [];
+    porDiaCap.forEach(grupo => {
+      // 2) Conservar solo el último envío del día (descartar lo claramente viejo)
+      const tss = grupo.map(tsMillis).filter(v => v != null);
+      const maxTs = tss.length ? Math.max(...tss) : null;
+      const vigentes = grupo.filter(r => {
+        const ts = tsMillis(r);
+        if (ts == null || maxTs == null) return true;       // sin ts → conservar
+        return (maxTs - ts) <= MARGEN_SESION_MS;            // del último envío
+      });
+      // 3) Una sola fila por actividad lógica, la de timestamp mayor
+      const porFila = new Map();
+      vigentes.forEach(r => {
+        const fk = `${norm(r.partida)}|${norm(r.subpartida)}|${norm(r.actividad)}`;
+        const prev = porFila.get(fk);
+        if (!prev || (tsMillis(r) || 0) >= (tsMillis(prev) || 0)) porFila.set(fk, r);
+      });
+      porFila.forEach(v => out.push(v));
+    });
+    return out;
   }, [tareoRegistros, resolverNombre]);
 
   const tareoStats = useMemo(() => {
