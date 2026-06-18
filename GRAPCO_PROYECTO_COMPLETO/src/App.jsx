@@ -61,6 +61,9 @@ const ALMACEN_SIDEBAR = {
     { key: 'materiales.catalogo',   label: 'Catálogo de Materiales', iconName: 'fileText',  color: '#c4b5fd' },
     { key: 'materiales.almacenes',  label: 'Almacenes',             iconName: 'building',   color: '#a5b4fc' },
   ],
+  'CARGA DE DATOS': [
+    { key: 'materiales.importar',   label: 'Importar Registro S10', iconName: 'package',    color: BASE.gold },
+  ],
 };
 // Reverso tab→key: cuando MaterialesPanel navega internamente (p.ej. al guardar una
 // salida salta a Kardex), traducimos el id de pestaña de vuelta a la key del sidebar.
@@ -72,6 +75,7 @@ const TAB_TO_KEY_MAT = {
   kardex:     'materiales.kardex',
   catalogo:   'materiales.catalogo',
   almacenes:  'materiales.almacenes',
+  importar:   'materiales.importar',
 };
 
 // Items del sidebar para roles que no son admin/ingeniero (estaticos)

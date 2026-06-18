@@ -21,6 +21,7 @@ import KardexView from './materiales/KardexView';
 import EntradaMaterial from './materiales/EntradaMaterial';
 import SalidaMaterial from './materiales/SalidaMaterial';
 import ReporteValorizadoS10 from './materiales/ReporteValorizadoS10';
+import ImportarRegistroAlmacen from './materiales/ImportarRegistroAlmacen';
 
 const TABS = [
   { id: 'dashboard',  l: 'Dashboard',   ic: 'dashboard' },
@@ -30,6 +31,7 @@ const TABS = [
   { id: 'entrada',    l: 'Entrada',     ic: 'package' },
   { id: 'salida',     l: 'Salida',      ic: 'truck' },
   { id: 'reporteS10', l: 'Reporte S10', ic: 'fileText' },
+  { id: 'importar',   l: 'Importar Registro', ic: 'package' },
 ];
 
 const KEY_TO_TAB_MAT = {
@@ -40,6 +42,7 @@ const KEY_TO_TAB_MAT = {
   'materiales.entrada':    'entrada',
   'materiales.salida':     'salida',
   'materiales.reporteS10': 'reporteS10',
+  'materiales.importar':   'importar',
 };
 
 export default function MaterialesPanel({ showToast, tabExterna, onChangeTab }) {
@@ -103,6 +106,7 @@ export default function MaterialesPanel({ showToast, tabExterna, onChangeTab }) 
           {tab === 'entrada'   && <EntradaMaterial showToast={showToast} onSaved={() => setTab('kardex')} />}
           {tab === 'salida'    && <SalidaMaterial showToast={showToast} onSaved={() => setTab('kardex')} />}
           {tab === 'reporteS10' && <ReporteValorizadoS10 showToast={showToast} />}
+          {tab === 'importar'  && <ImportarRegistroAlmacen showToast={showToast} />}
         </div>
       </div>
     </RoleGuard>
