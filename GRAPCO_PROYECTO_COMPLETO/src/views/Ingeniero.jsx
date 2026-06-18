@@ -596,6 +596,101 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
   // horizontal abajo). Las demás vistas se comportan normal (scroll de página) para no alterarlas.
   const vistaTabla = view === 'analisis' || view === 'auditoria' || view === 'control';
 
+  // Cluster de comando (CPI/EF + botones Filtros/Resumen). Se reutiliza: va a la
+  // derecha de la fila de sub-tabs (espacio vacío) y, si el grupo tiene un único
+  // módulo (sin sub-tabs), cae a una barra suelta propia para no perderlo.
+  const comandoControles = (
+    <>
+      {/* KPI cluster: CPI · EF — segmentos pulidos, no chip de color */}
+      <div style={{
+        display: 'inline-flex',
+        alignItems: 'stretch',
+        background: BASE.bgSoft,
+        border: `1px solid ${BASE.border}`,
+        borderRadius: '10px',
+        overflow: 'hidden',
+      }}>
+        <Tooltip texto="CPI = Earned Value / Actual Cost. Mide eficiencia de costo. ≥1.0 = bajo presupuesto, <1.0 = sobrecostó la obra." variant="info">
+          <div style={{
+            padding: '6px 14px',
+            display: 'inline-flex',
+            alignItems: 'baseline',
+            gap: '7px',
+            borderRight: `1px solid ${BASE.border}`,
+          }}>
+            <span style={{ fontSize: '9.5px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.7px' }}>CPI</span>
+            <span style={{
+              fontSize: '15px', fontWeight: '900', color: cpiEstado.color,
+              fontFamily: 'var(--grapco-font-mono, monospace)',
+            }}>{fmtCPIPct(stats.cpi)}</span>
+            <span style={{
+              width: '6px', height: '6px', borderRadius: '50%',
+              background: cpiEstado.color, alignSelf: 'center',
+              boxShadow: `0 0 0 2px ${cpiEstado.color}33`,
+            }}/>
+          </div>
+        </Tooltip>
+        <Tooltip texto="Eficiencia operativa: HH planificadas vs HH reales ejecutadas. ≥100% indica que se cumplió o superó la meta." variant="info">
+          <div style={{
+            padding: '6px 14px',
+            display: 'inline-flex',
+            alignItems: 'baseline',
+            gap: '7px',
+          }}>
+            <span style={{ fontSize: '9.5px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.7px' }}>EF</span>
+            <span style={{
+              fontSize: '15px', fontWeight: '900',
+              color: stats.ef >= 100 ? BASE.green : '#d97706',
+              fontFamily: 'var(--grapco-font-mono, monospace)',
+            }}>{stats.ef}%</span>
+          </div>
+        </Tooltip>
+      </div>
+
+      {/* Botones colapsables — refinados con SVG icons y altura uniforme 32px */}
+      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+        {[
+          { open: filtrosAbiertos, setOpen: setFiltrosAbiertos, icon: 'filter',    label: 'Filtros',  active: tieneFiltrosActivos, activeBg: BASE.gold },
+          { open: resumenAbierto,  setOpen: setResumenAbierto,  icon: 'barChart3', label: 'Resumen' },
+        ].map((b) => (
+          <button
+            key={b.label}
+            onClick={() => b.setOpen(!b.open)}
+            style={{
+              height: '32px',
+              padding: '0 12px',
+              background: b.open ? BASE.navy : (b.active ? `${b.activeBg}15` : BASE.white),
+              color: b.open ? '#fff' : (b.active ? b.activeBg : BASE.navy),
+              border: `1px solid ${b.open ? BASE.navy : (b.active ? b.activeBg : BASE.border)}`,
+              borderRadius: '8px',
+              fontSize: '11px',
+              fontWeight: '700',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '7px',
+              transition: 'all 0.15s ease',
+              letterSpacing: '0.2px',
+            }}>
+            <Icon name={b.icon} size={13} color={b.open ? '#fff' : (b.active ? b.activeBg : BASE.muted)} strokeWidth={2} />
+            {b.label}
+            {b.active && !b.open && <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: b.activeBg }}/>}
+            {b.badge != null && (
+              <span style={{
+                background: b.open ? 'rgba(255,255,255,0.2)' : `${BASE.gold}25`,
+                color: b.open ? '#fff' : BASE.goldDark,
+                padding: '1px 7px', borderRadius: '999px',
+                fontSize: '9.5px', fontWeight: '900',
+                fontFamily: 'var(--grapco-font-mono, monospace)',
+              }}>{b.badge}</span>
+            )}
+            <span style={{ marginLeft: '2px', opacity: 0.55, fontSize: '9px' }}>{b.open ? '▴' : '▾'}</span>
+          </button>
+        ))}
+      </div>
+    </>
+  );
+
   return (
     <div ref={shellRef} style={vistaTabla ? { height: shellH, overflow: 'auto', overscrollBehavior: 'contain' } : undefined}>
       {/* === NAVEGACIÓN POR GRUPOS (Nivel 1) — tabs limpios estilo SaaS premium ===
@@ -658,8 +753,10 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
         borderTop: !soloPlaneamiento ? 'none' : `1px solid ${BASE.border}`,
         padding: '12px 16px',
         marginBottom: '14px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        gap: '12px', flexWrap: 'wrap',
       }}>
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', minWidth: 0 }}>
           {grupoCfg.items.map(item => {
             const activa = view === item.id;
             return (
@@ -684,11 +781,19 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
             );
           })}
         </div>
+        {/* Controles de comando (CPI/EF + Filtros/Resumen) en el espacio libre a la derecha */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          {comandoControles}
+        </div>
       </div>
       )}
 
-      {/* === BARRA DE COMANDO — premium minimal ===
-          KPIs CPI/EF como segmentos en lugar de chip + botones colapsables con SVG icons. */}
+      {/* === BARRA DE COMANDO (fallback) === Solo cuando el grupo NO tiene sub-tabs
+          (grupo de un único módulo, p. ej. Cockpit o Planeamiento standalone): ahí no
+          hay fila de sub-tabs donde alojar los controles, así que CPI/EF + Filtros/
+          Resumen se muestran en su propia barra. En grupos con sub-tabs, estos
+          controles viven a la derecha de la fila de sub-tabs (ver arriba). */}
+      {grupoCfg.items.length <= 1 && (
       <div className="anim-slide-down" style={{
         background: BASE.white,
         borderRadius: '12px',
@@ -701,96 +806,12 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
         gap: '10px',
         rowGap: '8px',
         flexWrap: 'wrap',
+        justifyContent: 'space-between',
         minWidth: 0,
       }}>
-        {/* KPI cluster: CPI · EF — segmentos pulidos, no chip de color */}
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'stretch',
-          background: BASE.bgSoft,
-          border: `1px solid ${BASE.border}`,
-          borderRadius: '10px',
-          overflow: 'hidden',
-        }}>
-          <Tooltip texto="CPI = Earned Value / Actual Cost. Mide eficiencia de costo. ≥1.0 = bajo presupuesto, <1.0 = sobrecostó la obra." variant="info">
-            <div style={{
-              padding: '6px 14px',
-              display: 'inline-flex',
-              alignItems: 'baseline',
-              gap: '7px',
-              borderRight: `1px solid ${BASE.border}`,
-            }}>
-              <span style={{ fontSize: '9.5px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.7px' }}>CPI</span>
-              <span style={{
-                fontSize: '15px', fontWeight: '900', color: cpiEstado.color,
-                fontFamily: 'var(--grapco-font-mono, monospace)',
-              }}>{fmtCPIPct(stats.cpi)}</span>
-              <span style={{
-                width: '6px', height: '6px', borderRadius: '50%',
-                background: cpiEstado.color, alignSelf: 'center',
-                boxShadow: `0 0 0 2px ${cpiEstado.color}33`,
-              }}/>
-            </div>
-          </Tooltip>
-          <Tooltip texto="Eficiencia operativa: HH planificadas vs HH reales ejecutadas. ≥100% indica que se cumplió o superó la meta." variant="info">
-            <div style={{
-              padding: '6px 14px',
-              display: 'inline-flex',
-              alignItems: 'baseline',
-              gap: '7px',
-            }}>
-              <span style={{ fontSize: '9.5px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.7px' }}>EF</span>
-              <span style={{
-                fontSize: '15px', fontWeight: '900',
-                color: stats.ef >= 100 ? BASE.green : '#d97706',
-                fontFamily: 'var(--grapco-font-mono, monospace)',
-              }}>{stats.ef}%</span>
-            </div>
-          </Tooltip>
-        </div>
-
-        {/* Botones colapsables — refinados con SVG icons y altura uniforme 32px */}
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', flex: '1 1 auto', justifyContent: 'flex-end', minWidth: 0 }}>
-          {[
-            { open: filtrosAbiertos, setOpen: setFiltrosAbiertos, icon: 'filter',    label: 'Filtros',  active: tieneFiltrosActivos, activeBg: BASE.gold },
-            { open: resumenAbierto,  setOpen: setResumenAbierto,  icon: 'barChart3', label: 'Resumen' },
-          ].map((b) => (
-            <button
-              key={b.label}
-              onClick={() => b.setOpen(!b.open)}
-              style={{
-                height: '32px',
-                padding: '0 12px',
-                background: b.open ? BASE.navy : (b.active ? `${b.activeBg}15` : BASE.white),
-                color: b.open ? '#fff' : (b.active ? b.activeBg : BASE.navy),
-                border: `1px solid ${b.open ? BASE.navy : (b.active ? b.activeBg : BASE.border)}`,
-                borderRadius: '8px',
-                fontSize: '11px',
-                fontWeight: '700',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '7px',
-                transition: 'all 0.15s ease',
-                letterSpacing: '0.2px',
-              }}>
-              <Icon name={b.icon} size={13} color={b.open ? '#fff' : (b.active ? b.activeBg : BASE.muted)} strokeWidth={2} />
-              {b.label}
-              {b.active && !b.open && <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: b.activeBg }}/>}
-              {b.badge != null && (
-                <span style={{
-                  background: b.open ? 'rgba(255,255,255,0.2)' : `${BASE.gold}25`,
-                  color: b.open ? '#fff' : BASE.goldDark,
-                  padding: '1px 7px', borderRadius: '999px',
-                  fontSize: '9.5px', fontWeight: '900',
-                  fontFamily: 'var(--grapco-font-mono, monospace)',
-                }}>{b.badge}</span>
-              )}
-              <span style={{ marginLeft: '2px', opacity: 0.55, fontSize: '9px' }}>{b.open ? '▴' : '▾'}</span>
-            </button>
-          ))}
-        </div>
+        {comandoControles}
       </div>
+      )}
 
       {/* === FILTROS (colapsable) — panel formal GRAPCO: tipografía sobria, acento dorado === */}
       {filtrosAbiertos && (() => {
