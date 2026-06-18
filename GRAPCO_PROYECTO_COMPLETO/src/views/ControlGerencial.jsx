@@ -18,7 +18,7 @@ import {
   calcularReporteTareos, calcularControlHHVariaciones, calcularMatrizIP,
   fmtMoney, fmt1, fmtCPIPct, COSTO_HORA_DEFAULT, COSTO_HORA_PROMEDIO, codigoCortoPartida,
 } from '../utils/helpers';
-import CostoRealOficial from './modulos/resultadoOperativo/CostoRealOficial';
+import RODesdeISP from './modulos/resultadoOperativo/RODesdeISP';
 
 export default function ControlGerencial({ historialEnriquecido, personalDB, configuracion, isMobile, asistencia }) {
   const [tab, setTab] = useState('tareos');
@@ -60,7 +60,7 @@ export default function ControlGerencial({ historialEnriquecido, personalDB, con
       }}>
         {[
           { id: 'tareos',       l: 'Reporte de Tareos',     desc: 'Costos jerarquicos por partida' },
-          { id: 'crOficial',    l: 'CR Oficial (Excel)',    desc: 'Costo Real del ISP · S/25.50/h' },
+          { id: 'crOficial',    l: 'CR / CHH (ISP)',         desc: 'Costo Real y Control HH desde el ISP' },
           { id: 'variaciones',  l: 'Control HH Variaciones', desc: 'Real vs meta + heatmap' },
           { id: 'ip',           l: 'Control de IP',          desc: 'IP por actividad y semana' },
         ].map(t => {
@@ -107,7 +107,7 @@ export default function ControlGerencial({ historialEnriquecido, personalDB, con
           isMobile={isMobile}
         />
       )}
-      {tab === 'crOficial' && <CostoRealOficial />}
+      {tab === 'crOficial' && <RODesdeISP />}
       {tab === 'variaciones' && (
         <ControlVariaciones
           historial={historialEnriquecido}
