@@ -8,7 +8,6 @@
 
 export const HERO_VIDEOS = [
   '/grapco-bg.mp4',
-  '/video-moreras.mp4',
 ];
 
 // Elegido una sola vez, cuando el módulo se importa por primera vez en la carga.
