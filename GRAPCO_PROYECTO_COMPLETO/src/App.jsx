@@ -41,6 +41,39 @@ const OT_SIDEBAR = {
   ],
 };
 
+// Menú lateral del área ALMACÉN / ADMINISTRACIÓN — mismo formato que "Producción y
+// Planeamiento" y "Oficina Técnica" (sidebar navy fijo, full-screen). Las keys mapean
+// a las pestañas internas de MaterialesPanel vía KEY_TO_TAB_MAT (prop tabExterna).
+// El almacenero deja de ver el panel de tarjetas: ahora opera a pantalla completa.
+const ALMACEN_SIDEBAR = {
+  'RESUMEN': [
+    { key: 'materiales.dashboard',  label: 'Dashboard',             iconName: 'dashboard',  color: BASE.gold },
+  ],
+  'OPERACIÓN DIARIA': [
+    { key: 'materiales.salida',     label: 'Vales / Salidas',       iconName: 'truck',      color: '#f87171' },
+    { key: 'materiales.entrada',    label: 'Registrar Entrada',     iconName: 'package',    color: '#34d399' },
+  ],
+  'INVENTARIO': [
+    { key: 'materiales.reporteS10', label: 'Stock Valorizado',      iconName: 'boxes',      color: '#fbbf24' },
+    { key: 'materiales.kardex',     label: 'Kardex de Movimientos', iconName: 'barChart3',  color: '#38bdf8' },
+  ],
+  'CONFIGURACIÓN': [
+    { key: 'materiales.catalogo',   label: 'Catálogo de Materiales', iconName: 'fileText',  color: '#c4b5fd' },
+    { key: 'materiales.almacenes',  label: 'Almacenes',             iconName: 'building',   color: '#a5b4fc' },
+  ],
+};
+// Reverso tab→key: cuando MaterialesPanel navega internamente (p.ej. al guardar una
+// salida salta a Kardex), traducimos el id de pestaña de vuelta a la key del sidebar.
+const TAB_TO_KEY_MAT = {
+  dashboard:  'materiales.dashboard',
+  salida:     'materiales.salida',
+  entrada:    'materiales.entrada',
+  reporteS10: 'materiales.reporteS10',
+  kardex:     'materiales.kardex',
+  catalogo:   'materiales.catalogo',
+  almacenes:  'materiales.almacenes',
+};
+
 // Items del sidebar para roles que no son admin/ingeniero (estaticos)
 const ROL_ITEMS = {
   capataz:           [{ key: 'capataz',  label: 'Panel del Capataz',       iconName: 'hardhat',    color: '#16a34a', group: 'MI ÁREA' }],
@@ -212,6 +245,7 @@ function AppInner() {
   // así una pestaña nueva abre DIRECTO donde se le pidió (multi-pestaña).
   const [moduloIngeniero, setModuloIngeniero] = useState(() => leerRutaHash()?.modulo || 'dashboard');
   const [moduloOT, setModuloOT] = useState('ot.dashboard'); // sub-módulo activo del área Oficina Técnica (menú lateral)
+  const [moduloAlmacen, setModuloAlmacen] = useState('materiales.dashboard'); // sub-módulo activo del área Almacén (menú lateral)
   const [drawerOpen, setDrawerOpen] = useState(false); // menú móvil (hamburguesa)
 
   // Si el módulo activo no está permitido para el área actual, salta al primero permitido.
@@ -1014,8 +1048,31 @@ function AppInner() {
         })()}
 
         {/* ── ROL: ALMACENERO / LOGISTICA (Bloque 19) ── */}
+        {/* Desktop: menú lateral navy (mismo formato que Producción/Planeamiento y
+            Oficina Técnica) que maneja las opciones del almacén; MaterialesPanel
+            ocupa todo el ancho restante. Móvil: panel de tarjetas mobile-first. */}
         {(rol === 'almacenero' || rol === 'logistica') && (
-          <Almacenero showToast={showToast} isMobile={isMobile} />
+          isMobile ? (
+            <Almacenero showToast={showToast} isMobile={isMobile} />
+          ) : (
+            <div style={{ position: 'relative' }}>
+              <AreaSidebar
+                grupos={ALMACEN_SIDEBAR}
+                activeKey={moduloAlmacen}
+                onSelect={setModuloAlmacen}
+                collapsed={sidebarCollapsed}
+                onToggleCollapse={toggleSidebar}
+                sidebarWidth={SIDEBAR_W}
+              />
+              <div style={{ minWidth: 0 }}>
+                <MaterialesPanel
+                  showToast={showToast}
+                  tabExterna={moduloAlmacen}
+                  onChangeTab={(t) => setModuloAlmacen(TAB_TO_KEY_MAT[t] || 'materiales.dashboard')}
+                />
+              </div>
+            </div>
+          )
         )}
 
         {/* ── ROL: CALIDAD (Bloque 20) ── */}
