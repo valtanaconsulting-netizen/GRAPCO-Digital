@@ -18,6 +18,7 @@ import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import { LEGACY_CREDITEX_IDS } from '../../hooks/useCatalogoWBS';
 import { fmtSoles, fmtNumero } from '../../utils/calidadOTAnalytics';
 import { parsePresupuestoExcel, PCT_DEFAULT, aNumero } from '../../utils/presupuestoParser';
+import { PRESUPUESTO_MONTOS_CREDITEX, PRESUPUESTO_MONTOS_CONFIG } from '../../data/presupuestoMontosCreditex';
 import Modal from '../../components/Modal';
 import EmptyState from '../../components/EmptyState';
 
@@ -66,24 +67,38 @@ export default function PresupuestoView({ showToast }) {
     return () => unsub();
   }, [proyId]);
 
+  // ── Base contractual (fallback offline) + overrides de Firestore ──
+  // En proyectos legacy CREDITEX el presupuesto real vive en código (base) y los
+  // docs de Firestore lo SOBRESCRIBEN por código (editar/importar no borra el resto).
+  const { partidasEff, configEff, usandoBase } = useMemo(() => {
+    if (!isLegacy) return { partidasEff: partidas, configEff: config, usandoBase: false };
+    const realByCod = new Map(partidas.map((p) => [String(p.codigo), p]));
+    const base = PRESUPUESTO_MONTOS_CREDITEX
+      .filter((b) => !realByCod.has(String(b.codigo)))
+      .map((b, i) => ({ id: `base-${b.codigo}`, unidad: 'GLB', orden: i, ...b }));
+    const merged = [...base, ...partidas].sort((a, b) => String(a.codigo).localeCompare(String(b.codigo)));
+    return { partidasEff: merged, configEff: config || PRESUPUESTO_MONTOS_CONFIG, usandoBase: base.length > 0 };
+  }, [partidas, config, isLegacy]);
+
   // ── Totales y resumen comercial ───────────────────────────────────
   const t = useMemo(() => {
-    const totF1 = partidas.reduce((s, p) => s + mF1(p), 0);
-    const totF2 = partidas.reduce((s, p) => s + mF2(p), 0);
-    const cd = config?.cd || +(totF1 + totF2).toFixed(2);
-    const ggPct = config?.ggPct ?? PCT_DEFAULT.ggPct;
-    const utilidadPct = config?.utilidadPct ?? PCT_DEFAULT.utilidadPct;
-    const igvPct = config?.igvPct ?? PCT_DEFAULT.igvPct;
-    const gg = config?.gg || +(cd * ggPct / 100).toFixed(2);
-    const utilidad = config?.utilidad || +(cd * utilidadPct / 100).toFixed(2);
-    const subtotal = config?.subtotal || +(cd + gg + utilidad).toFixed(2);
-    const igv = config?.igv || +(subtotal * igvPct / 100).toFixed(2);
-    const total = config?.total || +(subtotal + igv).toFixed(2);
-    const costoObra = config?.costoObra || +(cd + gg).toFixed(2);  // meta de control del RO
-    return { totF1, totF2, cd, ggPct, utilidadPct, igvPct, gg, utilidad, subtotal, igv, total, costoObra };
-  }, [partidas, config]);
+    const totF1 = partidasEff.reduce((s, p) => s + mF1(p), 0);
+    const totF2 = partidasEff.reduce((s, p) => s + mF2(p), 0);
+    const cd = configEff?.cd || +(totF1 + totF2).toFixed(2);
+    const ggPct = configEff?.ggPct ?? PCT_DEFAULT.ggPct;
+    const utilidadPct = configEff?.utilidadPct ?? PCT_DEFAULT.utilidadPct;
+    const igvPct = configEff?.igvPct ?? PCT_DEFAULT.igvPct;
+    const gg = configEff?.gg || +(cd * ggPct / 100).toFixed(2);
+    const descuento = configEff?.descuento || 0;
+    const utilidad = configEff?.utilidad || +(cd * utilidadPct / 100).toFixed(2);
+    const subtotal = configEff?.subtotal || +(cd + gg - descuento + utilidad).toFixed(2);
+    const igv = configEff?.igv || +(subtotal * igvPct / 100).toFixed(2);
+    const total = configEff?.total || +(subtotal + igv).toFixed(2);
+    const costoObra = configEff?.costoObra || +(cd + gg).toFixed(2);  // meta de control del RO
+    return { totF1, totF2, cd, ggPct, utilidadPct, igvPct, gg, descuento, utilidad, subtotal, igv, total, costoObra };
+  }, [partidasEff, configEff]);
 
-  const hayDatos = partidas.length > 0;
+  const hayDatos = partidasEff.length > 0;
 
   // ── CRUD manual ───────────────────────────────────────────────────
   const guardar = async () => {
@@ -134,8 +149,13 @@ export default function PresupuestoView({ showToast }) {
         <div style={{ flex: '1 1 240px' }}>
           <p style={{ fontSize: 13, fontWeight: 900, color: BASE.navy }}>Presupuesto contractual</p>
           <p style={{ fontSize: 11, color: BASE.muted, marginTop: 2 }}>
-            {partidas.length} partidas · Costo Directo <strong>{fmtSoles(t.cd)}</strong> · Costo de Obra (CD+GG) <strong style={{ color: BASE.navy }}>{fmtSoles(t.costoObra)}</strong>
+            {partidasEff.length} partidas · Costo Directo <strong>{fmtSoles(t.cd)}</strong> · Costo de Obra (CD+GG) <strong style={{ color: BASE.navy }}>{fmtSoles(t.costoObra)}</strong>
           </p>
+          {usandoBase && (
+            <p style={{ fontSize: 10, color: BASE.goldDark, fontWeight: 700, marginTop: 2 }}>
+              ◆ Base contractual CREDITEX (PTARI F1 + NAVE F2). Importa o edita para versionar en Firestore.
+            </p>
+          )}
         </div>
         <button onClick={() => setImportOpen(true)} style={btn(BASE.gold, BASE.goldDark)}>📥 IMPORTAR PPTO</button>
         <button onClick={() => { setForm(FORM_INICIAL); setEditando('NUEVO'); }} style={btn(BASE.navy, BASE.navyDark)}>➕ NUEVA PARTIDA</button>
@@ -173,11 +193,11 @@ export default function PresupuestoView({ showToast }) {
             })}
           </div>
 
-          {lente === 'resumen' && <ResumenLente partidas={partidas} t={t} />}
-          {lente === 'frente' && <FrenteLente partidas={partidas} t={t} />}
+          {lente === 'resumen' && <ResumenLente partidas={partidasEff} t={t} />}
+          {lente === 'frente' && <FrenteLente partidas={partidasEff} t={t} />}
           {lente === 'detalle' && (
-            <TablaDetalle partidas={partidas}
-              onEdit={(p) => { setForm({ ...FORM_INICIAL, ...p, montoF1: mF1(p), montoF2: mF2(p) }); setEditando(p.id); }}
+            <TablaDetalle partidas={partidasEff}
+              onEdit={(p) => { setForm({ ...FORM_INICIAL, ...p, montoF1: mF1(p), montoF2: mF2(p) }); setEditando(String(p.id).startsWith('base-') ? 'NUEVO' : p.id); }}
               onDelete={borrar} t={t} />
           )}
         </>
@@ -233,6 +253,7 @@ function ResumenLente({ partidas, t }) {
     ['COSTO DIRECTO', t.cd, true],
     [`GASTOS GENERALES (${Math.round(t.ggPct)}%)`, t.gg, false],
     ['COSTO DE OBRA (CD + GG) · meta del RO', t.costoObra, 'meta'],
+    ...(t.descuento ? [['(−) DESCUENTO COMERCIAL', -t.descuento, false]] : []),
     [`UTILIDAD (${Math.round(t.utilidadPct)}%)`, t.utilidad, false],
     ['SUBTOTAL', t.subtotal, true],
     [`IGV (${Math.round(t.igvPct)}%)`, t.igv, false],
@@ -340,7 +361,9 @@ function TablaDetalle({ partidas, onEdit, onDelete, t }) {
                 <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace', fontWeight: 900, color: BASE.navy }}>{fmtSoles(mF1(p) + mF2(p))}</td>
                 <td style={{ ...td(), textAlign: 'center', whiteSpace: 'nowrap' }}>
                   <button onClick={() => onEdit(p)} style={miniBtn(BASE.navy)}>EDITAR</button>
-                  <button onClick={() => onDelete(p)} style={{ ...miniBtn(BASE.red), marginLeft: 6 }}>✕</button>
+                  {!String(p.id).startsWith('base-') && (
+                    <button onClick={() => onDelete(p)} style={{ ...miniBtn(BASE.red), marginLeft: 6 }}>✕</button>
+                  )}
                 </td>
               </tr>
             ))}
