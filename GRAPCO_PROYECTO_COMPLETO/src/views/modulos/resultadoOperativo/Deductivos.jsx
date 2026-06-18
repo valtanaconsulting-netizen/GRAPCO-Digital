@@ -10,7 +10,7 @@ export default function Deductivos({ showToast }) {
       tipo="deductivos"
       coleccion="Deductivos"
       titulo="DEDUCTIVOS"
-      subtitulo="Partidas deductivas (PQ-01 / PQ-02) con presupuesto, programado y valorizado."
+      subtitulo="Estatus de deductivos (F05): CD/GG/U y estados. Los APROBADOS reducen el BAC del RO."
       color="#ef4444"
       icono="➖"
       showToast={showToast}

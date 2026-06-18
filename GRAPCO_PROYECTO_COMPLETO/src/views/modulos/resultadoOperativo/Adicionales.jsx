@@ -10,7 +10,7 @@ export default function Adicionales({ showToast }) {
       tipo="adicionales"
       coleccion="Adicionales"
       titulo="ADICIONALES"
-      subtitulo="Partidas adicionales aprobadas (PQ-01 / PQ-02) con presupuesto, programado y valorizado."
+      subtitulo="Estatus de adicionales (F05): CD/GG/U, estado de ejecución, aprobación y abono. Los APROBADOS ajustan el BAC del RO."
       color="#16a34a"
       icono="➕"
       showToast={showToast}
