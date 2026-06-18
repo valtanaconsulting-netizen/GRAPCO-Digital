@@ -1,0 +1,23 @@
+{
+  "projectId": "dba27de2-d2c6-4520-a5ac-ff57f246d712",
+  "shape": "package",
+  "pkg": "vite-react-starter",
+  "globalName": "GRAPCO",
+  "cssEntry": "src/styles/global.css",
+  "readmeHeader": ".design-sync/conventions.md",
+  "componentSrcMap": {
+    "Icon": "src/components/Icon.jsx",
+    "VistaHeader": "src/components/VistaHeader.jsx",
+    "EmptyState": "src/components/EmptyState.jsx",
+    "AreaSidebar": "src/components/AreaSidebar.jsx"
+  },
+  "overrides": {
+    "AreaSidebar": { "cardMode": "single", "viewport": "240x580", "primaryStory": "MenuLateral" }
+  },
+  "dtsPropsFor": {
+    "Icon": "/** Nombre del icono del set GRAPCO (p.ej. 'dashboard', 'fileText', 'trendingUp'). */ name: string; /** Tamaño en px. */ size?: number; /** Color del trazo (CSS color o 'currentColor'). */ color?: string; strokeWidth?: number; style?: React.CSSProperties;",
+    "VistaHeader": "/** Nombre del icono (set GRAPCO) mostrado en el chip dorado. */ icono?: string; /** Título principal de la vista. */ titulo?: string; /** Subtítulo descriptivo. */ subtitulo?: string; /** Eyebrow / etiqueta superior en mayúsculas. */ eyebrow?: string; /** Color de acento (default oro de marca). */ acento?: string; /** Contenido alineado a la derecha (acciones, KPIs). */ derecha?: React.ReactNode;",
+    "EmptyState": "/** Emoji o glifo grande. */ icono?: string; titulo?: string; descripcion?: string; /** Llamada a la acción opcional. */ accion?: { label: string; onClick: () => void } | null; altura?: string; /** Esquema de color del placeholder. */ variante?: 'default' | 'success' | 'warning' | 'bim';",
+    "AreaSidebar": "/** Grupos del menú: { GRUPO: [{ key, label, iconName, color }] }. */ grupos: Record<string, Array<{ key: string; label: string; iconName: string; color?: string }>>; /** Key del item activo. */ activeKey?: string; /** Callback al elegir un item. */ onSelect: (key: string) => void; collapsed?: boolean; onToggleCollapse?: () => void; sidebarWidth?: number; /** Slot superior (p.ej. selector de frente). */ topSlot?: React.ReactNode; onHoverItem?: (key: string) => void;"
+  }
+}
