@@ -1,200 +1,155 @@
-// src/views/oficinatecnica/ValorizacionesView.jsx — Valorizaciones al cliente (B20)
-// Calcula automaticamente desde produccion + partidas contractuales
+// src/views/oficinatecnica/ValorizacionesView.jsx — Valorizaciones al cliente (F07)
+// Réplica del GP-GCE-FOR-F07: por partida 1001-1018 (Ppto · Período · Acumulado · Saldo · %)
+// + liquidación (Valorización Bruta → Adelanto → IGV → Retención FG 5% → Detracción 4%).
+//
+// CONVERSA con todo: el Presupuesto (Ppto contractual, vía usePresupuestoContractual) define
+// el techo por partida; cada valorización guarda partidasValorizadas[{codigo, montoBruto}] en
+// ValorizacionesContractuales, que el motor del RO lee como EARNED VALUE (EV) acumulado.
+// El valorizado por partida está en nivel COSTO DIRECTO (mismas unidades que el BAC del RO);
+// la cara-venta (CD+GG+Utilidad+IGV) se arma solo para la liquidación al cliente.
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { collection, addDoc, updateDoc, doc, onSnapshot, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { BASE } from '../../utils/styles';
 import { useAuth } from '../../contexts/AuthContext';
-import { calcularValorizacion, fmtSoles, fmtNumero } from '../../utils/calidadOTAnalytics';
+import { fmtSoles } from '../../utils/calidadOTAnalytics';
+import usePresupuestoContractual from '../../hooks/usePresupuestoContractual';
 import Modal from '../../components/Modal';
 import EmptyState from '../../components/EmptyState';
 
+const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
+const pctTxt = (n) => `${Math.round(Number(n) || 0)}%`;
+
 export default function ValorizacionesView({ showToast }) {
   const { user } = useAuth();
-  const [valorizaciones, setValorizaciones] = useState([]);
-  const [partidas, setPartidas] = useState([]);
-  const [historial, setHistorial] = useState([]);
+  const { proyId, isLegacy, partidas, totales: tP, usandoBase } = usePresupuestoContractual();
+
+  const [vals, setVals] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editando, setEditando] = useState(null);
   const [creando, setCreando] = useState(false);
-  const [calculando, setCalculando] = useState(false);
+  const [verVal, setVerVal] = useState(null);
 
-  // Form de creacion
-  const [periodoDesde, setPeriodoDesde] = useState('');
-  const [periodoHasta, setPeriodoHasta] = useState(new Date().toISOString().split('T')[0]);
-  const [porcAdelanto, setPorcAdelanto] = useState(10);
-  const [factorReajuste, setFactorReajuste] = useState(1.0);
-
+  // ── Valorizaciones del proyecto (aisladas) ────────────────────────
   useEffect(() => {
-    const unsubs = [
-      onSnapshot(query(collection(db, 'ValorizacionesContractuales'), orderBy('numeroValorizacion', 'desc')),
-        (snap) => { setValorizaciones(snap.docs.map(d => ({ id: d.id, ...d.data() }))); setLoading(false); }),
-      onSnapshot(collection(db, 'PartidasContractuales'),
-        (snap) => setPartidas(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
-      onSnapshot(query(collection(db, 'Historial'), orderBy('fecha', 'desc')),
-        (snap) => setHistorial(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
-    ];
-    return () => unsubs.forEach(u => u());
-  }, []);
+    if (!proyId) { setVals([]); setLoading(false); return; }
+    setLoading(true);
+    const unsub = onSnapshot(collection(db, 'ValorizacionesContractuales'),
+      (snap) => {
+        const todas = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        const mias = todas.filter((v) => v.proyectoId === proyId || (!v.proyectoId && isLegacy));
+        mias.sort((a, b) => (a.numeroValorizacion || 0) - (b.numeroValorizacion || 0));
+        setVals(mias); setLoading(false);
+      },
+      (e) => { console.warn('[Valorizaciones]', e); setLoading(false); });
+    return () => unsub();
+  }, [proyId, isLegacy]);
 
-  const proximoNumero = useMemo(() =>
-    Math.max(0, ...valorizaciones.map(v => v.numeroValorizacion || 0)) + 1
-  , [valorizaciones]);
+  // CD contractual por partida (techo) — combinado F1 + F2.
+  const cdPorCodigo = useMemo(() => {
+    const m = new Map();
+    partidas.forEach((p) => m.set(String(p.codigo), { descripcion: p.descripcion, cd: round2((p.montoF1 || 0) + (p.montoF2 || 0)) }));
+    return m;
+  }, [partidas]);
+  const cdContractual = tP.cd;
 
-  const calcularYCrear = async () => {
-    if (!partidas.length) {
-      showToast?.('Primero carga las partidas contractuales', 'error');
-      return;
-    }
-    if (!periodoHasta) {
-      showToast?.('Indica el periodo de la valorizacion', 'error');
-      return;
-    }
-
-    setCalculando(true);
-    try {
-      const calculo = calcularValorizacion({
-        historial,
-        partidasContractuales: partidas,
-        periodo: {
-          desde: periodoDesde ? new Date(periodoDesde) : null,
-          hasta: new Date(periodoHasta),
-        },
-        porcAdelanto: parseFloat(porcAdelanto) || 0,
-        factorReajuste: parseFloat(factorReajuste) || 1.0,
-        numeroValorizacion: proximoNumero,
+  // Acumulado valorizado (CD) por código, sumando TODAS las valorizaciones no anuladas.
+  const acumPorCodigo = useMemo(() => {
+    const m = new Map();
+    vals.filter((v) => v.estado !== 'anulada').forEach((v) => {
+      (v.partidasValorizadas || []).forEach((it) => {
+        const c = String(it.codigo);
+        m.set(c, round2((m.get(c) || 0) + (Number(it.montoBruto) || 0)));
       });
+    });
+    return m;
+  }, [vals]);
 
-      const data = {
-        ...calculo,
-        periodo: {
-          desde: periodoDesde ? new Date(periodoDesde) : null,
-          hasta: new Date(periodoHasta),
-        },
-        estado: 'borrador',
-        creadoEn: serverTimestamp(),
-        creadoPor: user?.email || 'desconocido',
-      };
+  const acumTotal = useMemo(() => [...acumPorCodigo.values()].reduce((s, x) => s + x, 0), [acumPorCodigo]);
+  const pctAvanceAcum = cdContractual > 0 ? (acumTotal / cdContractual) * 100 : 0;
+  const proximoNumero = useMemo(() => Math.max(0, ...vals.map((v) => v.numeroValorizacion || 0)) + 1, [vals]);
 
-      const docRef = await addDoc(collection(db, 'ValorizacionesContractuales'), data);
-      showToast?.(`✅ Valorizacion V-${proximoNumero} creada: ${fmtSoles(calculo.total)}`, 'success');
-      setCreando(false);
-      setEditando({ id: docRef.id, ...data });
-    } catch (e) {
-      console.error(e);
-      showToast?.('Error: ' + e.message, 'error');
-    } finally { setCalculando(false); }
+  // Filas de la vista general (F07 hoja 5.RO): por partida con presupuesto.
+  const filas = useMemo(() => {
+    const arr = [];
+    cdPorCodigo.forEach((info, codigo) => {
+      if (info.cd <= 0.005) return;
+      const acum = acumPorCodigo.get(codigo) || 0;
+      arr.push({ codigo, descripcion: info.descripcion, cd: info.cd, acum, saldo: round2(info.cd - acum), pct: info.cd > 0 ? (acum / info.cd) * 100 : 0 });
+    });
+    return arr.sort((a, b) => a.codigo.localeCompare(b.codigo, 'es', { numeric: true }));
+  }, [cdPorCodigo, acumPorCodigo]);
+
+  const cambiarEstado = async (v, nuevoEstado) => {
+    try {
+      await updateDoc(doc(db, 'ValorizacionesContractuales', v.id), {
+        estado: nuevoEstado, actualizadoEn: serverTimestamp(), actualizadoPor: user?.email || 'desconocido',
+      });
+      showToast?.(`✅ V-${v.numeroValorizacion} → ${nuevoEstado}`, 'success');
+    } catch (e) { showToast?.('Error: ' + e.message, 'error'); }
   };
 
-  const cambiarEstado = async (id, nuevoEstado) => {
-    try {
-      await updateDoc(doc(db, 'ValorizacionesContractuales', id), {
-        estado: nuevoEstado,
-        actualizadoEn: serverTimestamp(),
-        actualizadoPor: user?.email || 'desconocido',
-        ...(nuevoEstado === 'pagada' ? { fechaPago: serverTimestamp() } : {}),
-      });
-      showToast?.(`✅ Valorizacion → ${nuevoEstado}`, 'success');
-    } catch (e) {
-      showToast?.('Error: ' + e.message, 'error');
-    }
-  };
-
-  if (loading) return <p style={{ padding: 30, textAlign: 'center', color: BASE.muted }}>⏳ Cargando valorizaciones...</p>;
+  if (!proyId) return <p style={{ padding: 30, textAlign: 'center', color: BASE.muted }}>Selecciona un proyecto activo.</p>;
+  if (loading) return <p style={{ padding: 30, textAlign: 'center', color: BASE.muted }}>⏳ Cargando valorizaciones…</p>;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', padding: '14px 18px' }}>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ flex: '1 1 200px' }}>
-            <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>Valorizaciones Contractuales</p>
-            <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '2px' }}>
-              {valorizaciones.length} emitidas · Total: <strong>{fmtSoles(valorizaciones.reduce((s, v) => s + (v.total || 0), 0))}</strong>
-            </p>
-          </div>
-          <button onClick={() => {
-            const ultima = valorizaciones.find(v => v.numeroValorizacion === proximoNumero - 1);
-            if (ultima?.periodo?.hasta) {
-              const f = ultima.periodo.hasta.toDate ? ultima.periodo.hasta.toDate() : new Date(ultima.periodo.hasta);
-              const desde = new Date(f);
-              desde.setDate(desde.getDate() + 1);
-              setPeriodoDesde(desde.toISOString().split('T')[0]);
-            } else {
-              setPeriodoDesde('');
-            }
-            setCreando(true);
-          }} style={{
-            padding: '10px 20px', borderRadius: '8px',
-            background: `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`,
-            color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900',
-            cursor: 'pointer', letterSpacing: '0.5px',
-            boxShadow: `0 4px 12px ${BASE.gold}55`,
-          }}>
-            🤖 NUEVA VALORIZACION (CALCULAR)
-          </button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* Cabecera */}
+      <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 12, padding: '14px 18px', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ flex: '1 1 240px' }}>
+          <p style={{ fontSize: 13, fontWeight: 900, color: BASE.navy }}>Valorizaciones al cliente · F07</p>
+          <p style={{ fontSize: 11, color: BASE.muted, marginTop: 2 }}>
+            {vals.length} valorizaciones · Acumulado <strong>{fmtSoles(acumTotal)}</strong> de <strong>{fmtSoles(cdContractual)}</strong> (CD) · avance <strong style={{ color: BASE.navy }}>{pctTxt(pctAvanceAcum)}</strong>
+          </p>
         </div>
-        <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '8px', fontStyle: 'italic' }}>
-          La valorizacion se calcula AUTOMATICAMENTE desde Producción × Precio Unitario contractual.
-        </p>
+        <button onClick={() => setCreando(true)} disabled={!filas.length} style={{ ...btn(BASE.gold, BASE.goldDark), opacity: filas.length ? 1 : 0.5 }}>➕ NUEVA VALORIZACIÓN</button>
       </div>
 
-      {valorizaciones.length === 0 ? (
-        <EmptyState icono="💰" titulo="Sin valorizaciones"
-          descripcion="Genera la primera valorizacion. La plataforma calcula avance × precio unitario × reajuste − adelanto + IGV." />
-      ) : (
-        <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', overflow: 'hidden' }}>
+      {/* KPIs */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8 }}>
+        <Kpi label="Presupuesto (CD)" valor={fmtSoles(cdContractual)} color={BASE.navy} />
+        <Kpi label="Valorizado acumulado" valor={fmtSoles(acumTotal)} color={BASE.green} />
+        <Kpi label="Por valorizar (saldo)" valor={fmtSoles(round2(cdContractual - acumTotal))} color={BASE.gold} />
+        <Kpi label="Avance acumulado" valor={pctTxt(pctAvanceAcum)} color="#0ea5e9" />
+      </div>
+
+      {usandoBase && (
+        <p style={{ fontSize: 10, color: BASE.goldDark, fontWeight: 700 }}>
+          ◆ Techo por partida desde el Presupuesto contractual CREDITEX. Cada valorización descuenta del saldo y alimenta el EV del RO.
+        </p>
+      )}
+
+      {/* Lista de valorizaciones */}
+      {vals.length > 0 && (
+        <Card titulo="Valorizaciones emitidas">
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', minWidth: '900px' }}>
-              <thead>
-                <tr style={{ background: BASE.navy, color: '#fff' }}>
-                  <th style={th()}>N°</th>
-                  <th style={th()}>Periodo</th>
-                  <th style={th({ textAlign: 'right' })}>Subtotal Bruto</th>
-                  <th style={th({ textAlign: 'right' })}>Reajuste</th>
-                  <th style={th({ textAlign: 'right' })}>Adelanto</th>
-                  <th style={th({ textAlign: 'right' })}>IGV</th>
-                  <th style={th({ textAlign: 'right' })}>TOTAL</th>
-                  <th style={th({ textAlign: 'center' })}>Estado</th>
-                  <th style={th({ textAlign: 'center' })}>Accion</th>
-                </tr>
-              </thead>
+            <table style={tabla}>
+              <thead><tr style={trHead}>
+                <th style={th()}>N°</th><th style={th()}>Período</th>
+                <th style={th({ textAlign: 'right' })}>Valorizado (CD)</th>
+                <th style={th({ textAlign: 'right' })}>A facturar</th>
+                <th style={th({ textAlign: 'right' })}>A pagar</th>
+                <th style={th({ textAlign: 'center' })}>Estado</th>
+                <th style={th({ textAlign: 'center' })}>Acción</th>
+              </tr></thead>
               <tbody>
-                {valorizaciones.map((v, i) => {
-                  const desde = v.periodo?.desde?.toDate ? v.periodo.desde.toDate() : (v.periodo?.desde ? new Date(v.periodo.desde) : null);
-                  const hasta = v.periodo?.hasta?.toDate ? v.periodo.hasta.toDate() : (v.periodo?.hasta ? new Date(v.periodo.hasta) : null);
-                  const estadoColor = v.estado === 'pagada' ? BASE.green : v.estado === 'aprobada' ? '#2563eb' : v.estado === 'enviada' ? '#7c3aed' : '#f59e0b';
+                {vals.map((v, i) => {
+                  const col = v.estado === 'pagada' ? BASE.green : v.estado === 'aprobada' ? '#2563eb' : v.estado === 'enviada' ? '#7c3aed' : v.estado === 'anulada' ? BASE.muted : BASE.gold;
                   return (
-                    <tr key={v.id} style={{ background: i % 2 === 0 ? BASE.white : BASE.bgSoft, borderBottom: `1px solid ${BASE.border}` }}>
-                      <td style={{ ...td(), fontWeight: '900', color: BASE.navy, fontFamily: 'monospace' }}>V-{v.numeroValorizacion}</td>
-                      <td style={{ ...td(), fontSize: '11px', fontFamily: 'monospace' }}>
-                        {desde ? desde.toLocaleDateString('es-PE') : '—'} a {hasta ? hasta.toLocaleDateString('es-PE') : '—'}
-                      </td>
-                      <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace' }}>{fmtSoles(v.subtotalBruto)}</td>
-                      <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace', fontSize: '11px' }}>×{fmtNumero(v.factorReajuste, 4)}</td>
-                      <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace', color: BASE.red }}>-{fmtSoles(v.amortizacionAdelanto)}</td>
-                      <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace' }}>{fmtSoles(v.igv)}</td>
-                      <td style={{ ...td(), textAlign: 'right', fontWeight: '900', color: BASE.navy, fontSize: '13px' }}>{fmtSoles(v.total)}</td>
+                    <tr key={v.id} style={{ background: i % 2 ? BASE.bgSoft : BASE.white, borderBottom: `1px solid ${BASE.border}` }}>
+                      <td style={{ ...td(), fontWeight: 900, color: BASE.navy, fontFamily: 'monospace' }}>V-{v.numeroValorizacion}</td>
+                      <td style={{ ...td(), fontSize: 11 }}>{v.periodoTexto || '—'}</td>
+                      <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace', fontWeight: 700 }}>{fmtSoles(v.cdPeriodo)}</td>
+                      <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace' }}>{fmtSoles(v.totalAFacturar)}</td>
+                      <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace', fontWeight: 900, color: BASE.navy }}>{fmtSoles(v.totalAPagar)}</td>
                       <td style={{ ...td(), textAlign: 'center' }}>
-                        <span style={{
-                          background: estadoColor, color: '#fff',
-                          padding: '3px 9px', borderRadius: '10px',
-                          fontSize: '9.5px', fontWeight: '900', letterSpacing: '0.4px',
-                        }}>{(v.estado || 'borrador').toUpperCase()}</span>
+                        <span style={{ background: col, color: '#fff', padding: '3px 9px', borderRadius: 10, fontSize: 9.5, fontWeight: 900 }}>{(v.estado || 'borrador').toUpperCase()}</span>
                       </td>
-                      <td style={{ ...td(), textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                          <button onClick={() => setEditando({ id: v.id, ...v })} style={btnAct(BASE.navy)}>VER</button>
-                          {v.estado === 'borrador' && (
-                            <button onClick={() => cambiarEstado(v.id, 'enviada')} style={btnAct('#7c3aed')}>ENVIAR</button>
-                          )}
-                          {v.estado === 'enviada' && (
-                            <button onClick={() => cambiarEstado(v.id, 'aprobada')} style={btnAct('#2563eb')}>APROBAR</button>
-                          )}
-                          {v.estado === 'aprobada' && (
-                            <button onClick={() => cambiarEstado(v.id, 'pagada')} style={btnAct(BASE.green)}>PAGAR</button>
-                          )}
-                        </div>
+                      <td style={{ ...td(), textAlign: 'center', whiteSpace: 'nowrap' }}>
+                        <button onClick={() => setVerVal(v)} style={miniBtn(BASE.navy)}>VER</button>
+                        {v.estado === 'borrador' && <button onClick={() => cambiarEstado(v, 'enviada')} style={{ ...miniBtn('#7c3aed'), marginLeft: 5 }}>ENVIAR</button>}
+                        {v.estado === 'enviada' && <button onClick={() => cambiarEstado(v, 'aprobada')} style={{ ...miniBtn('#2563eb'), marginLeft: 5 }}>APROBAR</button>}
+                        {v.estado === 'aprobada' && <button onClick={() => cambiarEstado(v, 'pagada')} style={{ ...miniBtn(BASE.green), marginLeft: 5 }}>PAGAR</button>}
                       </td>
                     </tr>
                   );
@@ -202,153 +157,277 @@ export default function ValorizacionesView({ showToast }) {
               </tbody>
             </table>
           </div>
-        </div>
+        </Card>
       )}
 
-      {/* Modal de creacion */}
+      {/* Vista general por partida (F07 hoja 5.RO) */}
+      {filas.length === 0 ? (
+        <EmptyState icono="💰" titulo="Sin presupuesto para valorizar"
+          descripcion="Carga el presupuesto contractual (módulo Presupuesto) y luego emite valorizaciones por partida." />
+      ) : (
+        <Card titulo="Avance valorizado por partida (vs presupuesto)">
+          <div style={{ overflowX: 'auto' }}>
+            <table style={tabla}>
+              <thead><tr style={trHead}>
+                <th style={th()}>Código</th><th style={th()}>Descripción</th>
+                <th style={th({ textAlign: 'right' })}>Ppto (CD)</th>
+                <th style={th({ textAlign: 'right' })}>Valorizado acum.</th>
+                <th style={th({ textAlign: 'right' })}>Saldo</th>
+                <th style={th({ textAlign: 'right' })}>% avance</th>
+              </tr></thead>
+              <tbody>
+                {filas.map((f, i) => (
+                  <tr key={f.codigo} style={{ background: i % 2 ? BASE.bgSoft : BASE.white, borderBottom: `1px solid ${BASE.border}` }}>
+                    <td style={{ ...td(), fontFamily: 'monospace', fontWeight: 900, color: BASE.navy }}>{f.codigo}</td>
+                    <td style={{ ...td(), fontWeight: 700 }}>{f.descripcion}</td>
+                    <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace' }}>{fmtSoles(f.cd)}</td>
+                    <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace', color: BASE.green, fontWeight: 700 }}>{fmtSoles(f.acum)}</td>
+                    <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace' }}>{fmtSoles(f.saldo)}</td>
+                    <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace', fontWeight: 800, color: f.pct >= 99.5 ? BASE.green : BASE.muted }}>{pctTxt(f.pct)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot><tr style={{ background: BASE.navy, color: '#fff' }}>
+                <td colSpan={2} style={{ padding: '11px 14px', fontWeight: 900, textAlign: 'right' }}>TOTAL COSTO DIRECTO</td>
+                <td style={{ padding: '11px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 900 }}>{fmtSoles(cdContractual)}</td>
+                <td style={{ padding: '11px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 900, color: '#4ade80' }}>{fmtSoles(acumTotal)}</td>
+                <td style={{ padding: '11px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 900 }}>{fmtSoles(round2(cdContractual - acumTotal))}</td>
+                <td style={{ padding: '11px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 900, color: BASE.gold }}>{pctTxt(pctAvanceAcum)}</td>
+              </tr></tfoot>
+            </table>
+          </div>
+        </Card>
+      )}
+
       {creando && (
-        <Modal onClose={() => setCreando(false)}>
-          <h3 style={{ fontSize: '17px', fontWeight: '900', color: BASE.navy, marginBottom: '14px' }}>
-            Nueva Valorizacion V-{proximoNumero}
-          </h3>
-          <p style={{ fontSize: '12.5px', color: BASE.muted, marginBottom: '16px' }}>
-            La plataforma calculara automaticamente avance × precio unitario contractual × reajuste, descontara adelanto y aplicara IGV.
-          </p>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <Field label="Periodo desde">
-              <input type="date" value={periodoDesde} onChange={e => setPeriodoDesde(e.target.value)} style={inpS} />
-            </Field>
-            <Field label="Periodo hasta *">
-              <input type="date" value={periodoHasta} onChange={e => setPeriodoHasta(e.target.value)} style={inpS} />
-            </Field>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <Field label="% Adelanto a amortizar">
-              <input type="number" step="0.01" value={porcAdelanto} onChange={e => setPorcAdelanto(e.target.value)} style={inpS} />
-            </Field>
-            <Field label="Factor reajuste polinomico">
-              <input type="number" step="0.0001" value={factorReajuste} onChange={e => setFactorReajuste(e.target.value)} style={inpS} />
-            </Field>
-          </div>
-
-          <div style={{
-            background: BASE.navySoft, border: `1px solid ${BASE.navyLight}55`,
-            borderLeft: `4px solid ${BASE.navy}`, borderRadius: '10px',
-            padding: '12px 16px', marginBottom: '12px',
-          }}>
-            <p style={{ fontSize: '11px', color: BASE.navyLight, fontWeight: '700', lineHeight: 1.5 }}>
-              💡 Formula: <code>(Avance del periodo × Precio Unitario × Factor Reajuste) − Adelanto + IGV</code>
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '20px' }}>
-            <button onClick={() => setCreando(false)} style={btnCancel}>Cancelar</button>
-            <button onClick={calcularYCrear} disabled={calculando} style={{
-              padding: '11px 22px', borderRadius: '8px',
-              background: `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`,
-              color: '#fff', border: 'none', fontSize: '12px', fontWeight: '900',
-              cursor: calculando ? 'not-allowed' : 'pointer', letterSpacing: '0.4px',
-              opacity: calculando ? 0.5 : 1,
-              boxShadow: `0 4px 12px ${BASE.gold}55`,
-            }}>
-              {calculando ? '⏳ Calculando...' : '🤖 CALCULAR Y CREAR'}
-            </button>
-          </div>
+        <Modal onClose={() => setCreando(false)} maxW="980px">
+          <NuevaValorizacion
+            proyId={proyId} user={user} numero={proximoNumero}
+            filas={filas} acumPorCodigo={acumPorCodigo}
+            ggPct={tP.ggPct} utilidadPct={tP.utilidadPct} igvPct={tP.igvPct}
+            onClose={() => setCreando(false)} showToast={showToast}
+          />
         </Modal>
       )}
 
-      {/* Modal de detalle */}
-      {editando && (
-        <Modal onClose={() => setEditando(null)} maxWidth="800px">
-          <h3 style={{ fontSize: '17px', fontWeight: '900', color: BASE.navy, marginBottom: '14px' }}>
-            Valorizacion V-{editando.numeroValorizacion}
-          </h3>
+      {verVal && (
+        <Modal onClose={() => setVerVal(null)} maxW="900px">
+          <DetalleValorizacion v={verVal} />
+        </Modal>
+      )}
+    </div>
+  );
+}
 
-          {/* Resumen */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px', marginBottom: '14px' }}>
-            <Resumen label="Subtotal bruto" valor={fmtSoles(editando.subtotalBruto)} />
-            <Resumen label="Reajustado" valor={fmtSoles(editando.montoReajustado)} />
-            <Resumen label="Adelanto" valor={`-${fmtSoles(editando.amortizacionAdelanto)}`} color={BASE.red} />
-            <Resumen label="Subtotal neto" valor={fmtSoles(editando.subtotalNeto)} />
-            <Resumen label="IGV" valor={fmtSoles(editando.igv)} />
-            <Resumen label="TOTAL" valor={fmtSoles(editando.total)} color={BASE.gold} bold />
-          </div>
+// ════════════════════════════════════════════════════════════════════
+// NUEVA VALORIZACIÓN — % avance acumulado por partida → período + liquidación
+// ════════════════════════════════════════════════════════════════════
+function NuevaValorizacion({ proyId, user, numero, filas, acumPorCodigo, ggPct, utilidadPct, igvPct, onClose, showToast }) {
+  const [periodoTexto, setPeriodoTexto] = useState(`Valorización N°${numero}`);
+  const [adelanto, setAdelanto] = useState(0);
+  const [fgPct, setFgPct] = useState(5);
+  const [detraccionPct, setDetraccionPct] = useState(4);
+  const [guardando, setGuardando] = useState(false);
+  // pct acumulado nuevo por código (default = % actual)
+  const [pctAcum, setPctAcum] = useState(() => {
+    const o = {};
+    filas.forEach((f) => { o[f.codigo] = Math.round((f.cd > 0 ? (f.acum / f.cd) * 100 : 0) * 10) / 10; });
+    return o;
+  });
 
-          {/* Tabla de partidas */}
-          <p style={lblSec}>PARTIDAS VALORIZADAS ({editando.partidasValorizadas?.length || 0})</p>
-          <div style={{ overflowX: 'auto', marginBottom: '14px' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', minWidth: '700px' }}>
-              <thead>
-                <tr style={{ background: BASE.navy, color: '#fff' }}>
-                  <th style={th()}>Codigo</th>
-                  <th style={th()}>Descripcion</th>
-                  <th style={th({ textAlign: 'center' })}>Und</th>
-                  <th style={th({ textAlign: 'right' })}>Metr. Contr.</th>
-                  <th style={th({ textAlign: 'right' })}>P.U.</th>
-                  <th style={th({ textAlign: 'right' })}>Av. Anterior</th>
-                  <th style={th({ textAlign: 'right' })}>Av. Periodo</th>
-                  <th style={th({ textAlign: 'right' })}>Monto</th>
+  const lineas = useMemo(() => filas.map((f) => {
+    const antCD = acumPorCodigo.get(f.codigo) || 0;
+    const pct = Math.max(0, Math.min(100, Number(pctAcum[f.codigo]) || 0));
+    const acumNuevoCD = round2((pct / 100) * f.cd);
+    const periodoCD = round2(acumNuevoCD - antCD);
+    return { codigo: f.codigo, descripcion: f.descripcion, cd: f.cd, antCD, pct, acumNuevoCD, periodoCD };
+  }), [filas, pctAcum, acumPorCodigo]);
+
+  const cdPeriodo = round2(lineas.reduce((s, l) => s + l.periodoCD, 0));
+  // Cara venta del período: CD × (1 + GG% + Utilidad%)
+  const factorVenta = 1 + (ggPct / 100) + (utilidadPct / 100);
+  const vbBruta = round2(cdPeriodo * factorVenta);
+  const liqNeta = round2(vbBruta - (Number(adelanto) || 0));
+  const igv = round2(liqNeta * (igvPct / 100));
+  const subtotalAPagar = round2(liqNeta + igv);
+  const fg = round2(subtotalAPagar * ((Number(fgPct) || 0) / 100));
+  const detraccion = round2(subtotalAPagar * ((Number(detraccionPct) || 0) / 100));
+  const totalAPagar = round2(subtotalAPagar - fg - detraccion);
+
+  const guardar = async () => {
+    if (cdPeriodo === 0) { showToast?.('No hay avance del período (todas las partidas iguales al acumulado)', 'error'); return; }
+    setGuardando(true);
+    try {
+      const data = {
+        proyectoId: proyId,
+        numeroValorizacion: numero,
+        periodoTexto: periodoTexto.trim() || `Valorización N°${numero}`,
+        estado: 'borrador',
+        partidasValorizadas: lineas
+          .filter((l) => Math.abs(l.periodoCD) > 0.005)
+          .map((l) => ({ codigo: l.codigo, descripcion: l.descripcion, montoBruto: l.periodoCD, pctAcum: l.pct, acumuladoCD: l.acumNuevoCD })),
+        cdPeriodo, ggPct, utilidadPct, igvPct,
+        vbBruta, amortizacionAdelanto: Number(adelanto) || 0,
+        liqNeta, igv, subtotalAPagar,
+        fgPct: Number(fgPct) || 0, fg, detraccionPct: Number(detraccionPct) || 0, detraccion,
+        totalAFacturar: subtotalAPagar, totalAPagar,
+        creadoEn: serverTimestamp(), creadoPor: user?.email || 'desconocido',
+      };
+      await addDoc(collection(db, 'ValorizacionesContractuales'), data);
+      showToast?.(`✅ Valorización V-${numero} creada (${fmtSoles(cdPeriodo)} CD)`, 'success');
+      onClose?.();
+    } catch (e) { showToast?.('Error: ' + e.message, 'error'); }
+    finally { setGuardando(false); }
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div>
+        <h3 style={{ fontSize: 17, fontWeight: 900, color: BASE.navy }}>Nueva valorización · V-{numero}</h3>
+        <p style={{ fontSize: 11.5, color: BASE.muted, marginTop: 2 }}>Ajusta el <b>% de avance acumulado</b> por partida. El período se calcula contra lo ya valorizado y alimenta el EV del RO.</p>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8 }}>
+        <Campo label="Período"><input value={periodoTexto} onChange={(e) => setPeriodoTexto(e.target.value)} style={inpS} /></Campo>
+        <Campo label="Amort. Adelanto (S/)"><input type="number" step="0.01" value={adelanto} onChange={(e) => setAdelanto(e.target.value)} style={inpS} /></Campo>
+        <Campo label="Retención FG (%)"><input type="number" step="0.1" value={fgPct} onChange={(e) => setFgPct(e.target.value)} style={inpS} /></Campo>
+        <Campo label="Detracción (%)"><input type="number" step="0.1" value={detraccionPct} onChange={(e) => setDetraccionPct(e.target.value)} style={inpS} /></Campo>
+      </div>
+
+      {/* Tabla por partida */}
+      <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ overflowX: 'auto', maxHeight: '40vh', overflowY: 'auto' }}>
+          <table style={tabla}>
+            <thead style={{ position: 'sticky', top: 0 }}><tr style={trHead}>
+              <th style={th()}>Código</th><th style={th()}>Descripción</th>
+              <th style={th({ textAlign: 'right' })}>Ppto CD</th>
+              <th style={th({ textAlign: 'right' })}>% acum. ant.</th>
+              <th style={th({ textAlign: 'center' })}>% acum. nuevo</th>
+              <th style={th({ textAlign: 'right' })}>Período (CD)</th>
+            </tr></thead>
+            <tbody>
+              {lineas.map((l, i) => (
+                <tr key={l.codigo} style={{ background: i % 2 ? BASE.bgSoft : BASE.white, borderBottom: `1px solid ${BASE.border}` }}>
+                  <td style={{ ...td(), fontFamily: 'monospace', fontWeight: 900, color: BASE.navy }}>{l.codigo}</td>
+                  <td style={{ ...td(), fontSize: 11 }}>{l.descripcion}</td>
+                  <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace' }}>{fmtSoles(l.cd)}</td>
+                  <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace', color: BASE.muted }}>{pctTxt(l.cd > 0 ? (l.antCD / l.cd) * 100 : 0)}</td>
+                  <td style={{ ...td(), textAlign: 'center' }}>
+                    <input type="number" step="0.1" min="0" max="100" value={pctAcum[l.codigo]}
+                      onChange={(e) => setPctAcum((s) => ({ ...s, [l.codigo]: e.target.value }))}
+                      style={{ width: 64, padding: '5px 7px', borderRadius: 6, border: `1.5px solid ${BASE.border}`, fontSize: 11.5, fontWeight: 700, textAlign: 'right', fontFamily: 'monospace' }} />
+                  </td>
+                  <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace', fontWeight: 800, color: l.periodoCD < 0 ? BASE.red : BASE.navy }}>{fmtSoles(l.periodoCD)}</td>
                 </tr>
-              </thead>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Liquidación */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8 }}>
+        <Kpi label="Valorizado período (CD)" valor={fmtSoles(cdPeriodo)} color={BASE.navy} chico />
+        <Kpi label={`Val. Bruta (CD+GG+Util)`} valor={fmtSoles(vbBruta)} color="#7c3aed" chico />
+        <Kpi label={`+ IGV ${pctTxt(igvPct)}`} valor={fmtSoles(igv)} color="#0ea5e9" chico />
+        <Kpi label="A facturar" valor={fmtSoles(subtotalAPagar)} color={BASE.green} chico />
+        <Kpi label={`− FG ${pctTxt(fgPct)} − Detr ${pctTxt(detraccionPct)}`} valor={`-${fmtSoles(fg + detraccion)}`} color={BASE.red} chico />
+        <Kpi label="TOTAL A PAGAR" valor={fmtSoles(totalAPagar)} color={BASE.gold} chico />
+      </div>
+
+      <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+        <button onClick={onClose} style={btnSec}>Cancelar</button>
+        <button onClick={guardar} disabled={guardando} style={{ ...btn(BASE.gold, BASE.goldDark), opacity: guardando ? 0.5 : 1 }}>
+          {guardando ? '⏳ Guardando…' : `💾 EMITIR V-${numero}`}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════
+// DETALLE de una valorización emitida
+// ════════════════════════════════════════════════════════════════════
+function DetalleValorizacion({ v }) {
+  const liq = [
+    ['Valorización Bruta (CD+GG+Utilidad)', v.vbBruta, false],
+    ['(−) Amortización de Adelanto', -(v.amortizacionAdelanto || 0), false],
+    ['Liquidación Neta', v.liqNeta, true],
+    [`(+) IGV ${pctTxt(v.igvPct)}`, v.igv, false],
+    ['Subtotal a facturar', v.totalAFacturar, 'meta'],
+    [`(−) Retención FG ${pctTxt(v.fgPct)}`, -(v.fg || 0), false],
+    [`(−) Detracción ${pctTxt(v.detraccionPct)}`, -(v.detraccion || 0), false],
+    ['TOTAL A PAGAR', v.totalAPagar, 'total'],
+  ];
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <h3 style={{ fontSize: 17, fontWeight: 900, color: BASE.navy }}>Valorización V-{v.numeroValorizacion} · {v.periodoTexto}</h3>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 1.1fr) minmax(240px, 0.9fr)', gap: 12 }}>
+        <Card titulo={`Partidas valorizadas (${v.partidasValorizadas?.length || 0})`}>
+          <div style={{ overflowX: 'auto', maxHeight: '50vh', overflowY: 'auto' }}>
+            <table style={tabla}>
+              <thead style={{ position: 'sticky', top: 0 }}><tr style={trHead}><th style={th()}>Cód.</th><th style={th()}>Descripción</th><th style={th({ textAlign: 'right' })}>Período (CD)</th><th style={th({ textAlign: 'right' })}>% acum.</th></tr></thead>
               <tbody>
-                {editando.partidasValorizadas?.map((p, i) => (
-                  <tr key={i} style={{ background: i % 2 === 0 ? BASE.white : BASE.bgSoft, borderBottom: `1px solid ${BASE.border}` }}>
-                    <td style={{ ...td(), fontFamily: 'monospace', fontSize: '10.5px', fontWeight: '900', color: BASE.navy }}>{p.codigo}</td>
-                    <td style={{ ...td(), fontSize: '11px' }}>{p.descripcion}</td>
-                    <td style={{ ...td(), textAlign: 'center', fontFamily: 'monospace' }}>{p.unidad}</td>
-                    <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace' }}>{fmtNumero(p.metradoContractual, 2)}</td>
-                    <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace' }}>{fmtSoles(p.precioUnitario)}</td>
-                    <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace', color: BASE.muted }}>{fmtNumero(p.avanceAcumAnterior, 2)}</td>
-                    <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace', fontWeight: '700' }}>{fmtNumero(p.avancePeriodo, 2)}</td>
-                    <td style={{ ...td(), textAlign: 'right', fontWeight: '900', color: BASE.navy }}>{fmtSoles(p.montoBruto)}</td>
+                {(v.partidasValorizadas || []).map((p, i) => (
+                  <tr key={i} style={{ background: i % 2 ? BASE.bgSoft : BASE.white, borderBottom: `1px solid ${BASE.border}` }}>
+                    <td style={{ ...td(), fontFamily: 'monospace', fontWeight: 900, color: BASE.navy }}>{p.codigo}</td>
+                    <td style={{ ...td(), fontSize: 11 }}>{p.descripcion}</td>
+                    <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace', fontWeight: 700 }}>{fmtSoles(p.montoBruto)}</td>
+                    <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace', color: BASE.muted }}>{pctTxt(p.pctAcum)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-
-          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-            <button onClick={() => setEditando(null)} style={btnCancel}>Cerrar</button>
-          </div>
-        </Modal>
-      )}
+        </Card>
+        <Card titulo="Liquidación">
+          <table style={tabla}><tbody>
+            {liq.map(([etq, val, tipo]) => (
+              <tr key={etq} style={{ borderBottom: `1px solid ${BASE.border}`, background: tipo === 'total' ? BASE.goldSoft : tipo === 'meta' ? BASE.navySoft : 'transparent' }}>
+                <td style={{ ...td(), fontWeight: tipo ? 900 : 700, color: tipo === 'total' ? BASE.goldDark : BASE.text }}>{etq}</td>
+                <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace', fontWeight: 900, fontSize: tipo === 'total' ? 14 : 12.5, color: tipo === 'total' ? BASE.goldDark : (val < 0 ? BASE.red : BASE.text) }}>{fmtSoles(val)}</td>
+              </tr>
+            ))}
+          </tbody></table>
+        </Card>
+      </div>
     </div>
   );
 }
 
-function Field({ label, children }) {
+// ── UI helpers ────────────────────────────────────────────────────────
+function Kpi({ label, valor, color, chico }) {
   return (
-    <div style={{ marginBottom: '12px' }}>
-      <label style={lblS}>{label.toUpperCase()}</label>
+    <div style={{ background: color + '12', border: `1px solid ${color}33`, borderLeft: `4px solid ${color}`, borderRadius: 10, padding: '9px 12px' }}>
+      <p style={{ fontSize: 9, fontWeight: 900, color: BASE.muted, letterSpacing: 0.4 }}>{label.toUpperCase()}</p>
+      <p style={{ fontSize: chico ? 14 : 16, fontWeight: 900, color, marginTop: 2, fontFamily: 'monospace' }}>{valor}</p>
+    </div>
+  );
+}
+function Card({ titulo, children }) {
+  return (
+    <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 12, overflow: 'hidden' }}>
+      <div style={{ padding: '9px 14px', background: BASE.bgSoft, borderBottom: `1px solid ${BASE.border}` }}>
+        <p style={{ fontSize: 11, fontWeight: 900, color: BASE.navy, letterSpacing: 0.3 }}>{titulo}</p>
+      </div>
+      <div style={{ padding: '4px 6px' }}>{children}</div>
+    </div>
+  );
+}
+function Campo({ label, children }) {
+  return (
+    <div>
+      <label style={{ fontSize: 9.5, fontWeight: 900, color: BASE.muted, letterSpacing: 0.6, display: 'block', marginBottom: 4 }}>{label.toUpperCase()}</label>
       {children}
     </div>
   );
 }
 
-function Resumen({ label, valor, color, bold }) {
-  return (
-    <div style={{
-      background: BASE.bgSoft, padding: '10px 12px', borderRadius: '8px',
-      border: `1px solid ${BASE.border}`, ...(bold ? { borderLeft: `4px solid ${color || BASE.gold}` } : {}),
-    }}>
-      <p style={{ fontSize: '9px', fontWeight: '900', color: BASE.muted, letterSpacing: '0.5px' }}>{label.toUpperCase()}</p>
-      <p style={{
-        fontSize: bold ? '15px' : '13px', fontWeight: '900',
-        color: color || BASE.navy, marginTop: '3px', fontFamily: 'monospace',
-      }}>{valor}</p>
-    </div>
-  );
-}
-
-const lblS = { fontSize: '9.5px', fontWeight: '900', color: BASE.muted, letterSpacing: '0.6px', display: 'block', marginBottom: '4px' };
-const lblSec = { fontSize: '11px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.6px', marginBottom: '8px' };
-const inpS = { width: '100%', padding: '9px 12px', borderRadius: '8px', border: `1.5px solid ${BASE.border}`, fontSize: '12.5px', fontWeight: '600', background: '#fff' };
-const btnCancel = { padding: '11px 22px', borderRadius: '8px', background: BASE.bgSoft, color: BASE.muted, border: 'none', fontSize: '12px', fontWeight: '800', cursor: 'pointer' };
-const btnAct = (color) => ({
-  padding: '4px 10px', borderRadius: '6px', background: color, color: '#fff',
-  border: 'none', fontSize: '9.5px', fontWeight: '900', cursor: 'pointer', letterSpacing: '0.4px',
-});
-const th = (extra = {}) => ({ padding: '11px 14px', textAlign: 'left', fontSize: '10.5px', fontWeight: '900', letterSpacing: '0.4px', whiteSpace: 'nowrap', ...extra });
-const td = (extra = {}) => ({ padding: '10px 14px', fontSize: '12px', color: BASE.text, verticalAlign: 'top', ...extra });
+const tabla = { width: '100%', borderCollapse: 'collapse', fontSize: 12.5, minWidth: 420 };
+const trHead = { background: BASE.navy, color: '#fff' };
+const th = (extra = {}) => ({ padding: '9px 12px', textAlign: 'left', fontSize: 10, fontWeight: 900, letterSpacing: 0.3, whiteSpace: 'nowrap', ...extra });
+const td = (extra = {}) => ({ padding: '8px 12px', fontSize: 12, color: BASE.text, verticalAlign: 'top', ...extra });
+const inpS = { width: '100%', padding: '9px 12px', borderRadius: 8, border: `1.5px solid ${BASE.border}`, fontSize: 12.5, fontWeight: 600, background: '#fff', boxSizing: 'border-box' };
+const btn = (c1, c2) => ({ padding: '10px 18px', borderRadius: 8, background: `linear-gradient(135deg, ${c1}, ${c2})`, color: '#fff', border: 'none', fontSize: 12, fontWeight: 900, cursor: 'pointer', letterSpacing: 0.4, boxShadow: `0 4px 12px ${c1}44` });
+const btnSec = { padding: '10px 20px', borderRadius: 8, background: BASE.bgSoft, color: BASE.muted, border: `1.5px solid ${BASE.border}`, fontSize: 12, fontWeight: 900, cursor: 'pointer' };
+const miniBtn = (c) => ({ padding: '5px 10px', borderRadius: 6, background: c, color: '#fff', border: 'none', fontSize: 10, fontWeight: 900, cursor: 'pointer', letterSpacing: 0.3 });
