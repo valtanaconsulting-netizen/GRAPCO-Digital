@@ -26,9 +26,9 @@
 
 /* Blobs de color que se mueven */
 .grapco-blob {
-  position: absolute; border-radius: 50%; filter: blur(70px);
+  position: absolute; border-radius: 50%; filter: blur(48px);
   mix-blend-mode: screen; pointer-events: none; z-index: 1;
-  will-change: transform;
+  will-change: transform; contain: layout style paint;
 }
 .grapco-blob-1 {
   width: 480px; height: 480px;
@@ -157,7 +157,7 @@
   .grapco-fi { font-size: 28px !important; }
   .grapco-fi-1 { font-size: 40px !important; }
   .grapco-fi-4, .grapco-fi-6 { font-size: 36px !important; }
-  .grapco-blob { filter: blur(50px); }
+  .grapco-blob { filter: blur(34px); }
   .grapco-blob-1, .grapco-blob-2, .grapco-blob-3, .grapco-blob-4 {
     width: 280px !important; height: 280px !important;
   }
