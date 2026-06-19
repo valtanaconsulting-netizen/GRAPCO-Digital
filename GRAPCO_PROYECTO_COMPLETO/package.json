@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource/ibm-plex-mono": "^5.2.7",
+    "@fontsource/ibm-plex-sans": "^5.2.8",
     "@react-pdf/renderer": "^4.5.1",
     "exceljs": "^4.4.0",
     "face-api.js": "^0.22.2",
