@@ -27,8 +27,7 @@ const optKiosk = { color: '#0F2A47', background: '#ffffff', fontWeight: 700 };
 const PINS_OBRA = {
   '1234': 'capataz',
   '5050': 'calidad',
-  '7777': 'ingeniero',
-  '9999': 'admin',
+  // ingeniero/admin NO entran por PIN: solo por login Firebase con su rol asignado.
 };
 
 const PERFILES = [

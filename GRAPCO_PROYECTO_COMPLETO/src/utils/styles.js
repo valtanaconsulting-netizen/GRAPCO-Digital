@@ -16,8 +16,6 @@ export const LOGO_FALLBACK = "/brand/grapco-128.png";
 // plataforma. Se muestra como co-marca en la cabecera del hub (proveedor del servicio).
 export const LOGO_VALTANA  = "/brand/valtana-logo.png";
 
-export const PASSWORD_INGENIERIA = "GRAPCO2025";
-
 export const LETRAS  = ['A','B','C','D','E','F'];
 export const CARGOS  = ['Capataz','Operario','Oficial','Ayudante'];
 // Staff técnico — solo para el registro de personal y filtros; NO entra en

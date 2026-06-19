@@ -124,11 +124,11 @@ export function AuthProvider({ children }) {
       const ref = doc(db, 'Usuarios', uid);
       const snap = await getDoc(ref);
       if (!snap.exists()) {
-        console.log('[Auth] Usuario sin perfil, auto-creando como ingeniero:', uid);
+        console.log('[Auth] Usuario sin perfil, auto-creando con rol MÍNIMO (capataz):', uid);
         const nuevoPerfil = {
           email: firebaseUser.email || '',
           nombre: firebaseUser.displayName || (firebaseUser.email || '').split('@')[0] || 'Usuario',
-          rol: 'ingeniero',
+          rol: 'capataz',   // rol mínimo: un admin promueve después (evita escalada por self-register)
           activo: true,
           creadoEn: serverTimestamp(),
           ultimoLogin: serverTimestamp(),
@@ -136,12 +136,12 @@ export function AuthProvider({ children }) {
         };
         try {
           await setDoc(ref, nuevoPerfil);
-          await auditar(uid, 'perfil_auto_creado', { email: firebaseUser.email, rol: 'ingeniero' });
+          await auditar(uid, 'perfil_auto_creado', { email: firebaseUser.email, rol: 'capataz' });
         } catch (createErr) {
           // Si las rules bloquean la auto-creacion, igual dejamos pasar al usuario en memoria.
           console.warn('[Auth] No se pudo persistir perfil auto-creado:', createErr.message);
         }
-        return { rol: 'ingeniero', activo: true, nombre: nuevoPerfil.nombre };
+        return { rol: 'capataz', activo: true, nombre: nuevoPerfil.nombre };
       }
       const data = snap.data();
       return {
@@ -151,8 +151,8 @@ export function AuthProvider({ children }) {
       };
     } catch (err) {
       console.error('[Auth] Error al cargar perfil:', err);
-      // Fallback: dejar entrar como ingeniero solo en memoria (las rules de lectura ya son if isAuth())
-      return { rol: 'ingeniero', activo: true };
+      // Fallback ante error de lectura: rol MÍNIMO (capataz), nunca ingeniero (evita escalada por error).
+      return { rol: 'capataz', activo: true };
     }
   };
 

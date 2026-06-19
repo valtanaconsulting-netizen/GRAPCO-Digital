@@ -15,9 +15,11 @@ import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { BASE } from '../utils/styles';
 
-// ── BYPASS DE PERMISOS (acceso total para desarrollo) ──
-// Para reactivar el control por roles, poner BYPASS_ROLES = false.
-const BYPASS_ROLES = true;
+// ── BYPASS DE PERMISOS ──
+// Por defecto bypass (acceso total) para no bloquear hasta tener TODOS los roles
+// asignados. Para ENDURECER (enforce real por rol) poner VITE_ENFORCE_ROLES=true en
+// .env. La defensa de fondo son las Firestore Rules, no este guard de UI.
+const BYPASS_ROLES = String(import.meta.env.VITE_ENFORCE_ROLES).toLowerCase() !== 'true';
 
 export default function RoleGuard({ roles, rolesPermitidos, children, fallback = null, silencioso = false }) {
   const { rol, loading } = useAuth();
