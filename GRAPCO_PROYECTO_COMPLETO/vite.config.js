@@ -44,19 +44,26 @@ export default defineConfig({
           // Tareo F13 con estilos (lazy import), NO en el arranque.
           if (id.includes('exceljs') || id.includes('/archiver') || id.includes('unzipper')
             || id.includes('fast-csv') || id.includes('saxes') || id.includes('/jszip')) return 'vendor-exceljs';
-          // html2pdf + html2canvas + jspdf (~0.5 MB) → chunk AISLADO. Solo al
-          // generar/ver el Tareo en PDF (lazy), NO en el arranque.
-          if (id.includes('html2pdf') || id.includes('html2canvas') || id.includes('jspdf')) return 'vendor-html2pdf';
+          // html2pdf + html2canvas + jspdf (~0.5 MB): NO los forzamos a un chunk
+          // nombrado. Hacerlo creaba una arista ESTATICA entry→vendor-html2pdf y se
+          // descargaban en el arranque (~150 KB gz) pese a ser 100% lazy. Devolviendo
+          // undefined, Rolldown los aisla solo como chunk DINAMICO (await import desde
+          // TareoPDFHtml). Verificar tras build: 0 imports de ese chunk en index-*.js.
+          if (id.includes('html2pdf') || id.includes('html2canvas') || id.includes('jspdf')) return;
           // TensorFlow + face-api → mismo chunk AISLADO (~0.6 MB). Solo se descarga al
           // abrir asistencia/reconocimiento facial (lazy), NO en el arranque.
           if (id.includes('face-api.js') || id.includes('@tensorflow') || id.includes('tfjs') || id.includes('seedrandom')) return 'vendor-faceapi';
-          // @react-pdf/renderer + motor PDF (pdfkit/fontkit/yoga ~1.5 MB) → chunk
-          // AISLADO. Solo se descarga al generar PDFs de protocolos (lazy), NO al inicio.
+          // @react-pdf/renderer + motor PDF (pdfkit/fontkit/yoga ~1.5 MB): NO los
+          // forzamos a un chunk nombrado. Hacerlo creaba una arista ESTATICA
+          // entry→vendor-pdf y se descargaban ~418 KB gz en el arranque pese a ser
+          // 100% lazy (solo se alcanzan via await import desde ProtocoloPreVaciadoPDF).
+          // Con undefined, Rolldown los aisla como chunk DINAMICO. Verificar: 0 imports
+          // de ese chunk en index-*.js tras el build.
           if (id.includes('@react-pdf') || id.includes('yoga-layout') || id.includes('fontkit')
             || id.includes('pdfkit') || id.includes('restructure') || id.includes('bidi-js')
             || id.includes('png-js') || id.includes('linebreak') || id.includes('unicode-properties')
             || id.includes('unicode-trie') || id.includes('tiny-inflate') || id.includes('/brotli')
-            || id.includes('/dfa/')) return 'vendor-pdf';
+            || id.includes('/dfa/')) return;
           return 'vendor';
         },
       },
