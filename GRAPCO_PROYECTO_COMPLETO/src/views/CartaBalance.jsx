@@ -16,6 +16,7 @@ import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
+import { SIN_ANIM } from '../utils/chartKit';
 
 export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMobile, showToast }) {
   const { proyectoActivoId } = useProyectoActivo();
@@ -659,7 +660,7 @@ export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMob
             <h3 style={{fontSize:'13px',fontWeight:'700',color:BASE.navy,marginBottom:'14px'}}>RESULTADOS GENERALES</h3>
             <ResponsiveContainer width="100%" height={260}>
               <PieChart>
-                <Pie data={[
+                <Pie {...SIN_ANIM} data={[
                   {name:`TP — ${cbTotals.pctTP}%`,value:cbTotals.pctTP||0.1},
                   {name:`TC — ${cbTotals.pctTC}%`,value:cbTotals.pctTC||0.1},
                   {name:`TNC — ${cbTotals.pctTNC}%`,value:cbTotals.pctTNC||0.1},
@@ -691,9 +692,9 @@ export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMob
                 <YAxis tick={{fontSize:11,fill:BASE.muted}} domain={[0,100]} unit="%"/>
                 <Tooltip formatter={v => `${v}%`}/>
                 <Legend wrapperStyle={{fontSize:'12px'}}/>
-                <Bar dataKey="TP" fill={CB_COL.TP} stackId="s"/>
-                <Bar dataKey="TC" fill={CB_COL.TC} stackId="s"/>
-                <Bar dataKey="TNC" fill={CB_COL.TNC} stackId="s" radius={[4,4,0,0]}/>
+                <Bar {...SIN_ANIM} dataKey="TP" fill={CB_COL.TP} stackId="s"/>
+                <Bar {...SIN_ANIM} dataKey="TC" fill={CB_COL.TC} stackId="s"/>
+                <Bar {...SIN_ANIM} dataKey="TNC" fill={CB_COL.TNC} stackId="s" radius={[4,4,0,0]}/>
               </BarChart>
             </ResponsiveContainer>
           </div>

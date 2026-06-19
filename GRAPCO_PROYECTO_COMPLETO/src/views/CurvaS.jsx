@@ -5,7 +5,7 @@ import {
   Tooltip, Legend, ResponsiveContainer, ReferenceLine,
 } from 'recharts';
 import { BASE } from '../utils/styles';
-import { EJE, GRILLA, TOOLTIP_STYLE, LEYENDA, degradado } from '../utils/chartKit';
+import { EJE, GRILLA, TOOLTIP_STYLE, LEYENDA, degradado, SIN_ANIM } from '../utils/chartKit';
 import { calcularEVM, fmt1, fmtCPIPct, getEstado } from '../utils/helpers';
 
 const Tip = ({ active, payload, label }) => {
@@ -182,19 +182,19 @@ export default function CurvaS({ historialEnriquecido }) {
             <Tooltip {...TOOLTIP_STYLE} content={<Tip />} />
             <Legend {...LEYENDA} iconType="line" />
             {/* PV - Plan (línea punteada) */}
-            <Line
+            <Line {...SIN_ANIM}
               type="monotone" dataKey="pv" name="PV · Planeado"
               stroke={BASE.muted} strokeWidth={2.5} strokeDasharray="6 4"
               dot={false} activeDot={{ r: 5 }}
             />
             {/* EV - Earned Value (área verde) */}
-            <Area
+            <Area {...SIN_ANIM}
               type="monotone" dataKey="ev" name="EV · Ganado"
               stroke={BASE.green} fill="url(#grad_ev_curvas)" strokeWidth={2.5}
               dot={{ r: 3, fill: BASE.green, strokeWidth: 0 }} activeDot={{ r: 5 }}
             />
             {/* AC - Actual Cost (línea navy) */}
-            <Line
+            <Line {...SIN_ANIM}
               type="monotone" dataKey="ac" name="AC · Real"
               stroke={BASE.navy} strokeWidth={2.5}
               dot={{ r: 3, fill: BASE.navy, strokeWidth: 0 }} activeDot={{ r: 5 }}

@@ -30,6 +30,7 @@ import {
   ResponsiveContainer, ComposedChart, Line, XAxis, YAxis,
   CartesianGrid, Tooltip as RTooltip, Legend, ReferenceLine, ReferenceDot,
 } from 'recharts';
+import { SIN_ANIM } from '../../utils/chartKit';
 
 const MONO = 'var(--grapco-font-mono, ui-monospace, monospace)';
 const ROJO = '#DC2626';
@@ -875,8 +876,8 @@ export default function CronogramaPro() {
                       <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: BASE.muted }} unit="%" />
                       <RTooltip formatter={(v) => `${v}%`} contentStyle={{ fontSize: '11px', borderRadius: '8px', border: `1px solid ${BASE.border}` }} />
                       <Legend wrapperStyle={{ fontSize: '11px' }} />
-                      {baseline && <Line type="monotone" dataKey="Línea base" stroke={BASE.mutedSoft} strokeDasharray="6 4" strokeWidth={2} dot={false} />}
-                      <Line type="monotone" dataKey="Programado" stroke={BASE.navy} strokeWidth={2.5} dot={false} />
+                      {baseline && <Line {...SIN_ANIM} type="monotone" dataKey="Línea base" stroke={BASE.mutedSoft} strokeDasharray="6 4" strokeWidth={2} dot={false} />}
+                      <Line {...SIN_ANIM} type="monotone" dataKey="Programado" stroke={BASE.navy} strokeWidth={2.5} dot={false} />
                       <ReferenceLine x={`S${curvaS.semHoy}`} stroke={ROJO} strokeDasharray="4 3" label={{ value: 'HOY', fontSize: 9, fill: ROJO, position: 'top' }} />
                       <ReferenceDot x={`S${curvaS.semHoy}`} y={curvaS.avanceReal} r={5} fill={BASE.gold} stroke={BASE.navy} strokeWidth={2}
                         label={{ value: `Real ${curvaS.avanceReal}%`, fontSize: 10, fill: BASE.goldDark, position: 'right', fontWeight: 700 }} />

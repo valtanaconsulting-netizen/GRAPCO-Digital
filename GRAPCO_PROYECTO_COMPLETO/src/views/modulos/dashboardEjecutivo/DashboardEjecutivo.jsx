@@ -22,7 +22,7 @@ import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts';
 import { BASE, CHART_PALETTE } from '../../../utils/styles';
-import { EJE, GRILLA, TOOLTIP_STYLE, LEYENDA } from '../../../utils/chartKit';
+import { EJE, GRILLA, TOOLTIP_STYLE, LEYENDA, SIN_ANIM } from '../../../utils/chartKit';
 import { fmtCPIPct, fmt1, getEstado, COSTO_HORA_PROMEDIO } from '../../../utils/helpers';
 import Icon from '../../../components/Icon';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
@@ -420,9 +420,9 @@ export default function DashboardEjecutivo({ showToast, isMobile }) {
               <YAxis {...EJE} domain={[0, 'auto']} />
               <Tooltip {...TOOLTIP_STYLE} />
               <Legend {...LEYENDA} />
-              <Line type="monotone" dataKey="CPI" stroke={BASE.navy} strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} connectNulls />
-              <Line type="monotone" dataKey="Avance %" stroke={BASE.gold} strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} connectNulls />
-              <Line type="monotone" dataKey="PPC" stroke={CHART_PALETTE[3]} strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} connectNulls />
+              <Line {...SIN_ANIM} type="monotone" dataKey="CPI" stroke={BASE.navy} strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} connectNulls />
+              <Line {...SIN_ANIM} type="monotone" dataKey="Avance %" stroke={BASE.gold} strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} connectNulls />
+              <Line {...SIN_ANIM} type="monotone" dataKey="PPC" stroke={CHART_PALETTE[3]} strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} connectNulls />
             </LineChart>
           </ResponsiveContainer>
         )}

@@ -8,7 +8,7 @@ import {
   ReferenceLine, ReferenceArea, AreaChart, Area, ComposedChart, Cell,
 } from 'recharts';
 import { BASE } from '../utils/styles';
-import { EJE, GRILLA, BARRA, degradado } from '../utils/chartKit';
+import { EJE, GRILLA, BARRA, degradado, SIN_ANIM } from '../utils/chartKit';
 import VistaHeader from '../components/VistaHeader';
 
 // === Builder de grafData a partir de registros — corre on-the-fly por filtro ===
@@ -512,7 +512,7 @@ export default function Graficos({ grafData: grafDataOriginal, filtrados = [], w
                 <ReferenceLine y={1} stroke="#16a34a" strokeDasharray="4 2" strokeWidth={1.5}/>
                 <ReferenceLine y={0.85} stroke="#d97706" strokeDasharray="4 2" strokeWidth={1.5}/>
               </>}
-              <Line type="monotone"
+              <Line {...SIN_ANIM} type="monotone"
                 dataKey={fActividad ? 'IP Real' : 'CPI'}
                 stroke={fActividad ? PAL.real.stroke : PAL.cpi.stroke}
                 strokeWidth={2.5}
@@ -560,12 +560,12 @@ export default function Graficos({ grafData: grafDataOriginal, filtrados = [], w
               <ReferenceArea y1={0} y2={0.85} fill={PAL.critico.fill} fillOpacity={PAL.critico.alpha} ifOverflow="hidden"/>
               <ReferenceLine y={1} stroke="#16a34a" strokeDasharray="4 2" strokeWidth={1.5}/>
               <ReferenceLine y={0.85} stroke="#d97706" strokeDasharray="4 2" strokeWidth={1.5}/>
-              <Line type="monotone" dataKey="CPI Acum" stroke={PAL.real.stroke} strokeWidth={3}
+              <Line {...SIN_ANIM} type="monotone" dataKey="CPI Acum" stroke={PAL.real.stroke} strokeWidth={3}
                 hide={hidCpi.has('CPI Acum')}
                 dot={{r:4,fill:PAL.real.stroke,strokeWidth:2,stroke:'#fff'}}
                 activeDot={{r:7,strokeWidth:2,stroke:'#fff'}}
                 animationDuration={500}/>
-              <Line type="monotone" dataKey="CPI Ppto" stroke={PAL.ppt.stroke} strokeWidth={2}
+              <Line {...SIN_ANIM} type="monotone" dataKey="CPI Ppto" stroke={PAL.ppt.stroke} strokeWidth={2}
                 hide={hidCpi.has('CPI Ppto')}
                 dot={{r:3,fill:PAL.ppt.stroke,strokeWidth:2,stroke:'#fff'}}
                 strokeDasharray="5 3" animationDuration={500}/>
@@ -600,9 +600,9 @@ export default function Graficos({ grafData: grafDataOriginal, filtrados = [], w
               <YAxis {...EJE} tickMargin={6} tickFormatter={fmtK}/>
               <Tooltip content={<Tip/>} cursor={{stroke:'#cbd5e1',strokeWidth:1,strokeDasharray:'3 3'}}/>
               <Legend content={renderLegend(hidCurva, setHidCurva)} verticalAlign="bottom"/>
-              <Area type="monotone" dataKey="HH Meta Acum" stroke={PAL.meta.stroke} fill="url(#grad_curvaMeta)"
+              <Area {...SIN_ANIM} type="monotone" dataKey="HH Meta Acum" stroke={PAL.meta.stroke} fill="url(#grad_curvaMeta)"
                 strokeWidth={2.5} strokeDasharray="5 3" hide={hidCurva.has('HH Meta Acum')} animationDuration={500}/>
-              <Area type="monotone" dataKey="HH Real Acum" stroke={PAL.real.stroke} fill="url(#grad_curvaReal)"
+              <Area {...SIN_ANIM} type="monotone" dataKey="HH Real Acum" stroke={PAL.real.stroke} fill="url(#grad_curvaReal)"
                 strokeWidth={2.5} hide={hidCurva.has('HH Real Acum')} animationDuration={500}/>
             </AreaChart>
           </ResponsiveContainer>
@@ -639,11 +639,11 @@ export default function Graficos({ grafData: grafDataOriginal, filtrados = [], w
                     <YAxis {...EJE} tickMargin={6} tickFormatter={fmtK}/>
                     <Tooltip content={<Tip/>} cursor={{fill:'#0f1f3a08'}}/>
                     <Legend content={renderLegend(hidPart, setHidPart)} verticalAlign="top"/>
-                    <Bar {...BARRA} dataKey="HH Meta" fill={PAL.meta.fill}
+                    <Bar {...SIN_ANIM} {...BARRA} dataKey="HH Meta" fill={PAL.meta.fill}
                       hide={hidPart.has('HH Meta')} animationDuration={500}/>
-                    <Bar {...BARRA} dataKey="HH Real" fill={PAL.real.fill}
+                    <Bar {...SIN_ANIM} {...BARRA} dataKey="HH Real" fill={PAL.real.fill}
                       hide={hidPart.has('HH Real')} animationDuration={500}/>
-                    <Bar {...BARRA} dataKey="HH Ppto" fill={PAL.ppt.fill}
+                    <Bar {...SIN_ANIM} {...BARRA} dataKey="HH Ppto" fill={PAL.ppt.fill}
                       hide={hidPart.has('HH Ppto')} animationDuration={500}/>
                   </BarChart>
                 </ResponsiveContainer>
@@ -681,11 +681,11 @@ export default function Graficos({ grafData: grafDataOriginal, filtrados = [], w
               <Tooltip content={<Tip/>} cursor={{fill:'#0f1f3a08'}}/>
               <Legend content={renderLegend(hidComp, setHidComp)} verticalAlign="top"/>
               <ReferenceLine yAxisId="right" y={1} stroke={PAL.meta.stroke} strokeDasharray="4 2" strokeWidth={1.5}/>
-              <Bar {...BARRA} yAxisId="left" dataKey="HH Real" fill={PAL.real.fill}
+              <Bar {...SIN_ANIM} {...BARRA} yAxisId="left" dataKey="HH Real" fill={PAL.real.fill}
                 hide={hidComp.has('HH Real')} animationDuration={500}/>
-              <Bar {...BARRA} yAxisId="left" dataKey="HH Meta" fill={PAL.meta.fill} opacity={0.65}
+              <Bar {...SIN_ANIM} {...BARRA} yAxisId="left" dataKey="HH Meta" fill={PAL.meta.fill} opacity={0.65}
                 hide={hidComp.has('HH Meta')} animationDuration={500}/>
-              <Line yAxisId="right" type="monotone" dataKey="CPI" stroke={PAL.cpi.stroke} strokeWidth={3}
+              <Line {...SIN_ANIM} yAxisId="right" type="monotone" dataKey="CPI" stroke={PAL.cpi.stroke} strokeWidth={3}
                 hide={hidComp.has('CPI')}
                 dot={{r:4,fill:PAL.cpi.stroke,strokeWidth:2,stroke:'#fff'}}
                 activeDot={{r:7,strokeWidth:2,stroke:'#fff'}}

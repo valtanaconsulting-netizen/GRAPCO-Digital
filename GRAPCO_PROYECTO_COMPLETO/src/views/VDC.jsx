@@ -14,7 +14,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine, LabelList,
 } from 'recharts';
 import { BASE, inp } from '../utils/styles';
-import { EJE, GRILLA, TOOLTIP_STYLE, LEYENDA, BARRA } from '../utils/chartKit';
+import { EJE, GRILLA, TOOLTIP_STYLE, LEYENDA, BARRA, SIN_ANIM } from '../utils/chartKit';
 import { comprimirImagen, pesoKB } from '../utils/imagen';
 import {
   RNC_CATEGORIAS, RNC_LABELS, RNC_COLORS, RNC_ICONS,
@@ -1812,8 +1812,8 @@ function PlanVsReal({ lapPlan = [], lapProgramado = [], ppcOficial = {}, saludLP
               <YAxis {...EJE} allowDecimals={false} />
               <Tooltip {...TOOLTIP_STYLE} formatter={(v, n) => [v, n === 'should' ? 'Plan base' : 'Comprometido']} />
               <Legend {...LEYENDA} formatter={(v) => v === 'should' ? 'Plan base (Should)' : 'Comprometido (Will)'} />
-              <Bar {...BARRA} dataKey="should" fill={BASE.navyLight} />
-              <Bar {...BARRA} dataKey="will" fill={BASE.gold} />
+              <Bar {...SIN_ANIM} {...BARRA} dataKey="should" fill={BASE.navyLight} />
+              <Bar {...SIN_ANIM} {...BARRA} dataKey="will" fill={BASE.gold} />
               <ReferenceLine x={'S' + curWeek} stroke={BASE.red} strokeDasharray="4 4" label={{ value: 'hoy', fontSize: 9, fill: BASE.red, position: 'top' }} />
             </ComposedChart>
           </ResponsiveContainer>
@@ -2883,7 +2883,7 @@ function PPCLap({ semanaActiva, setSemanaActiva, semanasMeta = {}, total, lookup
                 <div style={{ position: 'relative', height: 190 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={donut} cx="50%" cy="50%" innerRadius={52} outerRadius={78} paddingAngle={2} dataKey="value" stroke="none">
+                      <Pie {...SIN_ANIM} data={donut} cx="50%" cy="50%" innerRadius={52} outerRadius={78} paddingAngle={2} dataKey="value" stroke="none">
                         {donut.map((d, i) => <Cell key={i} fill={d.color} />)}
                       </Pie>
                       <Tooltip {...TOOLTIP_STYLE} formatter={(v, n) => [`${v}`, n]} />
@@ -2911,10 +2911,10 @@ function PPCLap({ semanaActiva, setSemanaActiva, semanasMeta = {}, total, lookup
                     <YAxis {...EJE} yAxisId="l" allowDecimals={false} />
                     <YAxis {...EJE} yAxisId="r" orientation="right" domain={[0, 100]} unit="%" />
                     <Tooltip {...TOOLTIP_STYLE} formatter={(v, n) => n === 'acum' ? [`${v}%`, '% acumulado'] : [v, 'Casos']} />
-                    <Bar {...BARRA} yAxisId="l" dataKey="n" fill={BASE.red}>
+                    <Bar {...SIN_ANIM} {...BARRA} yAxisId="l" dataKey="n" fill={BASE.red}>
                       <LabelList dataKey="n" position="top" style={{ fontSize: 9, fontWeight: 800, fill: BASE.red }} />
                     </Bar>
-                    <Line yAxisId="r" type="monotone" dataKey="acum" stroke={BASE.gold} strokeWidth={2.5} dot={{ r: 3, fill: BASE.gold }} activeDot={{ r: 5 }} />
+                    <Line {...SIN_ANIM} yAxisId="r" type="monotone" dataKey="acum" stroke={BASE.gold} strokeWidth={2.5} dot={{ r: 3, fill: BASE.gold }} activeDot={{ r: 5 }} />
                     <ReferenceLine yAxisId="r" y={80} stroke={BASE.navy} strokeDasharray="4 4" />
                   </ComposedChart>
                 </ResponsiveContainer>
@@ -2933,7 +2933,7 @@ function PPCLap({ semanaActiva, setSemanaActiva, semanasMeta = {}, total, lookup
                     <XAxis {...EJE} dataKey="s" interval={Math.ceil(trend.length / 14)} />
                     <YAxis {...EJE} domain={[0, 100]} unit="%" />
                     <Tooltip {...TOOLTIP_STYLE} formatter={(v) => [`${v}%`, 'PPC']} />
-                    <Bar {...BARRA} dataKey="ppc">
+                    <Bar {...SIN_ANIM} {...BARRA} dataKey="ppc">
                       {trend.map((t, i) => <Cell key={i} fill={t.ppc >= 80 ? BASE.greenDark : t.ppc >= 50 ? BASE.gold : BASE.red} />)}
                     </Bar>
                     <ReferenceLine y={80} stroke={BASE.navy} strokeDasharray="4 4" label={{ value: 'meta 80%', fontSize: 8, fill: BASE.navy, position: 'insideTopRight' }} />

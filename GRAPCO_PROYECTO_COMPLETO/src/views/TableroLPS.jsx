@@ -9,7 +9,7 @@ import {
   CartesianGrid, Tooltip, BarChart, Bar, Cell,
 } from 'recharts';
 import { BASE } from '../utils/styles';
-import { EJE, GRILLA, TOOLTIP_STYLE, BARRA } from '../utils/chartKit';
+import { EJE, GRILLA, TOOLTIP_STYLE, BARRA, SIN_ANIM } from '../utils/chartKit';
 import { calcularEstadoRestriccion, calcularKPIRestricciones, fmtFechaCorta } from '../utils/helpers';
 
 const panel = {
@@ -299,7 +299,7 @@ export default function TableroLPS({
                   <XAxis {...EJE} dataKey="semana" />
                   <YAxis {...EJE} domain={[0, 100]} />
                   <Tooltip {...TOOLTIP_STYLE} formatter={(v) => [`${v}%`, 'PPC']} />
-                  <Line type="monotone" dataKey="ppc" stroke={ppcColor} strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                  <Line {...SIN_ANIM} type="monotone" dataKey="ppc" stroke={ppcColor} strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -322,7 +322,7 @@ export default function TableroLPS({
                   <XAxis {...EJE} type="number" />
                   <YAxis {...EJE} type="category" dataKey="causa" width={130} />
                   <Tooltip {...TOOLTIP_STYLE} />
-                  <Bar {...BARRA} dataKey="cantidad" radius={[0, 4, 4, 0]} label={{ position: 'right', fontSize: 11, fontWeight: 800 }}>
+                  <Bar {...SIN_ANIM} {...BARRA} dataKey="cantidad" radius={[0, 4, 4, 0]} label={{ position: 'right', fontSize: 11, fontWeight: 800 }}>
                     {cnc.map((c, i) => <Cell key={i} fill={c.color} />)}
                   </Bar>
                 </BarChart>

@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import { db } from '../firebaseConfig';
 import { fmt1, obtenerSemana, fmtFechaCorta } from '../utils/helpers';
+import { SIN_ANIM } from '../utils/chartKit';
 import { FECHA_INICIO_PROYECTO } from '../utils/constants';
 import { calcularCostoAPU } from '../utils/planMaestroAnalytics';
 import { clasificarAPU } from '../data/seed/apusCreditex';
@@ -85,7 +86,7 @@ function CostoPanel({ elsF, catSel, setCatSel, toggleCats }) {
               <XAxis type="number" tick={{ fontSize: 9, fill: D.muted }} tickFormatter={v => `S/${(v / 1000).toFixed(0)}k`} />
               <YAxis type="category" dataKey="cat" width={140} tick={{ fontSize: 9.5, fill: D.text }} />
               <Tooltip formatter={(v) => ['S/ ' + money(v), 'Costo']} contentStyle={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: '8px', fontSize: '11px', color: D.text }} cursor={{ fill: 'rgba(15,42,71,0.05)' }} />
-              <Bar dataKey="Costo" radius={[0, 4, 4, 0]} cursor="pointer" onClick={(d) => setCatSel(d.cat)}
+              <Bar {...SIN_ANIM} dataKey="Costo" radius={[0, 4, 4, 0]} cursor="pointer" onClick={(d) => setCatSel(d.cat)}
                 label={{ position: 'right', formatter: v => 'S/ ' + money(v), fontSize: 9, fill: D.muted }}>
                 {topCats.map((e, i) => { const on = (catSel || []).includes(e.cat); return <Cell key={i} fill={on ? D.gold : D.accent} opacity={(catSel || []).length && !on ? 0.35 : 1} />; })}
               </Bar>
@@ -173,7 +174,7 @@ function SectorPanel({ elsF, niveles, secSel, catSel, setSecSel, setCatSel }) {
           <div style={{ height: '230px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={distrib} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={48} outerRadius={78} paddingAngle={3}
+                <Pie {...SIN_ANIM} data={distrib} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={48} outerRadius={78} paddingAngle={3}
                   onClick={(d) => setSecSel(d.name)} style={{ cursor: 'pointer' }}>
                   {distrib.map((e, i) => { const on = (secSel || []).includes(e.name); return <Cell key={i} fill={niveles[i]?.color || PAL[i % PAL.length]} stroke={on ? D.text : 'none'} strokeWidth={on ? 2 : 0} opacity={(secSel || []).length && !on ? 0.4 : 1} />; })}
                 </Pie>
@@ -353,7 +354,7 @@ function PlazosPanel({ els, niveles, isolate, showToast }) {
               <XAxis dataKey="label" tick={{ fontSize: 9, fill: D.muted }} interval={0} angle={-18} textAnchor="end" height={42} />
               <YAxis tick={{ fontSize: 9, fill: D.muted }} />
               <Tooltip formatter={(v) => [`${fmt1(v)} m3`, 'Avance']} labelFormatter={(_, pl) => pl && pl[0] ? `Semana ${pl[0].payload.sem} - ${fechaDe(pl[0].payload.ini)} a ${fechaDe(pl[0].payload.fin)}` : ''} contentStyle={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: '8px', fontSize: '11px', color: D.text }} cursor={{ fill: 'rgba(15,42,71,0.05)' }} />
-              <Bar dataKey="vol" radius={[4, 4, 0, 0]} cursor="pointer" onClick={(d) => setIdx(d.k)}>
+              <Bar {...SIN_ANIM} dataKey="vol" radius={[4, 4, 0, 0]} cursor="pointer" onClick={(d) => setIdx(d.k)}>
                 {porSemana.map((e, k) => <Cell key={k} fill={k === idx ? D.gold : k < idx ? D.green : D.accent} opacity={k <= idx ? 1 : 0.45} />)}
               </Bar>
             </BarChart>

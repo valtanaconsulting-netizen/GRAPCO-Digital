@@ -9,7 +9,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, Cell,
 } from 'recharts';
-import { EJE, GRILLA, TOOLTIP_STYLE, BARRA } from '../utils/chartKit';
+import { EJE, GRILLA, TOOLTIP_STYLE, BARRA, SIN_ANIM } from '../utils/chartKit';
 
 const TARIFA_PROMEDIO_DEFAULT = (
   Object.values(COSTO_HORA_DEFAULT).reduce((s, v) => s + v, 0) /
@@ -163,7 +163,7 @@ export default function ImpactoTesis({ historialEnriquecido, configuracion }) {
             <XAxis {...EJE} dataKey="etapa" />
             <YAxis {...EJE} domain={[0, 130]} tickFormatter={v => `${v}%`} />
             <Tooltip {...TOOLTIP_STYLE} formatter={v => [`${v}%`, 'CPI']} />
-            <Bar {...BARRA} dataKey="cpi">
+            <Bar {...SIN_ANIM} {...BARRA} dataKey="cpi">
               {dataComparativa.map((d, i) => (
                 <Cell
                   key={i}

@@ -6,7 +6,7 @@ import {
   ReferenceLine, ReferenceArea, Area,
 } from 'recharts';
 import { BASE } from '../utils/styles';
-import { EJE, GRILLA, TOOLTIP_STYLE, LEYENDA, degradado } from '../utils/chartKit';
+import { EJE, GRILLA, TOOLTIP_STYLE, LEYENDA, degradado, SIN_ANIM } from '../utils/chartKit';
 import VistaHeader from '../components/VistaHeader';
 import {
   calcularTendencia, calcularTendenciaPond, mediaMovil, fmt1, fmtCPI, fmtCPIPct,
@@ -470,13 +470,13 @@ export default function Tendencias({ filtrados, historial, wbs }) {
             <ReferenceLine y={0.85} stroke="#d97706" strokeDasharray="5 3" label={{value:'ALERTA 85%',fill:'#d97706',fontSize:10,position:'right'}}/>
             <ReferenceLine x={`S${serieSemanal.ultimaSemana}`} stroke={BASE.muted} strokeWidth={1.5} label={{value:'AHORA',fill:BASE.muted,fontSize:10,position:'top'}}/>
 
-            <Area type="monotone" dataKey="Banda Sup" stroke="none" fill="url(#grad_bandaSup)" fillOpacity={confiable ? 1 : 0.4} legendType="none"/>
-            <Area type="monotone" dataKey="Banda Inf" stroke="none" fill="#fff" fillOpacity={1} legendType="none"/>
+            <Area {...SIN_ANIM} type="monotone" dataKey="Banda Sup" stroke="none" fill="url(#grad_bandaSup)" fillOpacity={confiable ? 1 : 0.4} legendType="none"/>
+            <Area {...SIN_ANIM} type="monotone" dataKey="Banda Inf" stroke="none" fill="#fff" fillOpacity={1} legendType="none"/>
 
-            <Line type="monotone" dataKey="CPI" stroke={BASE.navy} strokeWidth={2.5} dot={{r:3,fill:BASE.navy,strokeWidth:2,stroke:'#fff'}} activeDot={{r:5}} connectNulls={false}/>
-            <Line type="monotone" dataKey="Media móvil (3)" stroke="#7c3aed" strokeWidth={2.5} strokeDasharray="4 4" dot={false} activeDot={{r:5}}/>
-            <Line type="monotone" dataKey="Tendencia CPI" stroke="#dc2626" strokeWidth={2.5} strokeDasharray="6 3" dot={false} activeDot={{r:5}}/>
-            <Line type="monotone" dataKey="Proyección CPI" stroke="#7c3aed" strokeWidth={confiable ? 2.5 : 1.5} strokeOpacity={confiable ? 1 : 0.45} strokeDasharray="6 3" dot={confiable ? {r:3,fill:'#7c3aed',strokeWidth:2,stroke:'#fff'} : false} activeDot={{r:5}} connectNulls={false}/>
+            <Line {...SIN_ANIM} type="monotone" dataKey="CPI" stroke={BASE.navy} strokeWidth={2.5} dot={{r:3,fill:BASE.navy,strokeWidth:2,stroke:'#fff'}} activeDot={{r:5}} connectNulls={false}/>
+            <Line {...SIN_ANIM} type="monotone" dataKey="Media móvil (3)" stroke="#7c3aed" strokeWidth={2.5} strokeDasharray="4 4" dot={false} activeDot={{r:5}}/>
+            <Line {...SIN_ANIM} type="monotone" dataKey="Tendencia CPI" stroke="#dc2626" strokeWidth={2.5} strokeDasharray="6 3" dot={false} activeDot={{r:5}}/>
+            <Line {...SIN_ANIM} type="monotone" dataKey="Proyección CPI" stroke="#7c3aed" strokeWidth={confiable ? 2.5 : 1.5} strokeOpacity={confiable ? 1 : 0.45} strokeDasharray="6 3" dot={confiable ? {r:3,fill:'#7c3aed',strokeWidth:2,stroke:'#fff'} : false} activeDot={{r:5}} connectNulls={false}/>
           </ComposedChart>
         </ResponsiveContainer>
       </Card>
@@ -538,8 +538,8 @@ export default function Tendencias({ filtrados, historial, wbs }) {
               <YAxis {...EJE} tickMargin={6}/>
               <Tooltip {...TOOLTIP_STYLE} content={<Tip/>}/>
               <Legend {...LEYENDA}/>
-              <Line type="monotone" dataKey="IP Real" stroke={BASE.navy} strokeWidth={2.5} dot={{r:3,fill:BASE.navy,strokeWidth:2,stroke:'#fff'}} activeDot={{r:5}}/>
-              <Line type="monotone" dataKey="IP Meta" stroke={BASE.green} strokeWidth={2.5} strokeDasharray="5 3" dot={{r:3,fill:BASE.green,strokeWidth:2,stroke:'#fff'}} activeDot={{r:5}}/>
+              <Line {...SIN_ANIM} type="monotone" dataKey="IP Real" stroke={BASE.navy} strokeWidth={2.5} dot={{r:3,fill:BASE.navy,strokeWidth:2,stroke:'#fff'}} activeDot={{r:5}}/>
+              <Line {...SIN_ANIM} type="monotone" dataKey="IP Meta" stroke={BASE.green} strokeWidth={2.5} strokeDasharray="5 3" dot={{r:3,fill:BASE.green,strokeWidth:2,stroke:'#fff'}} activeDot={{r:5}}/>
             </LineChart>
           </ResponsiveContainer>
         )}

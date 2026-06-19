@@ -8,7 +8,7 @@ import {
   XAxis, YAxis, Tooltip, CartesianGrid, Legend,
 } from 'recharts';
 import { BASE, CHART_PALETTE } from '../utils/styles';
-import { EJE, GRILLA, TOOLTIP_STYLE, LEYENDA, BARRA } from '../utils/chartKit';
+import { EJE, GRILLA, TOOLTIP_STYLE, LEYENDA, BARRA, SIN_ANIM } from '../utils/chartKit';
 import { fmt1 } from '../utils/helpers';
 import { crearResolverNombre } from '../utils/nombresCanonicos';
 import VistaHeader from '../components/VistaHeader';
@@ -407,8 +407,8 @@ export default function AnalisisHHCross({ filtrados = [], personalDB = [] }) {
                         labelFormatter={(_, p) => p?.[0]?.payload?.fechaFull || ''}
                       />
                       <Legend {...LEYENDA} />
-                      <Bar {...BARRA} dataKey="HN" stackId="a" fill={BASE.navy} cursor="pointer" />
-                      <Bar {...BARRA} dataKey="HE" stackId="a" fill={BASE.gold} cursor="pointer" />
+                      <Bar {...SIN_ANIM} {...BARRA} dataKey="HN" stackId="a" fill={BASE.navy} cursor="pointer" />
+                      <Bar {...SIN_ANIM} {...BARRA} dataKey="HE" stackId="a" fill={BASE.gold} cursor="pointer" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>

@@ -11,7 +11,7 @@ import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine,
 } from 'recharts';
 import { BASE } from '../../../utils/styles';
-import { EJE, GRILLA, TOOLTIP_STYLE, LEYENDA } from '../../../utils/chartKit';
+import { EJE, GRILLA, TOOLTIP_STYLE, LEYENDA, SIN_ANIM } from '../../../utils/chartKit';
 import { COSTO_HORA_DEFAULT } from '../../../utils/helpers';
 import Icon from '../../../components/Icon';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
@@ -195,8 +195,8 @@ export default function RadarProduccion({ isMobile }) {
               <Legend {...LEYENDA} />
               <ReferenceLine y={85} stroke={BASE.red} strokeDasharray="5 4" label={{ value: 'Umbral 85%', fontSize: 10, fill: BASE.red, position: 'insideTopRight' }} />
               <ReferenceLine y={100} stroke={BASE.greenDark} strokeDasharray="2 4" />
-              <Line type="monotone" dataKey="CPI" stroke={BASE.navy} strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls />
-              <Line type="monotone" dataKey="Proyección" stroke={BASE.gold} strokeWidth={2.5} strokeDasharray="6 5" dot={false} activeDot={{ r: 5 }} connectNulls />
+              <Line {...SIN_ANIM} type="monotone" dataKey="CPI" stroke={BASE.navy} strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls />
+              <Line {...SIN_ANIM} type="monotone" dataKey="Proyección" stroke={BASE.gold} strokeWidth={2.5} strokeDasharray="6 5" dot={false} activeDot={{ r: 5 }} connectNulls />
             </LineChart>
           </ResponsiveContainer>
         )}

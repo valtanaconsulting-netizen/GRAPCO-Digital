@@ -22,7 +22,7 @@ import SkeletonPantalla from '../../../components/SkeletonPantalla';
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ReferenceLine,
 } from 'recharts';
-import { EJE, GRILLA, TOOLTIP_STYLE, degradado } from '../../../utils/chartKit';
+import { EJE, GRILLA, TOOLTIP_STYLE, degradado, SIN_ANIM } from '../../../utils/chartKit';
 
 const MONO = 'var(--grapco-font-mono, ui-monospace, monospace)';
 
@@ -172,7 +172,7 @@ export default function EstadoObra({ irA }) {
                 <YAxis {...EJE} domain={[0, 100]} unit="%" />
                 <RTooltip {...TOOLTIP_STYLE} formatter={(v) => [`${v}%`, 'Programado']} />
                 <ReferenceLine x={`S${curvaS.semHoy}`} stroke={BASE.red} strokeDasharray="4 3" label={{ value: 'HOY', fontSize: 9, fill: BASE.red, position: 'top' }} />
-                <Area type="monotone" dataKey="Programado" stroke={BASE.navy} strokeWidth={2.5} fill="url(#grad_estadoObra)" />
+                <Area {...SIN_ANIM} type="monotone" dataKey="Programado" stroke={BASE.navy} strokeWidth={2.5} fill="url(#grad_estadoObra)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>

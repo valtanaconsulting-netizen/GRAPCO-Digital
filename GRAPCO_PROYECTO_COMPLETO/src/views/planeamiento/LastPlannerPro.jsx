@@ -20,6 +20,7 @@ import {
   ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis,
   CartesianGrid, Tooltip as RTooltip, Legend, ReferenceLine,
 } from 'recharts';
+import { SIN_ANIM } from '../../utils/chartKit';
 
 const MONO = 'var(--grapco-font-mono, ui-monospace, monospace)';
 const ROJO = '#DC2626';
@@ -457,8 +458,8 @@ export default function LastPlannerPro() {
                   <RTooltip contentStyle={{ fontSize: '11px', borderRadius: '8px', border: `1px solid ${BASE.border}` }} />
                   <Legend wrapperStyle={{ fontSize: '11px' }} />
                   <ReferenceLine y={80} stroke={BASE.green} strokeDasharray="5 4" label={{ value: 'Meta 80%', fontSize: 9, fill: BASE.green, position: 'right' }} />
-                  <Bar dataKey="PPC" fill={BASE.navy} radius={[4, 4, 0, 0]} barSize={26} />
-                  <Line type="monotone" dataKey="PPC" stroke={BASE.gold} strokeWidth={2.5} dot={{ r: 3, fill: BASE.gold }} />
+                  <Bar {...SIN_ANIM} dataKey="PPC" fill={BASE.navy} radius={[4, 4, 0, 0]} barSize={26} />
+                  <Line {...SIN_ANIM} type="monotone" dataKey="PPC" stroke={BASE.gold} strokeWidth={2.5} dot={{ r: 3, fill: BASE.gold }} />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
