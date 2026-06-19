@@ -1,15 +1,10 @@
 // ════════════════════════════════════════════════════════════════════════════
-// storage.rules — MODO DEV/BYPASS (acceso abierto)
+// storage.rules — modo SEGURO (autenticado)
 //
-// ⚠️  ATENCIÓN: ESTAS REGLAS PERMITEN LECTURA Y ESCRITURA SIN AUTENTICACIÓN.
-//     Solo deben usarse en desarrollo / pruebas internas.
-//     NO desplegar a producción con datos reales.
+// Lectura: solo usuarios autenticados. Escritura: autenticado + ≤15 MB + imagen/PDF.
+// (El encabezado anterior describía un modo BYPASS que ya NO está activo.)
 //
-// Para volver a las reglas originales seguras:
-//   1) Reemplaza este archivo con storage.rules.original.bak
-//   2) firebase deploy --only storage
-//
-// Para desplegar este modo bypass:
+// Desplegar:
 //   firebase deploy --only storage
 // ════════════════════════════════════════════════════════════════════════════
 
@@ -32,7 +27,7 @@ service firebase.storage {
     // Lectura abierta (avatares pueden mostrarse en cualquier UI cliente).
     // Escritura SOLO por el dueño, máx 5 MB, sólo imágenes.
     match /Avatars/{fileName} {
-      allow read: if true;
+      allow read: if request.auth != null;
       allow write: if request.auth != null
                 && fileName.split('.')[0] == request.auth.uid
                 && request.resource.size < 5 * 1024 * 1024

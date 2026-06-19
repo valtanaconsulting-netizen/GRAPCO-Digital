@@ -74,9 +74,11 @@ service cloud.firestore {
       // Bootstrap: el PRIMER admin se auto-crea si no existe /Bootstrap/done.
       // Admin: crea/edita cualquier perfil.
       allow create: if isAdmin() || (
+                       // Self-register SOLO con rol mínimo (capataz). Un admin/superadmin promueve
+                       // a ingeniero/planeamiento/etc. — evita escalada de privilegios por self-register.
                        isAuth() && uid() == userId &&
                        request.resource.data.activo == true &&
-                       request.resource.data.rol in ['ingeniero','capataz','almacenero','logistica','calidad','oficina_tecnica','seguridad','supervisor_cliente','subcontratista','carta_balance','planeamiento']
+                       request.resource.data.rol == 'capataz'
                      ) || (
                        isAuth() && uid() == userId &&
                        request.resource.data.rol == 'admin' &&
