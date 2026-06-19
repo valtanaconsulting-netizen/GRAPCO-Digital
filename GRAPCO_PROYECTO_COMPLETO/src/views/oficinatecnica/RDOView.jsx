@@ -7,12 +7,14 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../firebaseConfig';
 import { BASE, CHART_PALETTE } from '../../utils/styles';
 import { useAuth } from '../../contexts/AuthContext';
+import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import { autogenerarRDOdesdeProduccion, fmtNumero } from '../../utils/calidadOTAnalytics';
 import Modal from '../../components/Modal';
 import EmptyState from '../../components/EmptyState';
 
 export default function RDOView({ showToast }) {
   const { user, rol } = useAuth();
+  const { filtrarPorContexto, proyectoActivoId } = useProyectoActivo();
   const [rdos, setRDOs] = useState([]);
   const [historial, setHistorial] = useState([]);
   const [tareos, setTareos] = useState([]);
@@ -28,16 +30,16 @@ export default function RDOView({ showToast }) {
   useEffect(() => {
     const unsubs = [
       onSnapshot(query(collection(db, 'RDO'), orderBy('fecha', 'desc')),
-        (snap) => { setRDOs(snap.docs.map(d => ({ id: d.id, ...d.data() }))); setLoading(false); }),
+        (snap) => { setRDOs(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })))); setLoading(false); }),
       onSnapshot(query(collection(db, 'Historial'), orderBy('fecha', 'desc')),
-        (snap) => setHistorial(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
+        (snap) => setHistorial(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() }))))),
       onSnapshot(collection(db, 'Registros_Campo'),
-        (snap) => setTareos(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
+        (snap) => setTareos(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() }))))),
       onSnapshot(collection(db, 'CuadrillasActivas'),
-        (snap) => setCuadrillas(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
+        (snap) => setCuadrillas(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() }))))),
     ];
     return () => unsubs.forEach(u => u());
-  }, []);
+  }, [filtrarPorContexto]);
 
   const generarRDOHoy = async () => {
     const hoy = new Date();
@@ -58,6 +60,7 @@ export default function RDOView({ showToast }) {
       });
       const docRef = await addDoc(collection(db, 'RDO'), {
         ...borrador,
+        proyectoId: proyectoActivoId,   // aislar el RDO por proyecto
         fecha: hoy,
         creadoEn: serverTimestamp(),
         creadoPor: user?.email || 'desconocido',

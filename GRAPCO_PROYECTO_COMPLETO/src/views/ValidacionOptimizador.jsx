@@ -13,6 +13,7 @@ import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { BASE } from '../utils/styles';
 import EmptyState from '../components/EmptyState';
+import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 import {
   validarModeloOptimizador,
   clasificarPrecision,
@@ -20,6 +21,7 @@ import {
 } from '../utils/cartaBalanceAnalytics';
 
 export default function ValidacionOptimizador() {
+  const { filtrarPorContexto } = useProyectoActivo();
   const [cartas, setCartas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filtroActividad, setFiltroActividad] = useState('');
@@ -28,13 +30,13 @@ export default function ValidacionOptimizador() {
     const unsub = onSnapshot(
       query(collection(db, 'Cartas_Balance'), orderBy('fecha', 'asc')),
       (snap) => {
-        setCartas(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        setCartas(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
         setLoading(false);
       },
       (err) => { console.error('[Validacion]', err); setLoading(false); }
     );
     return () => unsub();
-  }, []);
+  }, [filtrarPorContexto]);
 
   // Filtrar
   const cartasFiltradas = useMemo(() => {
