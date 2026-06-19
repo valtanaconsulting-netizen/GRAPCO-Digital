@@ -49,6 +49,11 @@ export const LEYENDA = {
 // Barras premium: esquinas redondeadas arriba
 export const BARRA = { radius: [5, 5, 0, 0], maxBarSize: 42 };
 
+// Apaga la animación de recharts: se re-anima en CADA render/filtro y causa jank
+// (sobre todo en móvil y dashboards con varios charts). Spread en cada serie:
+//   <Line {...SIN_ANIM} ... />  <Bar {...SIN_ANIM} ... />  <Area {...SIN_ANIM} ... />  <Pie {...SIN_ANIM} ... />
+export const SIN_ANIM = { isAnimationActive: false };
+
 // Definición de gradiente vertical para <Area>/<Bar> — úsalo dentro de <defs>:
 //   <defs>{degradado('gradReal', CHART.real)}</defs>
 //   <Area fill="url(#gradReal)" ... />

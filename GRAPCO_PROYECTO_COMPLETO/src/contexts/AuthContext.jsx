@@ -6,7 +6,7 @@
 //   - Mensajes de error genéricos (no revela si email existe)
 //   - Audit log de operaciones críticas
 
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useMemo } from 'react';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -407,7 +407,10 @@ export function AuthProvider({ children }) {
     setRol(null);
   };
 
-  const value = {
+  // value memoizado: sin esto se recrea un objeto nuevo en CADA render del provider
+  // y React re-renderiza TODOS los consumidores de useAuth (toda la app). Las funciones
+  // (register/login/...) solo dependen de user/rolPermitido, ambos en las deps → siempre frescas.
+  const value = useMemo(() => ({
     user, rol, rolPermitido, loading, esDemo,
     // Área única destino (capataz, etc.) → App lo usa para entrar directo.
     areaAuto: AUTO_AREA[rolPermitido] || null,
@@ -423,7 +426,8 @@ export function AuthProvider({ children }) {
     // Roles del Bloque 20 (Calidad + Oficina Tecnica)
     isCalidad: rol === 'calidad',
     isSupervisorCliente: rol === 'supervisor_cliente',
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [user, rol, rolPermitido, loading, esDemo]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

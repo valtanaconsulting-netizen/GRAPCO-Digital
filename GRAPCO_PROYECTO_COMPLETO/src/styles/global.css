@@ -264,3 +264,16 @@ html { scroll-behavior: smooth; }
   /* Colores fieles en impresión */
   #print-portal, #print-portal * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 }
+
+/* ── Respeto GLOBAL a "reducir movimiento" del SO ───────────────────────────
+   Corta animaciones/transiciones en TODA la app cuando el usuario activa
+   "reduce motion" (accesibilidad + menos trabajo de GPU/CPU). El reset vivía en
+   src/index.css, que NUNCA se importa; aquí sí porque global.css se carga en main.jsx. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

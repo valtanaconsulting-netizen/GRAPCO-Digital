@@ -284,10 +284,18 @@ function AppInner() {
 
   const [ww, setWw] = useState(window.innerWidth);
   useEffect(() => {
-    const h = () => setWw(window.innerWidth);
+    // Throttle por rAF: el resize dispara decenas de veces/seg al arrastrar la ventana;
+    // sin esto cada pixel re-renderiza TODA la app. Con rAF colapsamos la ráfaga a un
+    // único setState por frame de pintado (responsivo pero sin tormenta de renders).
+    let rafId = 0;
+    const h = () => {
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => { rafId = 0; setWw(window.innerWidth); });
+    };
     window.addEventListener('resize', h);
     window.addEventListener('orientationchange', h);
     return () => {
+      if (rafId) cancelAnimationFrame(rafId);
       window.removeEventListener('resize', h);
       window.removeEventListener('orientationchange', h);
     };
