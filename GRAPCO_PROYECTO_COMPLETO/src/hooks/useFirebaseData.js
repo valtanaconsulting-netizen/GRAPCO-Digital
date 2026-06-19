@@ -5,6 +5,7 @@ import { db } from '../firebaseConfig';
 import {
   collection, onSnapshot, query, orderBy, doc, where, limit,
 } from 'firebase/firestore';
+import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 
 // Hook: registros de campo (con cálculo de HH acumuladas para una fecha específica)
 //
@@ -13,6 +14,7 @@ import {
 // cliente. Esto evita que el dashboard muestre 0 registros si algunos no migraron
 // el campo timestamp.
 export function useHistorial(fechaActual) {
+  const { filtrarPorContexto } = useProyectoActivo();
   const [historial, setHistorial] = useState([]);
   const [hhAcumuladasDia, setHhAcumuladasDia] = useState({});
 
@@ -28,7 +30,9 @@ export function useHistorial(fechaActual) {
       );
       return onSnapshot(q, snap => {
         try {
-          const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          // Aislado por proyecto: solo la producción del proyecto activo (la legacy sin
+          // proyectoId es visible solo en el proyecto default).
+          const docs = filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })));
           setHistorial(docs);
           const acum = {};
           docs.filter(r => r && r.fecha === fechaActual).forEach(reg =>
@@ -41,7 +45,7 @@ export function useHistorial(fechaActual) {
         } catch (err) { console.error('[useHistorial snap]', err); }
       }, err => console.error('[useHistorial onSnapshot] permission/red error:', err.code || err.message, err));
     } catch (err) { console.error('[useHistorial setup]', err); }
-  }, [fechaActual]);
+  }, [fechaActual, filtrarPorContexto]);
 
   return { historial, hhAcumuladasDia };
 }
@@ -86,6 +90,7 @@ export function usePersonal() {
 
 // Hook: planes diarios
 export function usePlanesDiarios() {
+  const { filtrarPorContexto } = useProyectoActivo();
   const [planesDiarios, setPlanesDiarios] = useState([]);
 
   useEffect(() => {
@@ -93,11 +98,11 @@ export function usePlanesDiarios() {
       const q = query(collection(db, 'Planes_Diarios'), orderBy('fecha', 'desc'));
       return onSnapshot(q, snap => {
         try {
-          setPlanesDiarios(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+          setPlanesDiarios(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
         } catch (err) { console.warn('[snap PD]', err); }
       }, err => console.warn('[onSnapshot PD]', err));
     } catch (err) { console.warn('[useEffect PD]', err); }
-  }, []);
+  }, [filtrarPorContexto]);
 
   return planesDiarios;
 }
