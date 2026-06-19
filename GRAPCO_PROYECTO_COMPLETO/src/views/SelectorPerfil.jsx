@@ -306,7 +306,7 @@ export default function SelectorPerfil() {
           así nunca se ve una imagen borrosa o lageada. */}
       <video
         ref={videoRef}
-        autoPlay loop muted playsInline preload="auto"
+        autoPlay loop muted playsInline preload="metadata"
         onCanPlay={(e) => { e.currentTarget.style.opacity = '0.82'; e.currentTarget.play?.().catch(() => {}); }}
         onError={() => { if (videoRef.current) videoRef.current.style.display = 'none'; }}
         aria-hidden="true"

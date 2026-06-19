@@ -775,7 +775,7 @@ export default function Login() {
       {/* Video hero PTARI (fundido suave) */}
       <video
         className="grapco-hero-video"
-        autoPlay muted loop playsInline preload="auto"
+        autoPlay muted loop playsInline preload="metadata"
         onCanPlay={(e) => { setVideoReady(true); e.currentTarget.play?.().catch(() => {}); }}
         onPlaying={() => setVideoReady(true)}
         aria-hidden="true"
