@@ -15,9 +15,9 @@ export default defineConfig({
     legalComments: 'none',
   },
   optimizeDeps: {
-    // xlsx NO va aquí: es lazy (vendor-xlsx aislado, no precargado). Pre-bundlearlo
-    // solo ralentiza el cold-start del dev server.
-    include: ['recharts', 'firebase/firestore'],
+    // xlsx/recharts NO van aquí: son lazy (chunks aislados, no precargados en prod).
+    // Pre-bundlearlos solo ralentiza el cold-start del dev server.
+    include: ['firebase/firestore'],
   },
   server: {
     hmr: { overlay: true },

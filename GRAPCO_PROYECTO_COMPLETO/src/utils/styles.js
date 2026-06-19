@@ -228,12 +228,15 @@ export const cardStyle = (extra = {}) => ({
 
 // ── Helper: button consistente ──
 export const buttonStyle = (variant = 'primary', size = 'md', extra = {}) => {
+  // transicion ACOTADA (no 'all'): solo las props baratas que cambian en hover/active.
+  // 'all' transicionaba tambien layout (padding/width/etc.) -> reflow innecesario en cada hover.
+  const tEase = `${ANIMATION.duration.fast} ${ANIMATION.easing.out}`;
   const base = {
     border: 'none',
     cursor: 'pointer',
     fontWeight: TYPOGRAPHY.weight.bold,
     fontFamily: BASE.font,
-    transition: `all ${ANIMATION.duration.fast} ${ANIMATION.easing.out}`,
+    transition: `background ${tEase}, color ${tEase}, border-color ${tEase}, box-shadow ${tEase}, transform ${tEase}`,
     display: 'inline-flex',
     alignItems: 'center',
     gap: SPACING.sm,
