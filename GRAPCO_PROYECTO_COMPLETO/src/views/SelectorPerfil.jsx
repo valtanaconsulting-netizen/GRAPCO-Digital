@@ -9,6 +9,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 import { BASE, LOGO, LOGO_FALLBACK } from '../utils/styles';
 import { HERO_VIDEO } from '../utils/heroVideo';
+import { conexionLenta } from '../utils/connection';
 import { obtenerSemana } from '../utils/helpers';
 import { FECHA_INICIO_PROYECTO } from '../utils/constants';
 import Icon from '../components/Icon';
@@ -304,7 +305,7 @@ export default function SelectorPerfil() {
       {/* Video hero a pantalla completa, en alta nitidez (grapco-bg.mp4). Sin
           poster oscuro: aparece con fundido suave solo cuando puede reproducir,
           así nunca se ve una imagen borrosa o lageada. */}
-      <video
+      {!conexionLenta() && <video
         ref={videoRef}
         autoPlay loop muted playsInline preload="metadata"
         onCanPlay={(e) => { e.currentTarget.style.opacity = '0.82'; e.currentTarget.play?.().catch(() => {}); }}
@@ -324,7 +325,7 @@ export default function SelectorPerfil() {
         }}
       >
         <source src={HERO_VIDEO} type="video/mp4" />
-      </video>
+      </video>}
       {/* Lavado NAVY cohesivo (sin dorado) — unifica el fondo con la marca y hace
           resaltar las tarjetas. Sustituye al overlay que mezclaba dorado+verde. */}
       <div aria-hidden="true" style={{

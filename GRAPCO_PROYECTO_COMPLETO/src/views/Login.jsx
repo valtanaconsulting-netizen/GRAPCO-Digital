@@ -6,6 +6,7 @@ import { db, auth } from '../firebaseConfig';
 import { useAuth } from '../contexts/AuthContext';
 import { BASE, LOGO, LOGO_FALLBACK, inp } from '../utils/styles';
 import { HERO_VIDEO } from '../utils/heroVideo';
+import { conexionLenta } from '../utils/connection';
 
 const STORAGE_INTENTOS = 'grapco_login_intentos';
 const MAX_INTENTOS = 5;
@@ -772,8 +773,8 @@ export default function Login() {
         position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
         background: `linear-gradient(115deg, transparent 40%, ${BASE.gold}0e 50%, transparent 60%)`,
       }} />
-      {/* Video hero PTARI (fundido suave) */}
-      <video
+      {/* Video hero PTARI (fundido suave) — omitido en conexiones lentas / ahorro de datos */}
+      {!conexionLenta() && <video
         className="grapco-hero-video"
         autoPlay muted loop playsInline preload="metadata"
         onCanPlay={(e) => { setVideoReady(true); e.currentTarget.play?.().catch(() => {}); }}
@@ -782,7 +783,7 @@ export default function Login() {
         style={{ opacity: videoReady ? 0.5 : 0, transition: 'opacity 1.1s ease' }}
       >
         <source src={HERO_VIDEO} type="video/mp4" />
-      </video>
+      </video>}
       {/* Overlay oscuro (degradado horizontal en desktop, radial en móvil) */}
       <div aria-hidden="true" style={{
         position: 'absolute', inset: 0, zIndex: 1,
