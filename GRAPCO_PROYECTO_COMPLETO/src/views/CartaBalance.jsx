@@ -392,7 +392,7 @@ export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMob
                   <select value={cbTrabajadores[i].cargo}
                     onChange={e => { const n = [...cbTrabajadores]; n[i] = {...n[i], cargo:e.target.value}; setCbTrabajadores(n); }}
                     style={{width:'60px',padding:'6px 4px',borderRadius:'6px',border:`1px solid ${BASE.border}`,fontSize:'11px',outline:'none'}}>
-                    {['OP','OF','AY','PE','CAP','TEC'].map(c => <option key={c} value={c}>{c}</option>)}
+                    {['CAP','OP','OF','AY'].map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
               ))}

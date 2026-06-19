@@ -244,7 +244,7 @@ export default function BimShell({ titulo, objetivo, accent = '#3B82F6', modelos
           <select value={urnSel} onChange={e => elegirModelo(e.target.value)}
             style={{ padding: '8px 12px', borderRadius: D.radiusSm, border: '1px solid #244A73', background: '#0B2138', color: '#E3EAF3', fontSize: '12px', fontWeight: 600, maxWidth: '220px', cursor: 'pointer' }}>
             <option value="">— Modelo cargado —</option>
-            {modelosDisponibles.map(m => <option key={m.id} value={m.urn}>{m.nombre || m.archivo || m.id}</option>)}
+            {modelosDisponibles.map(m => <option key={m.id} value={m.urn}>{m.nombreOriginal || m.nombre || m.archivo || m.id}</option>)}
           </select>
           <button onClick={() => setShowUpload(s => !s)}
             style={{ padding: '8px 16px', borderRadius: D.radiusSm, border: 'none', cursor: 'pointer', background: accent, color: '#fff', fontSize: '12px', fontWeight: 700, letterSpacing: '0.2px', boxShadow: `0 6px 16px -6px ${accent}`, transition: `transform .15s ${D.ease}` }}

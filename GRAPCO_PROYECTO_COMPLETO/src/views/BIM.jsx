@@ -39,7 +39,7 @@ export default function BIM({ historialEnriquecido = [], showToast }) {
     const unsub = onSnapshot(q, snap => {
       const todos = snap.docs
         .map(d => ({ id: d.id, ...d.data() }))
-        .filter(m => m.urn && (m.traduccionStatus === 'success' || m.traduccionStatus === 'inprogress'));
+        .filter(m => m.urn && m.traduccionStatus === 'success');  // solo traducidos: 'inprogress' no tiene SVF2 y el visor falla
       setModelosDisponibles(filtrarPorContexto(todos));  // solo modelos de ESTE proyecto
     });
     return () => unsub();
