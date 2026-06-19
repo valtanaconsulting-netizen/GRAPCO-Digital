@@ -66,7 +66,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Assets de Vite y otros estáticos → cache-first
-  if (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/icons/') || url.pathname.match(/\.(png|jpe?g|svg|css|js|woff2?)$/)) {
+  if (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/icons/') || url.pathname.match(/\.(png|jpe?g|svg|webp|css|js|woff2?|mp4|webm)$/)) {
     event.respondWith((async () => {
       const cached = await caches.match(request);
       if (cached) return cached;
