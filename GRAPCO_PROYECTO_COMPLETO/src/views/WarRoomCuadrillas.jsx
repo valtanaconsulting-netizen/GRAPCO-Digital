@@ -27,7 +27,7 @@ const VENTANAS = [
 ];
 
 export default function WarRoomCuadrillas({ historial = [] }) {
-  const { proyectoActivoId } = useProyectoActivo();
+  const { proyectoActivoId, filtrarPorContexto } = useProyectoActivo();
   const { infoMap } = useCatalogoWBS(proyectoActivoId);
   // Catálogo WBS normalizado por actividad → IP meta (rendimiento objetivo).
   const infoNorm = useMemo(() => {
@@ -45,7 +45,7 @@ export default function WarRoomCuadrillas({ historial = [] }) {
     const unsub1 = onSnapshot(
       query(collection(db, 'Cartas_Balance'), orderBy('fecha', 'desc')),
       (snap) => {
-        setCartas(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.proyectoId === proyectoActivoId));
+        setCartas(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
         setLoading(false);
       },
       (err) => { console.error('[WarRoom][cartas]', err); setLoading(false); }
@@ -54,15 +54,14 @@ export default function WarRoomCuadrillas({ historial = [] }) {
       collection(db, 'Cuadrillas'),
       (snap) => {
         const byName = {};
-        snap.docs.forEach(d => {
-          const data = d.data();
-          if (data.nombre && data.proyectoId === proyectoActivoId) byName[data.nombre] = { id: d.id, ...data };
+        filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() }))).forEach(data => {
+          if (data.nombre) byName[data.nombre] = data;
         });
         setCuadrillasDB(byName);
       }
     );
     return () => { unsub1(); unsub2(); };
-  }, [proyectoActivoId]);
+  }, [filtrarPorContexto]);
 
   // Filtrar por ventana
   const cartasEnVentana = useMemo(() => {
