@@ -13,7 +13,7 @@ export const fmtCPI    = v => v === null || v === undefined ? '---' : v.toFixed(
 export const fmt1   = v => isNaN(parseFloat(v)) ? '—' : parseFloat(v).toFixed(1);
 export const fmt2   = v => isNaN(parseFloat(v)) ? '—' : parseFloat(v).toFixed(2);
 export const fmt3   = v => isNaN(parseFloat(v)) ? '—' : parseFloat(v).toFixed(3);
-export const fmtPct = v => isNaN(parseFloat(v)) ? '—' : `${(parseFloat(v) * 100).toFixed(1)}%`;
+export const fmtPct = v => isNaN(parseFloat(v)) ? '—' : `${Math.round(parseFloat(v) * 100)}%`;
 export const fmtNum = v => isNaN(parseFloat(v)) ? '—' : parseFloat(v).toLocaleString('es-PE',{maximumFractionDigits:1});
 export const fmtMoney = v => isNaN(parseFloat(v)) ? '—' : `S/ ${parseFloat(v).toLocaleString('es-PE',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
 

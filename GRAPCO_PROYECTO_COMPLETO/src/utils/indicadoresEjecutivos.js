@@ -109,7 +109,7 @@ export function calcularIndicadoresDiarios({
   ncs = [],
   compromisos = [],
   inspecciones = [],
-  costoHH = 14,
+  costoHH = 25.5,   // costo-hora único del proyecto (S/25.50), no 14
   fecha,
 }) {
   // ── Producción y costo (acumulado a la fecha) ──

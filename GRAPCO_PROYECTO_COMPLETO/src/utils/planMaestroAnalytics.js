@@ -313,7 +313,9 @@ export function calcularCostoRealActividad({
   let hhAcum = 0;
   for (const t of tareos) {
     if (!esDeEstaPartida(t)) continue;
-    const hh = t.horasHombre || t.hh || 0;
+    // El campo canónico de HH del tareo es `totalHH` (lo escribe Capataz y lo usa el
+    // CR vivo). horasHombre/hh son legacy; usar totalHH evita MO≈0 y CPI inflado.
+    const hh = Number(t.totalHH ?? t.horasHombre ?? t.hh ?? 0) || 0;
     costoMO += hh * COSTO_HORA_RO;
     hhAcum += hh;
   }
@@ -624,11 +626,12 @@ export function calcularROMensual({
   // KPIs globales (COSTO DIRECTO — por partidas, sin GG; retro-compatible)
   const CPI_global = totales.AC > 0 ? totales.EV / totales.AC : 0;
   const SPI_global = totales.PV > 0 ? totales.EV / totales.PV : 0;
-  const EAC_global = CPI_global > 0 ? totales.BAC / CPI_global : totales.BAC;
-  const VAC_global = totales.BAC - EAC_global;
+  // EAC/VAC sobre el BAC CONTRACTUAL (incluye adicionales/deductivos), igual que la UI.
+  const EAC_global = CPI_global > 0 ? bacContractual / CPI_global : bacContractual;
+  const VAC_global = bacContractual - EAC_global;
   const margenAplicadoGlobal = totales.vendido > 0 ? ((totales.vendido - totales.costoAplicado) / totales.vendido) * 100 : 0;
   const margenRealGlobal = totales.vendido > 0 ? ((totales.vendido - totales.costoReal) / totales.vendido) * 100 : 0;
-  const margenProyectadoCierre = totales.BAC > 0 ? (VAC_global / totales.BAC) * 100 : 0;
+  const margenProyectadoCierre = bacContractual > 0 ? (VAC_global / bacContractual) * 100 : 0;
 
   // KPIs CON GG (Total Costo de Obra = Costo Directo + Gastos Generales).
   // Es el "resultado operativo" completo del F06: AC y CPI incluyen GG.
@@ -779,9 +782,9 @@ export const fmtNumero = (n, dec = 2) => {
   return Number(n).toLocaleString('es-PE', { minimumFractionDigits: dec, maximumFractionDigits: dec });
 };
 
-export const fmtPct = (n, dec = 1) => {
+export const fmtPct = (n, dec = 0) => {
   if (n == null || isNaN(n)) return '—';
-  return `${redondear(n, dec)}%`;
+  return `${redondear(n, dec)}%`;   // regla del proyecto: % sin decimales por defecto
 };
 
 export const colorMargen = (margen, meta = 15) => {

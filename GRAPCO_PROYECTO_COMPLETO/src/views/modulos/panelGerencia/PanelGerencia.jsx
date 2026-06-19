@@ -259,7 +259,7 @@ export default function PanelGerencia({ showToast }) {
 
           <Pillar titulo="TAREOS · HH" color={CHART_PALETTE[7]}>
             <PillarKPI label="HH acumuladas"
-              valor={fmtNumero(tareos.reduce((s, t) => s + (t.horasHombre || t.hh || 0), 0), 0)}
+              valor={fmtNumero(tareos.reduce((s, t) => s + (Number(t.totalHH ?? t.horasHombre ?? t.hh ?? 0) || 0), 0), 0)}
               color={BASE.navy} chico />
             <PillarKPI label="Personas-día" valor={tareos.length} color={BASE.gold} />
             <PillarKPI label="Vinculadas WBS"

@@ -12,10 +12,12 @@ import {
  * Hook que carga TODOS los datos necesarios y calcula el RO completo.
  * Lo usan: RODashboard, ROporPartida, ROProyeccion, CurvaSFinanciera.
  */
-export default function useRO({ margenMeta = 15, fechaActual = new Date(), ignorarFrente = false } = {}) {
+export default function useRO({ margenMeta = 15, fechaActual: fechaActualProp = null, ignorarFrente = false } = {}) {
   // Aislamiento multi-proyecto: el RO usa SOLO la data del proyecto activo.
   // ignorarFrente: cargar TODOS los frentes (para el RO comparativo F1 vs F2).
   const { filtrarPorContexto } = useProyectoActivo();
+  // Fecha ESTABLE: sin esto el default new Date() recalcula TODO el RO en cada render.
+  const fechaActual = useMemo(() => fechaActualProp || new Date(), [fechaActualProp]);
   const [actividades, setActividades] = useState([]);
   const [apus, setApus] = useState([]);
   const [tareos, setTareos] = useState([]);

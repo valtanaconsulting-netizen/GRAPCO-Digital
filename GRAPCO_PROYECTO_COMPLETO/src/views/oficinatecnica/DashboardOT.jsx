@@ -5,12 +5,14 @@ import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestor
 import { db } from '../../firebaseConfig';
 import { BASE } from '../../utils/styles';
 import { fmtSoles, fmtNumero } from '../../utils/calidadOTAnalytics';
+import usePresupuestoContractual from '../../hooks/usePresupuestoContractual';
 
 export default function DashboardOT() {
   const [rdos, setRDOs] = useState([]);
   const [valorizaciones, setValorizaciones] = useState([]);
-  const [partidas, setPartidas] = useState([]);
   const [loading, setLoading] = useState(true);
+  // Presupuesto desde la fuente única (base contractual + overrides), igual que el RO.
+  const { totales: tPres, partidas: partidasPres } = usePresupuestoContractual();
 
   useEffect(() => {
     const unsubs = [
@@ -20,18 +22,15 @@ export default function DashboardOT() {
       onSnapshot(query(collection(db, 'ValorizacionesContractuales'), orderBy('numeroValorizacion', 'desc')),
         (snap) => setValorizaciones(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
         (e) => console.error('[Val]', e)),
-      onSnapshot(collection(db, 'PartidasContractuales'),
-        (snap) => setPartidas(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
-        (e) => console.error('[Part]', e)),
     ];
     return () => unsubs.forEach(u => u());
   }, []);
 
   const stats = useMemo(() => {
-    const presupuestoContractual = partidas.reduce((s, p) => s + (p.metradoContractual || 0) * (p.precioUnitario || 0), 0);
-    const totalValorizado = valorizaciones.reduce((s, v) => s + (v.subtotalBruto || 0), 0);
+    const presupuestoContractual = tPres.cd || 0;
+    const totalValorizado = valorizaciones.reduce((s, v) => s + (Number(v.cdPeriodo) || 0), 0);
     const pctEjecutado = presupuestoContractual > 0 ? (totalValorizado / presupuestoContractual) * 100 : 0;
-    const totalCobrado = valorizaciones.filter(v => v.estado === 'pagada').reduce((s, v) => s + (v.total || 0), 0);
+    const totalCobrado = valorizaciones.filter(v => v.estado === 'pagada').reduce((s, v) => s + (Number(v.totalAPagar) || 0), 0);
     const valorizacionesPendientes = valorizaciones.filter(v => v.estado === 'borrador' || v.estado === 'enviada').length;
     const rdosFirmados = rdos.filter(r => r.estado === 'firmado' || r.estado === 'enviado_cliente').length;
     const rdosBorrador = rdos.filter(r => r.estado === 'borrador').length;
@@ -46,9 +45,9 @@ export default function DashboardOT() {
       rdosFirmados,
       rdosBorrador,
       totalRDOs: rdos.length,
-      totalPartidas: partidas.length,
+      totalPartidas: partidasPres.length,
     };
-  }, [rdos, valorizaciones, partidas]);
+  }, [rdos, valorizaciones, tPres, partidasPres]);
 
   if (loading) return <p style={{ padding: 30, textAlign: 'center', color: BASE.muted }}>⏳ Cargando indicadores...</p>;
 
