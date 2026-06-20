@@ -1,6 +1,7 @@
 // src/views/capataz/secciones/BarraInferior.jsx
-// Barra sticky inferior. Su acción principal depende del PASO del capataz:
-//   modo="tareo"   → GUARDAR + "Siguiente: Metrado" (avanza al paso 2).
+// Barra sticky inferior. Su acción principal depende del MÓDULO del capataz:
+//   modo="tareo"   → GUARDAR + "Guardar y volver" (regresa a los módulos; el
+//                    Metrado se hace luego entrando a su propio módulo).
 //   modo="metrado" → GUARDAR + SUBIR (sube los registros a la oficina técnica).
 // Respeta el "home indicator" del iPhone (safe-area-inset-bottom). En desktop
 // arranca en left:210px para no taparse con el sidebar fixed del shell.
@@ -13,7 +14,7 @@ export default function BarraInferior({
   actividadesCount,
   onGuardar,
   onSubir,
-  onSiguiente,
+  onListoTareo,
   modo = 'metrado',
 }) {
   const ocupado = estadoBorrador === 'guardando' || estadoBorrador === 'subiendo';
@@ -45,18 +46,18 @@ export default function BarraInferior({
       </button>
 
       {esTareo ? (
-        <button type="button" onClick={onSiguiente} disabled={ocupado}
+        <button type="button" onClick={onListoTareo} disabled={ocupado}
           style={{
             flex: 2,
             padding: '14px 18px',
-            background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
+            background: `linear-gradient(135deg, ${BASE.green}, ${BASE.greenDark})`,
             color: '#fff', border: 'none', borderRadius: '12px',
             fontSize: '14px', fontWeight: '800', cursor: 'pointer',
-            boxShadow: `0 4px 16px ${BASE.navy}55`,
+            boxShadow: `0 4px 16px ${BASE.green}55`,
             opacity: ocupado ? 0.7 : 1,
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
           }}>
-          {estadoBorrador === 'guardando' ? '⏳ Guardando...' : <>SIGUIENTE: METRADO 📏 ▶</>}
+          {estadoBorrador === 'guardando' ? '⏳ Guardando...' : <>✓ GUARDAR Y VOLVER</>}
         </button>
       ) : (
         <button type="button" onClick={onSubir} disabled={ocupado}

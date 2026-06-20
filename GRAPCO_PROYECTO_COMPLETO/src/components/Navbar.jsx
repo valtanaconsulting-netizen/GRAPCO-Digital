@@ -49,7 +49,12 @@ export default function Navbar({ rol, isMobile, onSalir, onCambiarArea, onMenu }
       background: `linear-gradient(135deg, ${BASE.navy} 0%, ${BASE.navyDark} 100%)`,
       borderBottom: `3px solid ${BASE.gold}`,
       padding: isMobile ? '0 10px' : '0 16px',
+      // Edge-to-edge: el navy pinta bajo la barra de estado / notch (safe-area).
+      // En PWA fullscreen el inset es 0 y queda igual; en navegador/iOS rellena
+      // el hueco superior para que no quede una franja blanca.
       height: '60px',
+      paddingTop: 'env(safe-area-inset-top)',
+      boxSizing: 'content-box',
       display: 'flex',
       alignItems: 'center',
       // FIXED full-width — siempre visible arriba. El sidebar empieza debajo (top:60).

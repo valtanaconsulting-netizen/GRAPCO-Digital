@@ -13,6 +13,7 @@ import React from 'react';
 import DateInput from '../../../components/DateInput';
 import { BASE, inp } from '../../../utils/styles';
 import { hoy } from '../../../utils/helpers';
+import SelectorCapataz from './SelectorCapataz';
 
 // Capataz solo puede tocar tareo de HOY o AYER. Se duplica aquí para no acoplar
 // el sidebar al padre (es una fecha trivial de calcular).
@@ -78,16 +79,19 @@ export default function SidebarCapataz({
         />
       </div>
 
-      {/* Sección CAPATAZ */}
+      {/* Sección CAPATAZ — selector premium (avatar + nombre legible) */}
       <div>
         <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.gold, letterSpacing: '1.2px', marginBottom: '8px' }}>
           👷 CAPATAZ
         </p>
-        <select value={capataz} onChange={e => setCapataz(e.target.value)}
-          style={inp({ fontSize: '14px', fontWeight: '700', color: BASE.navy })}>
-          <option value="">Seleccione...</option>
-          {Object.keys(cuadrillasParaSelect).map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
+        <SelectorCapataz
+          value={capataz}
+          opciones={Object.entries(cuadrillasParaSelect).map(([nombre, miembros]) => ({
+            nombre,
+            miembros: Array.isArray(miembros) ? miembros.length : null,
+          }))}
+          onChange={setCapataz}
+        />
         {cuadrillaInfo && (
           <div style={{
             marginTop: '8px', padding: '8px 10px',

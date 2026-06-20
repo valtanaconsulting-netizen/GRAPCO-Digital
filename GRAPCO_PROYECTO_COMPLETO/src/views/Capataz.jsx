@@ -859,14 +859,11 @@ export default function Capataz({
   };
   const irInicio = () => setVista('inicio');
 
-  // Paso 1 → Paso 2: guarda el borrador del tareo y avanza al metrado.
-  const siguienteAMetrado = async () => {
-    if (!tieneTareo) {
-      showToast('Asigna horas a al menos una actividad antes de pasar al metrado', 'warning');
-      return;
-    }
+  // Cerrar el módulo TAREO: guarda el borrador y vuelve a los 2 módulos. Desde
+  // ahí el capataz entra (cuando quiera) al módulo METRADO, ya desbloqueado.
+  const listoTareo = async () => {
     await guardarBorrador();
-    irAMetrado();
+    irInicio();
   };
 
   // ════════════════════════════════════════════════════════════
@@ -1043,9 +1040,7 @@ export default function Capataz({
             <>
               <StepperCapataz
                 vista={vista}
-                tieneTareo={tieneTareo}
                 onIrInicio={irInicio}
-                onIr={(v) => (v === 'metrado' ? irAMetrado() : irATareo())}
               />
 
               <HeaderCapataz
@@ -1095,7 +1090,7 @@ export default function Capataz({
           actividadesCount={vista === 'metrado' ? actividadesConHH.length : actividades.length}
           onGuardar={guardarBorrador}
           onSubir={subir}
-          onSiguiente={siguienteAMetrado}
+          onListoTareo={listoTareo}
         />
       )}
     </>

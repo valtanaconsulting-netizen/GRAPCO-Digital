@@ -634,7 +634,7 @@ function AppInner() {
       <main id="main-content" style={{
         flex: 1,
         padding: '14px 16px',
-        paddingTop: '74px',
+        paddingTop: 'calc(74px + env(safe-area-inset-top))',
         paddingLeft: isMobile ? '16px' : CONTENT_PAD_LEFT,
         width: '100%',
         boxSizing: 'border-box',
