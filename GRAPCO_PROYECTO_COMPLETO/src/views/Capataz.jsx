@@ -187,13 +187,17 @@ export default function Capataz({
     return [capatazComoMiembro, ...equipo];
   }, [capataz, cuadrillasParaSelect, personalDB]);
 
-  // Auto-selección: cuando el usuario logueado ES un capataz, su propia
-  // cuadrilla se elige sola — "le sale su nombre" sin tener que buscarlo.
+  // Auto-selección de la cuadrilla del capataz logueado: así, al entrar con su
+  // cuenta, NO tiene que buscarse en una lista — su nombre ya viene puesto y ve
+  // directo las 2 áreas (Tareo / Metrado).
   useEffect(() => {
-    if (rol !== 'capataz' || capataz) return;          // solo capataz; respeta elección manual
-    if (!nombreUsuario) return;
+    if (capataz) return;                                // respeta elección manual
     const opciones = Object.keys(cuadrillasParaSelect);
     if (!opciones.length) return;
+    // 1) Una sola cuadrilla en el proyecto = es la suya → autoselecciona.
+    if (opciones.length === 1) { setCapataz(opciones[0]); return; }
+    // 2) Varias cuadrillas → intenta calzar por el nombre de su usuario.
+    if (rol !== 'capataz' || !nombreUsuario) return;
     const DIACRIT = new RegExp('[\\u0300-\\u036f]', 'g');
     const norm = s => String(s || '')
       .toLowerCase().normalize('NFD').replace(DIACRIT, '').trim();
@@ -895,7 +899,6 @@ export default function Capataz({
     }
   };
 
-  const sinSeleccion = !capataz;
   const sidebarWidth = 280;
 
   // sidebarContent se renderiza en dos lugares (estado vacío y layout principal),
@@ -926,49 +929,29 @@ export default function Capataz({
     />
   );
 
-  // ── Estado vacío (sin capataz) ──
-  if (sinSeleccion) {
+  // ── PANTALLA DE ENTRADA = selector de ÁREAS (full-screen, sin sidebar) ──
+  // Es lo PRIMERO que ve el capataz al entrar: escoge módulo (Tareo o Metrado)
+  // y recién ingresa. Su cuadrilla ya viene autoseleccionada.
+  if (vista === 'inicio') {
     return (
-      <div style={{
-        display: 'flex', minHeight: 'calc(100dvh - 56px)',
-        flexDirection: isMobile ? 'column' : 'row',
-      }}>
-        {/* Sidebar / panel superior móvil */}
-        <aside style={{
-          width: isMobile ? '100%' : `${sidebarWidth}px`,
-          flexShrink: 0,
-          background: BASE.white,
-          borderRight: isMobile ? 'none' : `1px solid ${BASE.border}`,
-          borderBottom: isMobile ? `1px solid ${BASE.border}` : 'none',
-          padding: isMobile ? '14px' : '20px',
-          boxShadow: isMobile ? 'none' : BASE.shadowSm,
-        }}>
-          {sidebarContent}
-        </aside>
-
-        {/* Estado vacío */}
-        <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
-          <div style={{ textAlign: 'center', maxWidth: '380px' }}>
-            <div style={{
-              width: '80px', height: '80px', borderRadius: '20px',
-              background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
-              margin: '0 auto 20px', display: 'flex',
-              alignItems: 'center', justifyContent: 'center',
-              boxShadow: BASE.shadowLg,
-            }}>
-              <span style={{ fontSize: '40px' }}>👷</span>
-            </div>
-            <h2 style={{ fontSize: '20px', fontWeight: '800', color: BASE.navy, marginBottom: '8px' }}>
-              {isMobile ? 'Selecciona arriba' : 'Selecciona un capataz'}
-            </h2>
-            <p style={{ fontSize: '13px', color: BASE.muted, lineHeight: 1.5 }}>
-              {isMobile
-                ? 'Elige fecha y capataz arriba para empezar a registrar producción.'
-                : 'Usa el panel lateral para escoger fecha y capataz, luego empieza a registrar las actividades del día.'}
-            </p>
-          </div>
-        </main>
-      </div>
+      <InicioCapataz
+        fecha={fecha}
+        capataz={capataz}
+        fechaLimitada={fechaLimitada}
+        cuadrillasParaSelect={cuadrillasParaSelect}
+        miembrosCuadrilla={miembrosCuadrilla}
+        setFecha={setFecha}
+        setCapataz={setCapataz}
+        obtenerSemana={obtenerSemana}
+        showToast={showToast}
+        isMobile={isMobile}
+        actividadesCount={actividades.length}
+        actividadesConHHCount={actividadesConHH.length}
+        totalHH={totalHHActivas.total}
+        tieneTareo={tieneTareo}
+        onAbrirTareo={irATareo}
+        onAbrirMetrado={irAMetrado}
+      />
     );
   }
 
@@ -1023,20 +1006,7 @@ export default function Capataz({
           overflowX: 'hidden',
         }}>
 
-          {vista === 'inicio' ? (
-            <InicioCapataz
-              fecha={fecha}
-              capataz={capataz}
-              obtenerSemana={obtenerSemana}
-              isMobile={isMobile}
-              actividadesCount={actividades.length}
-              actividadesConHHCount={actividadesConHH.length}
-              totalHH={totalHHActivas.total}
-              tieneTareo={tieneTareo}
-              onAbrirTareo={irATareo}
-              onAbrirMetrado={irAMetrado}
-            />
-          ) : (
+          {(
             <>
               <StepperCapataz
                 vista={vista}
