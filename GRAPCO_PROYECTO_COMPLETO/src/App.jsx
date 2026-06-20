@@ -36,8 +36,25 @@ const OT_SIDEBAR = {
     { key: 'ot.sustento',  label: 'Sustento',            iconName: 'layers',     color: '#fbbf24' },
     { key: 'ot.informe',   label: 'Informe PDF',         iconName: 'fileText',   color: '#c4b5fd' },
   ],
+  // RESULTADO OPERATIVO desglosado en sub-grupos (antes era 1 ítem con 11 chips arriba).
   'RESULTADO OPERATIVO': [
-    { key: 'ot.ro',        label: 'Resultado Operativo', iconName: 'trendingUp', color: '#fbbf24' },
+    { key: 'ot.ro.dashboard',  label: 'Dashboard RO',       iconName: 'dashboard',  color: '#fbbf24' },
+  ],
+  'RO · COSTO REAL': [
+    { key: 'ot.ro.costoReal',  label: 'Costo Real (CR)',    iconName: 'coins',      color: '#38bdf8' },
+  ],
+  'RO · ANÁLISIS': [
+    { key: 'ot.ro.oficial',    label: 'RO Oficial (F06)',   iconName: 'fileText',   color: '#fbbf24' },
+    { key: 'ot.ro.partidas',   label: 'Por Partida',        iconName: 'layers',     color: '#c4b5fd' },
+    { key: 'ot.ro.frentes',    label: 'Por Frente (F1/F2)', iconName: 'target',     color: '#5eead4' },
+  ],
+  'RO · PROYECCIÓN': [
+    { key: 'ot.ro.proyeccion', label: 'Proyección',         iconName: 'trendingUp', color: '#f87171' },
+    { key: 'ot.ro.curvaS',     label: 'Curva S',            iconName: 'lineChart',  color: '#5eead4' },
+  ],
+  'RO · CONTRACTUAL': [
+    { key: 'ot.ro.adicionales', label: 'Adicionales',       iconName: 'calculator', color: '#4ade80' },
+    { key: 'ot.ro.deductivos',  label: 'Deductivos',        iconName: 'balance',    color: '#f87171' },
   ],
 };
 

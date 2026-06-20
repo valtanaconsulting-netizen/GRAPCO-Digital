@@ -92,6 +92,17 @@ const TAB_TO_GRUPO = {
 const KEY_TO_TAB_OT = {
   'ot.dashboard':   'dashboard',
   'ot.ro':          'ro',
+  // Las secciones del RO viven ahora como entradas del menú lateral (ot.ro.<seccion>);
+  // todas renderizan el ROPanel, que abre la sección indicada por KEY_TO_RO_SECCION.
+  'ot.ro.dashboard':   'ro',
+  'ot.ro.costoReal':   'ro',
+  'ot.ro.oficial':     'ro',
+  'ot.ro.partidas':    'ro',
+  'ot.ro.frentes':     'ro',
+  'ot.ro.proyeccion':  'ro',
+  'ot.ro.curvaS':      'ro',
+  'ot.ro.adicionales': 'ro',
+  'ot.ro.deductivos':  'ro',
   'ot.valoriz':     'valoriz',
   'ot.sustento':    'sustento',
   'ot.fotografico': 'fotografico',
@@ -101,9 +112,25 @@ const KEY_TO_TAB_OT = {
   'ot.bim':         'bim',
 };
 
+// Cada entrada ot.ro.<x> del menú lateral abre el ROPanel en esa sección.
+const KEY_TO_RO_SECCION = {
+  'ot.ro':             'dashboard',  // compat: clave antigua → arranca en el dashboard del RO
+  'ot.ro.dashboard':   'dashboard',
+  'ot.ro.costoReal':   'costoReal',
+  'ot.ro.oficial':     'oficial',
+  'ot.ro.partidas':    'partidas',
+  'ot.ro.frentes':     'frentes',
+  'ot.ro.proyeccion':  'proyeccion',
+  'ot.ro.curvaS':      'curvaS',
+  'ot.ro.adicionales': 'adicionales',
+  'ot.ro.deductivos':  'deductivos',
+};
+
 export default function OficinaTecnicaPanel({ showToast, tabExterna, onChangeTab }) {
   const [tabInterno, setTabInterno]   = useState('dashboard');
   const tab = tabExterna ? (KEY_TO_TAB_OT[tabExterna] || 'dashboard') : tabInterno;
+  // Sección del RO a abrir cuando la entrada del sidebar es ot.ro.<x> (null = ROPanel con sus chips).
+  const roSeccion = tabExterna ? (KEY_TO_RO_SECCION[tabExterna] || null) : null;
 
   // El grupo activo se deriva del tab. Si el usuario hace click manual, se respeta.
   const grupoDelTab = TAB_TO_GRUPO[tab] || 'resumen';
@@ -227,7 +254,7 @@ export default function OficinaTecnicaPanel({ showToast, tabExterna, onChangeTab
         {/* CONTENIDO */}
         <div className="anim-fade-in" key={tab}>
           {tab === 'dashboard'   && <DashboardOT showToast={showToast} />}
-          {tab === 'ro'          && <ROPanel showToast={showToast} />}
+          {tab === 'ro'          && <ROPanel showToast={showToast} seccionExterna={roSeccion} />}
           {tab === 'valoriz'     && <ValorizacionesView showToast={showToast} />}
           {tab === 'sustento'    && <SustentoMetrados showToast={showToast} />}
           {tab === 'fotografico' && <RegistroFotografico />}
