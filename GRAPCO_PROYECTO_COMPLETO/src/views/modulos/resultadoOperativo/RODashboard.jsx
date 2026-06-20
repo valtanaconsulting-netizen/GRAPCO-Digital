@@ -6,6 +6,9 @@ import { fmtSoles, fmtPct, colorMargen, colorCPI } from '../../../utils/planMaes
 import useRO from './useRO';
 import EmptyState from '../../../components/EmptyState';
 
+// Rótulo de sección — organiza el dashboard como narrativa: Actual → EVM → Proyección → Partidas.
+const SEC = { fontSize: '10px', fontWeight: 900, color: BASE.muted, letterSpacing: '1px', textTransform: 'uppercase', margin: '4px 2px -2px' };
+
 export default function RODashboard() {
   const { ro, loading } = useRO();
 
@@ -37,6 +40,7 @@ export default function RODashboard() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
       {/* KPIs financieros principales */}
+      <p style={SEC}>📌 Resultado a la fecha</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(216px, 1fr))', gap: '10px' }}>
         <KPI label="VENDIDO (EV)" valor={fmtSoles(evShow)}
           color={BASE.gold} sub={ro.evReal ? 'Valorizado al cliente' : `${fmtPct(indicadoresGlobales.pctAvanceFisico)} avance físico`} icono="💵" />
@@ -72,6 +76,7 @@ export default function RODashboard() {
       </div>
 
       {/* Proyecciones */}
+      <p style={SEC}>🔮 Proyección al cierre</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(216px, 1fr))', gap: '10px' }}>
         <KPI label="EAC (Proyección al cierre)" valor={fmtSoles(indicadoresGlobales.EAC)}
           color={indicadoresGlobales.EAC > totales.BAC ? BASE.red : BASE.green}
@@ -88,6 +93,7 @@ export default function RODashboard() {
       </div>
 
       {/* Layout 2 columnas: Críticas + Estrella */}
+      <p style={SEC}>🚦 Partidas — dónde mirar</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '12px' }}>
         {/* Partidas críticas */}
         <Card titulo={`🔴 PARTIDAS CRÍTICAS (${partidasCriticas.length})`} color={BASE.red}>
