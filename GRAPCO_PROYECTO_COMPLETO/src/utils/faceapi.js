@@ -113,24 +113,49 @@ export function promediarDescriptores(lista) {
   return out;
 }
 
-/**
- * Busca al obrero cuyo descriptor más se acerca al de la cara detectada.
- * obreros: [{ id, nombre, faceDescriptors: [Float32Array, ...] }]
- * Retorna { obrero, distancia } o null si nada alcanza el threshold.
- */
-export function buscarMatch(descriptorTest, obreros, threshold = 0.55) {
-  if (!descriptorTest || !obreros?.length) return null;
-  let mejor = { obrero: null, distancia: Infinity };
-  for (const o of obreros) {
-    const descs = o.faceDescriptors || [];
-    for (const d of descs) {
-      const arr = d instanceof Float32Array ? d : Float32Array.from(d);
-      const dist = faceapi.euclideanDistance(descriptorTest, arr);
-      if (dist < mejor.distancia) mejor = { obrero: o, distancia: dist };
-    }
+/** Distancias euclidianas (ordenadas asc) del descriptor de prueba a TODAS las fotos del obrero. */
+function distanciasOrdenadas(descriptorTest, descs) {
+  const ds = [];
+  for (const d of (descs || [])) {
+    const arr = d instanceof Float32Array ? d : Float32Array.from(d);
+    ds.push(faceapi.euclideanDistance(descriptorTest, arr));
   }
-  if (mejor.distancia <= threshold) return mejor;
-  return null;
+  ds.sort((a, b) => a - b);
+  return ds;
+}
+
+/**
+ * Busca al obrero cuyo rostro mas se acerca al detectado, con DOS defensas
+ * anti-falso-positivo (la causa de "me reconocio como otra persona"):
+ *
+ *  1) DISTANCIA ROBUSTA por obrero = media de las 2 fotos mas cercanas. Un match
+ *     REAL se parece a VARIAS de sus fotos; una coincidencia, a UNA sola. Asi un
+ *     fluke ("una foto de otra persona que por casualidad se parece") deja de ganar.
+ *  2) GATE DE MARGEN: el match solo se marca 'aceptado' si el SEGUNDO obrero mas
+ *     parecido esta CLARAMENTE mas lejos (margen >= margenMin). Si dos personas
+ *     quedan casi igual de cerca es AMBIGUO -> no se arriesga un match equivocado.
+ *
+ * obreros: [{ id, nombre, faceDescriptors: [Float32Array, ...] }]
+ * Devuelve SIEMPRE el mejor candidato (aunque no pase el piso/margen, para poder
+ * dar feedback "te veo como X al 68%"):
+ *   { obrero, distancia (min: para piso y similitud %), robusta, margen, aceptado }
+ * o null solo si no hay obreros/descriptor.
+ */
+export function buscarMatch(descriptorTest, obreros, threshold = 0.55, margenMin = 0.05) {
+  if (!descriptorTest || !obreros?.length) return null;
+  const ranking = obreros.map(o => {
+    const ds = distanciasOrdenadas(descriptorTest, o.faceDescriptors || []);
+    const min = ds.length ? ds[0] : Infinity;
+    const robusta = ds.length >= 2 ? (ds[0] + ds[1]) / 2 : min; // media de las 2 mejores
+    return { obrero: o, distancia: min, robusta };
+  }).sort((a, b) => a.robusta - b.robusta);
+
+  const mejor = ranking[0];
+  if (!mejor || !isFinite(mejor.robusta)) return null;
+  const segundo = ranking[1];
+  const margen = (segundo && isFinite(segundo.robusta)) ? (segundo.robusta - mejor.robusta) : Infinity;
+  const aceptado = mejor.distancia <= threshold && margen >= margenMin;
+  return { obrero: mejor.obrero, distancia: mejor.distancia, robusta: mejor.robusta, margen, aceptado };
 }
 
 // ── Calibración distancia euclidiana ↔ similitud (%) ──

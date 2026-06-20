@@ -56,8 +56,13 @@ const salidaTareoDe = (hhmm) => {
 // NO bajar de 75 sin autorización: es el piso de seguridad pedido por gerencia.
 const SIMILITUD_MIN  = 75;   // % mínimo obligatorio para aceptar un rostro
 const SIMILITUD_AUTO = 80;   // % desde el cual basta con menos evidencia temporal
-const DIST_MAX  = distanciaDeSimilitud(SIMILITUD_MIN);   // 0.25 → similitud 75%
-const DIST_AUTO = distanciaDeSimilitud(SIMILITUD_AUTO);  // 0.20 → similitud 80%
+const DIST_MAX  = distanciaDeSimilitud(SIMILITUD_MIN);   // ≈0.41 dist → similitud 75%
+const DIST_AUTO = distanciaDeSimilitud(SIMILITUD_AUTO);  // ≈0.39 dist → similitud 80%
+// Margen anti-ambigüedad: el match solo cuenta si la 2ª persona más parecida está
+// al menos esta distancia (euclidiana) MÁS LEJOS. Sin esto, dos rostros parecidos se
+// confundían — era la causa de "me reconoció como OTRA persona". 0.05 = margen claro
+// que no frena los matches legítimos (la persona correcta gana con holgura).
+const MARGEN_MIN = 0.05;
 
 // ── Robustez del marcaje grupal ──
 const COOLDOWN_MS   = 12000;  // tras marcar a alguien, no re-marcarlo por 12 s
@@ -263,11 +268,13 @@ export default function MarcadorAsistencia({ showToast }) {
         const lote = [];
         const enLote = new Set();
         for (const det of dets) {
-          const best = buscarMatch(det.descriptor, personalEnrolado, Infinity);
+          const best = buscarMatch(det.descriptor, personalEnrolado, Infinity, MARGEN_MIN);
           if (best?.obrero && best.distancia < mejorGlobal.dist) {
             mejorGlobal = { dist: best.distancia, nombre: best.obrero.nombre };
           }
-          if (!best?.obrero || best.distancia > DIST_MAX) continue;  // bajo el piso 75% → ignora
+          // Ignora si: no hay candidato · no supera el piso de 75% · o es AMBIGUO
+          // (otra persona casi igual de parecida) → no arriesgamos un match equivocado.
+          if (!best?.obrero || best.distancia > DIST_MAX || !best.aceptado) continue;
           reconoc++;
           const id = best.obrero.id;
 
