@@ -47,7 +47,12 @@ export default function SidebarCapataz({
   onAgregarActividad,
   onEliminarBorrador,
   onVerTareo,
+  modo = 'tareo',
 }) {
+  // El catálogo y "Nueva actividad" pertenecen al PASO 1 (tareo): ahí se eligen
+  // las actividades del día. En el paso de metrado no se agregan actividades —
+  // solo se llena el metrado de las que ya se escogieron.
+  const esTareo = modo === 'tareo';
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {/* Sección FECHA */}
@@ -108,15 +113,17 @@ export default function SidebarCapataz({
               🛠️ HERRAMIENTAS
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <button type="button" onClick={onAbrirCatalogoWbs} style={{
-                padding: '10px 12px', background: BASE.bgSoft, color: BASE.navy,
-                border: `1px solid ${BASE.border}`, borderRadius: '8px',
-                fontSize: '12px', fontWeight: '700', cursor: 'pointer',
-                textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px',
-              }}>
-                <span style={{ fontSize: '16px' }}>📚</span>
-                <span>Catálogo WBS</span>
-              </button>
+              {esTareo && (
+                <button type="button" onClick={onAbrirCatalogoWbs} style={{
+                  padding: '10px 12px', background: BASE.bgSoft, color: BASE.navy,
+                  border: `1px solid ${BASE.border}`, borderRadius: '8px',
+                  fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+                  textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px',
+                }}>
+                  <span style={{ fontSize: '16px' }}>📚</span>
+                  <span>Catálogo WBS</span>
+                </button>
+              )}
               <button type="button" onClick={onAbrirHistorial} style={{
                 padding: '10px 12px', background: BASE.bgSoft, color: BASE.navy,
                 border: `1px solid ${BASE.border}`, borderRadius: '8px',
@@ -126,16 +133,18 @@ export default function SidebarCapataz({
                 <span style={{ fontSize: '16px' }}>📅</span>
                 <span>Editar día anterior</span>
               </button>
-              <button type="button" onClick={onAgregarActividad} style={{
-                padding: '10px 12px', background: BASE.green, color: '#fff',
-                border: 'none', borderRadius: '8px',
-                fontSize: '12px', fontWeight: '800', cursor: 'pointer',
-                textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px',
-                boxShadow: `0 2px 6px ${BASE.green}55`,
-              }}>
-                <span style={{ fontSize: '16px' }}>➕</span>
-                <span>Nueva actividad</span>
-              </button>
+              {esTareo && (
+                <button type="button" onClick={onAgregarActividad} style={{
+                  padding: '10px 12px', background: BASE.green, color: '#fff',
+                  border: 'none', borderRadius: '8px',
+                  fontSize: '12px', fontWeight: '800', cursor: 'pointer',
+                  textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px',
+                  boxShadow: `0 2px 6px ${BASE.green}55`,
+                }}>
+                  <span style={{ fontSize: '16px' }}>➕</span>
+                  <span>Nueva actividad</span>
+                </button>
+              )}
               {actividades.length > 0 && onVerTareo && (
                 <button type="button" onClick={onVerTareo} style={{
                   padding: '10px 12px', background: BASE.navy, color: '#fff',

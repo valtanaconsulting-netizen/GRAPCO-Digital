@@ -23,10 +23,10 @@ export default function CapatazPanel(props) {
           👷 PANEL DE CAPATAZ · OBRA EN CAMPO
         </p>
         <h2 style={{ fontSize: '22px', fontWeight: '900', marginTop: '4px' }}>
-          Tu día y tu evidencia fotográfica
+          Tu día: Tareo y Metrado
         </h2>
         <p style={{ fontSize: '12px', opacity: 0.92, marginTop: '4px' }}>
-          Registra avances con fotos. Esa información llega directo a los ingenieros.
+          1° coloca a tu gente y sus horas (Tareo). 2° registra el metrado y las observaciones. Llega directo a los ingenieros.
         </p>
       </div>
 

@@ -28,6 +28,8 @@ import HeaderCapataz from './capataz/secciones/HeaderCapataz';
 import TabsActividades from './capataz/secciones/TabsActividades';
 import SidebarCapataz from './capataz/secciones/SidebarCapataz';
 import EditorActividad from './capataz/secciones/EditorActividad';
+import InicioCapataz from './capataz/secciones/InicioCapataz';
+import StepperCapataz from './capataz/secciones/StepperCapataz';
 import { useAuth } from '../contexts/AuthContext';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 
@@ -75,6 +77,9 @@ export default function Capataz({
   const fechaLimitada = rol === 'capataz';
   const [fecha,          setFecha]          = useState(hoy());
   const [capataz,        setCapataz]        = useState('');
+  // Paso del flujo del capataz: 'inicio' (las 2 tarjetas) → 'tareo' (gente+HH)
+  // → 'metrado' (metrado+observación+fotos de las actividades del tareo).
+  const [vista,          setVista]          = useState('inicio');
   const [actividades,    setActividades]    = useState([]);
   const [actActivaId,    setActActivaId]    = useState(null);
   const [borradorDocId,  setBorradorDocId]  = useState(null);
@@ -339,7 +344,23 @@ export default function Capataz({
     return { hn, he, total: hn + he };
   }, [hhAcumPorTrab]);
 
+  // ── Derivados para el flujo de 2 pasos ──
+  // El METRADO deriva del TAREO: solo se metra sobre las actividades que ya
+  // tienen horas asignadas. `tieneTareo` es el gate que habilita el paso 2.
+  const actividadesConHH = useMemo(() =>
+    actividades.filter(a =>
+      (a.detalleTareo || []).some(t => (parseFloat(t?.hn) || 0) + (parseFloat(t?.he) || 0) > 0)
+    ), [actividades]);
+  const tieneTareo = actividadesConHH.length > 0;
+
+  // Lista de actividades visible según el paso: en metrado, solo las del tareo.
+  const actividadesVista = vista === 'metrado' ? actividadesConHH : actividades;
+
+  // Al cambiar de día o de capataz se vuelve al inicio (las 2 tarjetas).
+  useEffect(() => { setVista('inicio'); }, [capataz, fecha]);
+
   // ── Acciones sobre actividades ──
+  // En metrado la actividad activa debe pertenecer a la lista derivada del tareo.
   const actividadActiva = actividades.find(a => a.id === actActivaId);
 
   const agregarActividad = () => {
@@ -571,7 +592,10 @@ export default function Capataz({
   };
 
   // ── EJECUTAR SUBIDA (sin validaciones legales — esas se hacen en subir()) ──
-  const ejecutarSubida = async () => {
+  // `listaParaSubir` son las actividades que de verdad se escriben a
+  // Registros_Campo (las del tareo, con HH). El BORRADOR sí conserva TODAS las
+  // actividades (incluidas filas sin horas) para no perderlas del día.
+  const ejecutarSubida = async (listaParaSubir = actividades) => {
     setEstadoBorrador('subiendo');
     let exitos = 0, fallos = 0;
 
@@ -579,7 +603,7 @@ export default function Capataz({
       // 1) UNA sola consulta para resolver registros existentes del día
       //    (antes era una consulta por actividad → N viajes de red).
       const existentesPorAct = {};
-      const faltaResolver = actividades.some(a => !a._registroExistenteId);
+      const faltaResolver = listaParaSubir.some(a => !a._registroExistenteId);
       if (faltaResolver) {
         try {
           const snap = await getDocs(query(
@@ -596,7 +620,7 @@ export default function Capataz({
 
       // 2) Escribir TODO en un solo lote (un commit, no N escrituras seriadas).
       const batch = writeBatch(db);
-      for (const a of actividades) {
+      for (const a of listaParaSubir) {
         const metVal = parseFloat(a.metrado) || 0;
         const detalleFinal = a.detalleTareo
           .filter(t => (t.hn + t.he) > 0)
@@ -681,17 +705,21 @@ export default function Capataz({
     if (!capataz || !fecha) return showToast('Falta fecha o capataz', 'warning');
     if (actividades.length === 0) return showToast('No hay actividades para subir', 'warning');
 
+    // Solo se suben las actividades del TAREO (con HH). Las filas sin horas son
+    // entradas abandonadas: no se escriben ni bloquean la subida.
+    const actsReales = actividadesConHH;
+    if (actsReales.length === 0)
+      return showToast('Ninguna actividad tiene horas. Asígnalas en el tareo primero.', 'warning');
+
     // 1) Validaciones de datos básicos + regla de bajo rendimiento (spec)
     const errores = [];
-    actividades.forEach((a, i) => {
+    actsReales.forEach((a, i) => {
       if (!a.partida || !a.subpartida || !a.actividad)
         errores.push(`Act #${i + 1}: falta partida/subpartida/actividad`);
       const met = parseFloat(a.metrado);
       if (isNaN(met) || met < 0)
-        errores.push(`Act "${a.actividad || `#${i + 1}`}": metrado inválido`);
+        errores.push(`Act "${a.actividad || `#${i + 1}`}": metrado inválido — complétalo en el paso de Metrado`);
       const totalHH = a.detalleTareo.reduce((s, t) => s + (t.hn || 0) + (t.he || 0), 0);
-      if (totalHH === 0)
-        errores.push(`Act "${a.actividad || `#${i + 1}`}": sin HH asignadas`);
 
       // SPEC: si IP real > IP meta (rendimiento peor que esperado),
       // exigir observación/restricción + al menos una foto.
@@ -733,7 +761,7 @@ export default function Capataz({
     }
 
     // 3) Sin bloqueos → subir directo (HE sin límite)
-    await ejecutarSubida();
+    await ejecutarSubida(actsReales);
   };
 
   // ── HISTORIAL ──
@@ -814,6 +842,33 @@ export default function Capataz({
     Object.values(cuadrillasDirectas || {}).find(c => c?.capataz === capataz)
   );
 
+  // ── Navegación entre pasos (inicio / tareo / metrado) ──
+  const irATareo = () => {
+    setVista('tareo');
+    setActActivaId(prev =>
+      actividades.some(a => a.id === prev) ? prev : (actividades[0]?.id || null));
+  };
+  const irAMetrado = () => {
+    if (!tieneTareo) {
+      showToast('Primero asigna horas a al menos una actividad en el tareo', 'warning');
+      return;
+    }
+    setVista('metrado');
+    setActActivaId(prev =>
+      actividadesConHH.some(a => a.id === prev) ? prev : (actividadesConHH[0]?.id || null));
+  };
+  const irInicio = () => setVista('inicio');
+
+  // Paso 1 → Paso 2: guarda el borrador del tareo y avanza al metrado.
+  const siguienteAMetrado = async () => {
+    if (!tieneTareo) {
+      showToast('Asigna horas a al menos una actividad antes de pasar al metrado', 'warning');
+      return;
+    }
+    await guardarBorrador();
+    irAMetrado();
+  };
+
   // ════════════════════════════════════════════════════════════
   // RENDER — Layout sidebar + main + sticky actions
   // ════════════════════════════════════════════════════════════
@@ -850,6 +905,7 @@ export default function Capataz({
   // por eso lo guardamos en una variable JSX con las mismas props.
   const sidebarContent = (
     <SidebarCapataz
+      modo={vista === 'metrado' ? 'metrado' : 'tareo'}
       fecha={fecha}
       capataz={capataz}
       fechaLimitada={fechaLimitada}
@@ -970,49 +1026,76 @@ export default function Capataz({
           overflowX: 'hidden',
         }}>
 
-          <HeaderCapataz
-            fecha={fecha}
-            capataz={capataz}
-            actividadesCount={actividades.length}
-            totalHHActivas={totalHHActivas}
-            obtenerSemana={obtenerSemana}
-          />
-
-          <TabsActividades
-            actividades={actividades}
-            actActivaId={actActivaId}
-            isMobile={isMobile}
-            onSetActActivaId={setActActivaId}
-            onAgregarActividad={agregarActividad}
-          />
-
-          {actividadActiva && (
-            <EditorActividad
-              actividadActiva={actividadActiva}
-              isMobile={isMobile}
-              buscarTrab={buscarTrab}
-              sinTopeHN={sinTopeHN}
-              importandoFacial={importandoFacial}
+          {vista === 'inicio' ? (
+            <InicioCapataz
               fecha={fecha}
-              showToast={showToast}
-              hhAcumPorTrab={hhAcumPorTrab}
-              onUpdActividad={updActividad}
-              onEliminarActividad={eliminarActividad}
-              onAbrirCatalogoWbs={() => setShowWbs(true)}
-              onImportarFacial={importarDesdeAsistenciaFacial}
-              onUpdTareo={updTareo}
+              capataz={capataz}
+              obtenerSemana={obtenerSemana}
+              isMobile={isMobile}
+              actividadesCount={actividades.length}
+              actividadesConHHCount={actividadesConHH.length}
+              totalHH={totalHHActivas.total}
+              tieneTareo={tieneTareo}
+              onAbrirTareo={irATareo}
+              onAbrirMetrado={irAMetrado}
             />
+          ) : (
+            <>
+              <StepperCapataz
+                vista={vista}
+                tieneTareo={tieneTareo}
+                onIrInicio={irInicio}
+                onIr={(v) => (v === 'metrado' ? irAMetrado() : irATareo())}
+              />
+
+              <HeaderCapataz
+                fecha={fecha}
+                capataz={capataz}
+                actividadesCount={actividadesVista.length}
+                totalHHActivas={totalHHActivas}
+                obtenerSemana={obtenerSemana}
+              />
+
+              <TabsActividades
+                actividades={actividadesVista}
+                actActivaId={actActivaId}
+                isMobile={isMobile}
+                onSetActActivaId={setActActivaId}
+                onAgregarActividad={agregarActividad}
+              />
+
+              {actividadActiva && actividadesVista.some(a => a.id === actividadActiva.id) && (
+                <EditorActividad
+                  modo={vista}
+                  actividadActiva={actividadActiva}
+                  isMobile={isMobile}
+                  buscarTrab={buscarTrab}
+                  sinTopeHN={sinTopeHN}
+                  importandoFacial={importandoFacial}
+                  fecha={fecha}
+                  showToast={showToast}
+                  hhAcumPorTrab={hhAcumPorTrab}
+                  onUpdActividad={updActividad}
+                  onEliminarActividad={eliminarActividad}
+                  onAbrirCatalogoWbs={() => setShowWbs(true)}
+                  onImportarFacial={importarDesdeAsistenciaFacial}
+                  onUpdTareo={updTareo}
+                />
+              )}
+            </>
           )}
         </main>
       </div>
 
-      {capataz && actividades.length > 0 && (
+      {capataz && vista !== 'inicio' && actividadesVista.length > 0 && (
         <BarraInferior
+          modo={vista}
           isMobile={isMobile}
           estadoBorrador={estadoBorrador}
-          actividadesCount={actividades.length}
+          actividadesCount={vista === 'metrado' ? actividadesConHH.length : actividades.length}
           onGuardar={guardarBorrador}
           onSubir={subir}
+          onSiguiente={siguienteAMetrado}
         />
       )}
     </>

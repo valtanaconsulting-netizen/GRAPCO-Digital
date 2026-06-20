@@ -27,12 +27,40 @@ window.addEventListener('vite:preloadError', (event) => {
   window.location.reload();
 });
 
+// ── Aplicar la actualización (purga caché + Service Worker y recarga) ──
+// La invoca el botón "Actualizar ahora" del cartel (ActualizacionBanner.jsx).
+// Es global para que cualquier parte de la UI pueda dispararla sin acoplarse.
+window.__grapcoActualizando = false;
+window.__grapcoActualizacionPendiente = false;
+window.__grapcoAplicarActualizacion = async function aplicarActualizacion() {
+  if (window.__grapcoActualizando) return;
+  window.__grapcoActualizando = true;
+  try {
+    // Si hay un SW en espera, que tome control; luego se purga todo igual.
+    const reg = await navigator.serviceWorker?.getRegistration?.();
+    if (reg?.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+    const regs = await navigator.serviceWorker?.getRegistrations?.() || [];
+    await Promise.all(regs.map(r => r.unregister()));
+    const keys = await caches?.keys?.() || [];
+    await Promise.all(keys.map(k => caches.delete(k)));
+  } catch { /* sin SW/caches: igual recargamos */ }
+  window.location.reload();
+};
+
+// Avisa a la UI que hay versión nueva (no recarga sola: la persona decide).
+function avisarActualizacionDisponible() {
+  window.__grapcoActualizacionPendiente = true;
+  try { window.dispatchEvent(new CustomEvent('grapco:update-available')); } catch { /* noop */ }
+}
+
 // ── Detector de versión nueva (rompe el caché viejo de la PWA) ──
 // Al arrancar y al volver a la pestaña, compara el bundle que ESTÁ corriendo
 // contra el index.html FRESCO del servidor. Si el hosting tiene una versión
-// nueva, purga caches + service worker y recarga UNA vez. Se ejecuta al inicio
-// (antes de que el usuario trabaje), así nunca queda atascado en una build vieja.
+// nueva, NO recarga en silencio: avisa con el cartel para que el obrero termine
+// lo que está haciendo y toque "Actualizar". Así nadie pierde lo que escribe ni
+// se queda atascado en una build vieja sin enterarse.
 async function verificarVersion() {
+  if (window.__grapcoActualizando || window.__grapcoActualizacionPendiente) return;
   try {
     const corriendo = document.querySelector('script[type="module"][src*="/assets/index-"]')?.src || '';
     const hashLocal = (corriendo.match(/index-[A-Za-z0-9_-]+\.js/) || [])[0];
@@ -40,25 +68,16 @@ async function verificarVersion() {
     const html = await fetch('/index.html', { cache: 'no-store' }).then(r => r.text());
     const hashServidor = (html.match(/index-[A-Za-z0-9_-]+\.js/) || [])[0];
     if (hashServidor && hashServidor !== hashLocal) {
-      const KEY = 'grapco_version_reload';
-      if (Date.now() - Number(sessionStorage.getItem(KEY) || 0) < 20000) return; // anti-bucle
-      sessionStorage.setItem(KEY, String(Date.now()));
-      try {
-        const regs = await navigator.serviceWorker?.getRegistrations?.() || [];
-        await Promise.all(regs.map(r => r.unregister()));
-        const keys = await caches?.keys?.() || [];
-        await Promise.all(keys.map(k => caches.delete(k)));
-      } catch { /* sin SW/caches: igual recargamos */ }
-      window.location.reload();
+      avisarActualizacionDisponible();
     }
-  } catch { /* offline o sin red: no forzar nada */ }
+  } catch { /* offline o sin red: no avisar nada */ }
 }
 verificarVersion();
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') verificarVersion(); });
 // Chequeo PERIÓDICO (cada 5 min): una PWA instalada en escritorio/kiosko puede
 // quedar horas abierta y enfocada → 'visibilitychange' nunca dispara y no se
-// enteraría de un deploy nuevo. Este intervalo garantiza que tome la última
-// versión sin que nadie tenga que cerrar/reabrir ni limpiar caché.
+// enteraría de un deploy nuevo. Este intervalo garantiza que el aviso aparezca
+// aunque nadie cambie de pestaña.
 setInterval(verificarVersion, 5 * 60 * 1000);
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -76,12 +95,13 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   const BUILD_ID = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev';
 
-  // Solo recargar si YA había un SW controlando (es una actualización real,
-  // no la primera instalación). Evita un reload innecesario en la 1ª visita.
-  const hadController = !!navigator.serviceWorker.controller;
+  // Recargar SOLO cuando la actualización la inició el usuario (botón "Actualizar
+  // ahora"). Antes recargaba en cuanto un SW nuevo tomaba control → la página se
+  // reiniciaba sola a media faena. Ahora el cambio de control sin acción del
+  // usuario no recarga: el aviso ya se mostró y la persona decide cuándo.
   let recargando = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!hadController || recargando) return;
+    if (!window.__grapcoActualizando || recargando) return;
     recargando = true;
     window.location.reload();
   });
@@ -90,14 +110,17 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
     navigator.serviceWorker.register(`/sw.js?v=${BUILD_ID}`, { scope: '/' })
       .then(reg => {
         console.log('[PWA] Service Worker registrado:', reg.scope, 'build', BUILD_ID);
-        // Si hay un SW esperando, pídele que active ya.
-        if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        // Si hay un SW en espera, hay versión nueva lista → avisar (sin activar
+        // en silencio). La activación real ocurre cuando el usuario toca el botón.
+        if (reg.waiting && navigator.serviceWorker.controller) avisarActualizacionDisponible();
         reg.addEventListener('updatefound', () => {
           const sw = reg.installing;
           if (!sw) return;
           sw.addEventListener('statechange', () => {
+            // SW nuevo instalado mientras ya había uno controlando = actualización
+            // disponible. Se avisa; no se fuerza skipWaiting.
             if (sw.state === 'installed' && navigator.serviceWorker.controller) {
-              sw.postMessage({ type: 'SKIP_WAITING' });
+              avisarActualizacionDisponible();
             }
           });
         });

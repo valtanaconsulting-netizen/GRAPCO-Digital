@@ -1,8 +1,10 @@
 // src/views/capataz/secciones/EditorActividad.jsx
-// Editor de la actividad activa: identificación (partida/subpartida/actividad),
-// metrado, observaciones, fotos del avance e ingreso de HN/HE por trabajador.
-// Incluye el botón "Importar HH desde Marcador Facial" para autocompletar HN/HE
-// desde Asistencia_Diaria.
+// Editor de la actividad activa, con DOS modos según el paso del capataz:
+//   modo="tareo"   → identificación (partida/subpartida/actividad) + HN/HE por
+//                    trabajador (incluye "Importar HH desde Marcador Facial").
+//   modo="metrado" → identificación en SOLO LECTURA (ya viene del tareo) +
+//                    metrado avanzado + observaciones + fotos del avance.
+// El modelo de datos es el mismo `actividad`; solo cambia qué secciones se ven.
 import React from 'react';
 import { BASE, inp } from '../../../utils/styles';
 import { CATALOGO_MASTER, JORNADA_LEGAL } from '../../../utils/constants';
@@ -24,7 +26,10 @@ export default function EditorActividad({
   onAbrirCatalogoWbs,
   onImportarFacial,
   onUpdTareo,
+  modo = 'tareo',
 }) {
+  const esTareo = modo === 'tareo';
+  const esMetrado = modo === 'metrado';
   return (
     <div style={{
       background: BASE.white, borderRadius: '14px',
@@ -64,57 +69,82 @@ export default function EditorActividad({
             }}>✓ SUBIDO</span>
           )}
         </div>
-        <button type="button" onClick={() => onEliminarActividad(actividadActiva.id)} style={{
-          padding: '6px 10px', background: BASE.redLight, color: BASE.red,
-          border: 'none', borderRadius: '7px', fontSize: '11px',
-          fontWeight: '700', cursor: 'pointer', flexShrink: 0,
-        }}>🗑️</button>
+        {esTareo && (
+          <button type="button" onClick={() => onEliminarActividad(actividadActiva.id)} style={{
+            padding: '6px 10px', background: BASE.redLight, color: BASE.red,
+            border: 'none', borderRadius: '7px', fontSize: '11px',
+            fontWeight: '700', cursor: 'pointer', flexShrink: 0,
+          }}>🗑️</button>
+        )}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        {/* Botón catálogo */}
-        <button type="button" onClick={onAbrirCatalogoWbs} style={{
-          padding: '12px 16px',
-          background: `linear-gradient(135deg, ${BASE.goldLight} 0%, #fff 100%)`,
-          color: BASE.navy,
-          border: `1.5px dashed ${BASE.gold}`, borderRadius: '10px',
-          fontSize: '12px', fontWeight: '800', cursor: 'pointer', textAlign: 'center',
-        }}>📚 Buscar en catálogo (toda la WBS)</button>
+        {/* ── IDENTIFICACIÓN (solo en TAREO; en metrado va fija) ── */}
+        {esTareo && (
+          <>
+            {/* Botón catálogo */}
+            <button type="button" onClick={onAbrirCatalogoWbs} style={{
+              padding: '12px 16px',
+              background: `linear-gradient(135deg, ${BASE.goldLight} 0%, #fff 100%)`,
+              color: BASE.navy,
+              border: `1.5px dashed ${BASE.gold}`, borderRadius: '10px',
+              fontSize: '12px', fontWeight: '800', cursor: 'pointer', textAlign: 'center',
+            }}>📚 Buscar en catálogo (toda la WBS)</button>
 
-        {/* Selectores Partida / Subpartida */}
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
-          <div>
-            <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', display: 'block', marginBottom: '5px' }}>PARTIDA</label>
-            <select value={actividadActiva.partida} style={inp({ fontSize: '12px' })}
-              onChange={e => onUpdActividad(actividadActiva.id, 'partida', e.target.value)}>
-              <option value="">Seleccionar...</option>
-              {Object.keys(CATALOGO_MASTER).map(p => <option key={p} value={p}>{p}</option>)}
-            </select>
+            {/* Selectores Partida / Subpartida */}
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
+              <div>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', display: 'block', marginBottom: '5px' }}>PARTIDA</label>
+                <select value={actividadActiva.partida} style={inp({ fontSize: '12px' })}
+                  onChange={e => onUpdActividad(actividadActiva.id, 'partida', e.target.value)}>
+                  <option value="">Seleccionar...</option>
+                  {Object.keys(CATALOGO_MASTER).map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', display: 'block', marginBottom: '5px' }}>SUBPARTIDA</label>
+                <select value={actividadActiva.subpartida} style={inp({ fontSize: '12px' })}
+                  onChange={e => onUpdActividad(actividadActiva.id, 'subpartida', e.target.value)}
+                  disabled={!actividadActiva.partida}>
+                  <option value="">Seleccionar...</option>
+                  {actividadActiva.partida && Object.keys(CATALOGO_MASTER[actividadActiva.partida] || {}).map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', display: 'block', marginBottom: '5px' }}>ACTIVIDAD</label>
+              <select value={actividadActiva.actividad} style={inp({ fontSize: '12px' })}
+                onChange={e => onUpdActividad(actividadActiva.id, 'actividad', e.target.value)}
+                disabled={!actividadActiva.subpartida}>
+                <option value="">Seleccionar...</option>
+                {actividadActiva.partida && actividadActiva.subpartida &&
+                  (CATALOGO_MASTER[actividadActiva.partida]?.[actividadActiva.subpartida] || []).map(a =>
+                    <option key={a} value={a}>{a}</option>
+                  )}
+              </select>
+            </div>
+          </>
+        )}
+
+        {/* ── IDENTIFICACIÓN FIJA (solo en METRADO, viene del tareo) ── */}
+        {esMetrado && (
+          <div style={{
+            background: BASE.bgSoft, border: `1px solid ${BASE.border}`,
+            borderRadius: '10px', padding: '10px 12px',
+            display: 'flex', flexDirection: 'column', gap: '2px',
+          }}>
+            <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.5px' }}>
+              ACTIVIDAD DEL TAREO
+            </p>
+            <p style={{ fontSize: '12px', fontWeight: '700', color: BASE.navy }}>
+              {actividadActiva.partida || '—'} › {actividadActiva.subpartida || '—'}
+            </p>
           </div>
-          <div>
-            <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', display: 'block', marginBottom: '5px' }}>SUBPARTIDA</label>
-            <select value={actividadActiva.subpartida} style={inp({ fontSize: '12px' })}
-              onChange={e => onUpdActividad(actividadActiva.id, 'subpartida', e.target.value)}
-              disabled={!actividadActiva.partida}>
-              <option value="">Seleccionar...</option>
-              {actividadActiva.partida && Object.keys(CATALOGO_MASTER[actividadActiva.partida] || {}).map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
-        </div>
+        )}
 
-        <div>
-          <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', display: 'block', marginBottom: '5px' }}>ACTIVIDAD</label>
-          <select value={actividadActiva.actividad} style={inp({ fontSize: '12px' })}
-            onChange={e => onUpdActividad(actividadActiva.id, 'actividad', e.target.value)}
-            disabled={!actividadActiva.subpartida}>
-            <option value="">Seleccionar...</option>
-            {actividadActiva.partida && actividadActiva.subpartida &&
-              (CATALOGO_MASTER[actividadActiva.partida]?.[actividadActiva.subpartida] || []).map(a =>
-                <option key={a} value={a}>{a}</option>
-              )}
-          </select>
-        </div>
-
+        {/* ── METRADO + OBSERVACIONES + FOTOS (solo en METRADO) ── */}
+        {esMetrado && (<>
         {/* Metrado destacado */}
         <div style={{
           background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
@@ -172,8 +202,10 @@ export default function EditorActividad({
             showToast={showToast}
           />
         </div>
+        </>)}
 
-        {/* TAREO DE PERSONAL — siempre 1 columna */}
+        {/* ── TAREO DE PERSONAL (solo en TAREO) — siempre 1 columna ── */}
+        {esTareo && (
         <div style={{
           background: BASE.bgSoft,
           border: `1px solid ${BASE.border}`,
@@ -254,6 +286,7 @@ export default function EditorActividad({
             );
           })()}
         </div>
+        )}
       </div>
     </div>
   );

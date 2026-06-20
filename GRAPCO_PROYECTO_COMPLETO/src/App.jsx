@@ -117,6 +117,7 @@ const ROL_ITEMS = {
 import { ThemeProvider } from './contexts/ThemeContext';
 import { NotificationProvider, useNotifications } from './contexts/NotificationContext';
 import PwaInstallPrompt from './components/PwaInstallPrompt';
+import ActualizacionBanner from './components/ActualizacionBanner';
 import CommandPalette from './components/CommandPalette';
 import OfflineBanner from './components/OfflineBanner';
 import GateProyectoLegacy from './components/GateProyectoLegacy';
@@ -221,6 +222,8 @@ export default function App() {
           <ErrorBoundary>
             <AppInnerKeyed />
             <PwaInstallPrompt />
+            {/* Aviso global "Hay una nueva actualización" tras cada deploy. */}
+            <ActualizacionBanner />
           </ErrorBoundary>
         </NotificationProvider>
         </ThemeProvider>
