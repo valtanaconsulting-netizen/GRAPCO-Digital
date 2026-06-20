@@ -45,7 +45,9 @@ export default function Capataz({
   cuadrillasActivas, cuadrillasDB, personalDB, isMobile, showToast,
 }) {
   const { rol, user } = useAuth();
-  const { proyectoActivoId, frenteActivoId, modoTodosFrentes, FRENTE_DEFAULT_ID, filtrarPorContexto } = useProyectoActivo();
+  const { proyectoActivoId, proyectoActivo, frenteActivoId, modoTodosFrentes, FRENTE_DEFAULT_ID, filtrarPorContexto } = useProyectoActivo();
+  const proyectoNombre = proyectoActivo?.nombre || proyectoActivo?.codigo || '';
+  const clienteNombre = proyectoActivo?.cliente || proyectoActivo?.clienteNombre || proyectoActivo?.empresa || '';
 
   // Override forzoso: si el usuario tiene proyectoIdAsignado en /Usuarios, ESE es el proyectoId
   // que se persiste — no el del contexto activo. Garantiza que un capataz nunca pueda escribir
@@ -937,13 +939,12 @@ export default function Capataz({
       <InicioCapataz
         fecha={fecha}
         capataz={capataz}
-        fechaLimitada={fechaLimitada}
+        proyectoNombre={proyectoNombre}
+        clienteNombre={clienteNombre}
         cuadrillasParaSelect={cuadrillasParaSelect}
         miembrosCuadrilla={miembrosCuadrilla}
-        setFecha={setFecha}
         setCapataz={setCapataz}
         obtenerSemana={obtenerSemana}
-        showToast={showToast}
         isMobile={isMobile}
         actividadesCount={actividades.length}
         actividadesConHHCount={actividadesConHH.length}
