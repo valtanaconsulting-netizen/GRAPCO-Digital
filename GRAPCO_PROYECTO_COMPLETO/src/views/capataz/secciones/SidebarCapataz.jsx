@@ -79,34 +79,28 @@ export default function SidebarCapataz({
         />
       </div>
 
-      {/* Sección CAPATAZ — selector premium (avatar + nombre legible) */}
-      <div>
-        <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.gold, letterSpacing: '1.2px', marginBottom: '8px' }}>
-          👷 CAPATAZ
-        </p>
-        <SelectorCapataz
-          value={capataz}
-          opciones={Object.entries(cuadrillasParaSelect).map(([nombre, miembros]) => ({
-            nombre,
-            miembros: Array.isArray(miembros) ? miembros.length : null,
-          }))}
-          onChange={setCapataz}
-        />
-        {cuadrillaInfo && (
-          <div style={{
-            marginTop: '8px', padding: '8px 10px',
-            background: BASE.bgSoft, borderRadius: '8px',
-            border: `1px solid ${BASE.border}`,
-          }}>
-            <p style={{ fontSize: '11px', fontWeight: '700', color: BASE.navy, marginBottom: '2px' }}>
-              🔧 {cuadrillaInfo.especialidad}
-            </p>
-            <p style={{ fontSize: '10px', color: BASE.muted }}>
-              👥 {miembrosCuadrilla.length} miembro{miembrosCuadrilla.length !== 1 ? 's' : ''} en cuadrilla
-            </p>
-          </div>
-        )}
-      </div>
+      {/* El capataz ya viene resuelto desde la pantalla de entrada — aquí solo se
+          muestra una línea fina de contexto (sin el selector grande, que era
+          redundante). */}
+      {capataz && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '8px',
+          padding: '8px 10px', background: BASE.bgSoft,
+          borderRadius: '8px', border: `1px solid ${BASE.border}`,
+        }}>
+          <span style={{ fontSize: '14px' }}>👷</span>
+          <span style={{ minWidth: 0 }}>
+            <span style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: BASE.navy, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {capataz}
+            </span>
+            {miembrosCuadrilla?.length > 0 && (
+              <span style={{ fontSize: '9.5px', color: BASE.muted }}>
+                👥 {miembrosCuadrilla.length} en cuadrilla
+              </span>
+            )}
+          </span>
+        </div>
+      )}
 
       {/* Acciones */}
       {capataz && (

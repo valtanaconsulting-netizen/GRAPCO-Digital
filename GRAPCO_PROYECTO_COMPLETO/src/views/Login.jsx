@@ -208,6 +208,9 @@ export default function Login() {
     }
   };
 
+  // En móvil (1 columna) la tarjeta va más compacta para no ocupar tanto alto.
+  const compact = !isWide;
+
   // ── Bloque reutilizable: la tarjeta de login (header + cuerpo + footer Valtana) ──
   const tarjeta = (
     <div style={{
@@ -216,7 +219,7 @@ export default function Login() {
       WebkitBackdropFilter: 'blur(10px)',
       borderRadius: '20px',
       padding: '0',
-      width: '100%', maxWidth: '410px',
+      width: '100%', maxWidth: compact ? '360px' : '410px',
       textAlign: 'center',
       boxShadow: `0 32px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(245,158,11,0.30), 0 0 60px rgba(245,158,11,0.12)`,
       position: 'relative', zIndex: 5,
@@ -227,7 +230,7 @@ export default function Login() {
       {/* Header con identidad GRAPCO (navy + acento dorado) */}
       <div style={{
         background: `linear-gradient(135deg, ${BASE.navy} 0%, ${BASE.navyDark || '#0f1a2e'} 100%)`,
-        padding: '28px 32px 22px',
+        padding: compact ? '18px 24px 14px' : '28px 32px 22px',
         position: 'relative',
         borderBottom: `3px solid ${BASE.gold}`,
       }}>
@@ -239,8 +242,8 @@ export default function Login() {
 
         {/* Logo en cuadro blanco con halo dorado */}
         <div style={{
-          width: '74px', height: '74px',
-          margin: '0 auto 12px',
+          width: compact ? '54px' : '74px', height: compact ? '54px' : '74px',
+          margin: compact ? '0 auto 8px' : '0 auto 12px',
           borderRadius: '16px',
           background: '#fff',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -256,26 +259,28 @@ export default function Login() {
         </div>
 
         <h1 style={{
-          fontSize: '24px', fontWeight: '900',
+          fontSize: compact ? '20px' : '24px', fontWeight: '900',
           color: '#fff', marginBottom: '4px',
-          letterSpacing: '2px',
+          letterSpacing: compact ? '1.5px' : '2px',
           textShadow: '0 2px 8px rgba(0,0,0,0.3)',
         }}>
           GRAPCO <span style={{ color: BASE.gold }}>S.A.C.</span>
         </h1>
         <p style={{
-          fontSize: '10px', color: BASE.gold,
-          fontWeight: '800', letterSpacing: '2.4px',
+          fontSize: compact ? '9px' : '10px', color: BASE.gold,
+          fontWeight: '800', letterSpacing: compact ? '2px' : '2.4px',
         }}>
           GESTIÓN DE PROYECTOS VDC
         </p>
       </div>
 
       {/* Cuerpo del card */}
-      <div style={{ padding: '24px 32px 22px' }}>
+      <div style={{ padding: compact ? '16px 22px 16px' : '24px 32px 22px' }}>
 
-      {/* RECOMENDACIÓN: instalar como app de escritorio */}
-      {!pwaInstalada && (
+      {/* RECOMENDACIÓN: instalar como app de escritorio.
+          En móvil se oculta (ya existe el aviso flotante global) para que el
+          inicio de sesión quede más compacto. */}
+      {!pwaInstalada && !compact && (
         <div style={{
           background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
           border: '1.5px solid #f59e0b',
@@ -326,7 +331,7 @@ export default function Login() {
         </div>
       )}
 
-      <p style={{ fontSize: '11px', color: BASE.muted, marginBottom: '20px', fontWeight: '700', letterSpacing: '2px' }}>
+      <p style={{ fontSize: '11px', color: BASE.muted, marginBottom: compact ? '14px' : '20px', fontWeight: '700', letterSpacing: '2px' }}>
         {view === 'login' ? '— INICIA SESIÓN —' : '— CREAR CUENTA —'}
       </p>
 
@@ -411,12 +416,12 @@ export default function Login() {
       )}
 
       {/* Formulario normal */}
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: compact ? '10px' : '14px' }}>
         <input
           type="email" placeholder="Correo electrónico"
           autoComplete="email" value={email}
           onChange={e => setEmail(e.target.value)}
-          style={inp({ padding: '14px' })} required
+          style={inp({ padding: compact ? '12px' : '14px' })} required
         />
         <div style={{ position: 'relative' }}>
           <input
@@ -425,7 +430,7 @@ export default function Login() {
             autoComplete={view === 'login' ? 'current-password' : 'new-password'}
             value={password}
             onChange={e => setPassword(e.target.value)}
-            style={inp({ padding: '14px', paddingRight: '46px', width: '100%', boxSizing: 'border-box' })}
+            style={inp({ padding: compact ? '12px' : '14px', paddingRight: '46px', width: '100%', boxSizing: 'border-box' })}
             required
           />
           <button
@@ -873,7 +878,7 @@ export default function Login() {
         width: isWide ? '480px' : '100%', flexShrink: 0,
         minHeight: '100dvh',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        padding: '28px 20px',
+        padding: compact ? '14px 14px' : '28px 20px',
         background: isWide ? 'rgba(8,18,34,0.45)' : 'transparent',
         backdropFilter: isWide ? 'blur(16px)' : undefined,
         WebkitBackdropFilter: isWide ? 'blur(16px)' : undefined,

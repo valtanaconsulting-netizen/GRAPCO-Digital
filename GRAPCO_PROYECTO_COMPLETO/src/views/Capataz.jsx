@@ -24,7 +24,6 @@ import WbsExplorer from './WbsExplorer';
 import TrabajadorCard from './capataz/secciones/TrabajadorCard';
 import ModalHistorial from './capataz/secciones/ModalHistorial';
 import BarraInferior from './capataz/secciones/BarraInferior';
-import HeaderCapataz from './capataz/secciones/HeaderCapataz';
 import TabsActividades from './capataz/secciones/TabsActividades';
 import SidebarCapataz from './capataz/secciones/SidebarCapataz';
 import EditorActividad from './capataz/secciones/EditorActividad';
@@ -1012,14 +1011,6 @@ export default function Capataz({
               <StepperCapataz
                 vista={vista}
                 onIrInicio={irInicio}
-              />
-
-              <HeaderCapataz
-                fecha={fecha}
-                capataz={capataz}
-                actividadesCount={actividadesVista.length}
-                totalHHActivas={totalHHActivas}
-                obtenerSemana={obtenerSemana}
               />
 
               <TabsActividades
