@@ -35,7 +35,7 @@ export default function RODashboard() {
   const colorMargenReal = colorMargen(margenShow, indicadoresGlobales.margenMeta);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
       {/* KPIs financieros principales */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(216px, 1fr))', gap: '10px' }}>
         <KPI label="VENDIDO (EV)" valor={fmtSoles(evShow)}
@@ -52,8 +52,8 @@ export default function RODashboard() {
       {/* EVM PMI */}
       <div style={{
         background: BASE.navy,
-        borderRadius: '12px', padding: '14px 20px', color: '#fff',
-        borderLeft: `5px solid ${BASE.gold}`,
+        borderRadius: '12px', padding: '13px 16px', color: '#fff',
+        borderLeft: `4px solid ${BASE.gold}`,
       }}>
         <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.gold, letterSpacing: '1.4px', marginBottom: '12px' }}>
           🎯 EVM · EARNED VALUE MANAGEMENT (PMI/PMBOK)
@@ -179,7 +179,7 @@ function KPI({ label, valor, color, sub, icono }) {
       }}>{icono}</div>
       <div style={{ minWidth: 0 }}>
         <p style={{ fontSize: '9px', fontWeight: '900', color: BASE.muted, letterSpacing: '0.8px' }}>{label}</p>
-        <p style={{ fontSize: '18px', fontWeight: '900', color, letterSpacing: '-0.3px', lineHeight: 1.2 }}>{valor}</p>
+        <p style={{ fontSize: '16px', fontWeight: '900', color, letterSpacing: '-0.3px', lineHeight: 1.2 }}>{valor}</p>
         <p style={{ fontSize: '10px', color: BASE.muted, marginTop: '1px' }}>{sub}</p>
       </div>
     </div>
@@ -206,7 +206,7 @@ function Card({ titulo, color, children }) {
       <div style={{ background: BASE.bgSoft, padding: '10px 16px', borderBottom: `1px solid ${BASE.border}`, borderLeft: `4px solid ${color}` }}>
         <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.5px' }}>{titulo}</p>
       </div>
-      <div style={{ padding: '14px 16px' }}>{children}</div>
+      <div style={{ padding: '12px 16px' }}>{children}</div>
     </div>
   );
 }

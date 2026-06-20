@@ -309,12 +309,12 @@ export default function ResultadoOperativoOficial({ showToast }) {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {/* Cabecera / meta */}
-      <div style={{ background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', borderRadius: 14, padding: '16px 22px', boxShadow: BASE.shadowMd, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+      <div style={{ background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', borderRadius: 12, padding: '13px 16px', boxShadow: BASE.shadowMd, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <p style={{ fontSize: 9.5, fontWeight: 900, letterSpacing: 1.4, color: BASE.gold }}>GP-GCE-FOR-F06 · RESULTADO OPERATIVO · EN VIVO</p>
-          <h2 style={{ fontSize: 20, fontWeight: 900, marginTop: 2 }}>El Estado de Resultados de la Obra</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 900, marginTop: 2 }}>El Estado de Resultados de la Obra</h2>
           <p style={{ fontSize: 12, opacity: 0.85, marginTop: 2 }}>
             {proyectoActivo?.nombre || 'Proyecto activo'} · {partidas.length} partidas ·{' '}
             {(f1 || f2) ? <span>frentes: <b style={{ color: BASE.gold }}>{[l1, f2 && l2].filter(Boolean).join(' / ')}</b></span> : 'toda la obra'} ·{' '}
@@ -331,7 +331,7 @@ export default function ResultadoOperativoOficial({ showToast }) {
         </div>
         <div style={{ textAlign: 'right' }}>
           <p style={{ fontSize: 10, fontWeight: 800, color: BASE.gold }}>CPI GLOBAL</p>
-          <p style={{ fontSize: 34, fontWeight: 900, lineHeight: 1, color: cpiCol(t.cpi) === '#16a34a' ? '#4ade80' : '#fbbf24' }}>{P(t.cpi)}</p>
+          <p style={{ fontSize: 17, fontWeight: 900, lineHeight: 1, color: cpiCol(t.cpi) === '#16a34a' ? '#4ade80' : '#fbbf24' }}>{P(t.cpi)}</p>
         </div>
       </div>
 
@@ -346,7 +346,7 @@ export default function ResultadoOperativoOficial({ showToast }) {
           { l: 'Estimado término (EAC)', v: <>S/ {S(t.eac)}</>, c: '#06b6d4' },
           { l: 'Variación (VAC)', v: <>S/ {S(t.vac)}</>, c: varCol(t.vac) },
         ].map((k) => (
-          <div key={k.l} style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderLeft: `5px solid ${k.c}`, borderRadius: 10, padding: '10px 13px', boxShadow: BASE.shadowSm }}>
+          <div key={k.l} style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderLeft: `3px solid ${k.c}`, borderRadius: 10, padding: '10px 13px', boxShadow: BASE.shadowSm }}>
             <p style={{ fontSize: 10, fontWeight: 800, color: BASE.muted, textTransform: 'uppercase' }}>{k.l}</p>
             <p style={{ fontSize: 16, fontWeight: 900, color: k.c, marginTop: 2, fontFamily: 'var(--grapco-font-mono, monospace)' }}>{k.v}</p>
           </div>

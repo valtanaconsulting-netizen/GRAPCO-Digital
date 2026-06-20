@@ -28,8 +28,8 @@ export default function ROporPartida() {
   if (!ro || partidas.length === 0) return <EmptyState icono="📋" titulo="Sin partidas" descripcion="Crea actividades en el Plan Maestro y registra avance." />;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', padding: '14px 18px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', padding: '12px 16px' }}>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 200px' }}>
             <p style={{ fontSize: '13px', fontWeight: '900', color: BASE.navy }}>📋 RO por Partida</p>
@@ -107,31 +107,31 @@ export default function ROporPartida() {
             </tbody>
             <tfoot>
               <tr style={{ background: BASE.navy, color: '#fff' }}>
-                <td colSpan={3} style={{ padding: '12px 14px', fontWeight: '900', textAlign: 'right', fontSize: '11px' }}>
+                <td colSpan={3} style={{ padding: '8px 14px', fontWeight: '900', textAlign: 'right', fontSize: '11px' }}>
                   TOTALES:
                 </td>
-                <td style={{ padding: '12px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: '900' }}>
+                <td style={{ padding: '8px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: '900' }}>
                   {fmtSoles(ro.totales.vendido)}
                 </td>
-                <td style={{ padding: '12px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: '900' }}>
+                <td style={{ padding: '8px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: '900' }}>
                   {fmtSoles(ro.totales.costoAplicado)}
                 </td>
-                <td style={{ padding: '12px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: '900' }}>
+                <td style={{ padding: '8px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: '900' }}>
                   {fmtSoles(ro.totales.costoReal)}
                 </td>
-                <td colSpan={1} style={{ padding: '12px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: '900', color: BASE.gold }}>
+                <td colSpan={1} style={{ padding: '8px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: '900', color: BASE.gold }}>
                   {fmtPct(ro.indicadoresGlobales.margenAplicado)}
                 </td>
-                <td style={{ padding: '12px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: '900', color: BASE.gold }}>
+                <td style={{ padding: '8px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: '900', color: BASE.gold }}>
                   {fmtPct(ro.indicadoresGlobales.margenReal)}
                 </td>
-                <td style={{ padding: '12px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: '900' }}>
+                <td style={{ padding: '8px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: '900' }}>
                   {ro.indicadoresGlobales.CPI?.toFixed(2)}
                 </td>
-                <td style={{ padding: '12px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: '900' }}>
+                <td style={{ padding: '8px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: '900' }}>
                   {ro.indicadoresGlobales.SPI?.toFixed(2)}
                 </td>
-                <td colSpan={2} style={{ padding: '12px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: '900', color: BASE.gold }}>
+                <td colSpan={2} style={{ padding: '8px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: '900', color: BASE.gold }}>
                   {fmtSoles(ro.indicadoresGlobales.EAC)}
                 </td>
               </tr>

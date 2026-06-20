@@ -68,17 +68,17 @@ export default function CostoRealOficial() {
   const acento = (p) => p >= 0.15 ? BASE.navy : p >= 0.06 ? BASE.gold : p >= 0.01 ? '#94a3b8' : '#e2e8f0';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {/* Cabecera ejecutiva */}
-      <div style={{ background: `linear-gradient(135deg, #0c4a6e, #075985)`, color: '#fff', borderRadius: 16, padding: '18px 24px', boxShadow: '0 10px 30px -8px rgba(8,47,73,0.55)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14, borderLeft: `6px solid ${BASE.gold}` }}>
+      <div style={{ background: `linear-gradient(135deg, #0c4a6e, #075985)`, color: '#fff', borderRadius: 12, padding: '12px 16px', boxShadow: '0 10px 30px -8px rgba(8,47,73,0.55)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14, borderLeft: `4px solid ${BASE.gold}` }}>
         <div>
           <p style={{ fontSize: 9.5, fontWeight: 900, letterSpacing: 1.6, color: '#7dd3fc' }}>🧾 CR · COSTO REAL · EN VIVO</p>
-          <h2 style={{ fontSize: 21, fontWeight: 900, marginTop: 3, letterSpacing: 0.2 }}>Costo Real por Partida (AC del RO)</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 900, marginTop: 3, letterSpacing: 0.2 }}>Costo Real por Partida (AC del RO)</h2>
           <p style={{ fontSize: 11.5, opacity: 0.88, marginTop: 3 }}>{proyectoActivo?.nombre || 'Proyecto activo'} · MO + Almacén + Facturas + Subcontratos</p>
         </div>
         <div style={{ textAlign: 'right', background: 'rgba(255,255,255,0.08)', borderRadius: 12, padding: '8px 16px', border: '1px solid rgba(255,255,255,0.15)' }}>
           <p style={{ fontSize: 9.5, fontWeight: 800, opacity: 0.8, letterSpacing: 0.8 }}>COSTO MO PROMEDIO</p>
-          <p style={{ fontSize: 30, fontWeight: 900, lineHeight: 1, color: BASE.gold }}>S/ {HH(COSTO_HORA_RO)}<span style={{ fontSize: 13, opacity: 0.85 }}> /h</span></p>
+          <p style={{ fontSize: 17, fontWeight: 900, lineHeight: 1, color: BASE.gold }}>S/ {HH(COSTO_HORA_RO)}<span style={{ fontSize: 13, opacity: 0.85 }}> /h</span></p>
         </div>
       </div>
 
@@ -92,7 +92,7 @@ export default function CostoRealOficial() {
         ].map((k) => (
           <div key={k.l} style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderTop: `4px solid ${k.c}`, borderRadius: 12, padding: '12px 15px', boxShadow: '0 4px 14px -6px rgba(15,23,42,0.12)' }}>
             <p style={{ fontSize: 10, fontWeight: 800, color: BASE.muted, textTransform: 'uppercase', letterSpacing: 0.4 }}>{k.ico} {k.l}</p>
-            <p style={{ fontSize: 21, fontWeight: 900, color: k.c, marginTop: 3, fontFamily: 'var(--grapco-font-mono, monospace)' }}>{k.v}</p>
+            <p style={{ fontSize: 17, fontWeight: 900, color: k.c, marginTop: 3, fontFamily: 'var(--grapco-font-mono, monospace)' }}>{k.v}</p>
           </div>
         ))}
       </div>
@@ -103,7 +103,7 @@ export default function CostoRealOficial() {
       </div>
 
       {/* Tabla ejecutiva */}
-      <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 14, overflow: 'hidden', boxShadow: '0 8px 26px -10px rgba(15,23,42,0.18)' }}>
+      <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 12, overflow: 'hidden', boxShadow: '0 8px 26px -10px rgba(15,23,42,0.18)' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ borderCollapse: 'collapse', fontSize: 11.5, width: '100%', minWidth: 880 }}>
             <thead style={{ position: 'sticky', top: 0, zIndex: 3 }}>

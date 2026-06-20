@@ -96,10 +96,10 @@ export default function ROFrentes() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div style={{ background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', borderRadius: 14, padding: '16px 22px', boxShadow: BASE.shadowMd }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', borderRadius: 12, padding: '13px 16px', boxShadow: BASE.shadowMd }}>
         <p style={{ fontSize: 9.5, fontWeight: 900, letterSpacing: 1.4, color: BASE.gold }}>RESULTADO OPERATIVO POR FRENTE · EN VIVO</p>
-        <h2 style={{ fontSize: 20, fontWeight: 900, marginTop: 2 }}>F1 vs F2 — comparativo de la obra</h2>
+        <h2 style={{ fontSize: 16, fontWeight: 900, marginTop: 2 }}>F1 vs F2 — comparativo de la obra</h2>
         <p style={{ fontSize: 12, opacity: 0.85, marginTop: 2 }}>{proyectoActivo?.nombre || 'Proyecto activo'} · {porFrente.length} frente{porFrente.length !== 1 ? 's' : ''} con actividades · GG no se reparte (es obra-level)</p>
       </div>
 
@@ -117,11 +117,11 @@ export default function ROFrentes() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 6 }}>
                 <div>
                   <p style={{ fontSize: 9, fontWeight: 800, color: BASE.muted, letterSpacing: 0.4 }}>MARGEN (CV)</p>
-                  <p style={{ fontSize: 18, fontWeight: 900, color: cv(ro.totales.EV, ro.totales.AC) >= 0 ? '#16a34a' : '#dc2626' }}>{fmtSoles(cv(ro.totales.EV, ro.totales.AC))}</p>
+                  <p style={{ fontSize: 16, fontWeight: 900, color: cv(ro.totales.EV, ro.totales.AC) >= 0 ? '#16a34a' : '#dc2626' }}>{fmtSoles(cv(ro.totales.EV, ro.totales.AC))}</p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <p style={{ fontSize: 9, fontWeight: 800, color: BASE.muted, letterSpacing: 0.4 }}>CPI</p>
-                  <p style={{ fontSize: 18, fontWeight: 900, color: colorCPI(cpi) }}>{cpi ? cpi.toFixed(2) : '—'}</p>
+                  <p style={{ fontSize: 16, fontWeight: 900, color: colorCPI(cpi) }}>{cpi ? cpi.toFixed(2) : '—'}</p>
                 </div>
               </div>
             </div>

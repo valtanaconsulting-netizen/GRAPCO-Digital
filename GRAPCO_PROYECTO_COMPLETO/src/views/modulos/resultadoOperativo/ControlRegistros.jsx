@@ -111,9 +111,9 @@ export default function ControlRegistros({ showToast }) {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {/* Encabezado + acciones de import */}
-      <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 14, padding: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+      <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 12, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <div style={{ flex: '1 1 280px' }}>
           <p style={{ fontSize: 12, fontWeight: 900, color: BASE.navy, letterSpacing: 0.5 }}>🧾 CONTROL DE REGISTROS — CR (en vivo)</p>
           <p style={{ fontSize: 11, color: BASE.muted, lineHeight: 1.5, marginTop: 4 }}>
@@ -137,7 +137,7 @@ export default function ControlRegistros({ showToast }) {
           descripcion="En cuanto haya tareos, salidas de almacén, facturas o subcontratos imputados a partidas, este control mostrará el desglose del AC por fuente. Usa los botones de arriba para importar Facturas o GG."
         />
       ) : (
-        <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 14, overflow: 'auto', boxShadow: '0 2px 6px rgba(15,23,42,0.04)' }}>
+        <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 12, overflow: 'auto', boxShadow: '0 2px 6px rgba(15,23,42,0.04)' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5, minWidth: 980 }}>
             <thead>
               <tr style={{ background: BASE.navy, color: '#fff' }}>

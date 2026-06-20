@@ -106,13 +106,13 @@ export default function ROPanel({ showToast, seccionExterna = null }) {
           <>
             <div style={{
               background: `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`,
-              borderRadius: '14px', padding: '20px 26px', color: '#fff',
+              borderRadius: '14px', padding: '13px 16px', color: '#fff',
               borderLeft: `5px solid ${BASE.navy}`, boxShadow: `0 4px 20px ${BASE.gold}55`,
             }}>
               <p style={{ fontSize: '10px', fontWeight: '900', color: '#fff', letterSpacing: '1.6px', opacity: 0.9 }}>
                 📊 RESULTADO OPERATIVO · METODOLOGÍA COSTOS PERÚ + EVM PMI
               </p>
-              <h2 style={{ fontSize: '22px', fontWeight: '900', marginTop: '4px' }}>
+              <h2 style={{ fontSize: '16px', fontWeight: '900', marginTop: '4px' }}>
                 El Estado de Resultados de la Obra
               </h2>
               <p style={{ fontSize: '12px', opacity: 0.92, marginTop: '4px' }}>

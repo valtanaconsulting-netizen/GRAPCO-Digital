@@ -64,8 +64,8 @@ export default function CurvaSFinanciera() {
   const ultimoReal = ultimoIdxReal >= 0 ? curva.curvaReal[ultimoIdxReal] : null;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '14px', padding: '20px 24px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', padding: '13px 16px' }}>
         <p style={{ fontSize: '12px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.5px', marginBottom: '4px' }}>
           📈 CURVA S FINANCIERA — PROGRAMADA vs REAL
         </p>
