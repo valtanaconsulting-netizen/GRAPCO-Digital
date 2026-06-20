@@ -264,7 +264,9 @@ export default function ResultadoOperativoOficial({ showToast }) {
   }
 
   const GROUPS = buildCols(l1, l2);
-  const ALLCOLS = GROUPS.flatMap(g => g.cols);
+  // Cada columna lleva el color de su grupo y si es la PRIMERA del grupo, para dibujar
+  // separadores verticales y un código de color por bloque (mismo color que las KPI cards).
+  const ALLCOLS = GROUPS.flatMap(g => g.cols.map((c, i) => ({ ...c, gC: g.c, first: i === 0 })));
   const total = filas[0];
   const t = total?.v || {};
 
@@ -371,27 +373,27 @@ export default function ResultadoOperativoOficial({ showToast }) {
                 <th rowSpan={2} style={{ ...thBase, textAlign: 'left', minWidth: 56, position: 'sticky', left: 50, background: BASE.navy, zIndex: 3 }}>PARTIDA</th>
                 <th rowSpan={2} style={{ ...thBase, textAlign: 'left', minWidth: 210, position: 'sticky', left: 106, background: BASE.navy, zIndex: 3, borderRight: `2px solid ${BASE.gold}` }}>DESCRIPCIÓN</th>
                 {GROUPS.map(g => (
-                  <th key={g.id} colSpan={g.cols.length} style={{ ...thBase, borderBottom: `3px solid ${g.c}` }}>{g.label}</th>
+                  <th key={g.id} colSpan={g.cols.length} style={{ ...thBase, color: g.c, borderBottom: `3px solid ${g.c}`, borderLeft: '2px solid rgba(255,255,255,0.20)' }}>{g.label}</th>
                 ))}
                 <th rowSpan={2} style={{ ...thBase, minWidth: 150, textAlign: 'left' }}>COMENTARIOS</th>
               </tr>
               <tr>
                 {ALLCOLS.map((c, i) => (
-                  <th key={c.k + i} style={{ ...thCol }}>{c.l}</th>
+                  <th key={c.k + i} style={{ ...thCol, color: c.bold ? '#fff' : '#cbd5e1', borderLeft: c.first ? `2px solid ${c.gC}` : undefined }}>{c.l}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {filas.map((f) => {
+              {filas.map((f, idx) => {
                 const isTotal = f.tipo === 'total';
-                const bg = isTotal ? BASE.navy : BASE.white;
+                const bg = isTotal ? BASE.navy : (idx % 2 === 0 ? BASE.white : (BASE.bgSoft || '#f8fafc'));
                 return (
                   <tr key={f.key} style={{ background: bg, borderTop: isTotal ? `2px solid ${BASE.gold}` : `1px solid ${BASE.borderSoft || BASE.border}` }}>
                     <td style={{ ...tdSticky(bg, 0), color: isTotal ? BASE.gold : BASE.muted, fontWeight: 700, fontSize: 9, fontFamily: 'monospace' }}>{f.frente}</td>
                     <td style={{ ...tdSticky(bg, 50), color: isTotal ? BASE.gold : BASE.muted, fontWeight: 700, fontSize: 9.5, fontFamily: 'monospace' }}>{f.codigo}</td>
                     <td style={{ ...tdSticky(bg, 106), color: isTotal ? '#fff' : BASE.navy, fontWeight: isTotal ? 900 : 700, fontSize: 11, whiteSpace: 'nowrap', borderRight: `2px solid ${isTotal ? BASE.gold : BASE.border}` }}>{f.descripcion}</td>
                     {ALLCOLS.map((c, i) => (
-                      <td key={c.k + i} style={{ padding: '5px 7px', textAlign: 'right', whiteSpace: 'nowrap', fontFamily: 'var(--grapco-font-mono, monospace)' }}>
+                      <td key={c.k + i} style={{ padding: '5px 7px', textAlign: 'right', whiteSpace: 'nowrap', fontFamily: 'var(--grapco-font-mono, monospace)', borderLeft: c.first ? `1px solid ${isTotal ? 'rgba(255,255,255,0.18)' : c.gC + '33'}` : undefined }}>
                         {celda(f, c)}
                       </td>
                     ))}
