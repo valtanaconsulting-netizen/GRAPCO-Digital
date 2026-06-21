@@ -21,8 +21,8 @@ const cant = (n) => (Number(n) || 0).toLocaleString('es-PE', { maximumFractionDi
 const pct = (n) => (Number.isFinite(n) ? Math.round(n * 100) : 0) + '%';
 
 export default function ValorizacionF07({ showToast }) {
-  const { proyectoActivo } = useProyectoActivo();
-  const proyId = proyectoActivo?.id;
+  const { proyectoActivo, proyectoActivoId } = useProyectoActivo();
+  const proyId = proyectoActivoId || proyectoActivo?.id;
   const [presu, setPresu] = useState([]);
   const [avances, setAvances] = useState([]); // [{ valN, label, avances:[{item,acum,actual}] }]
   const [loading, setLoading] = useState(true);

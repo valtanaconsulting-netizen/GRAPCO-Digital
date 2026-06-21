@@ -416,6 +416,27 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // /PresupuestoF07 — presupuesto al detalle (formato F07) de la valorización
+    match /PresupuestoF07/{rowId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // /ValorizacionF07_Avance — acumulado de metrado por partida en cada valorización
+    match /ValorizacionF07_Avance/{valId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // /MetradosContractuales — metrado contractual editable de la valorización
+    match /MetradosContractuales/{metId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
     // /Adicionales (futuro)
     match /Adicionales/{adId} {
       allow read: if isAuth();
