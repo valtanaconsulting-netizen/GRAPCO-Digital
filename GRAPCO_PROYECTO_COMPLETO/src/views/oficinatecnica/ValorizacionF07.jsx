@@ -11,7 +11,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
-import { BASE } from '../../utils/styles';
+import { BASE, LOGO } from '../../utils/styles';
 import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import EmptyState from '../../components/EmptyState';
 
@@ -82,22 +82,49 @@ export default function ValorizacionF07({ showToast }) {
   if (loading) return <p style={{ padding: 30, textAlign: 'center', color: BASE.muted }}>⏳ Cargando presupuesto…</p>;
   if (!presu.length) return <EmptyState icono="📄" titulo="Sin presupuesto F07" descripcion="No se ha cargado el presupuesto al detalle (formato F07) de este proyecto." />;
 
+  const cliente = proyectoActivo?.cliente || proyectoActivo?.clienteNombre || 'CREDITEX';
+  const obra = proyectoActivo?.nombre || 'PTAR PLANTA 5';
+  const ubic = proyectoActivo?.ubicacion || 'Calle Los Hornos 185, Urb. Vulcano, Ate, Lima';
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {/* Cabecera */}
-      <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-        <div>
-          <p style={{ fontSize: 13, fontWeight: 900, color: BASE.navy }}>Valorización · Formato F07 (por cantidad)</p>
-          <p style={{ fontSize: 11, color: BASE.muted, marginTop: 2 }}>
-            GP-GCE-FOR-F07 · {presu.filter(p => p.esPartida).length} partidas · valoriza por metrado (Cant × P.U.). Quincenal.
-          </p>
+      {/* CABECERA F07 (tal cual el Excel) */}
+      <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '70px 1fr 200px', alignItems: 'stretch' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: `1px solid ${BASE.border}`, padding: 8 }}>
+            <img src={LOGO} alt="GRAPCO" style={{ width: 52, height: 52, objectFit: 'contain' }} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }}>
+            <p style={{ fontSize: 18, fontWeight: 900, color: BASE.navy, letterSpacing: 0.5 }}>VALORIZACIÓN N°{String(pq).padStart(2, '0')}</p>
+          </div>
+          <div style={{ borderLeft: `1px solid ${BASE.border}`, fontSize: 10 }}>
+            {[['CÓDIGO', 'GP-GCE-FOR-F07'], ['VERSIÓN', '0.00'], ['VALORIZACIÓN N°', String(pq).padStart(2, '0')]].map(([k, v]) => (
+              <div key={k} style={{ display: 'flex', borderBottom: `1px solid ${BASE.border}` }}>
+                <span style={{ flex: 1, padding: '5px 8px', fontWeight: 800, color: BASE.muted }}>{k}</span>
+                <span style={{ flex: 1, padding: '5px 8px', fontWeight: 800, color: BASE.navy, borderLeft: `1px solid ${BASE.border}` }}>{v}</span>
+              </div>
+            ))}
+          </div>
         </div>
-        <label style={{ fontSize: 12, fontWeight: 800, color: BASE.navy, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-          Valorización N°
-          <select value={pq} onChange={e => setPqSel(parseInt(e.target.value, 10))} style={{ padding: '7px 12px', borderRadius: 8, border: `1.5px solid ${BASE.border}`, fontSize: 13, fontWeight: 800 }}>
-            {(periodos.length ? periodos : [1]).map(n => <option key={n} value={n}>N° {String(n).padStart(2, '0')}</option>)}
-          </select>
-        </label>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0', borderTop: `1px solid ${BASE.border}` }}>
+          {[['OBRA', obra], ['CLIENTE', cliente], ['CONTRATISTA', 'GRAPCO SAC'], ['SUPERVISIÓN', proyectoActivo?.supervision || 'Diseños Racionales SAC'], ['DENOMINACIÓN', `PPTO ${obra}`], ['PRESUPUESTO', 'Contractual (PTARI)'], ['UBICACIÓN', ubic], ['VALORIZACIÓN N°', String(pq).padStart(2, '0')]].map(([k, v]) => (
+            <div key={k} style={{ display: 'flex', fontSize: 10.5, borderRight: `1px solid ${BASE.border}`, borderBottom: `1px solid ${BASE.border}` }}>
+              <span style={{ padding: '6px 8px', fontWeight: 800, color: BASE.muted, minWidth: 86, background: BASE.bgSoft }}>{k}</span>
+              <span style={{ padding: '6px 8px', fontWeight: 700, color: BASE.navy, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', padding: '10px 14px', background: BASE.bgSoft }}>
+          <p style={{ fontSize: 11, color: BASE.muted }}>
+            {presu.filter(p => p.esPartida).length} partidas · valoriza por <b>metrado</b> (Cant × P.U.) · quincenal.
+          </p>
+          <label style={{ fontSize: 12, fontWeight: 800, color: BASE.navy, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            Ver Valorización N°
+            <select value={pq} onChange={e => setPqSel(parseInt(e.target.value, 10))} style={{ padding: '7px 12px', borderRadius: 8, border: `1.5px solid ${BASE.border}`, fontSize: 13, fontWeight: 800 }}>
+              {(periodos.length ? periodos : [1]).map(n => <option key={n} value={n}>N° {String(n).padStart(2, '0')}</option>)}
+            </select>
+          </label>
+        </div>
       </div>
 
       {/* KPIs por bloque (S/.) */}

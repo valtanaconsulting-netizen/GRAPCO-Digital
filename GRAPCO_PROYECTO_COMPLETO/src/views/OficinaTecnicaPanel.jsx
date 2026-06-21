@@ -60,8 +60,8 @@ const GRUPOS = {
     color: '#f59e0b',
     tagline: 'Valorización y cobro al cliente',
     items: [
-      { id: 'valoriz',  l: 'Valorizaciones', icono: '💰', icon: 'coins',    desc: 'Mensual al cliente (auto-calcula)' },
-      { id: 'valorf07', l: 'Valorización F07', icono: '📄', icon: 'fileText', desc: 'Formato oficial F07 por cantidad (item/und/cant/PU)' },
+      { id: 'valoriz',  l: 'Valorizaciones', icono: '📄', icon: 'fileText', desc: 'Formato oficial F07 por cantidad (item/und/cant/PU)' },
+      { id: 'liquidacion', l: 'Liquidación / Cobro', icono: '💰', icon: 'coins', desc: '% por partida + IGV/FG/detracción' },
       { id: 'sustento', l: 'Metrados / Sustento', icono: '📐', icon: 'layers', desc: 'Planilla de metrados (concreto/acero/encofrado) + fotos' },
       { id: 'informe',  l: 'Informe PDF',    icono: '📑', icon: 'fileText', desc: 'Genera el sustento imprimible' },
     ],
@@ -257,8 +257,8 @@ export default function OficinaTecnicaPanel({ showToast, tabExterna, onChangeTab
         <div className="anim-fade-in" key={tab}>
           {tab === 'dashboard'   && <DashboardOT showToast={showToast} />}
           {tab === 'ro'          && <ROPanel showToast={showToast} seccionExterna={roSeccion} />}
-          {tab === 'valoriz'     && <ValorizacionesView showToast={showToast} />}
-          {tab === 'valorf07'    && <ValorizacionF07 showToast={showToast} />}
+          {tab === 'valoriz'     && <ValorizacionF07 showToast={showToast} />}
+          {tab === 'liquidacion' && <ValorizacionesView showToast={showToast} />}
           {tab === 'sustento'    && <SustentoMetrados showToast={showToast} />}
           {tab === 'fotografico' && <RegistroFotografico />}
           {tab === 'informe'     && <InformeSustento />}
