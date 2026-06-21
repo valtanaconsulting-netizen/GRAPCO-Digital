@@ -14,6 +14,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import { BASE } from '../../utils/styles';
 import Modal from '../../components/Modal';
+import ConfirmModal from '../../components/ConfirmModal';
 import EmptyState from '../../components/EmptyState';
 import FotoUploader from '../../components/FotoUploader';
 import PlanillaMetrado, { TIPOS_METRADO, parcialFila } from './PlanillaMetrado';
@@ -67,6 +68,7 @@ export default function SustentoMetrados({ showToast }) {
   const [verDetalle, setVerDetalle] = useState(null);
   const [plantillaAbierta, setPlantillaAbierta] = useState(false);
   const [colapsados, setColapsados] = useState({});   // carpetas de valorización plegadas
+  const [aEliminar, setAEliminar] = useState(null);   // sustento pendiente de confirmar borrado
 
   useEffect(() => {
     const unsubs = [
@@ -153,13 +155,16 @@ export default function SustentoMetrados({ showToast }) {
     }
   };
 
-  const eliminar = async (it) => {
-    if (!confirm(`¿Eliminar el sustento "${it.partida} · ${it.periodoMes}"?`)) return;
+  // Borrado con confirmación CENTRADA (ConfirmModal), nunca window.confirm.
+  const eliminarConfirmado = async () => {
+    const it = aEliminar; if (!it) return;
     try {
       await deleteDoc(doc(db, 'SustentoMetrados', it.id));
-      showToast?.('Eliminado', 'success');
+      showToast?.('Sustento eliminado', 'success');
     } catch (e) {
       showToast?.('Error: ' + e.message, 'error');
+    } finally {
+      setAEliminar(null);
     }
   };
 
@@ -292,7 +297,7 @@ export default function SustentoMetrados({ showToast }) {
                           <div style={{ display: 'flex', gap: '5px', marginTop: '2px' }}>
                             <button onClick={() => setVerDetalle(it)} style={btnSm(BASE.navyLight)}>Ver</button>
                             <button onClick={() => abrirEdicion(it)} style={btnSm(BASE.gold)}>Editar</button>
-                            <button onClick={() => eliminar(it)}    style={btnSm(BASE.red)}>✕</button>
+                            <button onClick={() => setAEliminar(it)}    style={btnSm(BASE.red)}>✕</button>
                           </div>
                         </div>
                       </div>
@@ -304,6 +309,20 @@ export default function SustentoMetrados({ showToast }) {
           })}
         </div>
       )}
+
+      {/* Confirmación CENTRADA de borrado (reemplaza window.confirm) */}
+      <ConfirmModal
+        abierto={!!aEliminar}
+        tono="peligro"
+        icono="🗑️"
+        titulo="¿Eliminar este sustento?"
+        mensaje={aEliminar ? `${aEliminar.partida}` : ''}
+        detalle={aEliminar ? `${aEliminar.valorizacionRef || 'Sin valorización'} · ${Number(aEliminar.metrado).toLocaleString('es-PE')} ${aEliminar.unidad} · ${(aEliminar.fotos?.length || 0)} foto(s). Esta acción no se puede deshacer.` : ''}
+        textoConfirmar="Sí, eliminar"
+        textoCancelar="Cancelar"
+        onConfirmar={eliminarConfirmado}
+        onCancelar={() => setAEliminar(null)}
+      />
 
       {/* Modal generador desde plantilla (Calzadura) */}
       {plantillaAbierta && (
