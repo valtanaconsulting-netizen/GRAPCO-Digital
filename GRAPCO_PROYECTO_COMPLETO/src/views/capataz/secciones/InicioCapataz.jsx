@@ -8,7 +8,7 @@
 // viene autoseleccionada. (Solo si por datos hubiera varias cuadrillas sin poder
 // resolver cuál es la suya, aparece un mini-selector de respaldo.)
 import React from 'react';
-import { BASE } from '../../../utils/styles';
+import { BASE, LOGO, LOGO_FALLBACK } from '../../../utils/styles';
 import { HERO_VIDEO } from '../../../utils/heroVideo';
 import { conexionLenta } from '../../../utils/connection';
 import SelectorCapataz from './SelectorCapataz';
@@ -138,6 +138,7 @@ export default function InicioCapataz({
       paddingBottom: 'calc(34px + env(safe-area-inset-bottom))',
       paddingLeft: '16px', paddingRight: '16px',
       boxSizing: 'border-box',
+      display: 'flex', flexDirection: 'column',
       fontFamily: BASE.font,
     }}>
       {/* Mismo fondo que el selector de áreas: video de la obra + lavado navy cohesivo. */}
@@ -156,7 +157,30 @@ export default function InicioCapataz({
           + 'linear-gradient(180deg, rgba(8,20,38,0.90) 0%, rgba(12,30,55,0.55) 46%, rgba(7,16,30,0.92) 100%),'
           + 'radial-gradient(130% 110% at 50% 42%, transparent 52%, rgba(4,11,22,0.78) 100%)',
       }} />
-      <div className="anim-fade-in" style={{ position: 'relative', zIndex: 2, maxWidth: '760px', margin: '0 auto', width: '100%' }}>
+      <div className="anim-fade-in" style={{ position: 'relative', zIndex: 2, maxWidth: '760px', margin: 'auto', width: '100%' }}>
+
+        {/* Marca GRAPCO (logo + título) — mismo header que el selector de áreas */}
+        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+          <div style={{
+            width: '72px', height: '72px',
+            background: 'linear-gradient(150deg, #ffffff 0%, #eef3f9 100%)',
+            borderRadius: '18px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            marginBottom: '10px', padding: '2px', overflow: 'hidden',
+            boxShadow: `0 13px 30px -16px rgba(0,0,0,0.6), 0 0 0 1.5px ${BASE.gold}40`,
+          }}>
+            <img src={LOGO} alt="GRAPCO"
+              onError={(e) => { if (!e.target.dataset.fallback) { e.target.dataset.fallback = '1'; e.target.src = LOGO_FALLBACK; } }}
+              style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '14px', transform: 'scale(1.25)' }} />
+          </div>
+          <h1 style={{ color: '#fff', fontSize: '25px', fontWeight: 900, margin: '0 0 6px', letterSpacing: '0.5px' }}>
+            GRAPCO <span style={{ color: BASE.gold }}>S.A.C.</span>
+          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+            <span style={{ height: '1px', width: '30px', background: `linear-gradient(90deg, transparent, ${BASE.gold}aa)` }} />
+            <span style={{ color: BASE.gold, fontSize: '9.5px', fontWeight: 800, letterSpacing: '2.6px', textTransform: 'uppercase' }}>Gestión de Proyectos VDC</span>
+            <span style={{ height: '1px', width: '30px', background: `linear-gradient(90deg, ${BASE.gold}aa, transparent)` }} />
+          </div>
+        </div>
 
         {/* Saludo */}
         <p style={{
