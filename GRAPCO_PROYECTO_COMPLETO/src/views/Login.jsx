@@ -216,9 +216,9 @@ export default function Login() {
     width: '100%', boxSizing: 'border-box',
     padding: compact ? '13px 14px' : '14px 16px',
     borderRadius: '14px',
-    background: 'rgba(255,255,255,0.07)',
-    border: '1px solid rgba(255,255,255,0.20)',
-    color: '#fff', fontSize: '14px', fontWeight: 600, outline: 'none',
+    background: 'rgba(7,15,28,0.6)',
+    border: '1px solid rgba(255,255,255,0.28)',
+    color: '#fff', caretColor: '#fff', fontSize: '14px', fontWeight: 600, outline: 'none',
     transition: 'border-color 0.18s, background 0.18s, box-shadow 0.18s',
     ...extra,
   });
@@ -226,8 +226,9 @@ export default function Login() {
   // ── Bloque reutilizable: la tarjeta de login (header + cuerpo + footer Valtana) ──
   const tarjeta = (
     <div style={{
-      // Glassmorphism premium: vidrio esmerilado FLOTANDO sobre el video de obra.
-      background: 'rgba(12,22,40,0.55)',
+      // Caja OSCURA densa (vidrio esmerilado) — ancla el formulario, sin dejar ver
+      // el video a través del texto. Más denso que el overlay general.
+      background: 'rgba(8,16,30,0.82)',
       backdropFilter: 'blur(20px) saturate(125%)',
       WebkitBackdropFilter: 'blur(20px) saturate(125%)',
       borderRadius: '20px',
@@ -478,6 +479,7 @@ export default function Login() {
               : 'linear-gradient(135deg, #f3c14e 0%, #d99a3a 45%, #b87333 100%)',
             color: '#fff', border: 'none', borderRadius: '14px',
             fontWeight: '800', fontSize: '14px', letterSpacing: '0.6px',
+            textShadow: '0 1px 2px rgba(0,0,0,0.3)',
             cursor: (loading || bloqueadoHasta > Date.now()) ? 'not-allowed' : 'pointer',
             marginTop: '6px',
             transition: 'transform 0.18s cubic-bezier(0.34,1.4,0.64,1), box-shadow 0.18s ease',
@@ -526,11 +528,20 @@ export default function Login() {
           @keyframes grapco-spin {
             to { transform: rotate(360deg); }
           }
-          .login-glass-input::placeholder { color: rgba(255,255,255,0.5); }
+          .login-glass-input::placeholder { color: rgba(255,255,255,0.55); }
           .login-glass-input:focus {
-            border-color: rgba(243,193,78,0.75);
-            background: rgba(255,255,255,0.12);
-            box-shadow: 0 0 0 3px rgba(243,193,78,0.15);
+            border-color: rgba(243,193,78,0.85);
+            background: rgba(7,15,28,0.8);
+            box-shadow: 0 0 0 3px rgba(243,193,78,0.18);
+          }
+          /* Autofill de Chrome: forzar texto claro + fondo oscuro (si no, queda blanco/blanco) */
+          .login-glass-input:-webkit-autofill,
+          .login-glass-input:-webkit-autofill:hover,
+          .login-glass-input:-webkit-autofill:focus {
+            -webkit-text-fill-color: #fff !important;
+            -webkit-box-shadow: 0 0 0 1000px rgba(7,15,28,0.95) inset !important;
+            caret-color: #fff !important;
+            border-radius: 14px;
           }
           .btn-ingresar:not(:disabled):hover { transform: scale(1.02); box-shadow: 0 12px 30px rgba(216,154,58,0.55); }
           .btn-ingresar:not(:disabled):active { transform: scale(0.99); }
@@ -855,7 +866,11 @@ export default function Login() {
         minHeight: '100dvh',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         padding: compact ? '18px 16px' : '28px 28px',
-        background: 'transparent',
+        // Zona derecha: cobertura oscura densa que separa el panel del video (escritorio).
+        background: isWide ? 'rgba(7,14,26,0.62)' : 'transparent',
+        backdropFilter: isWide ? 'blur(6px)' : undefined,
+        WebkitBackdropFilter: isWide ? 'blur(6px)' : undefined,
+        borderLeft: isWide ? '1px solid rgba(255,255,255,0.08)' : 'none',
         overflowY: 'auto',
       }}>
         {/* Luces neón de fondo en los colores del logo Valtana (navy · amarillo · naranja) */}

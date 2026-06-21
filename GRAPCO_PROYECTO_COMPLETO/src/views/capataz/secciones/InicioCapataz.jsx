@@ -9,6 +9,8 @@
 // resolver cuál es la suya, aparece un mini-selector de respaldo.)
 import React from 'react';
 import { BASE } from '../../../utils/styles';
+import { HERO_VIDEO } from '../../../utils/heroVideo';
+import { conexionLenta } from '../../../utils/connection';
 import SelectorCapataz from './SelectorCapataz';
 
 // "ARAYA QUISPE CONDORI MARCELINO" → "Araya Quispe Condori Marcelino"
@@ -131,16 +133,30 @@ export default function InicioCapataz({
       // del <main> y el sidebar ya no afectan). El navbar (z-index 102) queda encima.
       position: 'fixed', inset: 0, zIndex: 30,
       overflowY: 'auto',
-      background:
-        'radial-gradient(60% 40% at 50% 0%, rgba(40,74,118,0.55) 0%, transparent 62%),'
-        + 'linear-gradient(180deg, #0a1628 0%, #0c1e37 50%, #07101e 100%)',
+      background: '#0a1628',
       paddingTop: 'calc(60px + env(safe-area-inset-top) + 20px)',
       paddingBottom: 'calc(34px + env(safe-area-inset-bottom))',
       paddingLeft: '16px', paddingRight: '16px',
       boxSizing: 'border-box',
       fontFamily: BASE.font,
     }}>
-      <div className="anim-fade-in" style={{ maxWidth: '760px', margin: '0 auto', width: '100%' }}>
+      {/* Mismo fondo que el selector de áreas: video de la obra + lavado navy cohesivo. */}
+      {!conexionLenta() && (
+        <video autoPlay loop muted playsInline preload="metadata" aria-hidden="true"
+          onCanPlay={(e) => { e.currentTarget.style.opacity = '0.82'; e.currentTarget.play?.().catch(() => {}); }}
+          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+          style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0, filter: 'saturate(1) brightness(0.9) contrast(1.06)', transition: 'opacity 1.1s ease', zIndex: 0, pointerEvents: 'none' }}>
+          <source src={HERO_VIDEO} type="video/mp4" />
+        </video>
+      )}
+      <div aria-hidden="true" style={{
+        position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
+        background:
+          'radial-gradient(55% 38% at 50% 2%, rgba(40,74,118,0.55) 0%, transparent 62%),'
+          + 'linear-gradient(180deg, rgba(8,20,38,0.90) 0%, rgba(12,30,55,0.55) 46%, rgba(7,16,30,0.92) 100%),'
+          + 'radial-gradient(130% 110% at 50% 42%, transparent 52%, rgba(4,11,22,0.78) 100%)',
+      }} />
+      <div className="anim-fade-in" style={{ position: 'relative', zIndex: 2, maxWidth: '760px', margin: '0 auto', width: '100%' }}>
 
         {/* Saludo */}
         <p style={{
