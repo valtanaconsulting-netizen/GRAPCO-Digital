@@ -211,17 +211,32 @@ export default function Login() {
   // En móvil (1 columna) la tarjeta va más compacta para no ocupar tanto alto.
   const compact = !isWide;
 
+  // Campo "glass": translúcido oscuro con texto claro (para el card glassmorphism).
+  const inpGlass = (extra = {}) => ({
+    width: '100%', boxSizing: 'border-box',
+    padding: compact ? '13px 14px' : '14px 16px',
+    borderRadius: '14px',
+    background: 'rgba(255,255,255,0.07)',
+    border: '1px solid rgba(255,255,255,0.20)',
+    color: '#fff', fontSize: '14px', fontWeight: 600, outline: 'none',
+    transition: 'border-color 0.18s, background 0.18s, box-shadow 0.18s',
+    ...extra,
+  });
+
   // ── Bloque reutilizable: la tarjeta de login (header + cuerpo + footer Valtana) ──
   const tarjeta = (
     <div style={{
-      background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
-      backdropFilter: 'blur(10px)',
-      WebkitBackdropFilter: 'blur(10px)',
+      // Glassmorphism premium: vidrio esmerilado FLOTANDO sobre el video de obra.
+      background: 'rgba(12,22,40,0.55)',
+      backdropFilter: 'blur(20px) saturate(125%)',
+      WebkitBackdropFilter: 'blur(20px) saturate(125%)',
       borderRadius: '20px',
       padding: '0',
-      width: '100%', maxWidth: compact ? '360px' : '410px',
+      width: '100%', maxWidth: compact ? '92vw' : '410px',
       textAlign: 'center',
-      boxShadow: `0 32px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(245,158,11,0.30), 0 0 60px rgba(245,158,11,0.12)`,
+      // Borde 1px blanco muy fino + sombras suaves en capas = profundidad 3D real.
+      border: '1px solid rgba(255,255,255,0.18)',
+      boxShadow: '0 24px 60px -12px rgba(0,0,0,0.65), 0 10px 28px -10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.14)',
       position: 'relative', zIndex: 5,
       animation: 'grapco-card-in 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
       overflow: 'hidden',
@@ -277,61 +292,10 @@ export default function Login() {
       {/* Cuerpo del card */}
       <div style={{ padding: compact ? '16px 22px 16px' : '24px 32px 22px' }}>
 
-      {/* RECOMENDACIÓN: instalar como app de escritorio.
-          En móvil se oculta (ya existe el aviso flotante global) para que el
-          inicio de sesión quede más compacto. */}
-      {!pwaInstalada && !compact && (
-        <div style={{
-          background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-          border: '1.5px solid #f59e0b',
-          borderRadius: '12px',
-          padding: '12px 14px',
-          marginBottom: '16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-        }}>
-          <div style={{
-            width: '38px', height: '38px',
-            borderRadius: '10px',
-            background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '20px', flexShrink: 0,
-            boxShadow: '0 3px 8px rgba(245,158,11,0.35)',
-          }}>📲</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: '11px', fontWeight: '900', color: '#92400e', marginBottom: '2px', letterSpacing: '0.3px' }}>
-              Instala GRAPCO como aplicación
-            </p>
-            <p style={{ fontSize: '10px', color: '#78350f', lineHeight: 1.3 }}>
-              Acceso directo desde tu escritorio · más rápido · funciona offline
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={instalarApp}
-            className="btn-feedback"
-            style={{
-              padding: '8px 14px',
-              background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '10px',
-              fontWeight: '900',
-              letterSpacing: '0.4px',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              boxShadow: '0 3px 8px rgba(245,158,11,0.4)',
-              flexShrink: 0,
-            }}
-          >
-            {pwaPrompt ? '⬇ INSTALAR' : 'CÓMO ↗'}
-          </button>
-        </div>
-      )}
+      {/* El aviso "Instala la app" se movió a un badge minimalista en la esquina
+          inferior izquierda de la pantalla (ver layout), para no recargar el card. */}
 
-      <p style={{ fontSize: '11px', color: BASE.muted, marginBottom: compact ? '14px' : '20px', fontWeight: '700', letterSpacing: '2px' }}>
+      <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginBottom: compact ? '14px' : '20px', fontWeight: '700', letterSpacing: '2px' }}>
         {view === 'login' ? '— INICIA SESIÓN —' : '— CREAR CUENTA —'}
       </p>
 
@@ -421,7 +385,8 @@ export default function Login() {
           type="email" placeholder="Correo electrónico"
           autoComplete="email" value={email}
           onChange={e => setEmail(e.target.value)}
-          style={inp({ padding: compact ? '12px' : '14px' })} required
+          className="login-glass-input"
+          style={inpGlass()} required
         />
         <div style={{ position: 'relative' }}>
           <input
@@ -430,7 +395,8 @@ export default function Login() {
             autoComplete={view === 'login' ? 'current-password' : 'new-password'}
             value={password}
             onChange={e => setPassword(e.target.value)}
-            style={inp({ padding: compact ? '12px' : '14px', paddingRight: '46px', width: '100%', boxSizing: 'border-box' })}
+            className="login-glass-input"
+            style={inpGlass({ paddingRight: '46px' })}
             required
           />
           <button
@@ -448,10 +414,10 @@ export default function Login() {
               fontSize: '18px',
               padding: '6px',
               borderRadius: '6px',
-              color: BASE.muted,
+              color: 'rgba(255,255,255,0.65)',
               lineHeight: 1,
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = BASE.bgSoft; }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.10)'; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
           >
             <IconoOjo off={verPassword} size={18} />
@@ -460,15 +426,15 @@ export default function Login() {
 
         {view === 'register' && (
           <div>
-            <label style={{ fontSize: '11px', fontWeight: '700', color: BASE.muted, display: 'block', marginBottom: '6px' }}>
+            <label style={{ fontSize: '11px', fontWeight: '700', color: 'rgba(255,255,255,0.72)', display: 'block', marginBottom: '6px', textAlign: 'left' }}>
               ROL
             </label>
             <select value={rolRegistro} onChange={e => setRolRegistro(e.target.value)}
-              style={inp({ padding: '12px', fontWeight: '600' })}>
-              <option value="capataz">Capataz</option>
-              <option value="carta_balance">Carta Balance</option>
+              style={{ ...inpGlass(), background: 'rgba(18,30,50,0.92)', color: '#fff' }}>
+              <option value="capataz" style={{ color: '#0f1f3a' }}>Capataz</option>
+              <option value="carta_balance" style={{ color: '#0f1f3a' }}>Carta Balance</option>
             </select>
-            <p style={{ fontSize: '10px', color: BASE.muted, marginTop: '6px' }}>
+            <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.55)', marginTop: '6px', textAlign: 'left' }}>
               El rol de Ingeniero es asignado por el administrador.
             </p>
           </div>
@@ -503,17 +469,19 @@ export default function Login() {
 
         <button
           type="submit" disabled={loading || bloqueadoHasta > Date.now()}
+          className="btn-ingresar"
           style={{
-            width: '100%', padding: '14px',
+            width: '100%', padding: '15px',
             background: loginExitoso
               ? '#16a34a'
-              : (loading || bloqueadoHasta > Date.now()) ? '#94a3b8' : BASE.navy,
-            color: '#fff', border: 'none', borderRadius: '10px',
-            fontWeight: '800', fontSize: '14px',
+              : (loading || bloqueadoHasta > Date.now()) ? '#64748b'
+              : 'linear-gradient(135deg, #f3c14e 0%, #d99a3a 45%, #b87333 100%)',
+            color: '#fff', border: 'none', borderRadius: '14px',
+            fontWeight: '800', fontSize: '14px', letterSpacing: '0.6px',
             cursor: (loading || bloqueadoHasta > Date.now()) ? 'not-allowed' : 'pointer',
-            marginTop: '4px',
-            transition: 'all 0.2s ease',
-            boxShadow: loginExitoso ? '0 4px 16px rgba(22,163,74,0.45)' : 'none',
+            marginTop: '6px',
+            transition: 'transform 0.18s cubic-bezier(0.34,1.4,0.64,1), box-shadow 0.18s ease',
+            boxShadow: loginExitoso ? '0 8px 22px rgba(22,163,74,0.5)' : '0 8px 20px rgba(216,154,58,0.4)',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
             transform: loginExitoso ? 'scale(1.02)' : 'scale(1)',
           }}
@@ -558,6 +526,14 @@ export default function Login() {
           @keyframes grapco-spin {
             to { transform: rotate(360deg); }
           }
+          .login-glass-input::placeholder { color: rgba(255,255,255,0.5); }
+          .login-glass-input:focus {
+            border-color: rgba(243,193,78,0.75);
+            background: rgba(255,255,255,0.12);
+            box-shadow: 0 0 0 3px rgba(243,193,78,0.15);
+          }
+          .btn-ingresar:not(:disabled):hover { transform: scale(1.02); box-shadow: 0 12px 30px rgba(216,154,58,0.55); }
+          .btn-ingresar:not(:disabled):active { transform: scale(0.99); }
         `}</style>
       </form>
 
@@ -583,7 +559,7 @@ export default function Login() {
             disabled={resetEnviando}
             style={{
               background: 'none', border: 'none',
-              color: BASE.navy, fontSize: '11.5px', fontWeight: '700',
+              color: BASE.gold, fontSize: '11.5px', fontWeight: '700',
               cursor: resetEnviando ? 'wait' : 'pointer',
               textDecoration: 'underline',
             }}
@@ -596,19 +572,19 @@ export default function Login() {
       {/* Cambiar entre login/registro */}
       <div style={{ marginTop: '14px' }}>
         {view === 'login' ? (
-          <p style={{ fontSize: '12px', color: BASE.muted }}>
+          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)' }}>
             ¿No tienes cuenta?{' '}
             <button
               onClick={() => { setView('register'); setError(''); }}
-              style={{ background: 'none', border: 'none', color: BASE.navy, fontWeight: '700', cursor: 'pointer', textDecoration: 'underline' }}
+              style={{ background: 'none', border: 'none', color: BASE.gold, fontWeight: '700', cursor: 'pointer', textDecoration: 'underline' }}
             >Regístrate aquí</button>
           </p>
         ) : (
-          <p style={{ fontSize: '12px', color: BASE.muted }}>
+          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)' }}>
             ¿Ya tienes cuenta?{' '}
             <button
               onClick={() => { setView('login'); setError(''); }}
-              style={{ background: 'none', border: 'none', color: BASE.navy, fontWeight: '700', cursor: 'pointer', textDecoration: 'underline' }}
+              style={{ background: 'none', border: 'none', color: BASE.gold, fontWeight: '700', cursor: 'pointer', textDecoration: 'underline' }}
             >Inicia sesión</button>
           </p>
         )}
@@ -785,7 +761,7 @@ export default function Login() {
         onCanPlay={(e) => { setVideoReady(true); e.currentTarget.play?.().catch(() => {}); }}
         onPlaying={() => setVideoReady(true)}
         aria-hidden="true"
-        style={{ opacity: videoReady ? 0.5 : 0, transition: 'opacity 1.1s ease' }}
+        style={{ opacity: videoReady ? 0.62 : 0, transition: 'opacity 1.1s ease' }}
       >
         <source src={HERO_VIDEO} type="video/mp4" />
       </video>}
@@ -793,8 +769,8 @@ export default function Login() {
       <div aria-hidden="true" style={{
         position: 'absolute', inset: 0, zIndex: 1,
         background: isWide
-          ? 'linear-gradient(90deg, rgba(8,18,34,0.82) 0%, rgba(8,18,34,0.42) 52%, rgba(8,18,34,0.50) 100%)'
-          : 'radial-gradient(circle at center, rgba(15,23,42,0.45) 0%, rgba(10,22,40,0.85) 78%)',
+          ? 'linear-gradient(90deg, rgba(8,16,30,0.74) 0%, rgba(8,16,30,0.34) 48%, rgba(8,16,30,0.40) 100%)'
+          : 'linear-gradient(180deg, rgba(8,16,30,0.42) 0%, rgba(8,16,30,0.64) 100%)',
       }} />
       {/* Línea dorada superior */}
       <div aria-hidden="true" style={{
@@ -878,11 +854,8 @@ export default function Login() {
         width: isWide ? '480px' : '100%', flexShrink: 0,
         minHeight: '100dvh',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        padding: compact ? '14px 14px' : '28px 20px',
-        background: isWide ? 'rgba(8,18,34,0.45)' : 'transparent',
-        backdropFilter: isWide ? 'blur(16px)' : undefined,
-        WebkitBackdropFilter: isWide ? 'blur(16px)' : undefined,
-        borderLeft: isWide ? `1px solid ${BASE.gold}35` : 'none',
+        padding: compact ? '18px 16px' : '28px 28px',
+        background: 'transparent',
         overflowY: 'auto',
       }}>
         {/* Luces neón de fondo en los colores del logo Valtana (navy · amarillo · naranja) */}
@@ -895,6 +868,37 @@ export default function Login() {
 
         {tarjeta}
       </div>
+
+      {/* === BADGE "Instalar app" — esquina inferior izquierda, minimalista (glass) === */}
+      {!pwaInstalada && (
+        <button
+          type="button"
+          onClick={instalarApp}
+          className="btn-feedback"
+          title="Instalar GRAPCO como aplicación"
+          style={{
+            position: 'fixed', left: '16px',
+            bottom: 'calc(16px + env(safe-area-inset-bottom))', zIndex: 9,
+            display: 'inline-flex', alignItems: 'center', gap: '10px',
+            padding: '9px 16px 9px 10px', borderRadius: '999px',
+            background: 'rgba(12,22,40,0.55)',
+            backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255,255,255,0.18)', color: '#fff', cursor: 'pointer',
+            boxShadow: '0 10px 28px -10px rgba(0,0,0,0.7)',
+          }}
+        >
+          <span style={{
+            width: '28px', height: '28px', borderRadius: '9px', flexShrink: 0,
+            background: 'linear-gradient(135deg, #f3c14e, #b87333)',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '14px', color: '#0f1f3a', fontWeight: 900,
+          }}>↓</span>
+          <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.15 }}>
+            <span style={{ fontSize: '11.5px', fontWeight: 700, letterSpacing: '0.2px' }}>Instalar app</span>
+            <span style={{ fontSize: '9px', fontWeight: 500, color: 'rgba(255,255,255,0.6)' }}>Acceso directo · offline</span>
+          </span>
+        </button>
+      )}
 
       {/* === ESTILOS GLOBALES DEL LOGIN === */}
       <style>{`
