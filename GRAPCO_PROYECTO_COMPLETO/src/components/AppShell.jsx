@@ -91,7 +91,11 @@ export default function AppShell({
     }}>
       {/* ========= TOPBAR ========= */}
       <header style={{
+        // Edge-to-edge: el fondo navy se extiende bajo la barra de estado (paddingTop =
+        // safe-area-inset-top) y el contenido del topbar queda DEBAJO del notch.
+        boxSizing: 'content-box',
         height: `${TOPBAR_H}px`,
+        paddingTop: 'env(safe-area-inset-top)',
         background: `linear-gradient(135deg, ${BASE.navy} 0%, ${BASE.navyDark} 100%)`,
         borderBottom: `2px solid ${BASE.gold}`,
         display: 'flex',
@@ -271,9 +275,9 @@ export default function AppShell({
           display: 'flex',
           flexDirection: 'column',
           position: 'fixed',
-          top: `${TOPBAR_H}px`,
+          top: `calc(${TOPBAR_H}px + env(safe-area-inset-top))`,
           left: isMobile ? (mobileOpen ? 0 : `-${sidebarW + 10}px`) : 0,
-          height: `calc(100dvh - ${TOPBAR_H}px)`,
+          height: `calc(100dvh - ${TOPBAR_H}px - env(safe-area-inset-top))`,
           zIndex: isMobile ? 90 : 50,
           transition: 'left 0.22s ease',
           boxShadow: isMobile ? '4px 0 20px rgba(15,23,42,0.2)' : '2px 0 6px rgba(15,23,42,0.04)',
@@ -484,6 +488,9 @@ export default function AppShell({
           flex: 1,
           minWidth: 0,
           padding: isMobile ? '10px 12px' : '14px 18px',
+          // Safe-area inferior (barra de gestos / home indicator) para que el último
+          // contenido no quede tapado por los elementos del sistema.
+          paddingBottom: isMobile ? 'calc(10px + env(safe-area-inset-bottom))' : 'calc(14px + env(safe-area-inset-bottom))',
           marginLeft: isMobile ? 0 : `${sidebarW}px`,
           overflowX: 'hidden',
           transition: 'margin-left 0.22s ease',
