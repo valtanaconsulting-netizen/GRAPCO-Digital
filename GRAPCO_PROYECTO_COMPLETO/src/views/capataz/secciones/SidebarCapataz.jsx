@@ -155,17 +155,8 @@ export default function SidebarCapataz({
                   <span>Ver Tareo (PDF)</span>
                 </button>
               )}
-              {actividades.length > 0 && (
-                <button type="button" onClick={onEliminarBorrador} style={{
-                  padding: '10px 12px', background: 'transparent', color: BASE.red,
-                  border: `1px solid ${BASE.redLight}`, borderRadius: '8px',
-                  fontSize: '11px', fontWeight: '700', cursor: 'pointer',
-                  textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px',
-                }}>
-                  <span style={{ fontSize: '14px' }}>🗑️</span>
-                  <span>Limpiar borrador</span>
-                </button>
-              )}
+              {/* "Limpiar borrador" eliminado: el día se gestiona por actividad (eliminar
+                  cada una) — menos riesgo de borrado masivo accidental y UI más limpia. */}
             </div>
           </div>
         </>

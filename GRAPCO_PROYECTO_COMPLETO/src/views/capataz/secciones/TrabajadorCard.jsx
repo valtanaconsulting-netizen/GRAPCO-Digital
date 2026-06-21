@@ -31,24 +31,24 @@ export default function TrabajadorCard({
       background: '#fff',
       border: `2px solid ${excedido ? '#fca5a5' : tieneHoras ? BASE.green : BASE.border}`,
       borderRadius: '12px',
-      padding: '14px',
+      padding: '12px',
       boxShadow: tieneHoras ? `0 2px 8px ${BASE.green}22` : 'none',
       transition: 'border-color 0.15s, box-shadow 0.15s',
     }}>
       {/* Cabecera: avatar + nombre */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '9px', marginBottom: '9px' }}>
         <span style={{
-          width: '36px', height: '36px', borderRadius: '10px',
+          width: '30px', height: '30px', borderRadius: '9px',
           background: tieneHoras ? BASE.green : BASE.navy,
           color: '#fff',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '14px', fontWeight: '900', flexShrink: 0,
+          fontSize: '12px', fontWeight: '900', flexShrink: 0,
         }}>{letra}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <strong style={{
-            fontSize: '14px', color: BASE.text,
-            display: 'block', lineHeight: 1.25, wordBreak: 'break-word',
-          }}>{t.nombre}</strong>
+            fontSize: '12.5px', color: BASE.text,
+            display: 'block', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }} title={t.nombre}>{t.nombre}</strong>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px' }}>
             <span style={{
               fontSize: '10px', fontWeight: '700',
