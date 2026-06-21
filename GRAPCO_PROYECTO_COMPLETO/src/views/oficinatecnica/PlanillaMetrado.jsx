@@ -24,15 +24,20 @@ export const semanaDe = (fechaStr) => {
   if (!fechaStr) return null;
   try { const n = obtenerSemana(fechaStr, FECHA_INICIO_PROYECTO); return Number.isFinite(n) ? n : null; } catch { return null; }
 };
+// FECHA_INICIO_PROYECTO puede ser un Date o un string 'YYYY-MM-DD' → se normaliza
+// a un lunes UTC. Tomamos los componentes locales del Date para no desfasar el día.
 const lunesSemana = (n) => {
-  const [y, m, d] = String(FECHA_INICIO_PROYECTO).slice(0, 10).split('-').map(Number);
-  const dt = new Date(Date.UTC(y, m - 1, d));
-  dt.setUTCDate(dt.getUTCDate() + (n - 1) * 7);
+  const base = FECHA_INICIO_PROYECTO instanceof Date ? FECHA_INICIO_PROYECTO : new Date(String(FECHA_INICIO_PROYECTO));
+  if (isNaN(base)) return null;
+  const dt = new Date(Date.UTC(base.getFullYear(), base.getMonth(), base.getDate()));
+  if (Number.isFinite(n)) dt.setUTCDate(dt.getUTCDate() + (n - 1) * 7);
   return dt;
 };
 const fmtDM = (dt) => `${String(dt.getUTCDate()).padStart(2, '0')}/${String(dt.getUTCMonth() + 1).padStart(2, '0')}`;
 export const rangoSemana = (n) => {
-  const ini = lunesSemana(n); const fin = new Date(ini); fin.setUTCDate(ini.getUTCDate() + 6);
+  const ini = lunesSemana(n);
+  if (!ini || isNaN(ini)) return { iniISO: '', label: '' };   // nunca revienta el render
+  const fin = new Date(ini); fin.setUTCDate(ini.getUTCDate() + 6);
   return { iniISO: ini.toISOString().slice(0, 10), label: `${fmtDM(ini)} – ${fmtDM(fin)}` };
 };
 
