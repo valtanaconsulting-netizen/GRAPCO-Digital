@@ -9,6 +9,7 @@ import RoleGuard from '../components/RoleGuard';
 import DashboardOT from './oficinatecnica/DashboardOT';
 import RDOView from './oficinatecnica/RDOView';
 import ValorizacionesView from './oficinatecnica/ValorizacionesView';
+import ValorizacionF07 from './oficinatecnica/ValorizacionF07';
 import PresupuestoView from './oficinatecnica/PresupuestoView';
 import SustentoMetrados from './oficinatecnica/SustentoMetrados';
 import RegistroFotografico from './oficinatecnica/RegistroFotografico';
@@ -60,6 +61,7 @@ const GRUPOS = {
     tagline: 'Valorización y cobro al cliente',
     items: [
       { id: 'valoriz',  l: 'Valorizaciones', icono: '💰', icon: 'coins',    desc: 'Mensual al cliente (auto-calcula)' },
+      { id: 'valorf07', l: 'Valorización F07', icono: '📄', icon: 'fileText', desc: 'Formato oficial F07 por cantidad (item/und/cant/PU)' },
       { id: 'sustento', l: 'Metrados / Sustento', icono: '📐', icon: 'layers', desc: 'Planilla de metrados (concreto/acero/encofrado) + fotos' },
       { id: 'informe',  l: 'Informe PDF',    icono: '📑', icon: 'fileText', desc: 'Genera el sustento imprimible' },
     ],
@@ -256,6 +258,7 @@ export default function OficinaTecnicaPanel({ showToast, tabExterna, onChangeTab
           {tab === 'dashboard'   && <DashboardOT showToast={showToast} />}
           {tab === 'ro'          && <ROPanel showToast={showToast} seccionExterna={roSeccion} />}
           {tab === 'valoriz'     && <ValorizacionesView showToast={showToast} />}
+          {tab === 'valorf07'    && <ValorizacionF07 showToast={showToast} />}
           {tab === 'sustento'    && <SustentoMetrados showToast={showToast} />}
           {tab === 'fotografico' && <RegistroFotografico />}
           {tab === 'informe'     && <InformeSustento />}
