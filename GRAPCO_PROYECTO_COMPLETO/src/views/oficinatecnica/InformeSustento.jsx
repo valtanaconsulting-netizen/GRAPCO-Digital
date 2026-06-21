@@ -206,7 +206,7 @@ export default function InformeSustento() {
                     <tbody>
                       {r.detalleMetrado.map((row, k) => (
                         <tr key={row.id || k} style={{ borderTop: `1px solid ${BASE.border}` }}>
-                          <td style={{ padding: '4px 8px', color: BASE.navy }}>{row.descripcion || `Elemento ${k + 1}`}</td>
+                          <td style={{ padding: '4px 8px', color: BASE.navy }}>{row.descripcion || (row.nGuia ? `Guía ${row.nGuia}${row.placa ? ' · ' + row.placa : ''}` : `Ítem ${k + 1}`)}</td>
                           <td style={{ padding: '4px 8px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700 }}>
                             {parcialFila(r.tipoMetrado || 'concreto', row).toLocaleString('es-PE', { maximumFractionDigits: 2 })}
                           </td>

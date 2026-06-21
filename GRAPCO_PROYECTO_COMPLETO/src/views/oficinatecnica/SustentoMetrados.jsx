@@ -32,8 +32,9 @@ const FORM_INICIAL = {
   codigoPartida: '',          // código WBS (1001-1018) para alimentar la valorización
   valorizacionRef: '',
   periodoMes: new Date().toISOString().slice(0, 7),
-  tipoMetrado: 'concreto',    // concreto | acero | encofrado | generico
+  tipoMetrado: 'concreto',    // concreto | acero | encofrado | eliminacion | …
   detalleMetrado: [],         // filas de la planilla de cómputo
+  metaMetrado: {},            // extras del cálculo (ej. factorEsponjamiento)
   metrado: 0,                 // total calculado por la planilla
   unidad: 'm3',
   descripcion: '',
@@ -85,6 +86,7 @@ export default function SustentoMetrados({ showToast }) {
       periodoMes: it.periodoMes || new Date().toISOString().slice(0, 7),
       tipoMetrado: it.tipoMetrado || 'concreto',
       detalleMetrado: it.detalleMetrado || [],
+      metaMetrado: it.metaMetrado || {},
       metrado: it.metrado || 0,
       unidad: it.unidad || 'm3',
       descripcion: it.descripcion || '',
@@ -290,8 +292,9 @@ export default function SustentoMetrados({ showToast }) {
               tipo={form.tipoMetrado}
               unidad={form.unidad}
               detalle={form.detalleMetrado}
-              onChange={({ tipo, unidad, detalle, total }) =>
-                setForm((f) => ({ ...f, tipoMetrado: tipo, unidad, detalleMetrado: detalle, metrado: total }))}
+              meta={form.metaMetrado}
+              onChange={({ tipo, unidad, detalle, total, meta }) =>
+                setForm((f) => ({ ...f, tipoMetrado: tipo, unidad, detalleMetrado: detalle, metaMetrado: meta || {}, metrado: total }))}
             />
           </div>
 
@@ -350,7 +353,7 @@ export default function SustentoMetrados({ showToast }) {
                     <tbody>
                       {verDetalle.detalleMetrado.map((r, i) => (
                         <tr key={r.id || i} style={{ borderTop: `1px solid ${BASE.border}` }}>
-                          <td style={{ padding: '5px 8px', color: BASE.navy }}>{r.descripcion || `Elemento ${i + 1}`}</td>
+                          <td style={{ padding: '5px 8px', color: BASE.navy }}>{r.descripcion || (r.nGuia ? `Guía ${r.nGuia}${r.placa ? ' · ' + r.placa : ''}` : `Ítem ${i + 1}`)}</td>
                           <td style={{ padding: '5px 8px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: BASE.text }}>
                             {parcialFila(verDetalle.tipoMetrado || 'concreto', r).toLocaleString('es-PE', { maximumFractionDigits: 2 })}
                           </td>

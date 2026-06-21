@@ -1,15 +1,16 @@
 // src/views/oficinatecnica/PlanillaMetrado.jsx
 // Planilla de CÓMPUTO DE METRADOS por tipo, "tal cual" se hace en la carpeta de
-// costos para el sustento de valorización. Reemplaza el "metrado a mano" por un
-// desglose por elemento que calcula el total en vivo.
+// costos para el sustento de valorización. Cada tipo elige su FORMATO:
 //
-// Familias de cálculo:
-//   • volumen (m³): parcial = nº × largo × ancho × alto   (concreto, excavación, relleno, genérico)
-//   • area    (m²): parcial = nº × largo/perím × alto × caras (encofrado, tarrajeo/solaqueo)
-//   • acero   (kg): parcial = nº elem × nº varillas × (long + empalme) × peso(Ø)
+//   • volumen (m³):   parcial = nº × largo × ancho × alto   (concreto, excavación, relleno, genérico)
+//   • area    (m²):   parcial = nº × largo/perím × alto × caras (encofrado, tarrajeo/solaqueo)
+//   • acero   (kg):   parcial = nº elem × nº varillas × (long + empalme) × peso(Ø)
+//   • volquetes (m³): planilla de salida de volquetes (N° guía · fecha · placa ·
+//                     interna/externa · volumen). Total eliminado = Σ volumen;
+//                     excavado masivo = eliminado ÷ (1 + factor esponjamiento).
 //
-// onChange entrega { tipo, unidad, detalle, total } al padre, que lo persiste y
-// usa el total como el metrado de la partida valorizada.
+// onChange entrega { tipo, unidad, detalle, total, meta } al padre, que lo
+// persiste y usa el total como metrado de la partida valorizada.
 import React, { useMemo } from 'react';
 import { BASE } from '../../utils/styles';
 
@@ -27,15 +28,19 @@ export const ACERO_PESOS = [
 ];
 const pesoDe = (d) => (ACERO_PESOS.find(p => p.id === d)?.kgm) || 0;
 
+// Capacidades típicas de volquete (m³) — atajo para llenar rápido.
+export const CAPACIDADES_VOLQUETE = [15, 22, 24, 25];
+
 // tipo → { label, unidad, icon, familia }
 export const TIPOS_METRADO = {
-  concreto:   { label: 'Concreto',         unidad: 'm3', icon: '🧱', familia: 'volumen' },
-  acero:      { label: 'Acero',            unidad: 'kg', icon: '🔩', familia: 'acero' },
-  encofrado:  { label: 'Encofrado',        unidad: 'm2', icon: '🪵', familia: 'area' },
-  excavacion: { label: 'Excavación',       unidad: 'm3', icon: '⛏️', familia: 'volumen' },
-  relleno:    { label: 'Relleno',          unidad: 'm3', icon: '🚜', familia: 'volumen' },
-  tarrajeo:   { label: 'Tarrajeo/Solaqueo', unidad: 'm2', icon: '🧽', familia: 'area' },
-  generico:   { label: 'Genérico',         unidad: 'und', icon: '📐', familia: 'volumen' },
+  concreto:    { label: 'Concreto',          unidad: 'm3', icon: '🧱', familia: 'volumen' },
+  acero:       { label: 'Acero',             unidad: 'kg', icon: '🔩', familia: 'acero' },
+  encofrado:   { label: 'Encofrado',         unidad: 'm2', icon: '🪵', familia: 'area' },
+  excavacion:  { label: 'Excavación',        unidad: 'm3', icon: '⛏️', familia: 'volumen' },
+  eliminacion: { label: 'Eliminación/Volquetes', unidad: 'm3', icon: '🚛', familia: 'volquetes' },
+  relleno:     { label: 'Relleno',           unidad: 'm3', icon: '🚜', familia: 'volumen' },
+  tarrajeo:    { label: 'Tarrajeo/Solaqueo', unidad: 'm2', icon: '🧽', familia: 'area' },
+  generico:    { label: 'Genérico',          unidad: 'und', icon: '📐', familia: 'volumen' },
 };
 const familiaDe = (tipo) => TIPOS_METRADO[tipo]?.familia || 'volumen';
 
@@ -53,64 +58,161 @@ export function parcialFila(tipo, r) {
   if (fam === 'area') {
     return dim(r.nVeces) * num(r.largo) * num(r.alto) * dim(r.caras);
   }
+  if (fam === 'volquetes') {
+    return num(r.volumen); // cada viaje aporta su volumen
+  }
   return dim(r.nVeces) * dim(r.largo) * dim(r.ancho) * dim(r.alto); // volumen / genérico
 }
 
 const filaVacia = (tipo) => {
-  const base = { id: `r_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, descripcion: '', nVeces: '' };
+  const base = { id: `r_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` };
   const fam = familiaDe(tipo);
-  if (fam === 'acero') return { ...base, diametro: '1/2"', nVarillas: '', largo: '', empalme: '' };
-  if (fam === 'area')  return { ...base, largo: '', alto: '', caras: '1' };
-  return { ...base, largo: '', ancho: '', alto: '' };
+  if (fam === 'acero')     return { ...base, descripcion: '', nVeces: '', diametro: '1/2"', nVarillas: '', largo: '', empalme: '' };
+  if (fam === 'area')      return { ...base, descripcion: '', nVeces: '', largo: '', alto: '', caras: '1' };
+  if (fam === 'volquetes') return { ...base, nGuia: '', fecha: '', placa: '', clase: 'Externa', volumen: '' };
+  return { ...base, descripcion: '', nVeces: '', largo: '', ancho: '', alto: '' };
 };
 
-// Columnas por familia: [key, label, ancho, placeholder]
+// Columnas por familia dimensional: [key, label, ancho, placeholder]
 const COLS = {
   volumen: [['nVeces','Nº', 52,'1'], ['largo','Largo (m)', 78,'0.00'], ['ancho','Ancho (m)', 78,'0.00'], ['alto','Alto/Esp (m)', 84,'0.00']],
   area:    [['nVeces','Nº', 52,'1'], ['largo','Largo/Perím (m)', 96,'0.00'], ['alto','Alto (m)', 78,'0.00'], ['caras','Caras', 60,'1']],
 };
 
-export default function PlanillaMetrado({ tipo = 'concreto', unidad, detalle = [], onChange }) {
+export default function PlanillaMetrado({ tipo = 'concreto', unidad, detalle = [], meta = {}, onChange }) {
   const filas = detalle.length ? detalle : [];
   const fam = familiaDe(tipo);
   const total = useMemo(() => filas.reduce((s, r) => s + parcialFila(tipo, r), 0), [filas, tipo]);
   const un = unidad || TIPOS_METRADO[tipo]?.unidad || 'und';
+  const factorEspon = meta?.factorEsponjamiento != null ? meta.factorEsponjamiento : 0.30;
 
-  const emit = (nuevasFilas, nuevoTipo = tipo, nuevaUnidad = un) => {
+  const emit = (nuevasFilas, nuevoTipo = tipo, nuevaUnidad = un, nuevaMeta = meta) => {
     const t = nuevasFilas.reduce((s, r) => s + parcialFila(nuevoTipo, r), 0);
-    onChange?.({ tipo: nuevoTipo, unidad: nuevaUnidad, detalle: nuevasFilas, total: Math.round(t * 1000) / 1000 });
+    onChange?.({ tipo: nuevoTipo, unidad: nuevaUnidad, detalle: nuevasFilas, total: Math.round(t * 1000) / 1000, meta: nuevaMeta || {} });
   };
 
   const cambiarTipo = (nuevoTipo) => {
-    emit([filaVacia(nuevoTipo)], nuevoTipo, TIPOS_METRADO[nuevoTipo]?.unidad || 'und');
+    const m = familiaDe(nuevoTipo) === 'volquetes' ? { factorEsponjamiento: 0.30 } : {};
+    emit([filaVacia(nuevoTipo)], nuevoTipo, TIPOS_METRADO[nuevoTipo]?.unidad || 'und', m);
   };
   const addFila = () => emit([...filas, filaVacia(tipo)]);
   const delFila = (id) => emit(filas.filter(r => r.id !== id));
   const setCampo = (id, k, v) => emit(filas.map(r => r.id === id ? { ...r, [k]: v } : r));
+  const setFactor = (v) => emit(filas, tipo, un, { ...meta, factorEsponjamiento: (parseFloat(v) || 0) });
 
+  // Selector de tipo (común a todos)
+  const Selector = (
+    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+      {Object.entries(TIPOS_METRADO).map(([k, t]) => (
+        <button key={k} type="button" onClick={() => cambiarTipo(k)} style={{
+          padding: '7px 11px', borderRadius: '9px', cursor: 'pointer',
+          border: tipo === k ? `2px solid ${BASE.gold}` : `1.5px solid ${BASE.border}`,
+          background: tipo === k ? BASE.navy : BASE.white,
+          color: tipo === k ? '#fff' : BASE.navy,
+          fontSize: '11px', fontWeight: 800,
+        }}>{t.icon} {t.label} <span style={{ opacity: 0.7, fontWeight: 600 }}>({t.unidad})</span></button>
+      ))}
+      {tipo === 'generico' && (
+        <input value={un} onChange={e => emit(filas, tipo, e.target.value)} placeholder="unidad"
+          style={{ width: '70px', padding: '6px 8px', borderRadius: '8px', border: `1.5px solid ${BASE.border}`, fontSize: '11.5px', fontWeight: 700, textAlign: 'center' }} />
+      )}
+    </div>
+  );
+
+  // ─────────── FAMILIA VOLQUETES (eliminación / salida de material) ───────────
+  if (fam === 'volquetes') {
+    const eliminado = total;                                  // Σ volumen de viajes
+    const viajes = filas.filter(r => num(r.volumen) > 0).length;
+    const excavado = (1 + factorEspon) > 0 ? eliminado / (1 + factorEspon) : 0;
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {Selector}
+
+        {/* Factor de esponjamiento + resúmenes derivados */}
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <label style={{ fontSize: '11px', fontWeight: 800, color: BASE.navy, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            Factor esponjamiento
+            <input value={Math.round(factorEspon * 100)} inputMode="decimal"
+              onChange={e => setFactor((parseFloat(e.target.value) || 0) / 100)}
+              style={{ width: 54, padding: '5px 7px', borderRadius: 7, border: `1.5px solid ${BASE.border}`, fontSize: 12, fontWeight: 800, textAlign: 'right', fontFamily: 'monospace' }} />
+            <span style={{ color: BASE.muted }}>%</span>
+          </label>
+          <span style={chipDeriv}>Eliminado: <b style={{ color: BASE.goldDark }}>{eliminado.toLocaleString('es-PE', { maximumFractionDigits: 2 })} m³</b></span>
+          <span style={chipDeriv}>Excavado masivo: <b style={{ color: BASE.navy }}>{excavado.toLocaleString('es-PE', { maximumFractionDigits: 2 })} m³</b></span>
+          <span style={chipDeriv}>Viajes: <b>{viajes}</b></span>
+        </div>
+
+        {/* Atajo de capacidad para la próxima fila */}
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '10.5px', color: BASE.muted, fontWeight: 700 }}>Agregar viaje de:</span>
+          {CAPACIDADES_VOLQUETE.map(c => (
+            <button key={c} type="button"
+              onClick={() => emit([...filas, { ...filaVacia('eliminacion'), volumen: String(c) }])}
+              style={{ padding: '5px 10px', borderRadius: '8px', border: `1.5px solid ${BASE.border}`, background: BASE.bgSoft, color: BASE.navy, fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}>
+              {c} m³
+            </button>
+          ))}
+        </div>
+
+        <div style={{ border: `1px solid ${BASE.border}`, borderRadius: '10px', overflow: 'hidden' }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: 560 }}>
+              <thead>
+                <tr style={{ background: BASE.navy, color: '#fff' }}>
+                  <th style={thS({ width: 92 })}>N° guía</th>
+                  <th style={thS({ width: 124 })}>Fecha</th>
+                  <th style={thS({ width: 96 })}>Placa</th>
+                  <th style={thS({ width: 96 })}>Clase</th>
+                  <th style={thS({ width: 90, textAlign: 'right' })}>Vol. (m³)</th>
+                  <th style={thS({ width: 34 })}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filas.length === 0 && (
+                  <tr><td colSpan={6} style={{ padding: '14px', textAlign: 'center', color: BASE.muted, fontSize: '11.5px', fontStyle: 'italic' }}>
+                    Sin viajes — usa los botones de capacidad o “Agregar elemento”.
+                  </td></tr>
+                )}
+                {filas.map((r, i) => (
+                  <tr key={r.id} style={{ background: i % 2 ? BASE.bgSoft : BASE.white, borderBottom: `1px solid ${BASE.border}` }}>
+                    <td style={tdS()}><input value={r.nGuia} onChange={e => setCampo(r.id, 'nGuia', e.target.value)} placeholder="000202" style={inpCell({ textAlign: 'left' })} /></td>
+                    <td style={tdS()}><input type="date" value={r.fecha || ''} onChange={e => setCampo(r.id, 'fecha', e.target.value)} style={inpCell({ textAlign: 'left' })} /></td>
+                    <td style={tdS()}><input value={r.placa} onChange={e => setCampo(r.id, 'placa', e.target.value)} placeholder="ANJ-776" style={inpCell({ textAlign: 'left' })} /></td>
+                    <td style={tdS()}>
+                      <select value={r.clase} onChange={e => setCampo(r.id, 'clase', e.target.value)} style={inpCell({ padding: '6px 4px' })}>
+                        <option>Externa</option><option>Interna</option>
+                      </select>
+                    </td>
+                    <td style={tdS()}><input value={r.volumen} onChange={e => setCampo(r.id, 'volumen', e.target.value)} placeholder="22" inputMode="decimal" style={inpCell({ textAlign: 'right', fontWeight: 800, color: BASE.green })} /></td>
+                    <td style={tdS({ textAlign: 'center' })}>
+                      <button type="button" onClick={() => delFila(r.id)} title="Quitar viaje" style={{ border: 'none', background: BASE.redLight, color: BASE.red, borderRadius: '6px', padding: '4px 7px', cursor: 'pointer', fontSize: '11px', fontWeight: 800 }}>✕</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr style={{ background: BASE.goldSoft }}>
+                  <td colSpan={4} style={{ padding: '9px 12px', textAlign: 'right', fontWeight: 900, color: BASE.navy }}>TOTAL ELIMINADO ({viajes} viajes)</td>
+                  <td style={{ padding: '9px 12px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 900, color: BASE.goldDark, fontSize: '14px' }}>{eliminado.toLocaleString('es-PE', { maximumFractionDigits: 2 })}</td>
+                  <td style={{ padding: '9px 6px', fontWeight: 800, color: BASE.muted, fontSize: '11px' }}>m³</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <button type="button" onClick={addFila} style={addBtn}>+ Agregar viaje</button>
+      </div>
+    );
+  }
+
+  // ─────────── FAMILIAS DIMENSIONALES (volumen / área / acero) ───────────
   const cols = fam === 'acero' ? null : (COLS[fam] || COLS.volumen);
   const nCols = fam === 'acero' ? 9 : (cols.length + 3);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-      {/* Selector de tipo */}
-      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-        {Object.entries(TIPOS_METRADO).map(([k, t]) => (
-          <button key={k} type="button" onClick={() => cambiarTipo(k)} style={{
-            padding: '7px 11px', borderRadius: '9px', cursor: 'pointer',
-            border: tipo === k ? `2px solid ${BASE.gold}` : `1.5px solid ${BASE.border}`,
-            background: tipo === k ? BASE.navy : BASE.white,
-            color: tipo === k ? '#fff' : BASE.navy,
-            fontSize: '11px', fontWeight: 800,
-          }}>{t.icon} {t.label} <span style={{ opacity: 0.7, fontWeight: 600 }}>({t.unidad})</span></button>
-        ))}
-        {tipo === 'generico' && (
-          <input value={un} onChange={e => emit(filas, tipo, e.target.value)} placeholder="unidad"
-            style={{ width: '70px', padding: '6px 8px', borderRadius: '8px', border: `1.5px solid ${BASE.border}`, fontSize: '11.5px', fontWeight: 700, textAlign: 'center' }} />
-        )}
-      </div>
-
-      {/* Tabla */}
+      {Selector}
       <div style={{ border: `1px solid ${BASE.border}`, borderRadius: '10px', overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: fam === 'acero' ? 640 : 480 }}>
@@ -184,12 +286,7 @@ export default function PlanillaMetrado({ tipo = 'concreto', unidad, detalle = [
           </table>
         </div>
       </div>
-
-      <button type="button" onClick={addFila} style={{
-        alignSelf: 'flex-start', padding: '8px 14px', borderRadius: '9px',
-        border: `1.5px dashed ${BASE.gold}`, background: BASE.goldLight, color: BASE.navy,
-        fontSize: '12px', fontWeight: 800, cursor: 'pointer',
-      }}>+ Agregar elemento</button>
+      <button type="button" onClick={addFila} style={addBtn}>+ Agregar elemento</button>
     </div>
   );
 }
@@ -197,3 +294,5 @@ export default function PlanillaMetrado({ tipo = 'concreto', unidad, detalle = [
 const thS = (extra = {}) => ({ padding: '8px 8px', textAlign: 'left', fontSize: '9.5px', fontWeight: 900, letterSpacing: '0.3px', whiteSpace: 'nowrap', ...extra });
 const tdS = (extra = {}) => ({ padding: '4px 6px', verticalAlign: 'middle', ...extra });
 const inpCell = (extra = {}) => ({ width: '100%', padding: '6px 7px', border: `1px solid ${BASE.border}`, borderRadius: '6px', fontSize: '11.5px', fontWeight: 600, textAlign: 'center', boxSizing: 'border-box', fontFamily: 'monospace', ...extra });
+const chipDeriv = { fontSize: '11px', color: BASE.muted, background: BASE.bgSoft, border: `1px solid ${BASE.border}`, borderRadius: '999px', padding: '5px 11px', fontWeight: 600 };
+const addBtn = { alignSelf: 'flex-start', padding: '8px 14px', borderRadius: '9px', border: `1.5px dashed ${BASE.gold}`, background: BASE.goldLight, color: BASE.navy, fontSize: '12px', fontWeight: 800, cursor: 'pointer' };
