@@ -26,6 +26,8 @@ const PARTIDAS_DEFAULT = [
   '4. Acarreo con Camión Grúa',
   '5. Cordón Bentonítico',
   '6. Nave Industrial',
+  '7. Demolición',
+  '8. Eliminación de desmonte',
 ];
 
 const FORM_INICIAL = {

@@ -8,6 +8,9 @@
 //   • volquetes (m³): planilla de salida de volquetes (N° guía · fecha · placa ·
 //                     interna/externa · volumen). Total eliminado = Σ volumen;
 //                     excavado masivo = eliminado ÷ (1 + factor esponjamiento).
+//   • demolicion (m²): planilla de demolición de losa/elemento por área. Total
+//                      partida = Σ área (m²). Volumen demolido = Σ nº × área × esp;
+//                      eliminado = demolido × (1 + factor esponjamiento).
 //
 // onChange entrega { tipo, unidad, detalle, total, meta } al padre, que lo
 // persiste y usa el total como metrado de la partida valorizada.
@@ -38,6 +41,7 @@ export const TIPOS_METRADO = {
   encofrado:   { label: 'Encofrado',         unidad: 'm2', icon: '🪵', familia: 'area' },
   excavacion:  { label: 'Excavación',        unidad: 'm3', icon: '⛏️', familia: 'volumen' },
   eliminacion: { label: 'Eliminación/Volquetes', unidad: 'm3', icon: '🚛', familia: 'volquetes' },
+  demolicion:  { label: 'Demolición',        unidad: 'm2', icon: '🏚️', familia: 'demolicion' },
   relleno:     { label: 'Relleno',           unidad: 'm3', icon: '🚜', familia: 'volumen' },
   tarrajeo:    { label: 'Tarrajeo/Solaqueo', unidad: 'm2', icon: '🧽', familia: 'area' },
   generico:    { label: 'Genérico',          unidad: 'und', icon: '📐', familia: 'volumen' },
@@ -61,6 +65,9 @@ export function parcialFila(tipo, r) {
   if (fam === 'volquetes') {
     return num(r.volumen); // cada viaje aporta su volumen
   }
+  if (fam === 'demolicion') {
+    return num(r.area); // el metrado de la partida es el área (m²); el nº solo alimenta el volumen demolido
+  }
   return dim(r.nVeces) * dim(r.largo) * dim(r.ancho) * dim(r.alto); // volumen / genérico
 }
 
@@ -70,6 +77,7 @@ const filaVacia = (tipo) => {
   if (fam === 'acero')     return { ...base, descripcion: '', nVeces: '', diametro: '1/2"', nVarillas: '', largo: '', empalme: '' };
   if (fam === 'area')      return { ...base, descripcion: '', nVeces: '', largo: '', alto: '', caras: '1' };
   if (fam === 'volquetes') return { ...base, nGuia: '', fecha: '', placa: '', clase: 'Externa', volumen: '' };
+  if (fam === 'demolicion') return { ...base, descripcion: '', area: '', espesor: '', nVeces: '1' };
   return { ...base, descripcion: '', nVeces: '', largo: '', ancho: '', alto: '' };
 };
 
@@ -92,7 +100,10 @@ export default function PlanillaMetrado({ tipo = 'concreto', unidad, detalle = [
   };
 
   const cambiarTipo = (nuevoTipo) => {
-    const m = familiaDe(nuevoTipo) === 'volquetes' ? { factorEsponjamiento: 0.30 } : {};
+    const f = familiaDe(nuevoTipo);
+    const m = f === 'volquetes' ? { factorEsponjamiento: 0.30 }
+            : f === 'demolicion' ? { factorEsponjamiento: 0.20 }
+            : {};
     emit([filaVacia(nuevoTipo)], nuevoTipo, TIPOS_METRADO[nuevoTipo]?.unidad || 'und', m);
   };
   const addFila = () => emit([...filas, filaVacia(tipo)]);
@@ -202,6 +213,82 @@ export default function PlanillaMetrado({ tipo = 'concreto', unidad, detalle = [
         </div>
 
         <button type="button" onClick={addFila} style={addBtn}>+ Agregar viaje</button>
+      </div>
+    );
+  }
+
+  // ─────────── FAMILIA DEMOLICIÓN (losa/elemento por área + espesor) ───────────
+  if (fam === 'demolicion') {
+    const areaTotal = total;                                              // Σ área (m²) = metrado de la partida
+    const demolido = filas.reduce((s, r) => s + dim(r.nVeces) * num(r.area) * num(r.espesor), 0);
+    const eliminado = demolido * (1 + factorEspon);                      // c/ esponjamiento
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {Selector}
+
+        {/* Factor de esponjamiento + resúmenes derivados */}
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <label style={{ fontSize: '11px', fontWeight: 800, color: BASE.navy, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            Factor esponjamiento
+            <input value={Math.round(factorEspon * 100)} inputMode="decimal"
+              onChange={e => setFactor((parseFloat(e.target.value) || 0) / 100)}
+              style={{ width: 54, padding: '5px 7px', borderRadius: 7, border: `1.5px solid ${BASE.border}`, fontSize: 12, fontWeight: 800, textAlign: 'right', fontFamily: 'monospace' }} />
+            <span style={{ color: BASE.muted }}>%</span>
+          </label>
+          <span style={chipDeriv}>Área demolida: <b style={{ color: BASE.goldDark }}>{areaTotal.toLocaleString('es-PE', { maximumFractionDigits: 2 })} m²</b></span>
+          <span style={chipDeriv}>Volumen demolido: <b style={{ color: BASE.navy }}>{demolido.toLocaleString('es-PE', { maximumFractionDigits: 2 })} m³</b></span>
+          <span style={chipDeriv}>Eliminado (c/ esponj.): <b style={{ color: BASE.green }}>{eliminado.toLocaleString('es-PE', { maximumFractionDigits: 2 })} m³</b></span>
+        </div>
+
+        <div style={{ border: `1px solid ${BASE.border}`, borderRadius: '10px', overflow: 'hidden' }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: 560 }}>
+              <thead>
+                <tr style={{ background: BASE.navy, color: '#fff' }}>
+                  <th style={thS({ minWidth: 150 })}>Elemento / Losa</th>
+                  <th style={thS({ width: 92, textAlign: 'right' })}>Área (m²)</th>
+                  <th style={thS({ width: 88, textAlign: 'right' })}>Espesor (m)</th>
+                  <th style={thS({ width: 52 })}>Nº</th>
+                  <th style={thS({ width: 92, textAlign: 'right' })}>Demolido (m³)</th>
+                  <th style={thS({ width: 34 })}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filas.length === 0 && (
+                  <tr><td colSpan={6} style={{ padding: '14px', textAlign: 'center', color: BASE.muted, fontSize: '11.5px', fontStyle: 'italic' }}>
+                    Sin elementos — agrega la primera losa ↓
+                  </td></tr>
+                )}
+                {filas.map((r, i) => {
+                  const vol = dim(r.nVeces) * num(r.area) * num(r.espesor);
+                  return (
+                    <tr key={r.id} style={{ background: i % 2 ? BASE.bgSoft : BASE.white, borderBottom: `1px solid ${BASE.border}` }}>
+                      <td style={tdS()}><input value={r.descripcion} onChange={e => setCampo(r.id, 'descripcion', e.target.value)} placeholder="Ej. Losa N. 0.00" style={inpCell({ textAlign: 'left' })} /></td>
+                      <td style={tdS()}><input value={r.area} onChange={e => setCampo(r.id, 'area', e.target.value)} placeholder="0.00" inputMode="decimal" style={inpCell({ textAlign: 'right', fontWeight: 800, color: BASE.green })} /></td>
+                      <td style={tdS()}><input value={r.espesor} onChange={e => setCampo(r.id, 'espesor', e.target.value)} placeholder="0.20" inputMode="decimal" style={inpCell({ textAlign: 'right' })} /></td>
+                      <td style={tdS()}><input value={r.nVeces} onChange={e => setCampo(r.id, 'nVeces', e.target.value)} placeholder="1" inputMode="decimal" style={inpCell()} /></td>
+                      <td style={tdS({ textAlign: 'right', color: BASE.muted, fontFamily: 'monospace', fontWeight: 700 })}>{vol.toLocaleString('es-PE', { maximumFractionDigits: 2 })}</td>
+                      <td style={tdS({ textAlign: 'center' })}>
+                        <button type="button" onClick={() => delFila(r.id)} title="Quitar fila" style={{ border: 'none', background: BASE.redLight, color: BASE.red, borderRadius: '6px', padding: '4px 7px', cursor: 'pointer', fontSize: '11px', fontWeight: 800 }}>✕</button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr style={{ background: BASE.goldSoft }}>
+                  <td style={{ padding: '9px 12px', textAlign: 'right', fontWeight: 900, color: BASE.navy }}>TOTAL ÁREA DEMOLIDA</td>
+                  <td style={{ padding: '9px 12px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 900, color: BASE.goldDark, fontSize: '14px' }}>{areaTotal.toLocaleString('es-PE', { maximumFractionDigits: 2 })}</td>
+                  <td colSpan={2} style={{ padding: '9px 6px', fontWeight: 800, color: BASE.muted, fontSize: '11px' }}>m²</td>
+                  <td style={{ padding: '9px 12px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 900, color: BASE.navy }}>{demolido.toLocaleString('es-PE', { maximumFractionDigits: 2 })}</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <button type="button" onClick={addFila} style={addBtn}>+ Agregar elemento</button>
       </div>
     );
   }
