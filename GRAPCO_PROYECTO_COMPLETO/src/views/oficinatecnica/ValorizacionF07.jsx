@@ -52,7 +52,7 @@ export default function ValorizacionF07({ showToast }) {
     const docSel = avances.find(a => a.valN === valN);
     const previas = avances.filter(a => a.valN < valN);
     const docAnt = previas.length ? previas[previas.length - 1] : null;
-    const mapAcum = (doc) => { const m = {}; (doc?.avances || []).forEach(x => { m[x.item] = (m[x.item] || 0) + (Number(x.acum) || 0); }); return m; };
+    const mapAcum = (doc) => { const m = {}; (doc?.avances || []).forEach(x => { const k = x.key || x.item; m[k] = (m[k] || 0) + (Number(x.acum) || 0); }); return m; };
     const acumSel = mapAcum(docSel);
     const acumAnt = mapAcum(docAnt);
     const m = {};
@@ -70,7 +70,7 @@ export default function ValorizacionF07({ showToast }) {
     let parcial = 0, ant = 0, act = 0, acum = 0;
     presu.forEach(p => {
       if (!p.esPartida || p.pu == null) return;
-      const e = ejecPorItem[p.item] || {};
+      const e = ejecPorItem[p.mkey] || {};
       parcial += (p.cant || 0) * p.pu;
       ant += (e.ant || 0) * p.pu;
       act += (e.act || 0) * p.pu;
@@ -172,7 +172,7 @@ export default function ValorizacionF07({ showToast }) {
                   );
                 }
                 const pu = p.pu || 0; const cantP = p.cant || 0; const parcial = cantP * pu;
-                const e = ejecPorItem[p.item] || { ant: 0, act: 0, acum: 0 };
+                const e = ejecPorItem[p.mkey] || { ant: 0, act: 0, acum: 0 };
                 const saldoCant = cantP - e.acum;
                 const cerrada = p.cerrada || (cantP > 0 && e.acum >= cantP - 0.001);
                 return (
