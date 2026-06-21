@@ -30,6 +30,14 @@ const PARTIDAS_DEFAULT = [
   '8. Eliminación de desmonte',
 ];
 
+// Título y orden de la "carpeta" a partir del PQ-XX de la valorización.
+const labelVal = (ref) => {
+  if (!ref) return { titulo: 'Sin valorización asignada', sub: '', orden: 9999 };
+  const m = String(ref).match(/(\d+)/);
+  const num = m ? parseInt(m[1], 10) : null;
+  return { titulo: num != null ? `Sustento de Valorización N°${num}` : String(ref), sub: String(ref), orden: num != null ? num : 9998 };
+};
+
 const FORM_INICIAL = {
   partida: PARTIDAS_DEFAULT[0],
   codigoPartida: '',          // código WBS (1001-1018) para alimentar la valorización
@@ -58,6 +66,7 @@ export default function SustentoMetrados({ showToast }) {
   const [filtroPartida, setFiltroPartida] = useState('todas');
   const [verDetalle, setVerDetalle] = useState(null);
   const [plantillaAbierta, setPlantillaAbierta] = useState(false);
+  const [colapsados, setColapsados] = useState({});   // carpetas de valorización plegadas
 
   useEffect(() => {
     const unsubs = [
@@ -79,6 +88,18 @@ export default function SustentoMetrados({ showToast }) {
     const fromItems = items.map(i => i.partida).filter(Boolean);
     return [...new Set([...PARTIDAS_DEFAULT, ...fromItems])];
   }, [items]);
+
+  // Agrupa los sustentos en CARPETAS por valorización (PQ-01, PQ-02, …) y los
+  // ordena ascendente; "sin valorización" va al final.
+  const grupos = useMemo(() => {
+    const map = new Map();
+    filtrados.forEach(it => { const k = it.valorizacionRef || '__sin__'; if (!map.has(k)) map.set(k, []); map.get(k).push(it); });
+    return [...map.entries()]
+      .map(([k, lista]) => ({ key: k, ref: k === '__sin__' ? '' : k, lista, fotos: lista.reduce((a, x) => a + (x.fotos?.length || 0), 0) }))
+      .sort((a, b) => labelVal(a.ref).orden - labelVal(b.ref).orden);
+  }, [filtrados]);
+
+  const toggleGrupo = (k) => setColapsados(s => ({ ...s, [k]: !s[k] }));
 
   const abrirNuevo = () => { setEditando(null); setForm(FORM_INICIAL); setModalAbierto(true); };
   const abrirEdicion = (it) => {
@@ -216,7 +237,7 @@ export default function SustentoMetrados({ showToast }) {
         </div>
       </div>
 
-      {/* Listado tipo galería */}
+      {/* CARPETAS por valorización (PQ-01, PQ-02, …) → tarjetas compactas */}
       {!filtrados.length ? (
         <EmptyState
           icono="📸"
@@ -224,61 +245,63 @@ export default function SustentoMetrados({ showToast }) {
           descripcion='Crea un sustento por partida (Concreto, Encofrado, Acero…) con fotos de campo y descripción del trabajo realizado.'
         />
       ) : (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-          gap: '14px',
-        }}>
-          {filtrados.map(it => (
-            <div key={it.id} style={{
-              background: BASE.white, border: `1px solid ${BASE.border}`,
-              borderRadius: '14px', overflow: 'hidden',
-              boxShadow: '0 2px 6px rgba(15,23,42,0.04)',
-              display: 'flex', flexDirection: 'column',
-            }}>
-              <div style={{
-                aspectRatio: '4/3', background: BASE.bgSoft,
-                position: 'relative', overflow: 'hidden',
-              }}>
-                {it.fotos?.length > 0 ? (
-                  <img src={it.fotos[0].url} alt={it.partida} style={{
-                    width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer',
-                  }} onClick={() => setVerDetalle(it)} />
-                ) : (
-                  <div style={{
-                    width: '100%', height: '100%',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: BASE.muted, fontSize: '11px',
-                  }}>Sin fotos</div>
-                )}
-                {it.fotos?.length > 1 && (
-                  <span style={{
-                    position: 'absolute', bottom: '8px', right: '8px',
-                    background: 'rgba(0,0,0,0.6)', color: '#fff',
-                    padding: '3px 8px', borderRadius: '999px',
-                    fontSize: '10px', fontWeight: 700,
-                  }}>+{it.fotos.length - 1} fotos</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {grupos.map(g => {
+            const meta = labelVal(g.ref);
+            const abierto = !colapsados[g.key];
+            return (
+              <div key={g.key} style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '14px', overflow: 'hidden', boxShadow: '0 2px 6px rgba(15,23,42,0.04)' }}>
+                {/* Cabecera de la carpeta */}
+                <button type="button" onClick={() => toggleGrupo(g.key)} style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: '12px',
+                  padding: '12px 16px', cursor: 'pointer', textAlign: 'left',
+                  background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', border: 'none',
+                }}>
+                  <span style={{ fontSize: '18px', transform: abierto ? 'none' : 'rotate(-90deg)', transition: 'transform 0.15s' }}>▾</span>
+                  <span style={{ fontSize: '20px' }}>📁</span>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'block', fontSize: '13.5px', fontWeight: 900, letterSpacing: '0.2px' }}>{meta.titulo}</span>
+                    {meta.sub && <span style={{ display: 'block', fontSize: '10px', color: BASE.gold, fontWeight: 700, letterSpacing: '0.5px' }}>{meta.sub}</span>}
+                  </span>
+                  <span style={{ fontSize: '11px', fontWeight: 800, background: 'rgba(255,255,255,0.14)', padding: '4px 10px', borderRadius: '999px', whiteSpace: 'nowrap' }}>
+                    {g.lista.length} sustento{g.lista.length === 1 ? '' : 's'} · 📷 {g.fotos}
+                  </span>
+                </button>
+
+                {/* Tarjetas compactas de la carpeta */}
+                {abierto && (
+                  <div style={{ padding: '12px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '10px' }}>
+                    {g.lista.map(it => (
+                      <div key={it.id} style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '11px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                        <div onClick={() => it.fotos?.length && setVerDetalle(it)} style={{ height: '108px', background: BASE.bgSoft, position: 'relative', overflow: 'hidden', cursor: it.fotos?.length ? 'pointer' : 'default' }}>
+                          {it.fotos?.length > 0 ? (
+                            <img src={it.fotos[0].url} alt={it.partida} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: BASE.muted, fontSize: '10.5px' }}>Sin fotos</div>
+                          )}
+                          {it.fotos?.length > 0 && (
+                            <span style={{ position: 'absolute', bottom: '6px', right: '6px', background: 'rgba(0,0,0,0.6)', color: '#fff', padding: '2px 7px', borderRadius: '999px', fontSize: '9.5px', fontWeight: 700 }}>📷 {it.fotos.length}</span>
+                          )}
+                        </div>
+                        <div style={{ padding: '9px 10px', display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                          <p style={{ fontSize: '12px', fontWeight: 900, color: BASE.navy, lineHeight: 1.25, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{it.partida}</p>
+                          <p style={{ fontSize: '11.5px', fontWeight: 800, color: BASE.green, fontFamily: 'var(--grapco-font-mono, monospace)' }}>
+                            {Number(it.metrado).toLocaleString('es-PE')} {it.unidad}
+                            {it.codigoPartida && <span style={{ color: BASE.muted, fontWeight: 600, marginLeft: 6 }}>· {it.codigoPartida}</span>}
+                          </p>
+                          <div style={{ display: 'flex', gap: '5px', marginTop: '2px' }}>
+                            <button onClick={() => setVerDetalle(it)} style={btnSm(BASE.navyLight)}>Ver</button>
+                            <button onClick={() => abrirEdicion(it)} style={btnSm(BASE.gold)}>Editar</button>
+                            <button onClick={() => eliminar(it)}    style={btnSm(BASE.red)}>✕</button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
-              <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
-                <p style={{ fontSize: '11px', color: BASE.muted, fontWeight: 700, letterSpacing: '0.4px' }}>
-                  {it.periodoMes} · {it.valorizacionRef || 'Sin VAL'}
-                </p>
-                <p style={{ fontSize: '13px', fontWeight: 900, color: BASE.navy }}>{it.partida}</p>
-                <p style={{ fontSize: '11px', color: BASE.muted, lineHeight: 1.4, flex: 1 }}>
-                  {it.descripcion}
-                </p>
-                <p style={{ fontSize: '11px', fontWeight: 700, color: BASE.green }}>
-                  {Number(it.metrado).toLocaleString('es-PE')} {it.unidad}
-                </p>
-                <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
-                  <button onClick={() => setVerDetalle(it)} style={btnSm(BASE.navyLight)}>Ver</button>
-                  <button onClick={() => abrirEdicion(it)} style={btnSm(BASE.gold)}>Editar</button>
-                  <button onClick={() => eliminar(it)}    style={btnSm(BASE.red)}>Eliminar</button>
-                </div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
