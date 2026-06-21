@@ -17,6 +17,7 @@ import Modal from '../../components/Modal';
 import EmptyState from '../../components/EmptyState';
 import FotoUploader from '../../components/FotoUploader';
 import PlanillaMetrado, { TIPOS_METRADO, parcialFila } from './PlanillaMetrado';
+import PlantillaCalzadura from './PlantillaCalzadura';
 
 const PARTIDAS_DEFAULT = [
   '1. Concreto',
@@ -54,6 +55,7 @@ export default function SustentoMetrados({ showToast }) {
   const [guardando, setGuardando] = useState(false);
   const [filtroPartida, setFiltroPartida] = useState('todas');
   const [verDetalle, setVerDetalle] = useState(null);
+  const [plantillaAbierta, setPlantillaAbierta] = useState(false);
 
   useEffect(() => {
     const unsubs = [
@@ -138,6 +140,28 @@ export default function SustentoMetrados({ showToast }) {
     }
   };
 
+  // Crea por lote los sustentos generados desde una plantilla (ej. Calzadura).
+  const generarDesdePlantilla = async (payloads) => {
+    if (!Array.isArray(payloads) || !payloads.length) return;
+    try {
+      for (const p of payloads) {
+        await addDoc(collection(db, 'SustentoMetrados'), {
+          ...p,
+          proyectoId: proyectoActivoId || null,
+          metrado: Number(p.metrado) || 0,
+          creadoEn: serverTimestamp(),
+          creadoPor: user?.email || 'desconocido',
+          actualizadoEn: serverTimestamp(),
+          actualizadoPor: user?.email || 'desconocido',
+        });
+      }
+      setPlantillaAbierta(false);
+      showToast?.(`${payloads.length} sustento(s) creados desde plantilla`, 'success');
+    } catch (e) {
+      showToast?.('Error al generar: ' + e.message, 'error');
+    }
+  };
+
   const imprimirInforme = () => {
     window.print();
   };
@@ -172,6 +196,11 @@ export default function SustentoMetrados({ showToast }) {
             <option value="todas">Todas las partidas</option>
             {partidasDisponibles.map(p => <option key={p} value={p}>{p}</option>)}
           </select>
+          <button onClick={() => setPlantillaAbierta(true)} style={{
+            background: BASE.white, color: BASE.navy, border: `1.5px solid ${BASE.gold}`,
+            padding: '10px 16px', borderRadius: '10px', fontWeight: 800, fontSize: '12px',
+            cursor: 'pointer',
+          }}>📋 Desde plantilla</button>
           <button onClick={imprimirInforme} style={{
             background: BASE.navy, color: '#fff', border: 'none',
             padding: '10px 16px', borderRadius: '10px', fontWeight: 800, fontSize: '12px',
@@ -249,6 +278,17 @@ export default function SustentoMetrados({ showToast }) {
             </div>
           ))}
         </div>
+      )}
+
+      {/* Modal generador desde plantilla (Calzadura) */}
+      {plantillaAbierta && (
+        <Modal onClose={() => setPlantillaAbierta(false)} title="Generar sustento desde plantilla · Calzadura" maxW="820px">
+          <PlantillaCalzadura
+            valorizaciones={valorizaciones}
+            onGenerar={generarDesdePlantilla}
+            onClose={() => setPlantillaAbierta(false)}
+          />
+        </Modal>
       )}
 
       {/* Modal crear/editar */}
