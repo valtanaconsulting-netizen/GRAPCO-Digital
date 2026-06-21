@@ -16,6 +16,25 @@
 // persiste y usa el total como metrado de la partida valorizada.
 import React, { useMemo } from 'react';
 import { BASE } from '../../utils/styles';
+import { obtenerSemana } from '../../utils/helpers';
+import { FECHA_INICIO_PROYECTO } from '../../utils/constants';
+
+// Semana del proyecto (LPS) de una fecha ISO. Semana 1 = lunes de FECHA_INICIO_PROYECTO.
+export const semanaDe = (fechaStr) => {
+  if (!fechaStr) return null;
+  try { const n = obtenerSemana(fechaStr, FECHA_INICIO_PROYECTO); return Number.isFinite(n) ? n : null; } catch { return null; }
+};
+const lunesSemana = (n) => {
+  const [y, m, d] = String(FECHA_INICIO_PROYECTO).slice(0, 10).split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + (n - 1) * 7);
+  return dt;
+};
+const fmtDM = (dt) => `${String(dt.getUTCDate()).padStart(2, '0')}/${String(dt.getUTCMonth() + 1).padStart(2, '0')}`;
+export const rangoSemana = (n) => {
+  const ini = lunesSemana(n); const fin = new Date(ini); fin.setUTCDate(ini.getUTCDate() + 6);
+  return { iniISO: ini.toISOString().slice(0, 10), label: `${fmtDM(ini)} – ${fmtDM(fin)}` };
+};
 
 // Peso nominal del acero corrugado por diámetro (kg/m) — estándar Perú/ASTM.
 export const ACERO_PESOS = [
@@ -46,7 +65,7 @@ export const TIPOS_METRADO = {
   tarrajeo:    { label: 'Tarrajeo/Solaqueo', unidad: 'm2', icon: '🧽', familia: 'area' },
   generico:    { label: 'Genérico',          unidad: 'und', icon: '📐', familia: 'volumen' },
 };
-const familiaDe = (tipo) => TIPOS_METRADO[tipo]?.familia || 'volumen';
+export const familiaDe = (tipo) => TIPOS_METRADO[tipo]?.familia || 'volumen';
 
 const num = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
 // Para dimensiones: en blanco = 1 (así un conteo simple no se anula al multiplicar).
@@ -111,21 +130,37 @@ export default function PlanillaMetrado({ tipo = 'concreto', unidad, detalle = [
   const setCampo = (id, k, v) => emit(filas.map(r => r.id === id ? { ...r, [k]: v } : r));
   const setFactor = (v) => emit(filas, tipo, un, { ...meta, factorEsponjamiento: (parseFloat(v) || 0) });
 
-  // Selector de tipo (común a todos)
+  // Selector de tipo (común a todos) — grid con botones grandes y aireados.
   const Selector = (
-    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-      {Object.entries(TIPOS_METRADO).map(([k, t]) => (
-        <button key={k} type="button" onClick={() => cambiarTipo(k)} style={{
-          padding: '7px 11px', borderRadius: '9px', cursor: 'pointer',
-          border: tipo === k ? `2px solid ${BASE.gold}` : `1.5px solid ${BASE.border}`,
-          background: tipo === k ? BASE.navy : BASE.white,
-          color: tipo === k ? '#fff' : BASE.navy,
-          fontSize: '11px', fontWeight: 800,
-        }}>{t.icon} {t.label} <span style={{ opacity: 0.7, fontWeight: 600 }}>({t.unidad})</span></button>
-      ))}
+    <div>
+      <p style={{ fontSize: '10px', fontWeight: 900, color: BASE.muted, letterSpacing: '0.7px', marginBottom: '8px' }}>
+        TIPO DE METRADO — ELIGE EL FORMATO
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '8px' }}>
+        {Object.entries(TIPOS_METRADO).map(([k, t]) => {
+          const activo = tipo === k;
+          return (
+            <button key={k} type="button" onClick={() => cambiarTipo(k)} style={{
+              display: 'flex', alignItems: 'center', gap: '9px',
+              padding: '11px 12px', borderRadius: '12px', cursor: 'pointer', textAlign: 'left',
+              border: activo ? `2px solid ${BASE.gold}` : `1.5px solid ${BASE.border}`,
+              background: activo ? BASE.navy : BASE.white,
+              color: activo ? '#fff' : BASE.navy,
+              boxShadow: activo ? `0 4px 12px ${BASE.navy}33` : 'none',
+              transition: 'all 0.12s',
+            }}>
+              <span style={{ fontSize: '19px', flexShrink: 0 }}>{t.icon}</span>
+              <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15, minWidth: 0 }}>
+                <span style={{ fontSize: '12.5px', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.label}</span>
+                <span style={{ fontSize: '9.5px', opacity: 0.7, fontWeight: 700, letterSpacing: '0.3px' }}>{t.unidad}</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
       {tipo === 'generico' && (
         <input value={un} onChange={e => emit(filas, tipo, e.target.value)} placeholder="unidad"
-          style={{ width: '70px', padding: '6px 8px', borderRadius: '8px', border: `1.5px solid ${BASE.border}`, fontSize: '11.5px', fontWeight: 700, textAlign: 'center' }} />
+          style={{ marginTop: '8px', width: '90px', padding: '7px 9px', borderRadius: '8px', border: `1.5px solid ${BASE.border}`, fontSize: '11.5px', fontWeight: 700, textAlign: 'center' }} />
       )}
     </div>
   );
@@ -135,11 +170,42 @@ export default function PlanillaMetrado({ tipo = 'concreto', unidad, detalle = [
     const eliminado = total;                                  // Σ volumen de viajes
     const viajes = filas.filter(r => num(r.volumen) > 0).length;
     const excavado = (1 + factorEspon) > 0 ? eliminado / (1 + factorEspon) : 0;
+
+    // Agrupa los viajes por SEMANA del proyecto (las sin fecha caen en un grupo aparte).
+    const grupos = (() => {
+      const map = new Map();
+      filas.forEach(r => { const s = semanaDe(r.fecha); const k = s == null ? 'sin' : s; if (!map.has(k)) map.set(k, []); map.get(k).push(r); });
+      return [...map.entries()].sort((a, b) => a[0] === 'sin' ? 1 : b[0] === 'sin' ? -1 : a[0] - b[0]);
+    })();
+    const semanasNum = grupos.map(g => g[0]).filter(k => k !== 'sin');
+    const ultimaSem = semanasNum.length ? semanasNum[semanasNum.length - 1] : null;
+    const addViajeSemana = (semNum, vol = '') => {
+      const f = semNum == null ? '' : rangoSemana(semNum).iniISO;
+      emit([...filas, { ...filaVacia('eliminacion'), fecha: f, volumen: vol ? String(vol) : '' }]);
+    };
+
+    const filaViaje = (r, i) => (
+      <tr key={r.id} style={{ background: i % 2 ? BASE.bgSoft : BASE.white, borderBottom: `1px solid ${BASE.border}` }}>
+        <td style={tdS()}><input value={r.nGuia} onChange={e => setCampo(r.id, 'nGuia', e.target.value)} placeholder="000202" style={inpCell({ textAlign: 'left' })} /></td>
+        <td style={tdS()}><input type="date" value={r.fecha || ''} onChange={e => setCampo(r.id, 'fecha', e.target.value)} style={inpCell({ textAlign: 'left' })} /></td>
+        <td style={tdS()}><input value={r.placa} onChange={e => setCampo(r.id, 'placa', e.target.value)} placeholder="ANJ-776" style={inpCell({ textAlign: 'left' })} /></td>
+        <td style={tdS()}>
+          <select value={r.clase} onChange={e => setCampo(r.id, 'clase', e.target.value)} style={inpCell({ padding: '6px 4px' })}>
+            <option>Externa</option><option>Interna</option>
+          </select>
+        </td>
+        <td style={tdS()}><input value={r.volumen} onChange={e => setCampo(r.id, 'volumen', e.target.value)} placeholder="22" inputMode="decimal" style={inpCell({ textAlign: 'right', fontWeight: 800, color: BASE.green })} /></td>
+        <td style={tdS({ textAlign: 'center' })}>
+          <button type="button" onClick={() => delFila(r.id)} title="Quitar viaje" style={{ border: 'none', background: BASE.redLight, color: BASE.red, borderRadius: '6px', padding: '4px 7px', cursor: 'pointer', fontSize: '11px', fontWeight: 800 }}>✕</button>
+        </td>
+      </tr>
+    );
+
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {Selector}
 
-        {/* Factor de esponjamiento + resúmenes derivados */}
+        {/* Factor de esponjamiento + resúmenes derivados (totales del sustento) */}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
           <label style={{ fontSize: '11px', fontWeight: 800, color: BASE.navy, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
             Factor esponjamiento
@@ -153,66 +219,82 @@ export default function PlanillaMetrado({ tipo = 'concreto', unidad, detalle = [
           <span style={chipDeriv}>Viajes: <b>{viajes}</b></span>
         </div>
 
-        {/* Atajo de capacidad para la próxima fila */}
+        {/* Atajos: agregan a la ÚLTIMA semana (o sin fecha si no hay) */}
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '10.5px', color: BASE.muted, fontWeight: 700 }}>Agregar viaje de:</span>
+          <span style={{ fontSize: '10.5px', color: BASE.muted, fontWeight: 700 }}>
+            Agregar viaje{ultimaSem ? ` a la Semana ${ultimaSem}` : ''} de:
+          </span>
           {CAPACIDADES_VOLQUETE.map(c => (
-            <button key={c} type="button"
-              onClick={() => emit([...filas, { ...filaVacia('eliminacion'), volumen: String(c) }])}
+            <button key={c} type="button" onClick={() => addViajeSemana(ultimaSem, c)}
               style={{ padding: '5px 10px', borderRadius: '8px', border: `1.5px solid ${BASE.border}`, background: BASE.bgSoft, color: BASE.navy, fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}>
               {c} m³
             </button>
           ))}
         </div>
 
-        <div style={{ border: `1px solid ${BASE.border}`, borderRadius: '10px', overflow: 'hidden' }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: 560 }}>
-              <thead>
-                <tr style={{ background: BASE.navy, color: '#fff' }}>
-                  <th style={thS({ width: 92 })}>N° guía</th>
-                  <th style={thS({ width: 124 })}>Fecha</th>
-                  <th style={thS({ width: 96 })}>Placa</th>
-                  <th style={thS({ width: 96 })}>Clase</th>
-                  <th style={thS({ width: 90, textAlign: 'right' })}>Vol. (m³)</th>
-                  <th style={thS({ width: 34 })}></th>
-                </tr>
-              </thead>
-              <tbody>
-                {filas.length === 0 && (
-                  <tr><td colSpan={6} style={{ padding: '14px', textAlign: 'center', color: BASE.muted, fontSize: '11.5px', fontStyle: 'italic' }}>
-                    Sin viajes — usa los botones de capacidad o “Agregar elemento”.
-                  </td></tr>
-                )}
-                {filas.map((r, i) => (
-                  <tr key={r.id} style={{ background: i % 2 ? BASE.bgSoft : BASE.white, borderBottom: `1px solid ${BASE.border}` }}>
-                    <td style={tdS()}><input value={r.nGuia} onChange={e => setCampo(r.id, 'nGuia', e.target.value)} placeholder="000202" style={inpCell({ textAlign: 'left' })} /></td>
-                    <td style={tdS()}><input type="date" value={r.fecha || ''} onChange={e => setCampo(r.id, 'fecha', e.target.value)} style={inpCell({ textAlign: 'left' })} /></td>
-                    <td style={tdS()}><input value={r.placa} onChange={e => setCampo(r.id, 'placa', e.target.value)} placeholder="ANJ-776" style={inpCell({ textAlign: 'left' })} /></td>
-                    <td style={tdS()}>
-                      <select value={r.clase} onChange={e => setCampo(r.id, 'clase', e.target.value)} style={inpCell({ padding: '6px 4px' })}>
-                        <option>Externa</option><option>Interna</option>
-                      </select>
-                    </td>
-                    <td style={tdS()}><input value={r.volumen} onChange={e => setCampo(r.id, 'volumen', e.target.value)} placeholder="22" inputMode="decimal" style={inpCell({ textAlign: 'right', fontWeight: 800, color: BASE.green })} /></td>
-                    <td style={tdS({ textAlign: 'center' })}>
-                      <button type="button" onClick={() => delFila(r.id)} title="Quitar viaje" style={{ border: 'none', background: BASE.redLight, color: BASE.red, borderRadius: '6px', padding: '4px 7px', cursor: 'pointer', fontSize: '11px', fontWeight: 800 }}>✕</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr style={{ background: BASE.goldSoft }}>
-                  <td colSpan={4} style={{ padding: '9px 12px', textAlign: 'right', fontWeight: 900, color: BASE.navy }}>TOTAL ELIMINADO ({viajes} viajes)</td>
-                  <td style={{ padding: '9px 12px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 900, color: BASE.goldDark, fontSize: '14px' }}>{eliminado.toLocaleString('es-PE', { maximumFractionDigits: 2 })}</td>
-                  <td style={{ padding: '9px 6px', fontWeight: 800, color: BASE.muted, fontSize: '11px' }}>m³</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </div>
+        {filas.length === 0 && (
+          <p style={{ padding: '14px', textAlign: 'center', color: BASE.muted, fontSize: '12px', fontStyle: 'italic', border: `1px dashed ${BASE.border}`, borderRadius: '10px' }}>
+            Sin viajes aún. Agrega uno con los botones de capacidad o “+ Nueva semana”.
+          </p>
+        )}
 
-        <button type="button" onClick={addFila} style={addBtn}>+ Agregar viaje</button>
+        {/* Un bloque por SEMANA con subtotal (clave para valorizar al detalle) */}
+        {grupos.map(([k, rows]) => {
+          const semNum = k === 'sin' ? null : k;
+          const rango = semNum ? rangoSemana(semNum) : null;
+          const vSem = rows.filter(r => num(r.volumen) > 0).length;
+          const m3Sem = rows.reduce((s, r) => s + num(r.volumen), 0);
+          return (
+            <div key={k} style={{ border: `1px solid ${BASE.border}`, borderRadius: '12px', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', padding: '9px 14px', background: BASE.navySoft, borderBottom: `1px solid ${BASE.border}` }}>
+                <p style={{ fontSize: '12px', fontWeight: 900, color: BASE.navy }}>
+                  📅 {semNum ? `SEMANA ${semNum}` : 'SIN FECHA'} {rango && <span style={{ fontWeight: 600, color: BASE.muted }}>· {rango.label}</span>}
+                </p>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  <span style={chipDeriv}>Viajes: <b>{vSem}</b></span>
+                  <span style={chipDeriv}>m³: <b style={{ color: BASE.goldDark }}>{m3Sem.toLocaleString('es-PE', { maximumFractionDigits: 2 })}</b></span>
+                </div>
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: 560 }}>
+                  <thead>
+                    <tr style={{ background: BASE.navy, color: '#fff' }}>
+                      <th style={thS({ width: 92 })}>N° guía</th>
+                      <th style={thS({ width: 124 })}>Fecha</th>
+                      <th style={thS({ width: 96 })}>Placa</th>
+                      <th style={thS({ width: 96 })}>Clase</th>
+                      <th style={thS({ width: 90, textAlign: 'right' })}>Vol. (m³)</th>
+                      <th style={thS({ width: 34 })}></th>
+                    </tr>
+                  </thead>
+                  <tbody>{rows.map((r, i) => filaViaje(r, i))}</tbody>
+                  <tfoot>
+                    <tr style={{ background: BASE.goldSoft }}>
+                      <td colSpan={4} style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 900, color: BASE.navy, fontSize: '11px' }}>SUBTOTAL SEMANA ({vSem} viajes)</td>
+                      <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 900, color: BASE.goldDark }}>{m3Sem.toLocaleString('es-PE', { maximumFractionDigits: 2 })}</td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+              <div style={{ padding: '8px 12px', borderTop: `1px solid ${BASE.border}` }}>
+                <button type="button" onClick={() => addViajeSemana(semNum)} style={{ ...addBtn, padding: '6px 12px', fontSize: '11.5px' }}>+ viaje a {semNum ? `Semana ${semNum}` : 'sin fecha'}</button>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Total general + nueva semana */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', padding: '10px 14px', background: BASE.navy, borderRadius: '12px' }}>
+          <button type="button" onClick={() => addViajeSemana(ultimaSem ? ultimaSem + 1 : null)}
+            style={{ padding: '8px 14px', borderRadius: '9px', border: `1.5px dashed ${BASE.gold}`, background: 'rgba(255,255,255,0.08)', color: '#fff', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}>
+            + Nueva semana
+          </button>
+          <span style={{ color: '#fff', fontSize: '13px', fontWeight: 900 }}>
+            TOTAL ELIMINADO: <span style={{ color: BASE.gold, fontFamily: 'monospace' }}>{eliminado.toLocaleString('es-PE', { maximumFractionDigits: 2 })} m³</span>
+            <span style={{ fontWeight: 600, opacity: 0.8, marginLeft: 8 }}>· {viajes} viajes</span>
+          </span>
+        </div>
       </div>
     );
   }

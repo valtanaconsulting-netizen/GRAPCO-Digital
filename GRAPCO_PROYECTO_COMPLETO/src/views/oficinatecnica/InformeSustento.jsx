@@ -7,7 +7,7 @@ import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { BASE, LOGO } from '../../utils/styles';
 import EmptyState from '../../components/EmptyState';
-import { parcialFila, TIPOS_METRADO } from './PlanillaMetrado';
+import { parcialFila, TIPOS_METRADO, familiaDe, semanaDe, rangoSemana } from './PlanillaMetrado';
 
 const fmtSoles = (n) => {
   const v = Number(n) || 0;
@@ -192,34 +192,74 @@ export default function InformeSustento() {
                 {r.descripcion || 'Sin descripción.'}
               </p>
 
-              {/* Planilla de metrados (desglose por elemento) */}
+              {/* Planilla de metrados (desglose por elemento). Para volquetes va
+                  ORDENADO POR SEMANA con subtotales, como en el sustento original. */}
               {Array.isArray(r.detalleMetrado) && r.detalleMetrado.length > 0 && (
                 <div style={{ marginBottom: '12px' }}>
                   <p style={{ fontSize: '10px', fontWeight: 900, color: BASE.navy, letterSpacing: '0.4px', marginBottom: '4px' }}>
                     PLANILLA DE METRADOS · {TIPOS_METRADO[r.tipoMetrado || 'concreto']?.label?.toUpperCase()} ({r.unidad})
                   </p>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', border: `1px solid ${BASE.border}` }}>
-                    <thead><tr style={{ background: BASE.bgSoft }}>
-                      <th style={{ padding: '5px 8px', textAlign: 'left', fontWeight: 900, color: BASE.muted }}>Elemento</th>
-                      <th style={{ padding: '5px 8px', textAlign: 'right', fontWeight: 900, color: BASE.muted, width: 90 }}>Parcial</th>
-                    </tr></thead>
-                    <tbody>
-                      {r.detalleMetrado.map((row, k) => (
-                        <tr key={row.id || k} style={{ borderTop: `1px solid ${BASE.border}` }}>
-                          <td style={{ padding: '4px 8px', color: BASE.navy }}>{row.descripcion || (row.nGuia ? `Guía ${row.nGuia}${row.placa ? ' · ' + row.placa : ''}` : `Ítem ${k + 1}`)}</td>
-                          <td style={{ padding: '4px 8px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700 }}>
-                            {parcialFila(r.tipoMetrado || 'concreto', row).toLocaleString('es-PE', { maximumFractionDigits: 2 })}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot><tr style={{ background: BASE.goldSoft }}>
-                      <td style={{ padding: '5px 8px', textAlign: 'right', fontWeight: 900, color: BASE.navy }}>TOTAL</td>
-                      <td style={{ padding: '5px 8px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 900, color: BASE.goldDark }}>
-                        {Number(r.metrado).toLocaleString('es-PE', { maximumFractionDigits: 3 })} {r.unidad}
-                      </td>
-                    </tr></tfoot>
-                  </table>
+
+                  {familiaDe(r.tipoMetrado) === 'volquetes' ? (
+                    (() => {
+                      // Agrupa los viajes por semana del proyecto.
+                      const grupos = new Map();
+                      r.detalleMetrado.forEach(row => { const s = semanaDe(row.fecha); const k = s == null ? 'sin' : s; if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(row); });
+                      const ordenados = [...grupos.entries()].sort((a, b) => a[0] === 'sin' ? 1 : b[0] === 'sin' ? -1 : a[0] - b[0]);
+                      return ordenados.map(([k, rows]) => {
+                        const semNum = k === 'sin' ? null : k;
+                        const rango = semNum ? rangoSemana(semNum) : null;
+                        const vSem = rows.filter(x => (parseFloat(x.volumen) || 0) > 0).length;
+                        const m3Sem = rows.reduce((s, x) => s + (parseFloat(x.volumen) || 0), 0);
+                        return (
+                          <div key={k} style={{ marginBottom: '8px' }}>
+                            <p style={{ fontSize: '10px', fontWeight: 900, color: BASE.gold, letterSpacing: '0.3px', margin: '6px 0 3px' }}>
+                              {semNum ? `SEMANA ${semNum}` : 'SIN FECHA'}{rango ? ` · ${rango.label}` : ''} — {vSem} viajes · {m3Sem.toLocaleString('es-PE', { maximumFractionDigits: 2 })} m³
+                            </p>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px', border: `1px solid ${BASE.border}` }}>
+                              <thead><tr style={{ background: BASE.bgSoft }}>
+                                <th style={cellTh('left')}>N° guía</th><th style={cellTh('left')}>Fecha</th>
+                                <th style={cellTh('left')}>Placa</th><th style={cellTh('left')}>Clase</th>
+                                <th style={cellTh('right', 70)}>Vol. (m³)</th>
+                              </tr></thead>
+                              <tbody>
+                                {rows.map((row, k2) => (
+                                  <tr key={row.id || k2} style={{ borderTop: `1px solid ${BASE.border}` }}>
+                                    <td style={cellTd()}>{row.nGuia || '—'}</td>
+                                    <td style={cellTd()}>{row.fecha || '—'}</td>
+                                    <td style={cellTd()}>{row.placa || '—'}</td>
+                                    <td style={cellTd()}>{row.clase || '—'}</td>
+                                    <td style={cellTd('right')}>{(parseFloat(row.volumen) || 0).toLocaleString('es-PE', { maximumFractionDigits: 2 })}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        );
+                      });
+                    })()
+                  ) : (
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', border: `1px solid ${BASE.border}` }}>
+                      <thead><tr style={{ background: BASE.bgSoft }}>
+                        <th style={{ padding: '5px 8px', textAlign: 'left', fontWeight: 900, color: BASE.muted }}>Elemento</th>
+                        <th style={{ padding: '5px 8px', textAlign: 'right', fontWeight: 900, color: BASE.muted, width: 90 }}>Parcial</th>
+                      </tr></thead>
+                      <tbody>
+                        {r.detalleMetrado.map((row, k) => (
+                          <tr key={row.id || k} style={{ borderTop: `1px solid ${BASE.border}` }}>
+                            <td style={{ padding: '4px 8px', color: BASE.navy }}>{row.descripcion || `Ítem ${k + 1}`}</td>
+                            <td style={{ padding: '4px 8px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700 }}>
+                              {parcialFila(r.tipoMetrado || 'concreto', row).toLocaleString('es-PE', { maximumFractionDigits: 2 })}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+
+                  <p style={{ fontSize: '11px', fontWeight: 900, color: BASE.goldDark, textAlign: 'right', marginTop: '4px' }}>
+                    TOTAL: {Number(r.metrado).toLocaleString('es-PE', { maximumFractionDigits: 3 })} {r.unidad}
+                  </p>
                 </div>
               )}
 
@@ -266,6 +306,9 @@ function Linea({ label, value }) {
     </div>
   );
 }
+
+const cellTh = (align = 'left', w) => ({ padding: '4px 7px', textAlign: align, fontWeight: 900, color: BASE.muted, fontSize: '9px', ...(w ? { width: w } : {}) });
+const cellTd = (align = 'left') => ({ padding: '3px 7px', textAlign: align, color: BASE.navy, fontFamily: align === 'right' ? 'monospace' : 'inherit', fontWeight: align === 'right' ? 700 : 500 });
 
 function Bloque({ label, value }) {
   return (
