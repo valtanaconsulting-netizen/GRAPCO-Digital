@@ -11,6 +11,7 @@
 //     o al volver a la pestaña, para que nadie se quede en una versión vieja.
 import React, { useEffect, useState } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
+import Icon from './Icon';
 
 export default function ActualizacionBanner() {
   const [mostrar, setMostrar] = useState(false);
@@ -69,8 +70,9 @@ export default function ActualizacionBanner() {
           width: '100%', maxWidth: '400px',
           background: esDark ? '#0f172a' : '#0b1f3a',
           color: '#fff',
+          fontFamily: 'var(--grapco-font-ui)',
           borderRadius: '18px',
-          padding: '24px 22px 20px',
+          padding: '26px 24px 22px',
           boxShadow: '0 28px 80px rgba(0,0,0,0.55)',
           border: '1px solid rgba(245,158,11,0.45)',
           borderTop: '4px solid #f59e0b',
@@ -78,20 +80,23 @@ export default function ActualizacionBanner() {
           animation: 'grapco-pop-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) both',
         }}>
         <div style={{
-          width: '58px', height: '58px', borderRadius: '16px',
+          width: '54px', height: '54px', borderRadius: '15px',
           background: 'linear-gradient(135deg, #f59e0b, #d97706)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '28px', margin: '0 auto 14px',
+          margin: '0 auto 15px',
           boxShadow: '0 8px 24px rgba(245,158,11,0.45)',
-        }}>{aplicando ? '⏳' : '🆕'}</div>
+        }}><Icon name="zap" size={26} color="#fff" strokeWidth={2.2} /></div>
 
-        <p id="upd-title" style={{ fontSize: '17px', fontWeight: '900', letterSpacing: '0.2px', marginBottom: '6px' }}>
-          {aplicando ? 'Actualizando…' : 'Hay una nueva actualización'}
+        <p style={{ fontSize: '10px', fontWeight: '800', letterSpacing: '2px', textTransform: 'uppercase', color: '#f59e0b', marginBottom: '7px' }}>
+          {aplicando ? 'Aplicando actualización' : 'Actualización disponible'}
         </p>
-        <p style={{ fontSize: '12.5px', opacity: 0.82, lineHeight: 1.55, marginBottom: '18px', maxWidth: '300px', marginLeft: 'auto', marginRight: 'auto' }}>
+        <p id="upd-title" style={{ fontSize: '18px', fontWeight: '800', letterSpacing: '-0.2px', marginBottom: '7px' }}>
+          {aplicando ? 'Instalando la nueva versión' : 'Nueva versión de la plataforma'}
+        </p>
+        <p style={{ fontSize: '12.5px', opacity: 0.8, lineHeight: 1.6, marginBottom: '20px', maxWidth: '305px', marginLeft: 'auto', marginRight: 'auto' }}>
           {aplicando
-            ? 'La app se reiniciará en un momento con la última versión.'
-            : 'Tendrás la última versión con las mejoras más recientes. Guarda lo que estés escribiendo antes de continuar.'}
+            ? 'La plataforma se reiniciará en unos segundos con la última versión.'
+            : 'Incluye mejoras y correcciones recientes. Guarda tu trabajo antes de continuar.'}
         </p>
 
         <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -102,7 +107,7 @@ export default function ActualizacionBanner() {
             fontSize: '13px', fontWeight: '900', letterSpacing: '0.4px',
             cursor: aplicando ? 'wait' : 'pointer',
             boxShadow: '0 6px 18px rgba(245,158,11,0.4)',
-          }}>{aplicando ? '⏳ Actualizando…' : '🔄 Actualizar ahora'}</button>
+          }}>{aplicando ? 'Actualizando…' : 'Actualizar ahora'}</button>
           {!aplicando && (
             <button onClick={despues} aria-label="Actualizar más tarde" className="btn-feedback" style={{
               padding: '11px 18px',
