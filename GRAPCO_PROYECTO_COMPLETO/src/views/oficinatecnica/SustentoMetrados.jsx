@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { useAuth } from '../../contexts/AuthContext';
+import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import { BASE } from '../../utils/styles';
 import Modal from '../../components/Modal';
 import EmptyState from '../../components/EmptyState';
@@ -42,6 +43,7 @@ const FORM_INICIAL = {
 
 export default function SustentoMetrados({ showToast }) {
   const { user } = useAuth();
+  const { proyectoActivoId } = useProyectoActivo();
   const [items, setItems] = useState([]);
   const [valorizaciones, setValorizaciones] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -102,6 +104,7 @@ export default function SustentoMetrados({ showToast }) {
     try {
       const payload = {
         ...form,
+        proyectoId: proyectoActivoId || null,   // aislamiento por proyecto
         metrado: Number(form.metrado) || 0,
         actualizadoEn: serverTimestamp(),
         actualizadoPor: user?.email || 'desconocido',

@@ -9,7 +9,7 @@
 // la cara-venta (CD+GG+Utilidad+IGV) se arma solo para la liquidación al cliente.
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { collection, onSnapshot, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, updateDoc, setDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { BASE } from '../../utils/styles';
 import { useAuth } from '../../contexts/AuthContext';
@@ -68,6 +68,49 @@ export default function ValorizacionesView({ showToast }) {
   const acumTotal = useMemo(() => [...acumPorCodigo.values()].reduce((s, x) => s + x, 0), [acumPorCodigo]);
   const pctAvanceAcum = cdContractual > 0 ? (acumTotal / cdContractual) * 100 : 0;
   const proximoNumero = useMemo(() => Math.max(0, ...vals.map((v) => v.numeroValorizacion || 0)) + 1, [vals]);
+
+  // ── Avance FÍSICO por metrado: contractual (lo ingresa OT) vs ejecutado
+  //    (suma de los sustentos de metrado por código) → % físico que sugiere la
+  //    valorización. Cierra el ciclo metrado → avance → valorización. ──────────
+  const [metrContr, setMetrContr] = useState({});   // codigo -> { metrado, unidad }
+  const [sustentos, setSustentos] = useState([]);
+  useEffect(() => {
+    if (!proyId) { setMetrContr({}); setSustentos([]); return; }
+    const u1 = onSnapshot(collection(db, 'MetradosContractuales'), (snap) => {
+      const m = {};
+      snap.docs.forEach((d) => { const x = d.data(); if (x.proyectoId === proyId) m[String(x.codigo)] = { metrado: Number(x.metrado) || 0, unidad: x.unidad || '' }; });
+      setMetrContr(m);
+    }, (e) => console.warn('[MetradosContractuales]', e));
+    const u2 = onSnapshot(collection(db, 'SustentoMetrados'), (snap) => {
+      setSustentos(snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((s) => !s.proyectoId || s.proyectoId === proyId));
+    }, (e) => console.warn('[SustentoMetrados]', e));
+    return () => { u1(); u2(); };
+  }, [proyId]);
+
+  const ejecPorCodigo = useMemo(() => {
+    const m = {};
+    sustentos.forEach((s) => { const c = String(s.codigoPartida || '').trim(); if (!c) return; m[c] = round2((m[c] || 0) + (Number(s.metrado) || 0)); });
+    return m;
+  }, [sustentos]);
+
+  const pctFisicoPorCodigo = useMemo(() => {
+    const m = {};
+    Object.entries(metrContr).forEach(([c, v]) => { if (v.metrado > 0) m[c] = Math.min(100, ((ejecPorCodigo[c] || 0) / v.metrado) * 100); });
+    return m;
+  }, [metrContr, ejecPorCodigo]);
+
+  const guardarMetrContr = async (codigo, descripcion, campo, valor) => {
+    if (!proyId) return;
+    const prev = metrContr[codigo] || {};
+    try {
+      await setDoc(doc(db, 'MetradosContractuales', `${proyId}__${codigo}`), {
+        proyectoId: proyId, codigo: String(codigo), descripcion: descripcion || '',
+        metrado: campo === 'metrado' ? (Number(valor) || 0) : (prev.metrado || 0),
+        unidad: campo === 'unidad' ? valor : (prev.unidad || ''),
+        actualizadoEn: serverTimestamp(),
+      }, { merge: true });
+    } catch (e) { showToast?.('Error guardando metrado contractual: ' + e.message, 'error'); }
+  };
 
   // Filas de la vista general (F07 hoja 5.RO): por partida con presupuesto.
   const filas = useMemo(() => {
@@ -165,34 +208,55 @@ export default function ValorizacionesView({ showToast }) {
         <EmptyState icono="💰" titulo="Sin presupuesto para valorizar"
           descripcion="Carga el presupuesto contractual (módulo Presupuesto) y luego emite valorizaciones por partida." />
       ) : (
-        <Card titulo="Avance valorizado por partida (vs presupuesto)">
+        <Card titulo="Avance valorizado por partida (vs presupuesto) + metrado físico">
+          <div style={{ padding: '0 8px 8px' }}>
+            <p style={{ fontSize: 10, color: BASE.muted }}>
+              📐 <b>Metrado contractual</b> = cantidad meta por partida (la ingresas una vez). <b>Ejecutado</b> = suma de los sustentos de metrado. <b>% físico</b> alimenta la valorización.
+            </p>
+          </div>
           <div style={{ overflowX: 'auto' }}>
             <table style={tabla}>
               <thead><tr style={trHead}>
                 <th style={th()}>Código</th><th style={th()}>Descripción</th>
                 <th style={th({ textAlign: 'right' })}>Ppto (CD)</th>
                 <th style={th({ textAlign: 'right' })}>Valorizado acum.</th>
-                <th style={th({ textAlign: 'right' })}>Saldo</th>
-                <th style={th({ textAlign: 'right' })}>% avance</th>
+                <th style={th({ textAlign: 'right' })}>% val.</th>
+                <th style={th({ textAlign: 'center' })}>Metrado contr.</th>
+                <th style={th({ textAlign: 'right' })}>Ejecutado</th>
+                <th style={th({ textAlign: 'right' })}>% físico</th>
               </tr></thead>
               <tbody>
-                {filas.map((f, i) => (
+                {filas.map((f, i) => {
+                  const mc = metrContr[f.codigo] || {};
+                  const ejec = ejecPorCodigo[f.codigo] || 0;
+                  const pctFis = pctFisicoPorCodigo[f.codigo];
+                  return (
                   <tr key={f.codigo} style={{ background: i % 2 ? BASE.bgSoft : BASE.white, borderBottom: `1px solid ${BASE.border}` }}>
                     <td style={{ ...td(), fontFamily: 'monospace', fontWeight: 900, color: BASE.navy }}>{f.codigo}</td>
                     <td style={{ ...td(), fontWeight: 700 }}>{f.descripcion}</td>
                     <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace' }}>{fmtSoles(f.cd)}</td>
                     <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace', color: BASE.green, fontWeight: 700 }}>{fmtSoles(f.acum)}</td>
-                    <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace' }}>{fmtSoles(f.saldo)}</td>
                     <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace', fontWeight: 800, color: f.pct >= 99.5 ? BASE.green : BASE.muted }}>{pctTxt(f.pct)}</td>
+                    <td style={{ ...td(), textAlign: 'center', whiteSpace: 'nowrap' }}>
+                      <MetradoContrInput codigo={f.codigo} descripcion={f.descripcion}
+                        valor={mc.metrado} unidad={mc.unidad} onGuardar={guardarMetrContr} />
+                    </td>
+                    <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace', color: ejec > 0 ? BASE.navy : BASE.muted }}>
+                      {ejec > 0 ? `${ejec.toLocaleString('es-PE', { maximumFractionDigits: 2 })} ${mc.unidad || ''}` : '—'}
+                    </td>
+                    <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace', fontWeight: 800, color: pctFis == null ? BASE.muted : pctFis >= 99.5 ? BASE.green : BASE.gold }}>
+                      {pctFis == null ? '—' : pctTxt(pctFis)}
+                    </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
               <tfoot><tr style={{ background: BASE.navy, color: '#fff' }}>
                 <td colSpan={2} style={{ padding: '11px 14px', fontWeight: 900, textAlign: 'right' }}>TOTAL COSTO DIRECTO</td>
                 <td style={{ padding: '11px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 900 }}>{fmtSoles(cdContractual)}</td>
                 <td style={{ padding: '11px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 900, color: '#4ade80' }}>{fmtSoles(acumTotal)}</td>
-                <td style={{ padding: '11px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 900 }}>{fmtSoles(round2(cdContractual - acumTotal))}</td>
                 <td style={{ padding: '11px 14px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 900, color: BASE.gold }}>{pctTxt(pctAvanceAcum)}</td>
+                <td colSpan={3} style={{ padding: '11px 14px', textAlign: 'right', fontWeight: 700, fontSize: 10, opacity: 0.85 }}>Saldo CD: {fmtSoles(round2(cdContractual - acumTotal))}</td>
               </tr></tfoot>
             </table>
           </div>
@@ -204,6 +268,7 @@ export default function ValorizacionesView({ showToast }) {
           <NuevaValorizacion
             proyId={proyId} user={user} numero={proximoNumero}
             filas={filas} acumPorCodigo={acumPorCodigo}
+            pctFisicoPorCodigo={pctFisicoPorCodigo}
             ggPct={tP.ggPct} utilidadPct={tP.utilidadPct} igvPct={tP.igvPct}
             onClose={() => setCreando(false)} showToast={showToast}
           />
@@ -222,7 +287,7 @@ export default function ValorizacionesView({ showToast }) {
 // ════════════════════════════════════════════════════════════════════
 // NUEVA VALORIZACIÓN — % avance acumulado por partida → período + liquidación
 // ════════════════════════════════════════════════════════════════════
-function NuevaValorizacion({ proyId, user, numero, filas, acumPorCodigo, ggPct, utilidadPct, igvPct, onClose, showToast }) {
+function NuevaValorizacion({ proyId, user, numero, filas, acumPorCodigo, pctFisicoPorCodigo = {}, ggPct, utilidadPct, igvPct, onClose, showToast }) {
   const [periodoTexto, setPeriodoTexto] = useState(`Valorización N°${numero}`);
   const [adelanto, setAdelanto] = useState(0);
   const [fgPct, setFgPct] = useState(5);
@@ -234,6 +299,18 @@ function NuevaValorizacion({ proyId, user, numero, filas, acumPorCodigo, ggPct, 
     filas.forEach((f) => { o[f.codigo] = Math.round((f.cd > 0 ? (f.acum / f.cd) * 100 : 0) * 10) / 10; });
     return o;
   });
+
+  // Trae el % desde el avance FÍSICO de metrados (ejecutado ÷ contractual).
+  const hayMetrados = Object.keys(pctFisicoPorCodigo).length > 0;
+  const usarPctFisico = () => {
+    let n = 0;
+    setPctAcum((prev) => {
+      const o = { ...prev };
+      filas.forEach((f) => { const p = pctFisicoPorCodigo[f.codigo]; if (p != null) { o[f.codigo] = Math.round(p * 10) / 10; n++; } });
+      return o;
+    });
+    showToast?.(n ? `📐 % tomado del metrado físico en ${n} partida(s)` : 'No hay metrado contractual cargado todavía', n ? 'success' : 'warning');
+  };
 
   const lineas = useMemo(() => filas.map((f) => {
     const antCD = acumPorCodigo.get(f.codigo) || 0;
@@ -282,9 +359,16 @@ function NuevaValorizacion({ proyId, user, numero, filas, acumPorCodigo, ggPct, 
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div>
-        <h3 style={{ fontSize: 17, fontWeight: 900, color: BASE.navy }}>Nueva valorización · V-{numero}</h3>
-        <p style={{ fontSize: 11.5, color: BASE.muted, marginTop: 2 }}>Ajusta el <b>% de avance acumulado</b> por partida. El período se calcula contra lo ya valorizado y alimenta el EV del RO.</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ flex: '1 1 280px' }}>
+          <h3 style={{ fontSize: 17, fontWeight: 900, color: BASE.navy }}>Nueva valorización · V-{numero}</h3>
+          <p style={{ fontSize: 11.5, color: BASE.muted, marginTop: 2 }}>Ajusta el <b>% de avance acumulado</b> por partida. El período se calcula contra lo ya valorizado y alimenta el EV del RO.</p>
+        </div>
+        {hayMetrados && (
+          <button onClick={usarPctFisico} title="Toma el % desde el metrado ejecutado ÷ contractual" style={{
+            ...btn(BASE.navy, BASE.navyDark), flexShrink: 0,
+          }}>📐 USAR % DE METRADOS</button>
+        )}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8 }}>
@@ -302,16 +386,24 @@ function NuevaValorizacion({ proyId, user, numero, filas, acumPorCodigo, ggPct, 
               <th style={th()}>Código</th><th style={th()}>Descripción</th>
               <th style={th({ textAlign: 'right' })}>Ppto CD</th>
               <th style={th({ textAlign: 'right' })}>% acum. ant.</th>
+              <th style={th({ textAlign: 'right' })}>% físico</th>
               <th style={th({ textAlign: 'center' })}>% acum. nuevo</th>
               <th style={th({ textAlign: 'right' })}>Período (CD)</th>
             </tr></thead>
             <tbody>
-              {lineas.map((l, i) => (
+              {lineas.map((l, i) => {
+                const pFis = pctFisicoPorCodigo[l.codigo];
+                return (
                 <tr key={l.codigo} style={{ background: i % 2 ? BASE.bgSoft : BASE.white, borderBottom: `1px solid ${BASE.border}` }}>
                   <td style={{ ...td(), fontFamily: 'monospace', fontWeight: 900, color: BASE.navy }}>{l.codigo}</td>
                   <td style={{ ...td(), fontSize: 11 }}>{l.descripcion}</td>
                   <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace' }}>{fmtSoles(l.cd)}</td>
                   <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace', color: BASE.muted }}>{pctTxt(l.cd > 0 ? (l.antCD / l.cd) * 100 : 0)}</td>
+                  <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: pFis == null ? BASE.muted : BASE.gold, cursor: pFis == null ? 'default' : 'pointer' }}
+                      title={pFis == null ? 'Sin metrado contractual' : 'Click para usar este %'}
+                      onClick={() => { if (pFis != null) setPctAcum((s) => ({ ...s, [l.codigo]: Math.round(pFis * 10) / 10 })); }}>
+                    {pFis == null ? '—' : pctTxt(pFis)}
+                  </td>
                   <td style={{ ...td(), textAlign: 'center' }}>
                     <input type="number" step="0.1" min="0" max="100" value={pctAcum[l.codigo]}
                       onChange={(e) => setPctAcum((s) => ({ ...s, [l.codigo]: e.target.value }))}
@@ -319,7 +411,8 @@ function NuevaValorizacion({ proyId, user, numero, filas, acumPorCodigo, ggPct, 
                   </td>
                   <td style={{ ...td(), textAlign: 'right', fontFamily: 'monospace', fontWeight: 800, color: l.periodoCD < 0 ? BASE.red : BASE.navy }}>{fmtSoles(l.periodoCD)}</td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -392,6 +485,27 @@ function DetalleValorizacion({ v }) {
         </Card>
       </div>
     </div>
+  );
+}
+
+// Input inline del metrado CONTRACTUAL por partida (cantidad + unidad). Guarda
+// onBlur para no escribir en cada tecla. Estado local para fluidez.
+function MetradoContrInput({ codigo, descripcion, valor, unidad, onGuardar }) {
+  const [m, setM] = useState(valor != null ? String(valor) : '');
+  const [u, setU] = useState(unidad || '');
+  useEffect(() => { setM(valor != null ? String(valor) : ''); }, [valor]);
+  useEffect(() => { setU(unidad || ''); }, [unidad]);
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+      <input value={m} inputMode="decimal" placeholder="meta"
+        onChange={(e) => setM(e.target.value)}
+        onBlur={() => onGuardar(codigo, descripcion, 'metrado', m)}
+        style={{ width: 62, padding: '5px 6px', borderRadius: 6, border: `1.5px solid ${BASE.border}`, fontSize: 11, fontWeight: 700, textAlign: 'right', fontFamily: 'monospace' }} />
+      <input value={u} placeholder="und"
+        onChange={(e) => setU(e.target.value)}
+        onBlur={() => onGuardar(codigo, descripcion, 'unidad', u)}
+        style={{ width: 42, padding: '5px 5px', borderRadius: 6, border: `1.5px solid ${BASE.border}`, fontSize: 10.5, fontWeight: 600, textAlign: 'center' }} />
+    </span>
   );
 }
 
