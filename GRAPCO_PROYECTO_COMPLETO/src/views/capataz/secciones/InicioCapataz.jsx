@@ -119,23 +119,23 @@ export default function InicioCapataz({
   const opcionesCapataz = Object.entries(cuadrillasParaSelect || {}).map(([nombre, miembros]) => ({
     nombre, miembros: Array.isArray(miembros) ? miembros.length : null,
   }));
-  // Solo si NO se pudo resolver su cuadrilla y hay más de una, se pide elegir.
-  const necesitaElegir = !capataz && opcionesCapataz.length > 1;
+  // Se pide elegir cuadrilla siempre que NO haya una seleccionada y existan opciones.
+  // Un capataz real ya viene autoseleccionado (no se muestra); un admin/ingeniero que
+  // entra al área SÍ debe elegir explícitamente (no se le asigna una ajena por defecto).
+  const necesitaElegir = !capataz && opcionesCapataz.length > 0;
 
   return (
     <div style={{
-      // Full-bleed: rompe el padding del <main> para un fondo navy inmersivo
-      // (igual que el selector de áreas del ingeniero), bajo el navbar fijo.
-      position: 'relative',
-      width: '100vw', left: '50%', marginLeft: '-50vw',
-      marginTop: 'calc(-1 * (74px + env(safe-area-inset-top)))',
-      marginBottom: '-14px',
-      minHeight: '100dvh',
+      // Pantalla de entrada FULL-VIEWPORT (mismo lenguaje que el selector de áreas).
+      // fixed inset:0 cubre TODO el ancho/alto sin dejar franjas blancas (el padding
+      // del <main> y el sidebar ya no afectan). El navbar (z-index 102) queda encima.
+      position: 'fixed', inset: 0, zIndex: 30,
+      overflowY: 'auto',
       background:
         'radial-gradient(60% 40% at 50% 0%, rgba(40,74,118,0.55) 0%, transparent 62%),'
         + 'linear-gradient(180deg, #0a1628 0%, #0c1e37 50%, #07101e 100%)',
-      paddingTop: 'calc(74px + env(safe-area-inset-top) + 18px)',
-      paddingBottom: '34px',
+      paddingTop: 'calc(60px + env(safe-area-inset-top) + 20px)',
+      paddingBottom: 'calc(34px + env(safe-area-inset-bottom))',
       paddingLeft: '16px', paddingRight: '16px',
       boxSizing: 'border-box',
       fontFamily: BASE.font,

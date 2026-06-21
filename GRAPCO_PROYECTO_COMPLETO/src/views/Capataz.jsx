@@ -195,10 +195,13 @@ export default function Capataz({
     if (capataz) return;                                // respeta elección manual
     const opciones = Object.keys(cuadrillasParaSelect);
     if (!opciones.length) return;
+    // Solo un CAPATAZ real auto-selecciona su cuadrilla. Un admin/ingeniero que entra
+    // al área de capataz NUNCA debe quedar "convertido" en el capataz de otra cuadrilla
+    // (p.ej. Franklin admin viendo a Marcelino): a ellos se les muestra el selector.
+    if (rol !== 'capataz' || !nombreUsuario) return;
     // 1) Una sola cuadrilla en el proyecto = es la suya → autoselecciona.
     if (opciones.length === 1) { setCapataz(opciones[0]); return; }
     // 2) Varias cuadrillas → intenta calzar por el nombre de su usuario.
-    if (rol !== 'capataz' || !nombreUsuario) return;
     const DIACRIT = new RegExp('[\\u0300-\\u036f]', 'g');
     const norm = s => String(s || '')
       .toLowerCase().normalize('NFD').replace(DIACRIT, '').trim();
