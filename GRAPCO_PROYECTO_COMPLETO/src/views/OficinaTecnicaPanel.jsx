@@ -60,7 +60,7 @@ const GRUPOS = {
     tagline: 'Valorización y cobro al cliente',
     items: [
       { id: 'valoriz',  l: 'Valorizaciones', icono: '💰', icon: 'coins',    desc: 'Mensual al cliente (auto-calcula)' },
-      { id: 'sustento', l: 'Sustento',       icono: '📸', icon: 'layers',   desc: 'Fotos manuales para PQ-XX' },
+      { id: 'sustento', l: 'Metrados / Sustento', icono: '📐', icon: 'layers', desc: 'Planilla de metrados (concreto/acero/encofrado) + fotos' },
       { id: 'informe',  l: 'Informe PDF',    icono: '📑', icon: 'fileText', desc: 'Genera el sustento imprimible' },
     ],
   },
