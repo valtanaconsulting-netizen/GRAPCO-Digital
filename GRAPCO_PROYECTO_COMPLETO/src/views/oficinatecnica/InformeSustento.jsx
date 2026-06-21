@@ -7,6 +7,7 @@ import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { BASE, LOGO } from '../../utils/styles';
 import EmptyState from '../../components/EmptyState';
+import { parcialFila, TIPOS_METRADO } from './PlanillaMetrado';
 
 const fmtSoles = (n) => {
   const v = Number(n) || 0;
@@ -190,6 +191,38 @@ export default function InformeSustento() {
               <p style={{ fontSize: '11.5px', color: BASE.muted, lineHeight: 1.5, marginBottom: '10px', background: BASE.bgSoft, padding: '8px 10px', borderRadius: '6px' }}>
                 {r.descripcion || 'Sin descripción.'}
               </p>
+
+              {/* Planilla de metrados (desglose por elemento) */}
+              {Array.isArray(r.detalleMetrado) && r.detalleMetrado.length > 0 && (
+                <div style={{ marginBottom: '12px' }}>
+                  <p style={{ fontSize: '10px', fontWeight: 900, color: BASE.navy, letterSpacing: '0.4px', marginBottom: '4px' }}>
+                    PLANILLA DE METRADOS · {TIPOS_METRADO[r.tipoMetrado || 'concreto']?.label?.toUpperCase()} ({r.unidad})
+                  </p>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', border: `1px solid ${BASE.border}` }}>
+                    <thead><tr style={{ background: BASE.bgSoft }}>
+                      <th style={{ padding: '5px 8px', textAlign: 'left', fontWeight: 900, color: BASE.muted }}>Elemento</th>
+                      <th style={{ padding: '5px 8px', textAlign: 'right', fontWeight: 900, color: BASE.muted, width: 90 }}>Parcial</th>
+                    </tr></thead>
+                    <tbody>
+                      {r.detalleMetrado.map((row, k) => (
+                        <tr key={row.id || k} style={{ borderTop: `1px solid ${BASE.border}` }}>
+                          <td style={{ padding: '4px 8px', color: BASE.navy }}>{row.descripcion || `Elemento ${k + 1}`}</td>
+                          <td style={{ padding: '4px 8px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700 }}>
+                            {parcialFila(r.tipoMetrado || 'concreto', row).toLocaleString('es-PE', { maximumFractionDigits: 2 })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot><tr style={{ background: BASE.goldSoft }}>
+                      <td style={{ padding: '5px 8px', textAlign: 'right', fontWeight: 900, color: BASE.navy }}>TOTAL</td>
+                      <td style={{ padding: '5px 8px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 900, color: BASE.goldDark }}>
+                        {Number(r.metrado).toLocaleString('es-PE', { maximumFractionDigits: 3 })} {r.unidad}
+                      </td>
+                    </tr></tfoot>
+                  </table>
+                </div>
+              )}
+
               {r.fotos?.length > 0 && (
                 <div style={{
                   display: 'grid',

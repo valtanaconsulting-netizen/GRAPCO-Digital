@@ -3,10 +3,10 @@
 // costos para el sustento de valorización. Reemplaza el "metrado a mano" por un
 // desglose por elemento que calcula el total en vivo.
 //
-//   • Concreto (m³):  parcial = nº veces × largo × ancho × alto
-//   • Acero (kg):     parcial = nº elem × nº varillas × (longitud + empalme) × peso(Ø)
-//   • Encofrado (m²): parcial = nº veces × largo × alto × caras
-//   • Genérico:       parcial = nº veces × largo × ancho × alto (dims en blanco = 1)
+// Familias de cálculo:
+//   • volumen (m³): parcial = nº × largo × ancho × alto   (concreto, excavación, relleno, genérico)
+//   • area    (m²): parcial = nº × largo/perím × alto × caras (encofrado, tarrajeo/solaqueo)
+//   • acero   (kg): parcial = nº elem × nº varillas × (long + empalme) × peso(Ø)
 //
 // onChange entrega { tipo, unidad, detalle, total } al padre, que lo persiste y
 // usa el total como el metrado de la partida valorizada.
@@ -27,47 +27,52 @@ export const ACERO_PESOS = [
 ];
 const pesoDe = (d) => (ACERO_PESOS.find(p => p.id === d)?.kgm) || 0;
 
+// tipo → { label, unidad, icon, familia }
 export const TIPOS_METRADO = {
-  concreto:  { label: 'Concreto', unidad: 'm3', icon: '🧱' },
-  acero:     { label: 'Acero',    unidad: 'kg', icon: '🔩' },
-  encofrado: { label: 'Encofrado', unidad: 'm2', icon: '🪵' },
-  generico:  { label: 'Genérico', unidad: 'und', icon: '📐' },
+  concreto:   { label: 'Concreto',         unidad: 'm3', icon: '🧱', familia: 'volumen' },
+  acero:      { label: 'Acero',            unidad: 'kg', icon: '🔩', familia: 'acero' },
+  encofrado:  { label: 'Encofrado',        unidad: 'm2', icon: '🪵', familia: 'area' },
+  excavacion: { label: 'Excavación',       unidad: 'm3', icon: '⛏️', familia: 'volumen' },
+  relleno:    { label: 'Relleno',          unidad: 'm3', icon: '🚜', familia: 'volumen' },
+  tarrajeo:   { label: 'Tarrajeo/Solaqueo', unidad: 'm2', icon: '🧽', familia: 'area' },
+  generico:   { label: 'Genérico',         unidad: 'und', icon: '📐', familia: 'volumen' },
 };
+const familiaDe = (tipo) => TIPOS_METRADO[tipo]?.familia || 'volumen';
 
 const num = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
 // Para dimensiones: en blanco = 1 (así un conteo simple no se anula al multiplicar).
 const dim = (v) => { if (v === '' || v === null || v === undefined) return 1; const n = parseFloat(v); return Number.isFinite(n) ? n : 1; };
 
-// Calcula el parcial de una fila según el tipo.
+// Calcula el parcial de una fila según la familia del tipo.
 export function parcialFila(tipo, r) {
-  if (tipo === 'acero') {
-    const nElem = dim(r.nVeces), nVar = dim(r.nVarillas);
+  const fam = familiaDe(tipo);
+  if (fam === 'acero') {
     const long = num(r.largo) + num(r.empalme);
-    return nElem * nVar * long * pesoDe(r.diametro);
+    return dim(r.nVeces) * dim(r.nVarillas) * long * pesoDe(r.diametro);
   }
-  if (tipo === 'encofrado') {
+  if (fam === 'area') {
     return dim(r.nVeces) * num(r.largo) * num(r.alto) * dim(r.caras);
   }
-  // concreto / genérico
-  return dim(r.nVeces) * dim(r.largo) * dim(r.ancho) * dim(r.alto);
+  return dim(r.nVeces) * dim(r.largo) * dim(r.ancho) * dim(r.alto); // volumen / genérico
 }
 
 const filaVacia = (tipo) => {
   const base = { id: `r_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, descripcion: '', nVeces: '' };
-  if (tipo === 'acero')     return { ...base, diametro: '1/2"', nVarillas: '', largo: '', empalme: '' };
-  if (tipo === 'encofrado') return { ...base, largo: '', alto: '', caras: '1' };
-  return { ...base, largo: '', ancho: '', alto: '' }; // concreto / genérico
+  const fam = familiaDe(tipo);
+  if (fam === 'acero') return { ...base, diametro: '1/2"', nVarillas: '', largo: '', empalme: '' };
+  if (fam === 'area')  return { ...base, largo: '', alto: '', caras: '1' };
+  return { ...base, largo: '', ancho: '', alto: '' };
 };
 
-// Columnas por tipo: [key, label, ancho, placeholder]
+// Columnas por familia: [key, label, ancho, placeholder]
 const COLS = {
-  concreto:  [['nVeces','Nº', 52,'1'], ['largo','Largo (m)', 78,'0.00'], ['ancho','Ancho (m)', 78,'0.00'], ['alto','Alto/Esp (m)', 84,'0.00']],
-  generico:  [['nVeces','Nº', 52,'1'], ['largo','Largo', 72,'0.00'], ['ancho','Ancho', 72,'0.00'], ['alto','Alto', 72,'0.00']],
-  encofrado: [['nVeces','Nº', 52,'1'], ['largo','Largo/Perím (m)', 96,'0.00'], ['alto','Alto (m)', 78,'0.00'], ['caras','Caras', 60,'1']],
+  volumen: [['nVeces','Nº', 52,'1'], ['largo','Largo (m)', 78,'0.00'], ['ancho','Ancho (m)', 78,'0.00'], ['alto','Alto/Esp (m)', 84,'0.00']],
+  area:    [['nVeces','Nº', 52,'1'], ['largo','Largo/Perím (m)', 96,'0.00'], ['alto','Alto (m)', 78,'0.00'], ['caras','Caras', 60,'1']],
 };
 
 export default function PlanillaMetrado({ tipo = 'concreto', unidad, detalle = [], onChange }) {
   const filas = detalle.length ? detalle : [];
+  const fam = familiaDe(tipo);
   const total = useMemo(() => filas.reduce((s, r) => s + parcialFila(tipo, r), 0), [filas, tipo]);
   const un = unidad || TIPOS_METRADO[tipo]?.unidad || 'und';
 
@@ -77,14 +82,14 @@ export default function PlanillaMetrado({ tipo = 'concreto', unidad, detalle = [
   };
 
   const cambiarTipo = (nuevoTipo) => {
-    // Al cambiar de tipo se reinician las filas (columnas distintas).
     emit([filaVacia(nuevoTipo)], nuevoTipo, TIPOS_METRADO[nuevoTipo]?.unidad || 'und');
   };
   const addFila = () => emit([...filas, filaVacia(tipo)]);
   const delFila = (id) => emit(filas.filter(r => r.id !== id));
   const setCampo = (id, k, v) => emit(filas.map(r => r.id === id ? { ...r, [k]: v } : r));
 
-  const cols = tipo === 'acero' ? null : (COLS[tipo] || COLS.concreto);
+  const cols = fam === 'acero' ? null : (COLS[fam] || COLS.volumen);
+  const nCols = fam === 'acero' ? 9 : (cols.length + 3);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -92,11 +97,11 @@ export default function PlanillaMetrado({ tipo = 'concreto', unidad, detalle = [
       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
         {Object.entries(TIPOS_METRADO).map(([k, t]) => (
           <button key={k} type="button" onClick={() => cambiarTipo(k)} style={{
-            padding: '7px 12px', borderRadius: '9px', cursor: 'pointer',
+            padding: '7px 11px', borderRadius: '9px', cursor: 'pointer',
             border: tipo === k ? `2px solid ${BASE.gold}` : `1.5px solid ${BASE.border}`,
             background: tipo === k ? BASE.navy : BASE.white,
             color: tipo === k ? '#fff' : BASE.navy,
-            fontSize: '11.5px', fontWeight: 800,
+            fontSize: '11px', fontWeight: 800,
           }}>{t.icon} {t.label} <span style={{ opacity: 0.7, fontWeight: 600 }}>({t.unidad})</span></button>
         ))}
         {tipo === 'generico' && (
@@ -108,11 +113,11 @@ export default function PlanillaMetrado({ tipo = 'concreto', unidad, detalle = [
       {/* Tabla */}
       <div style={{ border: `1px solid ${BASE.border}`, borderRadius: '10px', overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: tipo === 'acero' ? 640 : 480 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: fam === 'acero' ? 640 : 480 }}>
             <thead>
               <tr style={{ background: BASE.navy, color: '#fff' }}>
                 <th style={thS({ minWidth: 150 })}>Descripción / Elemento</th>
-                {tipo === 'acero' ? (
+                {fam === 'acero' ? (
                   <>
                     <th style={thS({ width: 56 })}>Nº elem</th>
                     <th style={thS({ width: 78 })}>Ø</th>
@@ -130,7 +135,7 @@ export default function PlanillaMetrado({ tipo = 'concreto', unidad, detalle = [
             </thead>
             <tbody>
               {filas.length === 0 && (
-                <tr><td colSpan={tipo === 'acero' ? 9 : (cols.length + 3)} style={{ padding: '14px', textAlign: 'center', color: BASE.muted, fontSize: '11.5px', fontStyle: 'italic' }}>
+                <tr><td colSpan={nCols} style={{ padding: '14px', textAlign: 'center', color: BASE.muted, fontSize: '11.5px', fontStyle: 'italic' }}>
                   Sin filas — agrega el primer elemento ↓
                 </td></tr>
               )}
@@ -139,7 +144,7 @@ export default function PlanillaMetrado({ tipo = 'concreto', unidad, detalle = [
                 return (
                   <tr key={r.id} style={{ background: i % 2 ? BASE.bgSoft : BASE.white, borderBottom: `1px solid ${BASE.border}` }}>
                     <td style={tdS()}><input value={r.descripcion} onChange={e => setCampo(r.id, 'descripcion', e.target.value)} placeholder="Ej. Zapata Z-1" style={inpCell({ textAlign: 'left' })} /></td>
-                    {tipo === 'acero' ? (
+                    {fam === 'acero' ? (
                       <>
                         <td style={tdS()}><input value={r.nVeces} onChange={e => setCampo(r.id, 'nVeces', e.target.value)} placeholder="1" inputMode="decimal" style={inpCell()} /></td>
                         <td style={tdS()}>
@@ -167,7 +172,7 @@ export default function PlanillaMetrado({ tipo = 'concreto', unidad, detalle = [
             </tbody>
             <tfoot>
               <tr style={{ background: BASE.goldSoft }}>
-                <td colSpan={tipo === 'acero' ? 7 : (cols.length + 1)} style={{ padding: '9px 12px', textAlign: 'right', fontWeight: 900, color: BASE.navy, fontSize: '12px' }}>
+                <td colSpan={fam === 'acero' ? 7 : (cols.length + 1)} style={{ padding: '9px 12px', textAlign: 'right', fontWeight: 900, color: BASE.navy, fontSize: '12px' }}>
                   TOTAL METRADO
                 </td>
                 <td style={{ padding: '9px 12px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 900, color: BASE.goldDark, fontSize: '14px' }}>
