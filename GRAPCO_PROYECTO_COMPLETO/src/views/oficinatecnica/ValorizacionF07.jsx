@@ -5,9 +5,10 @@
 //
 // Fuentes vivas:
 //   • PresupuestoF07  → el presupuesto al detalle (item, descripción, und, cant, pu).
-//   • SustentoMetrados → la cantidad ejecutada por partida (codigoPartida == item),
-//     clasificada por valorización (PQ-XX). El "Actual" es el PQ seleccionado;
-//     "Acumulado Anterior" es lo de PQ menores; "Acumulado" la suma hasta el PQ.
+//   • ValorizacionF07_Avance → el ACUMULADO de cantidad (metrado) por ítem en cada
+//     una de las valorizaciones (V-01..V-09 + LIQUIDACIÓN). El acumulado del F07 ES
+//     el metrado del ISP ya cruzado al ítem y agrupado por quincena. El "Actual" es
+//     (acumulado de la val − acumulado de la val anterior); "Saldo" = Cant − Acumulado.
 import React, { useEffect, useMemo, useState } from 'react';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
@@ -18,51 +19,51 @@ import EmptyState from '../../components/EmptyState';
 const soles = (n) => 'S/ ' + (Number(n) || 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const cant = (n) => (Number(n) || 0).toLocaleString('es-PE', { maximumFractionDigits: 2 });
 const pct = (n) => (Number.isFinite(n) ? Math.round(n * 100) : 0) + '%';
-const pqNum = (ref) => { const m = String(ref || '').match(/(\d+)/); return m ? parseInt(m[1], 10) : null; };
 
 export default function ValorizacionF07({ showToast }) {
   const { proyectoActivo } = useProyectoActivo();
   const proyId = proyectoActivo?.id;
   const [presu, setPresu] = useState([]);
-  const [sustentos, setSustentos] = useState([]);
+  const [avances, setAvances] = useState([]); // [{ valN, label, avances:[{item,acum,actual}] }]
   const [loading, setLoading] = useState(true);
-  const [pqSel, setPqSel] = useState(null);
+  const [valSel, setValSel] = useState(null);
 
   useEffect(() => {
-    if (!proyId) { setPresu([]); setSustentos([]); setLoading(false); return; }
+    if (!proyId) { setPresu([]); setAvances([]); setLoading(false); return; }
     setLoading(true);
     const u1 = onSnapshot(collection(db, 'PresupuestoF07'), (snap) => {
       const rows = snap.docs.map(d => d.data()).filter(p => p.proyectoId === proyId).sort((a, b) => (a.orden || 0) - (b.orden || 0));
       setPresu(rows); setLoading(false);
     }, () => setLoading(false));
-    const u2 = onSnapshot(collection(db, 'SustentoMetrados'), (snap) => {
-      setSustentos(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(s => !s.proyectoId || s.proyectoId === proyId));
+    const u2 = onSnapshot(collection(db, 'ValorizacionF07_Avance'), (snap) => {
+      setAvances(snap.docs.map(d => d.data()).filter(a => a.proyectoId === proyId).sort((a, b) => (a.valN || 0) - (b.valN || 0)));
     });
     return () => { u1(); u2(); };
   }, [proyId]);
 
-  // Valorizaciones (PQ) presentes en los sustentos.
-  const periodos = useMemo(() => {
-    const set = new Set();
-    sustentos.forEach(s => { const n = pqNum(s.valorizacionRef); if (n != null) set.add(n); });
-    return [...set].sort((a, b) => a - b);
-  }, [sustentos]);
-  const pq = pqSel != null ? pqSel : (periodos.length ? periodos[periodos.length - 1] : 1);
+  // Valorizaciones disponibles (V-01..V-09 + LIQUIDACIÓN).
+  const periodos = useMemo(() => avances.map(a => ({ valN: a.valN, label: a.label || ('V-' + String(a.valN).padStart(2, '0')) })), [avances]);
+  const valN = valSel != null ? valSel : (periodos.length ? periodos[periodos.length - 1].valN : 1);
+  const periodoActual = periodos.find(p => p.valN === valN) || { valN, label: 'V-' + String(valN).padStart(2, '0') };
+  const esLiquidacion = /LIQUID/i.test(periodoActual.label);
 
-  // Ejecutado por item, separado por PQ.
+  // Mapas acumulados (item → cantidad) de la val seleccionada y de la anterior.
   const ejecPorItem = useMemo(() => {
-    const m = {}; // item -> { hastaAnt, actual, hastaAcum }
-    sustentos.forEach(s => {
-      const it = String(s.codigoPartida || '').trim(); if (!it) return;
-      const n = pqNum(s.valorizacionRef);
-      const q = Number(s.metrado) || 0;
-      if (!m[it]) m[it] = { ant: 0, act: 0, acum: 0 };
-      if (n != null && n < pq) m[it].ant += q;
-      if (n != null && n === pq) m[it].act += q;
-      if (n == null || n <= pq) m[it].acum += q;
+    const docSel = avances.find(a => a.valN === valN);
+    const previas = avances.filter(a => a.valN < valN);
+    const docAnt = previas.length ? previas[previas.length - 1] : null;
+    const mapAcum = (doc) => { const m = {}; (doc?.avances || []).forEach(x => { m[x.item] = (m[x.item] || 0) + (Number(x.acum) || 0); }); return m; };
+    const acumSel = mapAcum(docSel);
+    const acumAnt = mapAcum(docAnt);
+    const m = {};
+    const items = new Set([...Object.keys(acumSel), ...Object.keys(acumAnt)]);
+    items.forEach(it => {
+      const acum = acumSel[it] || 0;
+      const ant = acumAnt[it] || 0;
+      m[it] = { ant, act: acum - ant, acum }; // ant + act = acum (cuadra el F07)
     });
     return m;
-  }, [sustentos, pq]);
+  }, [avances, valN]);
 
   // Totales (a nivel S/.) de cada bloque.
   const tot = useMemo(() => {
@@ -95,10 +96,10 @@ export default function ValorizacionF07({ showToast }) {
             <img src={LOGO} alt="GRAPCO" style={{ width: 52, height: 52, objectFit: 'contain' }} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }}>
-            <p style={{ fontSize: 18, fontWeight: 900, color: BASE.navy, letterSpacing: 0.5 }}>VALORIZACIÓN N°{String(pq).padStart(2, '0')}</p>
+            <p style={{ fontSize: 18, fontWeight: 900, color: BASE.navy, letterSpacing: 0.5 }}>{esLiquidacion ? 'LIQUIDACIÓN' : `VALORIZACIÓN N°${String(valN).padStart(2, '0')}`}</p>
           </div>
           <div style={{ borderLeft: `1px solid ${BASE.border}`, fontSize: 10 }}>
-            {[['CÓDIGO', 'GP-GCE-FOR-F07'], ['VERSIÓN', '0.00'], ['VALORIZACIÓN N°', String(pq).padStart(2, '0')]].map(([k, v]) => (
+            {[['CÓDIGO', 'GP-GCE-FOR-F07'], ['VERSIÓN', '0.00'], ['VALORIZACIÓN N°', esLiquidacion ? 'LIQ' : String(valN).padStart(2, '0')]].map(([k, v]) => (
               <div key={k} style={{ display: 'flex', borderBottom: `1px solid ${BASE.border}` }}>
                 <span style={{ flex: 1, padding: '5px 8px', fontWeight: 800, color: BASE.muted }}>{k}</span>
                 <span style={{ flex: 1, padding: '5px 8px', fontWeight: 800, color: BASE.navy, borderLeft: `1px solid ${BASE.border}` }}>{v}</span>
@@ -107,7 +108,7 @@ export default function ValorizacionF07({ showToast }) {
           </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0', borderTop: `1px solid ${BASE.border}` }}>
-          {[['OBRA', obra], ['CLIENTE', cliente], ['CONTRATISTA', 'GRAPCO SAC'], ['SUPERVISIÓN', proyectoActivo?.supervision || 'Diseños Racionales SAC'], ['DENOMINACIÓN', `PPTO ${obra}`], ['PRESUPUESTO', 'Contractual (PTARI)'], ['UBICACIÓN', ubic], ['VALORIZACIÓN N°', String(pq).padStart(2, '0')]].map(([k, v]) => (
+          {[['OBRA', obra], ['CLIENTE', cliente], ['CONTRATISTA', 'GRAPCO SAC'], ['SUPERVISIÓN', proyectoActivo?.supervision || 'Diseños Racionales SAC'], ['DENOMINACIÓN', `PPTO ${obra}`], ['PRESUPUESTO', 'Contractual (PTARI)'], ['UBICACIÓN', ubic], ['VALORIZACIÓN N°', esLiquidacion ? 'LIQUIDACIÓN' : String(valN).padStart(2, '0')]].map(([k, v]) => (
             <div key={k} style={{ display: 'flex', fontSize: 10.5, borderRight: `1px solid ${BASE.border}`, borderBottom: `1px solid ${BASE.border}` }}>
               <span style={{ padding: '6px 8px', fontWeight: 800, color: BASE.muted, minWidth: 86, background: BASE.bgSoft }}>{k}</span>
               <span style={{ padding: '6px 8px', fontWeight: 700, color: BASE.navy, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v}</span>
@@ -116,12 +117,12 @@ export default function ValorizacionF07({ showToast }) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', padding: '10px 14px', background: BASE.bgSoft }}>
           <p style={{ fontSize: 11, color: BASE.muted }}>
-            {presu.filter(p => p.esPartida).length} partidas · valoriza por <b>metrado</b> (Cant × P.U.) · quincenal.
+            {presu.filter(p => p.esPartida).length} partidas · valoriza por <b>metrado</b> (Cant × P.U.) · quincenal · {periodos.length || 0} valorizaciones.
           </p>
           <label style={{ fontSize: 12, fontWeight: 800, color: BASE.navy, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-            Ver Valorización N°
-            <select value={pq} onChange={e => setPqSel(parseInt(e.target.value, 10))} style={{ padding: '7px 12px', borderRadius: 8, border: `1.5px solid ${BASE.border}`, fontSize: 13, fontWeight: 800 }}>
-              {(periodos.length ? periodos : [1]).map(n => <option key={n} value={n}>N° {String(n).padStart(2, '0')}</option>)}
+            Ver
+            <select value={valN} onChange={e => setValSel(parseInt(e.target.value, 10))} style={{ padding: '7px 12px', borderRadius: 8, border: `1.5px solid ${BASE.border}`, fontSize: 13, fontWeight: 800 }}>
+              {(periodos.length ? periodos : [{ valN: 1, label: 'V-01' }]).map(p => <option key={p.valN} value={p.valN}>{/LIQUID/i.test(p.label) ? 'LIQUIDACIÓN' : `Valorización N° ${String(p.valN).padStart(2, '0')}`}</option>)}
             </select>
           </label>
         </div>
@@ -131,7 +132,7 @@ export default function ValorizacionF07({ showToast }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8 }}>
         <Kpi label="Presupuesto (parcial)" v={soles(tot.parcial)} c={BASE.navy} />
         <Kpi label="Acum. anterior" v={soles(tot.ant)} c={BASE.muted} />
-        <Kpi label={`Actual · V-${String(pq).padStart(2, '0')}`} v={soles(tot.act)} c={BASE.gold} />
+        <Kpi label={`Actual · ${esLiquidacion ? 'LIQ' : 'V-' + String(valN).padStart(2, '0')}`} v={soles(tot.act)} c={BASE.gold} />
         <Kpi label="Acumulado" v={soles(tot.acum)} c={BASE.green} />
         <Kpi label="Saldo referencial" v={soles(tot.saldo)} c="#0ea5e9" />
       </div>
@@ -213,7 +214,7 @@ export default function ValorizacionF07({ showToast }) {
         </div>
       </div>
       <p style={{ fontSize: 10.5, color: BASE.muted }}>
-        ◆ El <b>Actual/Acumulado</b> se calcula con los metrados de <b>Metrados/Sustento</b> cuyo <b>código de partida</b> coincide con el ítem. Las partidas sin sustento quedan en 0 hasta cargarlo.
+        ◆ El <b>metrado de avance</b> proviene del <b>ISP</b> (cantidad ejecutada por partida), agrupado por quincena → cada valorización. <b>Actual</b> = acumulado de la val − acumulado de la anterior · <b>Saldo</b> = Cant − Acumulado. {!avances.length && <span style={{ color: BASE.gold, fontWeight: 800 }}>· Aún no se han cargado los avances de este proyecto.</span>}
       </p>
     </div>
   );
