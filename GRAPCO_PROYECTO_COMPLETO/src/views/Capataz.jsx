@@ -260,6 +260,36 @@ export default function Capataz({
     // capataz confirme su cuadrilla (acción explícita, jamás suplantación silenciosa).
   }, [esCapatazReal, capataz, nombreUsuario, capatazVinculado, cuadrillasParaSelect]);
 
+  // ── Recordar la cuadrilla elegida (por usuario) ──────────────────────────
+  // Sin esto, al salir y volver a entrar el panel arrancaba con `capataz` vacío
+  // y volvía a pedir "elegir el tareo" cada vez. Guardamos la última cuadrilla
+  // que ESTE usuario eligió (clave por uid) y la restauramos al reingresar, para
+  // dejarlo donde estaba.
+  const KEY_CAP = user?.uid ? `grapco_cap_${user.uid}` : null;
+
+  // Persistir: cada vez que hay una cuadrilla activa, se recuerda para el próximo ingreso.
+  useEffect(() => {
+    if (!KEY_CAP || !capataz) return;
+    try { localStorage.setItem(KEY_CAP, capataz); } catch (_) {}
+  }, [KEY_CAP, capataz]);
+
+  // Restaurar: si aún no hay cuadrilla resuelta, recuperamos la última elección de
+  // este usuario. Solo se restaura un valor que (a) él mismo eligió antes y (b) SIGUE
+  // existiendo en las cuadrillas del proyecto activo → nunca cruza proyectos ni suplanta.
+  // Si el admin vinculó explícitamente al capataz (capatazVinculado), esa identidad
+  // manda y el recuerdo no la pisa. Va DESPUÉS de la auto-selección para que, sin
+  // vínculo, la elección recordada gane sobre el calce difuso por nombre.
+  useEffect(() => {
+    if (capataz) return;                 // ya hay una elección activa
+    if (!KEY_CAP) return;
+    if (capatazVinculado) return;        // identidad explícita manda
+    const opciones = Object.keys(cuadrillasParaSelect || {});
+    if (!opciones.length) return;
+    let guardado = null;
+    try { guardado = localStorage.getItem(KEY_CAP); } catch (_) {}
+    if (guardado && opciones.includes(guardado)) setCapataz(guardado);
+  }, [capataz, KEY_CAP, capatazVinculado, cuadrillasParaSelect]);
+
   const crearActividadConMiembros = useCallback(() => ({
     ...newActividadItem(),
     detalleTareo: miembrosCuadrilla.map(m => ({
