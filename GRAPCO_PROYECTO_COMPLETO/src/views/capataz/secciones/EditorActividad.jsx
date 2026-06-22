@@ -230,24 +230,6 @@ export default function EditorActividad({
             </p>
           </div>
 
-          {/* Importar HH desde marcador facial */}
-          <button
-            onClick={() => onImportarFacial(actividadActiva.id)}
-            disabled={importandoFacial}
-            title="Lee Asistencia_Diaria del día y completa HN/HE de los miembros que marcaron entrada y salida"
-            style={{
-              width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-              padding: '10px 14px', marginBottom: '12px',
-              background: importandoFacial ? '#94a3b8' : 'linear-gradient(135deg,#0d9488,#0f766e)',
-              color: '#fff', border: 'none', borderRadius: '10px',
-              fontSize: '12px', fontWeight: 900, letterSpacing: '0.4px',
-              cursor: importandoFacial ? 'wait' : 'pointer',
-              boxShadow: '0 4px 12px rgba(13,148,136,0.35)',
-            }}>
-            <span style={{ fontSize: '15px' }}>📷</span>
-            {importandoFacial ? 'Importando…' : 'Importar HH desde Marcador Facial'}
-          </button>
-
           {(() => {
             const q = buscarTrab.trim().toLowerCase();
             const lista = q

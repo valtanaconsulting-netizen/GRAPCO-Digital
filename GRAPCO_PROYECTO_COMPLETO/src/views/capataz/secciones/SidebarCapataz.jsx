@@ -9,7 +9,7 @@
 // "buscar trabajador" perdía el foco letra por letra. Como ahora es un módulo
 // separado con referencia estable, ese riesgo no aplica. NO lo vuelvas a meter
 // inline dentro de Capataz.jsx.
-import React from 'react';
+import React, { useState } from 'react';
 import DateInput from '../../../components/DateInput';
 import { BASE, inp } from '../../../utils/styles';
 import { hoy } from '../../../utils/helpers';
@@ -54,6 +54,7 @@ export default function SidebarCapataz({
   // las actividades del día. En el paso de metrado no se agregan actividades —
   // solo se llena el metrado de las que ya se escogieron.
   const esTareo = modo === 'tareo';
+  const [verMas, setVerMas] = useState(false);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {/* Sección FECHA */}
@@ -111,97 +112,76 @@ export default function SidebarCapataz({
               🛠️ HERRAMIENTAS
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {/* Acciones ESENCIALES del capataz: elegir actividad + añadir actividad
+                  (la 3ª, buscar por nombre, va más abajo). */}
               {esTareo && (
                 <button type="button" onClick={onAbrirCatalogoWbs} style={{
-                  padding: '10px 12px', background: BASE.bgSoft, color: BASE.navy,
+                  padding: '11px 12px', background: BASE.bgSoft, color: BASE.navy,
                   border: `1px solid ${BASE.border}`, borderRadius: '8px',
-                  fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+                  fontSize: '12.5px', fontWeight: '700', cursor: 'pointer',
                   textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px',
                 }}>
                   <span style={{ fontSize: '16px' }}>📚</span>
-                  <span>Catálogo WBS</span>
+                  <span>Elegir actividad (Catálogo)</span>
                 </button>
               )}
-              <button type="button" onClick={onAbrirHistorial} style={{
-                padding: '10px 12px', background: BASE.bgSoft, color: BASE.navy,
-                border: `1px solid ${BASE.border}`, borderRadius: '8px',
-                fontSize: '12px', fontWeight: '700', cursor: 'pointer',
-                textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px',
-              }}>
-                <span style={{ fontSize: '16px' }}>📅</span>
-                <span>Editar día anterior</span>
-              </button>
               {esTareo && (
                 <button type="button" onClick={onAgregarActividad} style={{
-                  padding: '10px 12px', background: BASE.green, color: '#fff',
+                  padding: '11px 12px', background: BASE.green, color: '#fff',
                   border: 'none', borderRadius: '8px',
-                  fontSize: '12px', fontWeight: '800', cursor: 'pointer',
+                  fontSize: '12.5px', fontWeight: '800', cursor: 'pointer',
                   textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px',
                   boxShadow: `0 2px 6px ${BASE.green}55`,
                 }}>
                   <span style={{ fontSize: '16px' }}>➕</span>
-                  <span>Nueva actividad</span>
+                  <span>Añadir otra actividad</span>
                 </button>
               )}
-              {actividades.length > 0 && onVerTareo && (
-                <button type="button" onClick={onVerTareo} style={{
-                  padding: '10px 12px', background: BASE.navy, color: '#fff',
-                  border: 'none', borderRadius: '8px',
-                  fontSize: '12px', fontWeight: '800', cursor: 'pointer',
-                  textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px',
-                  boxShadow: `0 2px 6px ${BASE.navy}55`,
-                }}>
-                  <span style={{ fontSize: '16px' }}>📄</span>
-                  <span>Ver Tareo (PDF)</span>
-                </button>
+
+              {/* Más opciones — desplegable: lo secundario no distrae al capataz */}
+              <button type="button" onClick={() => setVerMas(v => !v)} style={{
+                padding: '9px 12px', background: 'transparent', color: BASE.muted,
+                border: `1px dashed ${BASE.border}`, borderRadius: '8px',
+                fontSize: '11px', fontWeight: '700', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px',
+              }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}><span style={{ fontSize: '15px' }}>⚙️</span> Más opciones</span>
+                <span style={{ display: 'inline-block', transform: verMas ? 'rotate(180deg)' : 'none', transition: 'transform 0.18s' }}>▾</span>
+              </button>
+              {verMas && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingLeft: '6px' }}>
+                  <button type="button" onClick={onAbrirHistorial} style={{
+                    padding: '10px 12px', background: BASE.bgSoft, color: BASE.navy,
+                    border: `1px solid ${BASE.border}`, borderRadius: '8px',
+                    fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+                    textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px',
+                  }}>
+                    <span style={{ fontSize: '16px' }}>📅</span>
+                    <span>Editar día anterior</span>
+                  </button>
+                  {actividades.length > 0 && onVerTareo && (
+                    <button type="button" onClick={onVerTareo} style={{
+                      padding: '10px 12px', background: BASE.navy, color: '#fff',
+                      border: 'none', borderRadius: '8px',
+                      fontSize: '12px', fontWeight: '800', cursor: 'pointer',
+                      textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px',
+                    }}>
+                      <span style={{ fontSize: '16px' }}>📄</span>
+                      <span>Ver Tareo (PDF)</span>
+                    </button>
+                  )}
+                </div>
               )}
-              {/* "Limpiar borrador" eliminado: el día se gestiona por actividad (eliminar
-                  cada una) — menos riesgo de borrado masivo accidental y UI más limpia. */}
             </div>
           </div>
         </>
       )}
 
-      {/* Estado del borrador */}
+      {/* Buscar trabajador por nombre — filtra el TAREO de personal */}
       {capataz && (
         <>
           <div style={{ height: '1px', background: BASE.border }} />
-          <div style={{
-            padding: '10px 12px', borderRadius: '10px',
-            background: ultSubida ? BASE.greenLight : estadoBorrador === 'cargado' && actividades.length > 0 ? BASE.goldLight : BASE.bgSoft,
-            border: `1px solid ${ultSubida ? BASE.green + '55' : estadoBorrador === 'cargado' && actividades.length > 0 ? BASE.gold + '55' : BASE.border}`,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '20px' }}>
-                {estadoBorrador === 'cargando' ? '⏳' :
-                  estadoBorrador === 'guardando' ? '💾' :
-                    estadoBorrador === 'subiendo' ? '☁️' :
-                      ultSubida ? '✅' :
-                        actividades.length > 0 ? '📝' : '📋'}
-              </span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{
-                  fontSize: '11px', fontWeight: '800',
-                  color: ultSubida ? BASE.greenDark : estadoBorrador === 'cargado' && actividades.length > 0 ? BASE.goldDark : BASE.muted,
-                }}>
-                  {estadoBorrador === 'cargando' && 'Cargando...'}
-                  {estadoBorrador === 'guardando' && 'Guardando...'}
-                  {estadoBorrador === 'subiendo' && 'Subiendo...'}
-                  {estadoBorrador === 'cargado' && ultSubida && `Subido (${ultSubida.n} act.)`}
-                  {estadoBorrador === 'cargado' && !ultSubida && actividades.length > 0 && 'Sin subir aún'}
-                  {estadoBorrador === 'vacio' && actividades.length === 0 && 'Sin borrador'}
-                </p>
-                {ultSubida && (
-                  <p style={{ fontSize: '9px', color: BASE.muted, marginTop: '1px' }}>
-                    {new Date(ultSubida.ts).toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Buscar trabajador por nombre — filtra el TAREO de personal */}
-          <div style={{ marginTop: '10px' }}>
+          <div>
             <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.5px', display: 'block', marginBottom: '5px' }}>
               🔎 BUSCAR TRABAJADOR
             </label>
