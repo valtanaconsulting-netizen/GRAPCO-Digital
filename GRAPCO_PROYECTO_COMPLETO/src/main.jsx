@@ -2,6 +2,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { activarPantallaCompletaEnPrimerToque } from './pantallaCompleta';
 // Fuentes AUTO-HOSPEDADAS (offline-first, sin Google Fonts ni cascada @import render-blocking).
 import '@fontsource/ibm-plex-sans/latin-400.css';
 import '@fontsource/ibm-plex-sans/latin-500.css';
@@ -85,6 +86,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <App />
   </React.StrictMode>
 );
+
+// Pantalla completa REAL en móvil: oculta la barra de estado del sistema
+// (hora/WiFi/batería) en el primer toque, sin tener que reinstalar la PWA.
+// En iPhone no hace nada (Apple no lo permite desde la web). Ver pantallaCompleta.js.
+activarPantallaCompletaEnPrimerToque();
 
 // ── Service Worker para PWA instalable ──
 // /sw.js cachea el app-shell y permite uso offline + install prompt en Chrome/Edge.
