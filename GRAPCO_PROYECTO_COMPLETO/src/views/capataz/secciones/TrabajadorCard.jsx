@@ -31,37 +31,30 @@ export default function TrabajadorCard({
       background: '#fff',
       border: `2px solid ${excedido ? '#fca5a5' : tieneHoras ? BASE.green : BASE.border}`,
       borderRadius: '12px',
-      padding: '12px',
+      padding: isMobile ? '8px 9px' : '12px',
       boxShadow: tieneHoras ? `0 2px 8px ${BASE.green}22` : 'none',
       transition: 'border-color 0.15s, box-shadow 0.15s',
     }}>
-      {/* Cabecera: avatar + nombre */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '9px', marginBottom: '9px' }}>
+      {/* Cabecera en UNA sola línea: avatar + nombre (ancho completo) + cargo a la derecha. Sin DNI. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
         <span style={{
-          width: '30px', height: '30px', borderRadius: '9px',
+          width: '26px', height: '26px', borderRadius: '8px',
           background: tieneHoras ? BASE.green : BASE.navy,
           color: '#fff',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: '12px', fontWeight: '900', flexShrink: 0,
         }}>{letra}</span>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <strong style={{
-            fontSize: '12.5px', color: BASE.text,
-            display: 'block', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          }} title={t.nombre}>{t.nombre}</strong>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px' }}>
-            <span style={{
-              fontSize: '10px', fontWeight: '700',
-              background: BASE.navy + '15', color: BASE.navy,
-              padding: '2px 7px', borderRadius: '12px',
-            }}>{(CARGOS_CORTO && CARGOS_CORTO[t.cargo]) || t.cargo}</span>
-            {t.dni && (
-              <span style={{ fontSize: '10px', color: BASE.muted, fontFamily: 'monospace' }}>
-                DNI {t.dni}
-              </span>
-            )}
-          </div>
-        </div>
+        <strong style={{
+          flex: 1, minWidth: 0,
+          fontSize: '12.5px', color: BASE.text,
+          lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }} title={t.nombre}>{t.nombre}</strong>
+        <span style={{
+          flexShrink: 0,
+          fontSize: '10px', fontWeight: '700',
+          background: BASE.navy + '15', color: BASE.navy,
+          padding: '3px 9px', borderRadius: '12px',
+        }}>{(CARGOS_CORTO && CARGOS_CORTO[t.cargo]) || t.cargo}</span>
       </div>
 
       {/* Inputs HN / HE — SIEMPRE lado a lado (2 columnas, también en móvil).
@@ -70,7 +63,7 @@ export default function TrabajadorCard({
         display: 'grid',
         gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
         gap: isMobile ? '8px' : '10px',
-        marginBottom: '10px',
+        marginBottom: '8px',
       }}>
         {[
           { lab: 'HN', sub: 'Normales', key: 'hn', color: BASE.navy, bg: BASE.navy + '0d' },
@@ -128,7 +121,7 @@ export default function TrabajadorCard({
       {/* Saldo + desglose HE */}
       <div style={{
         fontSize: '11px',
-        padding: '8px 10px',
+        padding: '5px 10px',
         background: excedido ? BASE.redLight : BASE.bgSoft,
         borderRadius: '8px',
         display: 'flex', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap',

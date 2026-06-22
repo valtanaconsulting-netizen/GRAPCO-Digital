@@ -32,7 +32,7 @@ export default function EditorActividad({
     <div style={{
       background: BASE.white, borderRadius: '14px',
       border: `1px solid ${BASE.border}`,
-      padding: isMobile ? '12px 6px' : '20px',
+      padding: isMobile ? '12px 4px' : '20px',
       marginBottom: '14px',
       boxShadow: BASE.shadowSm,
     }}>
@@ -170,7 +170,7 @@ export default function EditorActividad({
           background: BASE.bgSoft,
           border: `1px solid ${BASE.border}`,
           borderRadius: '12px',
-          padding: isMobile ? '12px 5px' : '14px',
+          padding: isMobile ? '10px 3px' : '14px',
         }}>
           <div style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
