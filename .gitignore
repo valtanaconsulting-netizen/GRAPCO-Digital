@@ -10,6 +10,11 @@ settings.local.json
 /*.xlsx
 /*.pdf
 /*.docx
+/*.mp4
+
+# Material de obra real y entornos locales — NO versionar (pesan ~1 GB, no son código)
+/05. Gestión Costos/
+.venv/
 
 # Backups de reglas / artefactos regenerables
 *.original.bak

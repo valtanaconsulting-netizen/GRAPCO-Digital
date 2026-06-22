@@ -42,6 +42,18 @@ scripts/backups/
 # Análisis/volcados de costos CREDITEX (scratch local — NO versionar)
 _scratch_costos/
 
+# Código retirado de la plataforma viva, preservado fuera del bundle (ver _ARCHIVO_RETIRADO/README.md)
+_ARCHIVO_RETIRADO/
+
+# Scripts de diagnóstico de un solo uso y sus salidas (scratch — NO versionar)
+scripts/scratch/
+scripts/_costos_catalog/
+scripts/_almacen_normalized.json
+
+# Artefactos de build nativo Android (regenerables)
+android/build/
+android/.gradle/
+
 # Config local de Claude Code, backups de reglas y salidas de prueba (no versionar)
 settings.local.json
 *.original.bak
