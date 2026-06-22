@@ -3,6 +3,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { activarPantallaCompletaEnPrimerToque } from './pantallaCompleta';
+import { inicializarNativo } from './nativo';
 // Fuentes AUTO-HOSPEDADAS (offline-first, sin Google Fonts ni cascada @import render-blocking).
 import '@fontsource/ibm-plex-sans/latin-400.css';
 import '@fontsource/ibm-plex-sans/latin-500.css';
@@ -87,9 +88,14 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>
 );
 
-// Pantalla completa REAL en móvil: oculta la barra de estado del sistema
+// App NATIVA (Capacitor): oculta la barra de estado del sistema y el splash.
+// En web/PWA no hace nada.
+inicializarNativo();
+
+// Pantalla completa REAL en móvil WEB: oculta la barra de estado del sistema
 // (hora/WiFi/batería) en el primer toque, sin tener que reinstalar la PWA.
-// En iPhone no hace nada (Apple no lo permite desde la web). Ver pantallaCompleta.js.
+// En iPhone web no hace nada (Apple no lo permite); en nativo lo maneja
+// inicializarNativo(). Ver pantallaCompleta.js.
 activarPantallaCompletaEnPrimerToque();
 
 // ── Service Worker para PWA instalable ──
@@ -98,7 +104,7 @@ activarPantallaCompletaEnPrimerToque();
 // lo instala y, al tomar control, recarga la página una sola vez para que el
 // usuario reciba SIEMPRE la última versión sin limpiar caché manualmente.
 // Solo se registra en HTTPS o localhost (requisito PWA).
-if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+if ('serviceWorker' in navigator && !window.Capacitor?.isNativePlatform?.() && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   const BUILD_ID = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev';
 
   // Recargar SOLO cuando la actualización la inició el usuario (botón "Actualizar

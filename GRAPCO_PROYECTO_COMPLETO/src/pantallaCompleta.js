@@ -22,6 +22,10 @@
 export function activarPantallaCompletaEnPrimerToque() {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
+  // App nativa (Capacitor): la barra de estado la maneja inicializarNativo()
+  // con el plugin StatusBar. No usamos la Fullscreen API web aquí.
+  if (window.Capacitor?.isNativePlatform?.()) return;
+
   // Ya corremos como PWA instalada en modo fullscreen → el sistema ya ocultó la
   // barra; no hay nada que hacer.
   const yaEsFullscreen = window.matchMedia?.('(display-mode: fullscreen)')?.matches;
