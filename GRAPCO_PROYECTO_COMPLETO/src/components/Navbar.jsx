@@ -108,7 +108,7 @@ export default function Navbar({ rol, isMobile, onSalir, onCambiarArea, onMenu }
       {/* Logo del CLIENTE del proyecto — al lado IZQUIERDO del de GRAPCO, mismo tamaño.
           Identifica de qué empresa/obra es el proyecto. Solo el logo (el nombre va en él);
           si no han subido logo, muestra su monograma de respaldo. */}
-      {(cliente.logoUrl || cliente.nombre) && (
+      {!isMobile && (cliente.logoUrl || cliente.nombre) && (
         <div title={cliente.nombre || 'Cliente'} style={{
           width: '40px', height: '40px', borderRadius: '10px', background: '#fff',
           padding: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -176,16 +176,18 @@ export default function Navbar({ rol, isMobile, onSalir, onCambiarArea, onMenu }
         whiteSpace: 'nowrap',
         overflow: 'hidden',
       }}>
+        {!isMobile && (
         <span style={{
-          width: isMobile ? '24px' : '28px', height: isMobile ? '24px' : '28px',
+          width: '28px', height: '28px',
           borderRadius: '7px',
           background: 'rgba(229, 168, 47, 0.12)',
           border: '1px solid rgba(229, 168, 47, 0.30)',
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           color: BASE.gold, flexShrink: 0,
         }}>
-          <Icon name={iconName} size={isMobile ? 13 : 15} strokeWidth={2} />
+          <Icon name={iconName} size={15} strokeWidth={2} />
         </span>
+        )}
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {isMobile ? 'GRAPCO S.A.C.' : titulo}
         </span>

@@ -187,19 +187,19 @@ export default function InicioCapataz({
       <div className="anim-fade-in" style={{ position: 'relative', zIndex: 2, maxWidth: '760px', margin: 'auto', width: '100%' }}>
 
         {/* Marca GRAPCO (logo + título) — mismo header que el selector de áreas */}
-        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+        <div style={{ textAlign: 'center', marginBottom: isMobile ? '12px' : '20px' }}>
           <div style={{
-            width: '72px', height: '72px',
+            width: isMobile ? '52px' : '72px', height: isMobile ? '52px' : '72px',
             background: 'linear-gradient(150deg, #ffffff 0%, #eef3f9 100%)',
-            borderRadius: '18px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            marginBottom: '10px', padding: '2px', overflow: 'hidden',
+            borderRadius: isMobile ? '14px' : '18px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            marginBottom: isMobile ? '8px' : '10px', padding: '2px', overflow: 'hidden',
             boxShadow: `0 13px 30px -16px rgba(0,0,0,0.6), 0 0 0 1.5px ${BASE.gold}40`,
           }}>
             <img src={LOGO} alt="GRAPCO"
               onError={(e) => { if (!e.target.dataset.fallback) { e.target.dataset.fallback = '1'; e.target.src = LOGO_FALLBACK; } }}
               style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '14px', transform: 'scale(1.25)' }} />
           </div>
-          <h1 style={{ color: '#fff', fontSize: '25px', fontWeight: 900, margin: '0 0 6px', letterSpacing: '0.5px' }}>
+          <h1 style={{ color: '#fff', fontSize: isMobile ? '19px' : '25px', fontWeight: 900, margin: '0 0 6px', letterSpacing: '0.5px' }}>
             GRAPCO <span style={{ color: BASE.gold }}>S.A.C.</span>
           </h1>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
