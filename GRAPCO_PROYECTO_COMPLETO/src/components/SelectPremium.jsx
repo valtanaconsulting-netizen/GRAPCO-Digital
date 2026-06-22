@@ -44,6 +44,7 @@ export default function SelectPremium({
   fontSize = '13px',
   searchable,            // forzar buscador; por defecto auto (> 7 opciones)
   openToken = 0,         // apertura programática: al incrementarlo, este selector se abre solo
+  openOnMount = false,   // abrir automáticamente al montar (p. ej. al desplegar una sección vacía)
 }) {
   const opciones = useMemo(() => normalizar(options), [options]);
   const [abierto, setAbierto] = useState(false);
@@ -102,6 +103,17 @@ export default function SelectPremium({
       setAbierto(true);
     }
   }, [openToken, disabled, isMobile, opciones.length]);
+
+  // Apertura al montar — la usa el editor cuando el capataz despliega la sección
+  // de actividad y el campo está vacío: arranca la cadena abriendo este selector.
+  useEffect(() => {
+    if (openOnMount && !disabled && opciones.length > 0) {
+      if (!isMobile) calcularCoords();
+      setAbierto(true);
+    }
+    // Solo al montar.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ESC + bloqueo de scroll del body mientras está abierto
   useEffect(() => {

@@ -32,6 +32,19 @@ export default function EditorActividad({
   // sola la Subpartida; al elegir Subpartida se abre sola la Actividad.
   const [openSubToken, setOpenSubToken] = useState(0);
   const [openActToken, setOpenActToken] = useState(0);
+  // La sección Partida/Subpartida/Actividad va plegada; el capataz la despliega
+  // con un toque y desde ahí corre la cadena de selectores.
+  const [identAbierta, setIdentAbierta] = useState(false);
+  // Solo subpartidas/actividades CON opciones reales: el catálogo tiene
+  // subpartidas vacías (p. ej. "DISEÑO": []) que, si se ofrecieran, dejarían la
+  // actividad sin poder completarse y bloquearían la subida del tareo.
+  const subpartidasDisponibles = actividadActiva.partida
+    ? Object.keys(CATALOGO_MASTER[actividadActiva.partida] || {})
+        .filter(sp => (CATALOGO_MASTER[actividadActiva.partida][sp] || []).length > 0)
+    : [];
+  const actividadesDisponibles = (actividadActiva.partida && actividadActiva.subpartida)
+    ? (CATALOGO_MASTER[actividadActiva.partida]?.[actividadActiva.subpartida] || [])
+    : [];
   return (
     <div style={{
       background: BASE.white, borderRadius: '14px',
@@ -41,68 +54,130 @@ export default function EditorActividad({
       boxShadow: BASE.shadowSm,
     }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        {/* ── IDENTIFICACIÓN (solo en TAREO; en metrado va fija) ── */}
+        {/* ── IDENTIFICACIÓN (solo en TAREO; en metrado va fija) ──
+            Toda la sección Partida/Subpartida/Actividad va PLEGADA tras una
+            cabecera. El capataz la despliega con un toque y desde ahí corre la
+            cadena (al elegir Partida se abre sola Subpartida, y luego Actividad).
+            Al elegir la Actividad la sección se pliega mostrando el resumen. */}
         {esTareo && (
-          <>
-            {/* El catálogo (buscar en toda la WBS) ahora vive SOLO en el menú de
-                Opciones — aquí el editor va directo a los selectores para no
-                duplicar accesos ni robar ancho. */}
-            {/* Selectores Partida / Subpartida */}
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
-              <div>
-                <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', display: 'block', marginBottom: '5px' }}>PARTIDA</label>
-                <SelectPremium
-                  value={actividadActiva.partida}
-                  onChange={v => {
-                    onUpdActividad(actividadActiva.id, 'partida', v);
-                    // Abrir sola la Subpartida si la partida elegida tiene opciones.
-                    if (Object.keys(CATALOGO_MASTER[v] || {}).length > 0) {
-                      setOpenSubToken(n => n + 1);
-                    }
-                  }}
-                  options={Object.keys(CATALOGO_MASTER)}
-                  isMobile={isMobile}
-                  title="Partida"
-                  fontSize="12px"
-                />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: identAbierta ? '12px' : 0 }}>
+            {/* Cabecera plegable */}
+            <button
+              type="button"
+              onClick={() => setIdentAbierta(o => !o)}
+              aria-expanded={identAbierta}
+              style={{
+                width: '100%', boxSizing: 'border-box', textAlign: 'left',
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: isMobile ? '11px 12px' : '12px 14px',
+                borderRadius: '12px',
+                border: `1.5px solid ${identAbierta ? BASE.gold : BASE.border}`,
+                background: identAbierta ? BASE.goldSoft : BASE.bgSoft,
+                boxShadow: identAbierta ? BASE.shadowFocus : 'none',
+                cursor: 'pointer', fontFamily: BASE.font,
+                transition: 'border-color .15s, background .15s, box-shadow .15s',
+              }}
+            >
+              <span style={{ fontSize: '16px', flexShrink: 0 }}>📋</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: '10px', fontWeight: 800, color: BASE.muted, letterSpacing: '0.6px' }}>
+                  ACTIVIDAD
+                </span>
+                <span style={{
+                  display: 'block', marginTop: '1px',
+                  fontSize: '12.5px',
+                  fontWeight: actividadActiva.actividad ? 700 : 600,
+                  color: actividadActiva.actividad ? BASE.navy : BASE.mutedSoft,
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
+                  {actividadActiva.actividad
+                    || (actividadActiva.partida
+                        ? `${actividadActiva.partida}${actividadActiva.subpartida ? ' › ' + actividadActiva.subpartida : ''}`
+                        : (identAbierta ? 'Elige partida, subpartida y actividad' : 'Toca para definir la actividad'))}
+                </span>
               </div>
-              <div>
-                <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', display: 'block', marginBottom: '5px' }}>SUBPARTIDA</label>
-                <SelectPremium
-                  value={actividadActiva.subpartida}
-                  onChange={v => {
-                    onUpdActividad(actividadActiva.id, 'subpartida', v);
-                    // Abrir sola la Actividad si la subpartida elegida tiene opciones.
-                    if ((CATALOGO_MASTER[actividadActiva.partida]?.[v] || []).length > 0) {
-                      setOpenActToken(n => n + 1);
-                    }
-                  }}
-                  options={actividadActiva.partida ? Object.keys(CATALOGO_MASTER[actividadActiva.partida] || {}) : []}
-                  disabled={!actividadActiva.partida}
-                  isMobile={isMobile}
-                  title="Subpartida"
-                  fontSize="12px"
-                  openToken={openSubToken}
-                />
-              </div>
-            </div>
+              {/* Chip de estado a la derecha (flexShrink:0 → nunca lo trunca la elipsis). */}
+              {actividadActiva.partida && !actividadActiva.actividad && (
+                <span style={{
+                  flexShrink: 0, fontSize: '9.5px', fontWeight: 800, letterSpacing: '0.3px',
+                  color: BASE.navy, background: BASE.goldSoft,
+                  border: `1px solid ${BASE.gold}`,
+                  padding: '3px 8px', borderRadius: '10px',
+                }}>FALTA</span>
+              )}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke={identAbierta ? BASE.gold : BASE.muted} strokeWidth="2.5"
+                strokeLinecap="round" strokeLinejoin="round"
+                style={{ transform: identAbierta ? 'rotate(180deg)' : 'none', transition: 'transform .18s', flexShrink: 0 }}>
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
 
-            <div>
-              <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', display: 'block', marginBottom: '5px' }}>ACTIVIDAD</label>
-              <SelectPremium
-                value={actividadActiva.actividad}
-                onChange={v => onUpdActividad(actividadActiva.id, 'actividad', v)}
-                options={(actividadActiva.partida && actividadActiva.subpartida)
-                  ? (CATALOGO_MASTER[actividadActiva.partida]?.[actividadActiva.subpartida] || [])
-                  : []}
-                disabled={!actividadActiva.subpartida}
-                isMobile={isMobile}
-                title="Actividad"
-                fontSize="12px"
-                openToken={openActToken}
-              />
-            </div>
-          </>
+            {/* Cuerpo: los 3 selectores (solo desplegado) */}
+            {identAbierta && (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', display: 'block', marginBottom: '5px' }}>PARTIDA</label>
+                    <SelectPremium
+                      value={actividadActiva.partida}
+                      onChange={v => {
+                        onUpdActividad(actividadActiva.id, 'partida', v);
+                        // Abrir sola la Subpartida si la partida elegida tiene subpartidas con opciones.
+                        if (Object.keys(CATALOGO_MASTER[v] || {}).filter(sp => (CATALOGO_MASTER[v][sp] || []).length > 0).length > 0) {
+                          setOpenSubToken(n => n + 1);
+                        }
+                      }}
+                      options={Object.keys(CATALOGO_MASTER)}
+                      isMobile={isMobile}
+                      title="Partida"
+                      fontSize="12px"
+                      openOnMount={!actividadActiva.partida}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', display: 'block', marginBottom: '5px' }}>SUBPARTIDA</label>
+                    <SelectPremium
+                      value={actividadActiva.subpartida}
+                      onChange={v => {
+                        onUpdActividad(actividadActiva.id, 'subpartida', v);
+                        // Abrir sola la Actividad si la subpartida elegida tiene opciones.
+                        if ((CATALOGO_MASTER[actividadActiva.partida]?.[v] || []).length > 0) {
+                          setOpenActToken(n => n + 1);
+                        }
+                      }}
+                      options={subpartidasDisponibles}
+                      disabled={!actividadActiva.partida}
+                      isMobile={isMobile}
+                      title="Subpartida"
+                      fontSize="12px"
+                      openToken={openSubToken}
+                      openOnMount={!!actividadActiva.partida && !actividadActiva.subpartida}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', display: 'block', marginBottom: '5px' }}>ACTIVIDAD</label>
+                  <SelectPremium
+                    value={actividadActiva.actividad}
+                    onChange={v => {
+                      onUpdActividad(actividadActiva.id, 'actividad', v);
+                      // Al elegir la actividad, la sección se pliega y muestra el resumen.
+                      setIdentAbierta(false);
+                    }}
+                    options={actividadesDisponibles}
+                    disabled={!actividadActiva.subpartida || actividadesDisponibles.length === 0}
+                    isMobile={isMobile}
+                    title="Actividad"
+                    fontSize="12px"
+                    openToken={openActToken}
+                    openOnMount={!!actividadActiva.subpartida && !actividadActiva.actividad}
+                  />
+                </div>
+              </>
+            )}
+          </div>
         )}
 
         {/* ── IDENTIFICACIÓN FIJA (solo en METRADO, viene del tareo) ── */}

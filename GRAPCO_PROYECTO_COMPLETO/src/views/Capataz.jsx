@@ -1110,6 +1110,7 @@ export default function Capataz({
 
               {actividadActiva && actividadesVista.some(a => a.id === actividadActiva.id) && (
                 <EditorActividad
+                  key={actividadActiva.id}
                   modo={vista}
                   actividadActiva={actividadActiva}
                   isMobile={isMobile}
