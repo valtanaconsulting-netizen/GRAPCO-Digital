@@ -5,7 +5,7 @@
 //   modo="metrado" → identificación en SOLO LECTURA (ya viene del tareo) +
 //                    metrado avanzado + observaciones + fotos del avance.
 // El modelo de datos es el mismo `actividad`; solo cambia qué secciones se ven.
-import React from 'react';
+import React, { useState } from 'react';
 import { BASE, inp } from '../../../utils/styles';
 import { CATALOGO_MASTER, JORNADA_LEGAL } from '../../../utils/constants';
 import FotoUploader from '../../../components/FotoUploader';
@@ -28,6 +28,10 @@ export default function EditorActividad({
 }) {
   const esTareo = modo === 'tareo';
   const esMetrado = modo === 'metrado';
+  // Tokens para encadenar la apertura de selectores: al elegir Partida se abre
+  // sola la Subpartida; al elegir Subpartida se abre sola la Actividad.
+  const [openSubToken, setOpenSubToken] = useState(0);
+  const [openActToken, setOpenActToken] = useState(0);
   return (
     <div style={{
       background: BASE.white, borderRadius: '14px',
@@ -49,7 +53,13 @@ export default function EditorActividad({
                 <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', display: 'block', marginBottom: '5px' }}>PARTIDA</label>
                 <SelectPremium
                   value={actividadActiva.partida}
-                  onChange={v => onUpdActividad(actividadActiva.id, 'partida', v)}
+                  onChange={v => {
+                    onUpdActividad(actividadActiva.id, 'partida', v);
+                    // Abrir sola la Subpartida si la partida elegida tiene opciones.
+                    if (Object.keys(CATALOGO_MASTER[v] || {}).length > 0) {
+                      setOpenSubToken(n => n + 1);
+                    }
+                  }}
                   options={Object.keys(CATALOGO_MASTER)}
                   isMobile={isMobile}
                   title="Partida"
@@ -60,12 +70,19 @@ export default function EditorActividad({
                 <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', display: 'block', marginBottom: '5px' }}>SUBPARTIDA</label>
                 <SelectPremium
                   value={actividadActiva.subpartida}
-                  onChange={v => onUpdActividad(actividadActiva.id, 'subpartida', v)}
+                  onChange={v => {
+                    onUpdActividad(actividadActiva.id, 'subpartida', v);
+                    // Abrir sola la Actividad si la subpartida elegida tiene opciones.
+                    if ((CATALOGO_MASTER[actividadActiva.partida]?.[v] || []).length > 0) {
+                      setOpenActToken(n => n + 1);
+                    }
+                  }}
                   options={actividadActiva.partida ? Object.keys(CATALOGO_MASTER[actividadActiva.partida] || {}) : []}
                   disabled={!actividadActiva.partida}
                   isMobile={isMobile}
                   title="Subpartida"
                   fontSize="12px"
+                  openToken={openSubToken}
                 />
               </div>
             </div>
@@ -82,6 +99,7 @@ export default function EditorActividad({
                 isMobile={isMobile}
                 title="Actividad"
                 fontSize="12px"
+                openToken={openActToken}
               />
             </div>
           </>

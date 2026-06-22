@@ -96,6 +96,10 @@ export default function TrabajadorCard({
                 type="number" step="0.5" min="0" inputMode="decimal"
                 value={t[key]}
                 onChange={e => updTareo(actividadActivaId, t.nombre, key, e.target.value)}
+                // Al enfocar/tocar el campo se selecciona todo el contenido para que
+                // la primera tecla REEMPLACE el valor (escribir 5 sobre el 0 da "5",
+                // no "05"; 6.5 da "6.5", no "06.5"). Así el capataz teclea limpio.
+                onFocus={e => e.target.select()}
                 style={{
                   flex: 1, minWidth: 0, width: '100%', textAlign: 'center',
                   fontWeight: '900', color, fontSize: isMobile ? '18px' : '22px',

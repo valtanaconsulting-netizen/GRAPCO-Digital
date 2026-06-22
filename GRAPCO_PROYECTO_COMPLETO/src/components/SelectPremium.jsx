@@ -43,6 +43,7 @@ export default function SelectPremium({
   title,
   fontSize = '13px',
   searchable,            // forzar buscador; por defecto auto (> 7 opciones)
+  openToken = 0,         // apertura programática: al incrementarlo, este selector se abre solo
 }) {
   const opciones = useMemo(() => normalizar(options), [options]);
   const [abierto, setAbierto] = useState(false);
@@ -86,6 +87,21 @@ export default function SelectPremium({
   };
   const cerrar = () => setAbierto(false);
   const elegir = (v) => { onChange?.(v); setAbierto(false); };
+
+  // Apertura programática — cadena Partida → Subpartida → Actividad.
+  // Cuando el padre incrementa openToken, abrimos este selector solo (si tiene
+  // opciones y no está deshabilitado). Así el capataz elige uno y aparece el
+  // siguiente sin tener que tocar cada campo.
+  const tokenPrev = useRef(openToken);
+  useEffect(() => {
+    if (openToken === tokenPrev.current) return;
+    tokenPrev.current = openToken;
+    if (openToken > 0 && !disabled && opciones.length > 0) {
+      setQuery('');
+      if (!isMobile) calcularCoords();
+      setAbierto(true);
+    }
+  }, [openToken, disabled, isMobile, opciones.length]);
 
   // ESC + bloqueo de scroll del body mientras está abierto
   useEffect(() => {
