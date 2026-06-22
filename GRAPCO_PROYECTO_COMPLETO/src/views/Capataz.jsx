@@ -1128,7 +1128,7 @@ export default function Capataz({
           modo={vista}
           isMobile={isMobile}
           estadoBorrador={estadoBorrador}
-          actividadesCount={vista === 'metrado' ? actividadesConHH.length : actividades.length}
+          actividadesCount={actividadesConHH.length}
           onGuardar={guardarBorrador}
           onSubir={subir}
           onEliminar={() => actividadActiva && eliminarActividad(actividadActiva.id)}
