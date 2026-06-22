@@ -70,14 +70,13 @@ function AreaCard({ icon, paso, titulo, descripcion, tags, color, bloqueada, mot
         </div>
       </div>
 
-      {(!isMobile || bloqueada) && (
-        <p style={{
-          fontSize: isMobile ? '11px' : '11.5px', color: BASE.muted, lineHeight: 1.45, margin: 0, flex: 1,
-          ...(isMobile ? { display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } : {}),
-        }}>
-          {bloqueada ? motivo : descripcion}
-        </p>
-      )}
+      <p style={{
+        fontSize: isMobile ? '11px' : '11.5px', color: BASE.muted, lineHeight: 1.45, margin: 0, flex: 1,
+        minHeight: isMobile ? '31px' : 0,
+        ...(isMobile ? { display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } : {}),
+      }}>
+        {bloqueada ? motivo : descripcion}
+      </p>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
         {tags.map(t => (
