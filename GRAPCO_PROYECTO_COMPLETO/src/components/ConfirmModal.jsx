@@ -2,7 +2,7 @@
 // Modal de confirmación premium (reemplaza window.confirm): overlay oscuro con
 // blur, tarjeta blanca centrada, barra de acento dorada y botones de marca.
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { BASE } from '../utils/styles';
 
 export default function ConfirmModal({
@@ -17,6 +17,20 @@ export default function ConfirmModal({
   onConfirmar,
   onCancelar,
 }) {
+  const btnRef = useRef(null);
+  const prevFocoRef = useRef(null);
+  // a11y: Esc cancela, foco inicial en el botón confirmar, retorno de foco al cerrar.
+  useEffect(() => {
+    if (!abierto) return;
+    prevFocoRef.current = document.activeElement;
+    btnRef.current?.focus();
+    const onKey = (e) => { if (e.key === 'Escape') onCancelar?.(); };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      try { prevFocoRef.current?.focus?.(); } catch (_) {}
+    };
+  }, [abierto, onCancelar]);
   if (!abierto) return null;
   const acento = tono === 'peligro' ? BASE.red : BASE.navy;
   const acentoFin = tono === 'peligro' ? BASE.redDark : BASE.navyDark;
@@ -55,7 +69,7 @@ export default function ConfirmModal({
               padding: '10px 18px', borderRadius: '10px', border: `1.5px solid ${BASE.border}`,
               background: BASE.white, color: BASE.muted, fontSize: '13px', fontWeight: 800, cursor: 'pointer',
             }}>{textoCancelar}</button>
-            <button onClick={onConfirmar} style={{
+            <button ref={btnRef} onClick={onConfirmar} style={{
               padding: '10px 22px', borderRadius: '10px', border: 'none',
               background: `linear-gradient(135deg, ${acento}, ${acentoFin})`, color: '#fff',
               fontSize: '13px', fontWeight: 900, cursor: 'pointer',

@@ -275,5 +275,8 @@ export async function verPDFTareoHtml(registrosPorDia, personalDB, ruc, supervis
     a.download = nombre;
     a.click();
   }
+  // Liberar el blob (PDFs de tareo pesan MB y el capataz los abre repetidamente).
+  // 60 s da tiempo a que la pestaña/descarga lo cargue antes de revocarlo.
+  setTimeout(() => { try { URL.revokeObjectURL(url); } catch (_) {} }, 60000);
   return numPaginas;
 }

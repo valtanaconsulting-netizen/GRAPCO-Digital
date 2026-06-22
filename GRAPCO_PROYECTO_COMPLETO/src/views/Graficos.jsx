@@ -298,6 +298,13 @@ const TwoLineTick = ({ x, y, payload }) => {
   );
 };
 
+// Formatos para las tablas de datos (puros → a nivel de módulo = referencia estable,
+// no se recrean por render; importa con 5-11 charts montados a la vez).
+const fmtHH = (v) => (v != null ? Number(v).toFixed(1) : '—');
+const fmtPct = (v) => (v != null ? `${Math.round(Number(v) * 100)}%` : '—');
+const fmtIP = (v) => (v != null ? Number(v).toFixed(3) : '—');
+const colorEstadoCPI = (v) => v == null ? BASE.muted : v >= 1 ? '#15803d' : v >= 0.85 ? '#b45309' : '#b91c1c';
+
 export default function Graficos({ grafData: grafDataOriginal, filtrados = [], wbs = {} }) {
   // === FILTRO GLOBAL: aplica a todos los charts ===
   const [fPartida,   setFPartida]   = useState('');
@@ -353,11 +360,7 @@ export default function Graficos({ grafData: grafDataOriginal, filtrados = [], w
   // Útil para "leer los números" cuando la curva sola no basta.
   const [mostrarTabla, setMostrarTabla] = useState(false);
 
-  // Formatos reutilizables para las tablas de datos
-  const fmtHH = (v) => (v != null ? Number(v).toFixed(1) : '—');
-  const fmtPct = (v) => (v != null ? `${Math.round(Number(v) * 100)}%` : '—');
-  const fmtIP = (v) => (v != null ? Number(v).toFixed(3) : '—');
-  const colorEstadoCPI = (v) => v == null ? BASE.muted : v >= 1 ? '#15803d' : v >= 0.85 ? '#b45309' : '#b91c1c';
+  // (fmtHH/fmtPct/fmtIP/colorEstadoCPI ahora viven a nivel de módulo, arriba.)
 
   // KPIs derivados (mostrar último valor)
   const ultIP   = grafData.semanas?.[grafData.semanas.length-1]?.['IP Real'];

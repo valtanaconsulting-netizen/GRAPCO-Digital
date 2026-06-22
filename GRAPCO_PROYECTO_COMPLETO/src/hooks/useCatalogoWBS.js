@@ -49,5 +49,8 @@ export function useCatalogoWBS(proyectoId) {
     [existe, arbol, esLegacy]
   );
 
-  return { loading, arbol, existe, catalogoMaster, infoMap };
+  // Memoizado: evita que el objeto literal nuevo por render invalide los useMemo
+  // aguas abajo (Dashboard, Oficina Tecnica, ValorizacionF07).
+  return useMemo(() => ({ loading, arbol, existe, catalogoMaster, infoMap }),
+    [loading, arbol, existe, catalogoMaster, infoMap]);
 }

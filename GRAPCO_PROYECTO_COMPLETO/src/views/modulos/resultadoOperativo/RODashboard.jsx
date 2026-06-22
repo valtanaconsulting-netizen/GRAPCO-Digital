@@ -68,10 +68,10 @@ export default function RODashboard() {
           <EVMCard label="EV" valor={fmtSoles(evShow)} desc={ro.evReal ? 'Valorizado real' : 'Valor ganado'} />
           <EVMCard label="AC" valor={fmtSoles(acShow)} desc={hayGG ? 'Costo real + GG' : 'Costo real'} />
           {hayGG && <EVMCard label="GG" valor={fmtSoles(gg.total)} desc="Gastos generales" />}
-          <EVMCard label="CPI" valor={cpiShow.toFixed(3)} desc={cpiShow >= 1 ? 'Bajo presupuesto' : 'Sobrecosto'}
+          <EVMCard label="CPI" valor={(Number.isFinite(cpiShow) ? cpiShow : 0).toFixed(3)} desc={cpiShow >= 1 ? 'Bajo presupuesto' : 'Sobrecosto'}
             highlight={colorCPIGlobal} />
-          <EVMCard label="SPI" valor={indicadoresGlobales.SPI.toFixed(3)} desc={indicadoresGlobales.SPI >= 1 ? 'Adelantado' : 'Atrasado'}
-            highlight={indicadoresGlobales.SPI >= 0.95 ? BASE.green : BASE.red} />
+          <EVMCard label="SPI" valor={(Number.isFinite(indicadoresGlobales?.SPI) ? indicadoresGlobales.SPI : 0).toFixed(3)} desc={indicadoresGlobales?.SPI >= 1 ? 'Adelantado' : 'Atrasado'}
+            highlight={indicadoresGlobales?.SPI >= 0.95 ? BASE.green : BASE.red} />
         </div>
       </div>
 

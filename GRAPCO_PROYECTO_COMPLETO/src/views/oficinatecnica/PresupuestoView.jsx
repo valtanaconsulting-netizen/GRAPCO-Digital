@@ -353,8 +353,13 @@ function ImportadorPPTO({ proyId, partidasActuales, user, onClose, showToast }) 
       const campo = frente === 'F2' ? 'montoF2' : 'montoF1';
       const otro = frente === 'F2' ? 'montoF1' : 'montoF2';
       const prevByCod = new Map(partidasActuales.map((p) => [String(p.codigo), p]));
-      const batch = writeBatch(db);
-      parsed.partidas.forEach((p, idx) => {
+      // Chunking a 400 ops/batch: un S10 real puede tener >500 partidas y un solo
+      // writeBatch falla al pasar 500 operaciones. Mismo patrón que los demás importadores.
+      const BATCH_OPS = 400;
+      let batch = writeBatch(db);
+      let ops = 0;
+      for (let idx = 0; idx < parsed.partidas.length; idx++) {
+        const p = parsed.partidas[idx];
         const id = `${proyId}__${p.codigo}`;
         const prev = prevByCod.get(String(p.codigo)) || {};
         const valNuevo = aNumero(p.montoF1 || p.montoF2);
@@ -374,8 +379,10 @@ function ImportadorPPTO({ proyId, partidasActuales, user, onClose, showToast }) 
           actualizadoPor: user?.email || 'import',
           origenImport: archivo?.name || 'PPTO',
         }, { merge: true });
-      });
-      await batch.commit();
+        ops++;
+        if (ops >= BATCH_OPS) { await batch.commit(); batch = writeBatch(db); ops = 0; }
+      }
+      if (ops > 0) await batch.commit();
 
       const r = parsed.resumen;
       await setDoc(doc(db, 'Presupuesto_Config', proyId), {

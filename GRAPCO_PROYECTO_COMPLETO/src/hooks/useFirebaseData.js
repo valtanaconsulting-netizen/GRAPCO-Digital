@@ -1,6 +1,6 @@
 // src/hooks/useFirebaseData.js — Hooks para suscripciones a Firebase
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { db } from '../firebaseConfig';
 import {
   collection, onSnapshot, query, orderBy, doc, where, limit,
@@ -47,7 +47,9 @@ export function useHistorial(fechaActual) {
     } catch (err) { console.error('[useHistorial setup]', err); }
   }, [fechaActual, filtrarPorContexto]);
 
-  return { historial, hhAcumuladasDia };
+  // Objeto memoizado: sin esto, el literal nuevo en cada render re-renderizaba
+  // todos los consumidores (DashboardEjecutivo, RadarProduccion, App, Marcador).
+  return useMemo(() => ({ historial, hhAcumuladasDia }), [historial, hhAcumuladasDia]);
 }
 
 // Hook: cuadrillas
