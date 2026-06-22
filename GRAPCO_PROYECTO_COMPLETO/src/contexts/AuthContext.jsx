@@ -227,6 +227,16 @@ export function AuthProvider({ children }) {
         const areaHash = leerRutaHash()?.area || null;
         // Roles de área única: entran directo a su panel (sin selector, sin escalar).
         const areaAuto = AUTO_AREA[perfil.rol];
+        // ¿Un área "pega" (se restaura al recargar / nuevo login) para este perfil?
+        // Las ÁREAS DE TRABAJADOR (AUTO_AREA: capataz, almacén, carta balance, etc.)
+        // NO son pegajosas para admin/ingeniero: si un admin entró solo a PREVISUALIZAR
+        // el área de capataz, un reload o nuevo login NO debe dejarlo atrapado ahí
+        // (regresa al SelectorPerfil). Solo "pega" si su rol REAL es ese mismo rol.
+        const areaPega = (area) => {
+          if (!area) return false;
+          if (AUTO_AREA[area]) return perfil.rol === area;   // área de trabajador → solo su dueño
+          return rolEsValido(perfil.rol, area);              // áreas multi (ingeniero/calidad/...) sí pegan
+        };
         if (areaAuto) {
           setRol(areaAuto);
           try { sessionStorage.setItem('grapco_rol_activo', areaAuto); } catch (_) {}
@@ -237,13 +247,19 @@ export function AuthProvider({ children }) {
           try { sessionStorage.removeItem('grapco_rol_activo'); } catch (_) {}
           limpiarRutaHash();
           setRol(null);
-        } else if (areaHash && rolEsValido(perfil.rol, areaHash)) {
+        } else if (areaHash && areaPega(areaHash)) {
           setRol(areaHash);
           try { sessionStorage.setItem('grapco_rol_activo', areaHash); } catch (_) {}
         } else {
-          // Solo restaurar el rol persistido si es válido para el rolPermitido.
-          const valido = rolPersistido && rolEsValido(perfil.rol, rolPersistido);
-          setRol(valido ? rolPersistido : null);
+          // Restaurar el rol persistido solo si "pega" para este perfil. Si era un
+          // área de trabajador previsualizada por un admin, se limpia y va al selector.
+          if (areaPega(rolPersistido)) {
+            setRol(rolPersistido);
+          } else {
+            try { sessionStorage.removeItem('grapco_rol_activo'); } catch (_) {}
+            limpiarRutaHash();
+            setRol(null);
+          }
         }
         setEsDemo(false);
 
