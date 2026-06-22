@@ -167,14 +167,19 @@ export default function EditorActividad({
         {/* ── TAREO DE PERSONAL (solo en TAREO) — siempre 1 columna ── */}
         {esTareo && (
         <div style={{
-          background: BASE.bgSoft,
-          border: `1px solid ${BASE.border}`,
+          // En móvil el bloque de tareo va A ANCHO COMPLETO: sin marco gris ni padding
+          // lateral, y con margen negativo que cancela el padding del editor → las
+          // tarjetas (nombre + cuadritos HN/HE) llegan de borde a borde de la pantalla.
+          background: isMobile ? 'transparent' : BASE.bgSoft,
+          border: isMobile ? 'none' : `1px solid ${BASE.border}`,
           borderRadius: '12px',
-          padding: isMobile ? '10px 3px' : '14px',
+          padding: isMobile ? '2px 0 0' : '14px',
+          margin: isMobile ? '0 -4px' : 0,
         }}>
           <div style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            marginBottom: '12px', flexWrap: 'wrap', gap: '6px',
+            marginBottom: '10px', flexWrap: 'wrap', gap: '6px',
+            padding: isMobile ? '0 4px' : 0,
           }}>
             <p style={{ fontSize: '11px', fontWeight: '800', color: BASE.navy, letterSpacing: '0.6px' }}>
               👷 TAREO DE PERSONAL · {(() => {

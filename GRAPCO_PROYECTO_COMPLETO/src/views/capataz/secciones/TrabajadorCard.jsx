@@ -31,7 +31,7 @@ export default function TrabajadorCard({
       background: '#fff',
       border: `2px solid ${excedido ? '#fca5a5' : tieneHoras ? BASE.green : BASE.border}`,
       borderRadius: '12px',
-      padding: isMobile ? '8px 9px' : '12px',
+      padding: isMobile ? '8px 6px' : '12px',
       boxShadow: tieneHoras ? `0 2px 8px ${BASE.green}22` : 'none',
       transition: 'border-color 0.15s, box-shadow 0.15s',
     }}>
