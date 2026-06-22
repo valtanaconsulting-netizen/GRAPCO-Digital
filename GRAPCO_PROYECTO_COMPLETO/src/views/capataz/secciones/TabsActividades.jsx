@@ -1,7 +1,8 @@
 // src/views/capataz/secciones/TabsActividades.jsx
 // Si no hay actividades → empty state con CTA "Crear primera actividad".
-// Si hay → chips horizontales scrollables (la activa se resalta con borde dorado
-// y fondo navy). Cada chip muestra # de orden, nombre, HH del día y check si ya
+// Si hay → lista vertical compacta (filas a todo el ancho, ~3 visibles y el
+// resto con scroll para no crecer). La activa se resalta con borde dorado y
+// fondo navy. Cada fila muestra # de orden, nombre, HH del día y check si ya
 // se subió ese registro.
 import React from 'react';
 import { BASE } from '../../../utils/styles';
@@ -71,41 +72,44 @@ export default function TabsActividades({
         }}>{actividades.length}</span>
       </div>
       <div style={{
-        display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px',
-        marginRight: '-12px', paddingRight: '12px',
+        display: 'flex', flexDirection: 'column', gap: '5px',
+        maxHeight: '108px', overflowY: 'auto',
+        marginRight: '-6px', paddingRight: '6px',
       }}>
         {actividades.map((a, i) => {
           const esActiva = a.id === actActivaId;
           const totalHHAct = a.detalleTareo.reduce((s, t) => s + (t.hn || 0) + (t.he || 0), 0);
           return (
             <button key={a.id} type="button" onClick={() => onSetActActivaId(a.id)} style={{
-              padding: '10px 14px', borderRadius: '10px',
+              padding: '6px 9px', borderRadius: '8px',
               border: esActiva ? `2px solid ${BASE.gold}` : `1.5px solid ${BASE.border}`,
               background: esActiva ? BASE.navy : BASE.white,
               color: esActiva ? '#fff' : BASE.text,
-              fontSize: '12px', fontWeight: '700', cursor: 'pointer',
-              whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '8px',
-              maxWidth: '260px', overflow: 'hidden',
+              fontSize: '11px', fontWeight: '700', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '7px',
+              width: '100%', boxSizing: 'border-box', textAlign: 'left',
               transition: 'all 0.15s',
               flexShrink: 0,
             }}>
               <span style={{
-                fontSize: '10px', fontWeight: '800',
+                fontSize: '9px', fontWeight: '800',
                 background: esActiva ? BASE.gold : BASE.bgSoft,
                 color: esActiva ? BASE.navy : BASE.muted,
-                padding: '2px 7px', borderRadius: '5px',
+                padding: '2px 6px', borderRadius: '5px',
                 flexShrink: 0,
               }}>{i + 1}</span>
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <span style={{
+                flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>
                 {a.actividad || 'Sin definir'}
               </span>
               <span style={{
-                fontSize: '10px',
+                fontSize: '9px',
                 background: esActiva ? 'rgba(255,255,255,0.18)' : BASE.bgSoft,
                 padding: '1px 6px', borderRadius: '4px',
-                opacity: esActiva ? 1 : 0.7,
+                opacity: esActiva ? 1 : 0.7, flexShrink: 0,
               }}>{totalHHAct.toFixed(1)}h</span>
-              {a._registroExistenteId && <span title="Ya subido" style={{ fontSize: '12px' }}>✅</span>}
+              {a._registroExistenteId && <span title="Ya subido" style={{ fontSize: '11px', flexShrink: 0 }}>✅</span>}
             </button>
           );
         })}
