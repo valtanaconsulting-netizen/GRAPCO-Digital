@@ -4,7 +4,7 @@
 // MODELO DE PERMISOS:
 //   - Solo usuarios autenticados pueden leer/escribir
 //   - Sistema de roles vía colección /Usuarios
-//   - Capataz: puede crear/editar SUS registros, leer maestros, NO puede borrar
+//   - Capataz: puede crear/editar/borrar SUS registros de campo, leer maestros
 //   - Ingeniero: lee todo, escribe configuración, audita
 //   - Admin: control total + gestión de usuarios
 //
@@ -125,7 +125,11 @@ service cloud.firestore {
                        (!('totalHH'   in request.resource.data) || numInRange(request.resource.data.totalHH, 0, 1000));
       // Actualizar: capataz/ingeniero/admin pueden corregir registros existentes
       allow update: if isCapataz() || isIngeniero() || isAdmin();
-      allow delete: if isIngeniero() || isAdmin();
+      // Borrar: mismo nivel de confianza que update (el capataz ya puede
+      // sobrescribir cualquier registro). Permite corregir/quitar lo que él
+      // mismo subió en el día. El cliente acota a su proyecto/frente vía
+      // filtrarPorContexto antes de llamar deleteDoc.
+      allow delete: if isCapataz() || isIngeniero() || isAdmin();
     }
 
     // ════════════════════════════════════════════════════════════════
