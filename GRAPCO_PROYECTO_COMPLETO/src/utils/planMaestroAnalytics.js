@@ -510,6 +510,17 @@ export function calcularROMensual({
   // Filtrar solo actividades hoja
   const actividadesHoja = obtenerActividadesHoja(actividades);
 
+  // Índices por código WBS: agrupan tareos/kardex/facturas/SC en UNA pasada para
+  // que cada partida lea SU bucket, en vez de re-escanear todo el dataset por cada
+  // actividad hoja. Antes O(partidas × datos); ahora O(partidas + datos). Cada item
+  // se registra bajo CADA valor distinto de sus campos de enlace, así get(codigoWBS)
+  // devuelve EXACTAMENTE el subconjunto que el filtro lineal recorría → el RO da el
+  // MISMO número (calcularCostoRealActividad re-aplica sus propios checks).
+  const tareosPorWBS   = indexarPorClavesWBS(tareos,            ['partida', 'codigoWBS', 'actividad']);
+  const kardexPorWBS   = indexarPorClavesWBS(kardexMovimientos, ['partidaDestino', 'actividadDestino']);
+  const facturasPorWBS = indexarPorClavesWBS(facturas,          ['partida', 'codigoWBS', 'actividad']);
+  const valSCPorWBS    = indexarPorClavesWBS(valorizacionesSC,  ['partida', 'codigoWBS', 'actividad']);
+
   // Por cada actividad, calcular indicadores
   const detallePartidas = actividadesHoja.map(act => {
     const codigoWBS = act.codigo;
@@ -520,13 +531,13 @@ export function calcularROMensual({
     const precioUnitario = act.precioUnitario || 0;
     const avanceMetradoAcum = act.avanceMetradoAcum || 0;
 
-    // Costo real (AC)
+    // Costo real (AC) — lee el bucket pre-indexado de esta partida (no re-escanea todo).
     const costoReal = calcularCostoRealActividad({
       codigoWBS,
-      tareos,
-      kardexMovimientos,
-      facturas,
-      valorizacionesSC,
+      tareos:            tareosPorWBS.get(codigoWBS)   || [],
+      kardexMovimientos: kardexPorWBS.get(codigoWBS)   || [],
+      facturas:          facturasPorWBS.get(codigoWBS) || [],
+      valorizacionesSC:  valSCPorWBS.get(codigoWBS)    || [],
       salariosPorCategoria,
     });
 
@@ -745,16 +756,36 @@ export function calcularCurvaS({ actividades = [], historial = [], fechaInicio, 
     return { fecha: p, valor: redondear(pvAcum) };
   });
 
-  // Curva S Real (EV acumulado desde Historial)
+  // Curva S Real (EV acumulado desde Historial).
+  // Pre-agrupa el historial por código de actividad con la fecha parseada UNA sola
+  // vez. Antes se re-filtraba TODO el historial y se re-parseaba la fecha por cada
+  // punto × actividad → O(puntos × actividades × historial). Mismo subconjunto y
+  // misma suma → curva idéntica.
+  const histPorCodigo = new Map();
+  for (const h of (historial || [])) {
+    if (!h) continue;
+    const f = h.fecha?.toDate ? h.fecha.toDate() : new Date(h.fecha);
+    const reg = { fechaMs: f instanceof Date ? f.getTime() : NaN, metrado: h.metrado || 0 };
+    const claves = new Set();
+    if (h.partida != null && h.partida !== '') claves.add(h.partida);
+    if (h.actividad != null && h.actividad !== '') claves.add(h.actividad);
+    for (const k of claves) {
+      const arr = histPorCodigo.get(k);
+      if (arr) arr.push(reg); else histPorCodigo.set(k, [reg]);
+    }
+  }
+
   const curvaReal = puntos.map(p => {
+    const pMs = p.getTime();
     let evAcum = 0;
     for (const act of actividadesHoja) {
       const PU = act.precioUnitario || 0;
-      const metradoEjecutadoHasta = (historial || []).filter(h => {
-        if (h.partida !== act.codigo && h.actividad !== act.codigo) return false;
-        const f = h.fecha?.toDate ? h.fecha.toDate() : new Date(h.fecha);
-        return f <= p;
-      }).reduce((s, h) => s + (h.metrado || 0), 0);
+      const bucket = histPorCodigo.get(act.codigo);
+      if (!bucket) continue;
+      let metradoEjecutadoHasta = 0;
+      for (const reg of bucket) {
+        if (reg.fechaMs <= pMs) metradoEjecutadoHasta += reg.metrado;
+      }
       evAcum += metradoEjecutadoHasta * PU;
     }
     return { fecha: p, valor: redondear(evAcum) };
@@ -770,6 +801,27 @@ export function calcularCurvaS({ actividades = [], historial = [], fechaInicio, 
 const redondear = (n, dec = 2) => {
   if (n == null || isNaN(n)) return 0;
   return Math.round(n * Math.pow(10, dec)) / Math.pow(10, dec);
+};
+
+// Agrupa items por CADA valor distinto de los campos de enlace al WBS indicados.
+// get(K) → todos los items con algún campo === K (mismo subconjunto que el filtro
+// lineal `x.partida===K || x.codigoWBS===K || ...`, pero construido en una pasada).
+// Un Set por item evita doble-registro cuando dos campos comparten valor.
+const indexarPorClavesWBS = (items, campos) => {
+  const idx = new Map();
+  for (const it of (items || [])) {
+    if (!it) continue;
+    const claves = new Set();
+    for (const c of campos) {
+      const v = it[c];
+      if (v != null && v !== '') claves.add(v);
+    }
+    for (const k of claves) {
+      const arr = idx.get(k);
+      if (arr) arr.push(it); else idx.set(k, [it]);
+    }
+  }
+  return idx;
 };
 
 export const fmtSoles = (n) => {
