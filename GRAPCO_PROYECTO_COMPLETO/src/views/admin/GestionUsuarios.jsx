@@ -1,6 +1,6 @@
 // src/views/admin/GestionUsuarios.jsx — CRUD de usuarios para admin
 import React, { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { db, auth } from '../../firebaseConfig';
 import { useAuth } from '../../contexts/AuthContext';
@@ -34,6 +34,7 @@ export default function GestionUsuarios({ showToast }) {
   const { user: adminActual } = useAuth();
   const [usuarios, setUsuarios] = useState([]);
   const [proyectos, setProyectos] = useState([]);
+  const [cuadrillas, setCuadrillas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filtroRol, setFiltroRol] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
@@ -59,6 +60,16 @@ export default function GestionUsuarios({ showToast }) {
     const unsub = onSnapshot(collection(db, 'Proyectos'),
       (snap) => setProyectos(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
       (err) => console.warn('[GestionUsuarios.Proyectos]', err)
+    );
+    return () => unsub();
+  }, []);
+
+  // Cuadrillas: para vincular cada cuenta de capataz a SU cuadrilla concreta
+  // (Usuarios.capatazNombre) y que jamás se resuelva la identidad por adivinanza.
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'Cuadrillas'),
+      (snap) => setCuadrillas(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+      (err) => console.warn('[GestionUsuarios.Cuadrillas]', err)
     );
     return () => unsub();
   }, []);
@@ -182,6 +193,18 @@ export default function GestionUsuarios({ showToast }) {
                         }}>
                           <span>{rolInfo.icon}</span>{rolInfo.label}
                         </span>
+                        {/* Vínculo de cuadrilla del capataz: visible para detectar cuentas sin vincular */}
+                        {u.rol === 'capataz' && (
+                          u.capatazNombre ? (
+                            <p style={{ fontSize: '9.5px', color: BASE.muted, marginTop: '4px', fontWeight: '700' }}>
+                              👷 {u.capatazNombre}
+                            </p>
+                          ) : (
+                            <p style={{ fontSize: '9.5px', color: BASE.red, marginTop: '4px', fontWeight: '700', fontStyle: 'italic' }}>
+                              ⚠️ cuadrilla sin vincular
+                            </p>
+                          )
+                        )}
                       </td>
                       <td style={{ padding: '12px 14px', fontSize: '11px' }}>
                         {veTodo ? (
@@ -298,6 +321,7 @@ export default function GestionUsuarios({ showToast }) {
         <ModalEditarRol
           usuario={showEditar}
           proyectos={proyectos}
+          cuadrillas={cuadrillas}
           onClose={() => setShowEditar(null)}
           showToast={showToast}
         />
@@ -446,17 +470,30 @@ function ModalCrearUsuario({ proyectos, onClose, showToast }) {
 // ════════════════════════════════════════════════════════════════
 // MODAL: Cambiar rol + proyecto asignado
 // ════════════════════════════════════════════════════════════════
-function ModalEditarRol({ usuario, proyectos, onClose, showToast }) {
+function ModalEditarRol({ usuario, proyectos, cuadrillas = [], onClose, showToast }) {
   const [nuevoRol, setNuevoRol] = useState(usuario.rol || 'ingeniero');
   const [nuevoProy, setNuevoProy] = useState(usuario.proyectoIdAsignado || '');
+  // Vínculo cuenta→cuadrilla (solo aplica a rol capataz). Es la identidad oficial
+  // del capataz: con esto su panel carga SIEMPRE su propia cuadrilla, jamás otra.
+  const [nuevoCapatazNombre, setNuevoCapatazNombre] = useState(usuario.capatazNombre || '');
   const [loading, setLoading] = useState(false);
 
   const veTodo = ROLES_QUE_VEN_TODO.has(nuevoRol);
+  const esCapataz = nuevoRol === 'capataz';
+
+  // Cuadrillas disponibles para vincular: las del proyecto asignado (si hay uno),
+  // o todas si aún no se eligió proyecto. Se ofrecen por nombre de capataz.
+  const cuadrillasDisponibles = (cuadrillas || [])
+    .filter(c => c && c.capataz && (!nuevoProy || !c.proyectoId || c.proyectoId === nuevoProy))
+    .map(c => c.capataz)
+    .filter((v, i, a) => a.indexOf(v) === i)
+    .sort((a, b) => String(a).localeCompare(String(b)));
 
   const submit = async () => {
     const cambioRol = nuevoRol !== usuario.rol;
     const cambioProy = (nuevoProy || '') !== (usuario.proyectoIdAsignado || '');
-    if (!cambioRol && !cambioProy) { onClose(); return; }
+    const cambioCapataz = (nuevoCapatazNombre || '') !== (usuario.capatazNombre || '');
+    if (!cambioRol && !cambioProy && !cambioCapataz) { onClose(); return; }
 
     // Validación: si NO es admin, debe tener proyecto asignado
     if (!veTodo && !nuevoProy) {
@@ -468,10 +505,20 @@ function ModalEditarRol({ usuario, proyectos, onClose, showToast }) {
     try {
       // Rol y proyecto se actualizan en una sola llamada a la Cloud Function
       // (Admin SDK, no depende de reglas de Firestore del cliente).
-      await actualizarUsuarioAdmin(usuario.id, {
-        nuevoRol: cambioRol ? nuevoRol : undefined,
-        proyectoIdAsignado: veTodo ? '' : nuevoProy,
-      });
+      if (cambioRol || cambioProy) {
+        await actualizarUsuarioAdmin(usuario.id, {
+          nuevoRol: cambioRol ? nuevoRol : undefined,
+          proyectoIdAsignado: veTodo ? '' : nuevoProy,
+        });
+      }
+      // El vínculo de cuadrilla lo escribe el admin directo en /Usuarios
+      // (las reglas permiten update de admin). Si el rol deja de ser capataz,
+      // se limpia el vínculo para no dejar identidad colgada.
+      if (cambioCapataz || (cambioRol && !esCapataz && usuario.capatazNombre)) {
+        await setDoc(doc(db, 'Usuarios', usuario.id),
+          { capatazNombre: esCapataz ? (nuevoCapatazNombre || '') : '', actualizadoEn: serverTimestamp() },
+          { merge: true });
+      }
       showToast?.(`✅ Usuario ${usuario.email} actualizado`, 'success');
       onClose();
     } catch (err) {
@@ -543,6 +590,41 @@ function ModalEditarRol({ usuario, proyectos, onClose, showToast }) {
             </select>
           )}
         </div>
+
+        {/* VÍNCULO CON SU CUADRILLA (solo rol capataz) — identidad oficial del capataz */}
+        {esCapataz && (
+          <div>
+            <p style={{ fontSize: '10px', fontWeight: '900', color: BASE.muted, letterSpacing: '0.5px', marginBottom: '6px' }}>
+              CUADRILLA DEL CAPATAZ
+            </p>
+            {cuadrillasDisponibles.length === 0 ? (
+              <div style={{
+                padding: '12px', background: BASE.bgSoft, border: `1px dashed ${BASE.border}`,
+                borderRadius: '8px', fontSize: '11.5px', color: BASE.muted, fontWeight: '600',
+              }}>
+                {nuevoProy
+                  ? 'Este proyecto aún no tiene cuadrillas. Créalas en Personal/Cuadrillas y vuelve a vincular.'
+                  : 'Elige primero el proyecto asignado para ver sus cuadrillas.'}
+              </div>
+            ) : (
+              <>
+                <select value={nuevoCapatazNombre} onChange={e => setNuevoCapatazNombre(e.target.value)} style={{
+                  width: '100%', padding: '11px 14px', borderRadius: '8px',
+                  border: `1.5px solid ${BASE.border}`, fontSize: '12.5px',
+                  fontWeight: '700', background: '#fff', cursor: 'pointer',
+                }}>
+                  <option value="">— Sin vincular (deberá confirmar al entrar) —</option>
+                  {cuadrillasDisponibles.map(nombre => (
+                    <option key={nombre} value={nombre}>{nombre}</option>
+                  ))}
+                </select>
+                <p style={{ fontSize: '10px', color: BASE.muted, marginTop: '4px', fontStyle: 'italic' }}>
+                  Al vincular, su panel cargará SIEMPRE esta cuadrilla — nunca la de otro.
+                </p>
+              </>
+            )}
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
           <button onClick={submit} disabled={loading} style={{

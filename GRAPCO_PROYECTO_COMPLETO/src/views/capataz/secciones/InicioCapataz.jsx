@@ -106,7 +106,7 @@ function AreaCard({ icon, paso, titulo, descripcion, tags, color, bloqueada, mot
 
 export default function InicioCapataz({
   fecha, capataz, proyectoNombre, clienteNombre,
-  cuadrillasParaSelect, miembrosCuadrilla, setCapataz, rol, cargandoCuadrilla, obtenerSemana, isMobile,
+  cuadrillasParaSelect, miembrosCuadrilla, setCapataz, rol, esCapatazReal, cargandoCuadrilla, obtenerSemana, isMobile,
   actividadesCount, actividadesConHHCount, totalHH, tieneTareo,
   onAbrirTareo, onAbrirMetrado,
 }) {
@@ -123,12 +123,17 @@ export default function InicioCapataz({
   const opcionesCapataz = Object.entries(cuadrillasParaSelect || {}).map(([nombre, miembros]) => ({
     nombre, miembros: Array.isArray(miembros) ? miembros.length : null,
   }));
-  // Mientras un CAPATAZ real resuelve su cuadrilla (carga + auto-selección de 1 opción)
-  // mostramos un loader, NO el selector ni las tarjetas bloqueadas → sin parpadeo al cargar.
-  const resolviendo = !capataz && rol === 'capataz' && (cargandoCuadrilla || opcionesCapataz.length === 1);
-  // Se pide elegir cuadrilla cuando NO se resuelve sola y existen opciones (admin/ingeniero,
-  // o capataz con varias cuadrillas sin coincidencia de nombre).
+  // Mientras un CAPATAZ real carga sus cuadrillas mostramos un loader (no el
+  // selector ni las tarjetas bloqueadas) → sin parpadeo al cargar. Ojo: ya NO
+  // se asume que "1 cuadrilla = la suya"; la auto-selección la decide Capataz.jsx
+  // por vínculo/nombre. Si no resuelve, cae al selector de abajo.
+  const resolviendo = !capataz && esCapatazReal && cargandoCuadrilla;
+  // Se pide elegir cuadrilla cuando NO se resolvió sola y hay opciones: admin/
+  // ingeniero (que previsualizan el área) o un capataz aún no vinculado que debe
+  // CONFIRMAR cuál es la suya.
   const necesitaElegir = !capataz && !resolviendo && opcionesCapataz.length > 0;
+  // Capataz real sin ninguna cuadrilla en su proyecto → aviso claro (no inventamos identidad).
+  const sinCuadrilla = !capataz && esCapatazReal && !cargandoCuadrilla && opcionesCapataz.length === 0;
 
   return (
     <div style={{
@@ -212,8 +217,17 @@ export default function InicioCapataz({
           margin: 0, color: '#fff', fontSize: isMobile ? '18px' : '25px', fontWeight: 900,
           letterSpacing: '0.4px', lineHeight: 1.18, textAlign: 'center',
         }}>
-          {saludo}{capataz ? <>, <span style={{ color: BASE.gold }}>{titulteCase(capataz)}</span></> : ''}
+          {/* El nombre del capataz solo personaliza el saludo cuando es un capataz
+              REAL. Un admin/ingeniero que previsualiza el área no "es" ese capataz:
+              ve la cuadrilla que escogió como contexto, sin suplantar la identidad. */}
+          {saludo}{capataz && esCapatazReal ? <>, <span style={{ color: BASE.gold }}>{titulteCase(capataz)}</span></> : ''}
         </p>
+        {/* Para admin/ingeniero: deja claro que está VIENDO una cuadrilla, no que la "es". */}
+        {capataz && !esCapatazReal && (
+          <p style={{ margin: '6px 0 0', color: 'rgba(255,255,255,0.7)', fontSize: isMobile ? '12px' : '13px', fontWeight: 700, textAlign: 'center' }}>
+            Viendo la cuadrilla de <span style={{ color: BASE.gold }}>{titulteCase(capataz)}</span>
+          </p>
+        )}
 
         {/* Fecha + Semana */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: '8px', marginTop: '9px' }}>
@@ -235,9 +249,25 @@ export default function InicioCapataz({
             borderRadius: '14px',
           }}>
             <p style={{ fontSize: '11px', fontWeight: 800, color: BASE.gold, letterSpacing: '0.6px', marginBottom: '8px' }}>
-              Confirma tu cuadrilla
+              {esCapatazReal ? 'Confirma tu cuadrilla' : 'Elige una cuadrilla para ver'}
             </p>
             <SelectorCapataz value={capataz} opciones={opcionesCapataz} onChange={setCapataz} />
+          </div>
+        )}
+
+        {/* Capataz real sin cuadrilla en su proyecto: aviso claro, NO se inventa identidad. */}
+        {sinCuadrilla && (
+          <div style={{
+            marginTop: '16px', padding: '14px 16px',
+            background: 'rgba(255,255,255,0.06)', border: `1px solid ${BASE.gold}44`,
+            borderRadius: '14px', textAlign: 'center',
+          }}>
+            <p style={{ fontSize: '13px', fontWeight: 800, color: '#fff', margin: '0 0 4px' }}>
+              Tu cuenta aún no está vinculada a una cuadrilla
+            </p>
+            <p style={{ fontSize: '11.5px', color: 'rgba(255,255,255,0.66)', margin: 0, lineHeight: 1.5 }}>
+              Pídele al administrador que asigne tu cuadrilla en este proyecto para poder registrar el tareo.
+            </p>
           </div>
         )}
 
