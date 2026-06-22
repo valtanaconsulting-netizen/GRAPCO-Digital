@@ -29,8 +29,8 @@ function AreaCard({ icon, paso, titulo, descripcion, tags, color, bloqueada, mot
         position: 'relative', overflow: 'hidden', textAlign: 'left',
         background: bloqueada ? 'linear-gradient(180deg,#f8fafc 0%,#eef2f7 100%)' : 'linear-gradient(180deg, #ffffff 0%, #f5f8fc 100%)',
         border: `1px solid ${bloqueada ? 'rgba(15,42,71,0.10)' : color + '55'}`,
-        borderRadius: '18px', padding: isMobile ? '16px 16px 14px' : '18px 18px 15px',
-        display: 'flex', flexDirection: 'column', gap: '10px',
+        borderRadius: '18px', padding: isMobile ? '12px 14px 11px' : '18px 18px 15px',
+        display: 'flex', flexDirection: 'column', gap: isMobile ? '7px' : '10px',
         opacity: bloqueada ? 0.72 : 1,
         boxShadow: bloqueada ? 'none' : sombra,
         transition: 'transform 0.24s cubic-bezier(0.34,1.4,0.64,1), box-shadow 0.24s, border-color 0.24s',
@@ -70,9 +70,14 @@ function AreaCard({ icon, paso, titulo, descripcion, tags, color, bloqueada, mot
         </div>
       </div>
 
-      <p style={{ fontSize: '11.5px', color: BASE.muted, lineHeight: 1.5, margin: 0, flex: 1 }}>
-        {bloqueada ? motivo : descripcion}
-      </p>
+      {(!isMobile || bloqueada) && (
+        <p style={{
+          fontSize: isMobile ? '11px' : '11.5px', color: BASE.muted, lineHeight: 1.45, margin: 0, flex: 1,
+          ...(isMobile ? { display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } : {}),
+        }}>
+          {bloqueada ? motivo : descripcion}
+        </p>
+      )}
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
         {tags.map(t => (
@@ -136,7 +141,7 @@ export default function InicioCapataz({
       position: 'fixed', inset: 0, zIndex: 30,
       overflowY: 'auto',
       background: '#0a1628',
-      paddingTop: 'calc(60px + env(safe-area-inset-top) + 20px)',
+      paddingTop: 'calc(60px + env(safe-area-inset-top) + 12px)',
       paddingBottom: 'calc(34px + env(safe-area-inset-bottom))',
       paddingLeft: '16px', paddingRight: '16px',
       boxSizing: 'border-box',
@@ -202,16 +207,18 @@ export default function InicioCapataz({
           <h1 style={{ color: '#fff', fontSize: isMobile ? '19px' : '25px', fontWeight: 900, margin: '0 0 6px', letterSpacing: '0.5px' }}>
             GRAPCO <span style={{ color: BASE.gold }}>S.A.C.</span>
           </h1>
+          {!isMobile && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
             <span style={{ height: '1px', width: '30px', background: `linear-gradient(90deg, transparent, ${BASE.gold}aa)` }} />
             <span style={{ color: BASE.gold, fontSize: '9.5px', fontWeight: 800, letterSpacing: '2.6px', textTransform: 'uppercase' }}>Gestión de Proyectos VDC</span>
             <span style={{ height: '1px', width: '30px', background: `linear-gradient(90deg, ${BASE.gold}aa, transparent)` }} />
           </div>
+          )}
         </div>
 
         {/* Saludo */}
         <p style={{
-          margin: 0, color: '#fff', fontSize: isMobile ? '21px' : '25px', fontWeight: 900,
+          margin: 0, color: '#fff', fontSize: isMobile ? '18px' : '25px', fontWeight: 900,
           letterSpacing: '0.4px', lineHeight: 1.18,
         }}>
           {saludo}{capataz ? <>, <span style={{ color: BASE.gold }}>{titulteCase(capataz)}</span></> : ''}
@@ -258,14 +265,14 @@ export default function InicioCapataz({
 
         {/* Pregunta */}
         <p style={{
-          margin: '22px 0 14px', color: 'rgba(255,255,255,0.6)',
+          margin: isMobile ? '10px 0 8px' : '22px 0 14px', color: 'rgba(255,255,255,0.6)',
           fontSize: '12px', fontWeight: 700, letterSpacing: '0.6px',
         }}>
           ¿En qué vas a trabajar hoy? Elige un área 👇
         </p>
 
         {/* Áreas */}
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '14px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? '10px' : '14px' }}>
           <AreaCard
             icon="👷" paso="ÁREA 1 · TAREO" titulo="Tareo"
             descripcion="Escoge las actividades del día y coloca a tu gente con sus horas (HN/HE). Puedes importar las horas del marcador facial."
@@ -287,7 +294,7 @@ export default function InicioCapataz({
         </div>
 
         {/* Mini-resumen del día */}
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '18px' }}>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: isMobile ? '10px' : '18px' }}>
           {[
             { l: 'ACTIVIDADES', v: actividadesCount },
             { l: 'CON HORAS', v: actividadesConHHCount },

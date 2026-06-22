@@ -28,7 +28,7 @@ const ROL_LABEL = {
   carta_balance: 'Carta Balance',
 };
 
-export default function UserProfileMenu({ rol, onSalir }) {
+export default function UserProfileMenu({ rol, onSalir, isMobile }) {
   const { user, rolPermitido } = useAuth();
   const [abierto, setAbierto] = useState(false);
   const [perfil, setPerfil] = useState({ nombre: '', photoURL: '' });
@@ -151,7 +151,7 @@ export default function UserProfileMenu({ rol, onSalir }) {
         style={{
           display: 'inline-flex', alignItems: 'center', gap: '8px',
           flexShrink: 0,
-          height: '30px', padding: '0 10px 0 3px', boxSizing: 'border-box',
+          height: '30px', padding: isMobile ? '0 3px' : '0 10px 0 3px', boxSizing: 'border-box',
           background: abierto ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.04)',
           border: `1px solid ${abierto ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.10)'}`,
           borderRadius: '8px',
@@ -160,13 +160,17 @@ export default function UserProfileMenu({ rol, onSalir }) {
           transition: 'all 0.15s',
         }}>
         <Avatar nombre={perfil.nombre} url={perfil.photoURL} size={24} />
-        <span style={{ fontSize: '11.5px', fontWeight: 600, maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {perfil.nombre || (user?.email || '').split('@')[0]}
-        </span>
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-          style={{ transform: abierto ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.15s', opacity: 0.7 }}>
-          <polyline points="6 9 12 15 18 9"/>
-        </svg>
+        {!isMobile && (
+          <span style={{ fontSize: '11.5px', fontWeight: 600, maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {perfil.nombre || (user?.email || '').split('@')[0]}
+          </span>
+        )}
+        {!isMobile && (
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+            style={{ transform: abierto ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.15s', opacity: 0.7 }}>
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        )}
       </button>
 
       {/* MODAL FULL-SCREEN renderizado vía Portal (fuera del navbar) */}

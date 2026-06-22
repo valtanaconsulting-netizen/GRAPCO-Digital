@@ -319,7 +319,7 @@ export default function Navbar({ rol, isMobile, onSalir, onCambiarArea, onMenu }
       </button>
 
       {/* MENÚ DE PERFIL — avatar + dropdown completo (también incluye "Cerrar sesión") */}
-      <UserProfileMenu rol={rol} onSalir={onSalir} />
+      <UserProfileMenu rol={rol} onSalir={onSalir} isMobile={isMobile} />
     </nav>
   );
 }
