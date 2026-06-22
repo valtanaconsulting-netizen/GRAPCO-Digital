@@ -32,9 +32,10 @@ const OT_SIDEBAR = {
     { key: 'ot.bim',         label: 'Modelo BIM',         iconName: 'cube',      color: '#5eead4' },
   ],
   'VALORIZACIÓN': [
-    { key: 'ot.valoriz',   label: 'Valorizaciones',      iconName: 'coins',      color: BASE.gold },
-    { key: 'ot.sustento',  label: 'Sustento',            iconName: 'layers',     color: '#fbbf24' },
-    { key: 'ot.informe',   label: 'Informe PDF',         iconName: 'fileText',   color: '#c4b5fd' },
+    { key: 'ot.valoriz',     label: 'Valorización F07 (ISP)', iconName: 'fileText', color: BASE.gold },
+    { key: 'ot.liquidacion', label: 'Valorización anterior',  iconName: 'coins',    color: '#22d3ee' },
+    { key: 'ot.sustento',    label: 'Sustento',               iconName: 'layers',   color: '#fbbf24' },
+    { key: 'ot.informe',     label: 'Informe PDF',            iconName: 'fileText', color: '#c4b5fd' },
   ],
   // RESULTADO OPERATIVO desglosado en sub-grupos (antes era 1 ítem con 11 chips arriba).
   'RESULTADO OPERATIVO': [

@@ -60,8 +60,8 @@ const GRUPOS = {
     color: '#f59e0b',
     tagline: 'Valorización y cobro al cliente',
     items: [
-      { id: 'valoriz',  l: 'Valorizaciones', icono: '📄', icon: 'fileText', desc: 'Formato oficial F07 por cantidad (item/und/cant/PU)' },
-      { id: 'liquidacion', l: 'Liquidación / Cobro', icono: '💰', icon: 'coins', desc: '% por partida + IGV/FG/detracción' },
+      { id: 'valoriz',  l: 'Valorización F07 (ISP)', icono: '📄', icon: 'fileText', desc: 'Formato oficial F07 por cantidad · metrado del ISP (item/und/cant/PU)' },
+      { id: 'liquidacion', l: 'Valorización anterior', icono: '💰', icon: 'coins', desc: 'Vista previa: % por partida + IGV/FG/detracción' },
       { id: 'sustento', l: 'Metrados / Sustento', icono: '📐', icon: 'layers', desc: 'Planilla de metrados (concreto/acero/encofrado) + fotos' },
       { id: 'informe',  l: 'Informe PDF',    icono: '📑', icon: 'fileText', desc: 'Genera el sustento imprimible' },
     ],
@@ -87,6 +87,7 @@ const TAB_TO_GRUPO = {
   fotografico:'ejecucion',
   bim:        'ejecucion',
   valoriz:    'facturacion',
+  liquidacion:'facturacion',
   sustento:   'facturacion',
   informe:    'facturacion',
 };
@@ -106,6 +107,7 @@ const KEY_TO_TAB_OT = {
   'ot.ro.adicionales': 'ro',
   'ot.ro.deductivos':  'ro',
   'ot.valoriz':     'valoriz',
+  'ot.liquidacion': 'liquidacion',
   'ot.sustento':    'sustento',
   'ot.fotografico': 'fotografico',
   'ot.informe':     'informe',
