@@ -243,12 +243,17 @@ export default function Capataz({
     //    o token significativo compartido). Si no calza, NO se asigna ninguna.
     if (!nombreUsuario) return;
     const u = norm(nombreUsuario);
+    const uAlpha = u.replace(/[^a-z]/g, '');   // sin espacios ni dígitos: "marcelinoaraya26" → "marcelinoaraya"
     const tokensU = u.split(/\s+/).filter(w => w.length > 3);
     const match = opciones.find(o => {
       const c = norm(o);
       if (c === u || c.includes(u) || u.includes(c)) return true;
       const tokensC = c.split(/\s+/).filter(w => w.length > 3);
-      return tokensU.some(w => tokensC.includes(w));
+      // Token significativo compartido (orden distinto): "perez juan" vs "juan perez".
+      if (tokensU.some(w => tokensC.includes(w))) return true;
+      // Cuenta "pegada" sin espacios (marcelinoaraya26): basta que ≥2 tokens del
+      // nombre del capataz aparezcan DENTRO del usuario → es su nombre, no azar.
+      return tokensC.filter(w => uAlpha.includes(w)).length >= 2;
     });
     if (match) setCapataz(match);
     // Sin calce → se queda vacío: InicioCapataz muestra el selector para que el
