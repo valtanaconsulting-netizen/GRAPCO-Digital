@@ -137,26 +137,29 @@ export default function ValorizacionF07({ showToast }) {
         <Kpi label="Saldo referencial" v={soles(tot.saldo)} c="#0ea5e9" />
       </div>
 
-      {/* Grilla F07 */}
-      <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 12, overflow: 'hidden' }}>
-        <div style={{ overflowX: 'auto' }}>
+      {/* Grilla F07 — overflow:visible para que el encabezado sticky se ancle al
+          contenedor de scroll del shell (igual que Auditoria), no a un wrapper local. */}
+      <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 12, overflow: 'visible' }}>
+        <div style={{ overflow: 'visible' }}>
           <table style={{ borderCollapse: 'collapse', fontSize: 11, minWidth: 1180, width: '100%' }}>
             <thead>
-              <tr style={{ background: BASE.navy, color: '#fff' }}>
-                <th rowSpan={2} style={th({ minWidth: 56, textAlign: 'left' })}>ITEM</th>
-                <th rowSpan={2} style={th({ minWidth: 240, textAlign: 'left' })}>DESCRIPCIÓN</th>
-                <th colSpan={4} style={th({ borderLeft: bd })}>PRESUPUESTO</th>
-                <th colSpan={3} style={th({ borderLeft: bd, background: '#334155' })}>ACUM. ANTERIOR</th>
-                <th colSpan={3} style={th({ borderLeft: bd, background: BASE.goldDark })}>ACTUAL</th>
-                <th colSpan={3} style={th({ borderLeft: bd, background: '#15803d' })}>ACUMULADO</th>
-                <th colSpan={3} style={th({ borderLeft: bd, background: '#0369a1' })}>SALDO REF.</th>
+              {/* Encabezado de 2 filas, ambas sticky: fila 1 top:0, fila 2 top:HR1.
+                  Cada th lleva fondo propio (al pegarse, el tr no pinta detrás). */}
+              <tr style={{ color: '#fff' }}>
+                <th rowSpan={2} style={th({ minWidth: 56, textAlign: 'left', ...stk(0, 7), background: BASE.navy })}>ITEM</th>
+                <th rowSpan={2} style={th({ minWidth: 240, textAlign: 'left', ...stk(0, 7), background: BASE.navy })}>DESCRIPCIÓN</th>
+                <th colSpan={4} style={th({ borderLeft: bd, ...stk(0, 6), height: HR1, boxSizing: 'border-box', background: BASE.navy })}>PRESUPUESTO</th>
+                <th colSpan={3} style={th({ borderLeft: bd, ...stk(0, 6), height: HR1, boxSizing: 'border-box', background: '#334155' })}>ACUM. ANTERIOR</th>
+                <th colSpan={3} style={th({ borderLeft: bd, ...stk(0, 6), height: HR1, boxSizing: 'border-box', background: BASE.goldDark })}>ACTUAL</th>
+                <th colSpan={3} style={th({ borderLeft: bd, ...stk(0, 6), height: HR1, boxSizing: 'border-box', background: '#15803d' })}>ACUMULADO</th>
+                <th colSpan={3} style={th({ borderLeft: bd, ...stk(0, 6), height: HR1, boxSizing: 'border-box', background: '#0369a1' })}>SALDO REF.</th>
               </tr>
-              <tr style={{ background: BASE.navyDark, color: '#fff' }}>
-                {['UND', 'CANT', 'P.U.', 'PARCIAL'].map((h, i) => <th key={h} style={th({ borderLeft: i === 0 ? bd : 'none', textAlign: i === 0 ? 'center' : 'right' })}>{h}</th>)}
-                {['CANT', '%', 'TOTAL'].map((h, i) => <th key={'a' + h + i} style={th({ borderLeft: i === 0 ? bd : 'none', textAlign: 'right' })}>{h}</th>)}
-                {['CANT', '%', 'TOTAL'].map((h, i) => <th key={'b' + h + i} style={th({ borderLeft: i === 0 ? bd : 'none', textAlign: 'right' })}>{h}</th>)}
-                {['CANT', '%', 'TOTAL'].map((h, i) => <th key={'c' + h + i} style={th({ borderLeft: i === 0 ? bd : 'none', textAlign: 'right' })}>{h}</th>)}
-                {['CANT', '%', 'TOTAL'].map((h, i) => <th key={'d' + h + i} style={th({ borderLeft: i === 0 ? bd : 'none', textAlign: 'right' })}>{h}</th>)}
+              <tr style={{ color: '#fff' }}>
+                {['UND', 'CANT', 'P.U.', 'PARCIAL'].map((h, i) => <th key={h} style={th({ borderLeft: i === 0 ? bd : 'none', textAlign: i === 0 ? 'center' : 'right', ...stk(HR1, 5), background: BASE.navyDark })}>{h}</th>)}
+                {['CANT', '%', 'TOTAL'].map((h, i) => <th key={'a' + h + i} style={th({ borderLeft: i === 0 ? bd : 'none', textAlign: 'right', ...stk(HR1, 5), background: BASE.navyDark })}>{h}</th>)}
+                {['CANT', '%', 'TOTAL'].map((h, i) => <th key={'b' + h + i} style={th({ borderLeft: i === 0 ? bd : 'none', textAlign: 'right', ...stk(HR1, 5), background: BASE.navyDark })}>{h}</th>)}
+                {['CANT', '%', 'TOTAL'].map((h, i) => <th key={'c' + h + i} style={th({ borderLeft: i === 0 ? bd : 'none', textAlign: 'right', ...stk(HR1, 5), background: BASE.navyDark })}>{h}</th>)}
+                {['CANT', '%', 'TOTAL'].map((h, i) => <th key={'d' + h + i} style={th({ borderLeft: i === 0 ? bd : 'none', textAlign: 'right', ...stk(HR1, 5), background: BASE.navyDark })}>{h}</th>)}
               </tr>
             </thead>
             <tbody>
@@ -245,5 +248,7 @@ function Kpi({ label, v, c }) {
 
 const bd = '2px solid rgba(255,255,255,0.35)';
 const bdL = `2px solid ${BASE.border}`;
+const HR1 = 26; // alto de la 1ª fila del encabezado (px) = top de la 2ª fila sticky
+const stk = (top, zIndex = 5) => ({ position: 'sticky', top, zIndex });
 const th = (extra = {}) => ({ padding: '6px 8px', fontSize: 9, fontWeight: 900, letterSpacing: 0.3, whiteSpace: 'nowrap', textAlign: 'center', ...extra });
 const td = (extra = {}) => ({ padding: '5px 8px', fontSize: 10.5, color: BASE.text, whiteSpace: 'nowrap', ...extra });
