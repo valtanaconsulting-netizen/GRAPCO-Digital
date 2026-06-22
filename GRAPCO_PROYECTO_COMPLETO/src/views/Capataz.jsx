@@ -89,6 +89,7 @@ export default function Capataz({
   const [buscarTrab,     setBuscarTrab]     = useState('');
   const [showWbs,        setShowWbs]        = useState(false);
   const [showHistorial,  setShowHistorial]  = useState(false);
+  const [menuAbierto,    setMenuAbierto]    = useState(false); // drawer lateral en móvil
   const [historialDelCap,setHistorialDelCap]= useState([]);
   // Jornada legal de HN por día de la semana (HE no tiene límite)
   //   lun-vie: 8.5h | sáb: SIN TOPE | dom: 0h
@@ -925,11 +926,11 @@ export default function Capataz({
       setBuscarTrab={setBuscarTrab}
       obtenerSemana={obtenerSemana}
       showToast={showToast}
-      onAbrirCatalogoWbs={() => setShowWbs(true)}
-      onAbrirHistorial={abrirHistorial}
-      onAgregarActividad={agregarActividad}
+      onAbrirCatalogoWbs={() => { setShowWbs(true); setMenuAbierto(false); }}
+      onAbrirHistorial={() => { abrirHistorial(); setMenuAbierto(false); }}
+      onAgregarActividad={() => { agregarActividad(); setMenuAbierto(false); }}
       onEliminarBorrador={eliminarBorrador}
-      onVerTareo={verTareoPDF}
+      onVerTareo={() => { verTareoPDF(); setMenuAbierto(false); }}
     />
   );
 
@@ -987,22 +988,62 @@ export default function Capataz({
         flexDirection: isMobile ? 'column' : 'row',
       }}>
 
-        {/* SIDEBAR (desktop) / Panel superior (móvil) */}
-        <aside style={{
-          width: isMobile ? '100%' : `${sidebarWidth}px`,
-          flexShrink: 0,
-          background: BASE.white,
-          borderRight: isMobile ? 'none' : `1px solid ${BASE.border}`,
-          borderBottom: isMobile ? `1px solid ${BASE.border}` : 'none',
-          padding: isMobile ? '12px 14px' : '20px',
-          boxShadow: isMobile ? 'none' : BASE.shadowSm,
-          position: isMobile ? 'static' : 'sticky',
-          top: isMobile ? 'auto' : '56px',
-          height: isMobile ? 'auto' : 'calc(100dvh - 56px)',
-          overflowY: 'auto',
-        }}>
-          {sidebarContent}
-        </aside>
+        {/* SIDEBAR — escritorio: barra fija a la izquierda · móvil: DRAWER deslizable
+            (☰ Opciones en la cabecera). Así el capataz ve un main limpio y abre el
+            menú de opciones solo cuando lo necesita. */}
+        {isMobile ? (
+          <>
+            {/* Backdrop */}
+            <div
+              onClick={() => setMenuAbierto(false)}
+              style={{
+                position: 'fixed', inset: 0, zIndex: 199,
+                background: 'rgba(7,16,30,0.55)', backdropFilter: 'blur(2px)',
+                opacity: menuAbierto ? 1 : 0,
+                pointerEvents: menuAbierto ? 'auto' : 'none',
+                transition: 'opacity 0.25s ease',
+              }}
+            />
+            {/* Drawer izquierdo */}
+            <aside style={{
+              position: 'fixed', top: 0, left: 0, bottom: 0,
+              width: '87%', maxWidth: '330px',
+              background: BASE.white,
+              boxShadow: '0 0 40px rgba(0,0,0,0.4)',
+              padding: '14px',
+              paddingTop: 'calc(14px + env(safe-area-inset-top))',
+              overflowY: 'auto', zIndex: 200,
+              transform: menuAbierto ? 'translateX(0)' : 'translateX(-100%)',
+              transition: 'transform 0.28s cubic-bezier(0.4,0,0.2,1)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 900, color: BASE.gold, letterSpacing: '1.2px' }}>OPCIONES</span>
+                <button type="button" onClick={() => setMenuAbierto(false)} aria-label="Cerrar opciones"
+                  style={{
+                    width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
+                    border: `1px solid ${BASE.border}`, background: BASE.bgSoft, color: BASE.navy,
+                    fontSize: '18px', fontWeight: 700, cursor: 'pointer', lineHeight: 1,
+                  }}>✕</button>
+              </div>
+              {sidebarContent}
+            </aside>
+          </>
+        ) : (
+          <aside style={{
+            width: `${sidebarWidth}px`,
+            flexShrink: 0,
+            background: BASE.white,
+            borderRight: `1px solid ${BASE.border}`,
+            padding: '20px',
+            boxShadow: BASE.shadowSm,
+            position: 'sticky',
+            top: '56px',
+            height: 'calc(100dvh - 56px)',
+            overflowY: 'auto',
+          }}>
+            {sidebarContent}
+          </aside>
+        )}
 
         {/* MAIN */}
         <main style={{
@@ -1016,6 +1057,8 @@ export default function Capataz({
               <StepperCapataz
                 vista={vista}
                 onIrInicio={irInicio}
+                isMobile={isMobile}
+                onAbrirMenu={() => setMenuAbierto(true)}
               />
 
               <TabsActividades

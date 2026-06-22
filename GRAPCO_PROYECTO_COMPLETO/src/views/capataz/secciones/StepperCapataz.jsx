@@ -10,7 +10,7 @@ const TITULO = {
   metrado: 'Metrado y observaciones',
 };
 
-export default function StepperCapataz({ vista, onIrInicio }) {
+export default function StepperCapataz({ vista, onIrInicio, isMobile, onAbrirMenu }) {
   const titulo = TITULO[vista] || TITULO.tareo;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
@@ -29,9 +29,27 @@ export default function StepperCapataz({ vista, onIrInicio }) {
       >
         <span style={{ fontSize: '20px', lineHeight: 1, marginTop: '-2px' }}>‹</span> Volver
       </button>
-      <h2 style={{ fontSize: '15px', fontWeight: '800', color: BASE.navy, letterSpacing: '-0.2px', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <h2 style={{ flex: 1, fontSize: '15px', fontWeight: '800', color: BASE.navy, letterSpacing: '-0.2px', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {titulo}
       </h2>
+      {/* Móvil: abre el menú lateral (drawer) con todas las opciones */}
+      {isMobile && onAbrirMenu && (
+        <button
+          type="button"
+          onClick={onAbrirMenu}
+          aria-label="Abrir opciones"
+          className="btn-feedback"
+          style={{
+            flexShrink: 0,
+            display: 'inline-flex', alignItems: 'center', gap: '7px',
+            height: '40px', padding: '0 15px', borderRadius: '11px',
+            border: `1px solid ${BASE.border}`, background: BASE.white,
+            color: BASE.navy, fontSize: '13px', fontWeight: '800', cursor: 'pointer',
+          }}
+        >
+          <span style={{ fontSize: '17px', lineHeight: 1 }}>☰</span> Opciones
+        </button>
+      )}
     </div>
   );
 }
