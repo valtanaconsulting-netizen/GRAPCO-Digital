@@ -416,5 +416,6 @@ export const CUADRILLAS_MAESTRAS = {
   "Capataz 3": ["Oficial 3", "Operario 3", "Ayudante 5", "Ayudante 6"]
 };
 
-export const JORNADA_LEGAL         = 8.5;
-export const FECHA_INICIO_PROYECTO = new Date("2025-11-03T00:00:00"); 
+export const JORNADA_LEGAL         = 8.5;   // tope de HN lun-vie
+export const JORNADA_SABADO        = 5.5;   // tope de HN el sábado (media jornada)
+export const FECHA_INICIO_PROYECTO = new Date("2025-11-03T00:00:00");

@@ -6,7 +6,7 @@ import {
   doc, setDoc, getDoc, deleteDoc, writeBatch,
 } from 'firebase/firestore';
 import {
-  INFO_MAP, FECHA_INICIO_PROYECTO,
+  INFO_MAP, FECHA_INICIO_PROYECTO, JORNADA_LEGAL, JORNADA_SABADO,
 } from '../utils/constants';
 import { BASE } from '../utils/styles';
 import {
@@ -44,7 +44,13 @@ const newActividadItem = () => ({
 export default function Capataz({
   cuadrillasActivas, cuadrillasDB, personalDB, isMobile, showToast,
 }) {
-  const { rol, user } = useAuth();
+  const { rol, rolPermitido, user } = useAuth();
+  // IDENTIDAD REAL del usuario = rolPermitido (el rol asignado en /Usuarios),
+  // NO `rol` (el área ACTIVA de la sesión). Un admin/ingeniero puede entrar al
+  // área de capataz para previsualizarla: en ese caso `rol === 'capataz'` pero
+  // `rolPermitido !== 'capataz'`. Solo un capataz REAL debe quedar atado a una
+  // cuadrilla — así nadie se "convierte" en otro capataz por accidente.
+  const esCapatazReal = rolPermitido === 'capataz';
   const { proyectoActivoId, proyectoActivo, frenteActivoId, modoTodosFrentes, FRENTE_DEFAULT_ID, filtrarPorContexto } = useProyectoActivo();
   const proyectoNombre = proyectoActivo?.nombre || proyectoActivo?.codigo || '';
   const clienteNombre = proyectoActivo?.cliente || proyectoActivo?.clienteNombre || proyectoActivo?.empresa || '';
@@ -54,20 +60,27 @@ export default function Capataz({
   // a un proyecto que no es el suyo, aunque el contexto esté en otro lado por un instante.
   const [proyectoIdUsuario, setProyectoIdUsuario] = useState(null);
   const [nombreUsuario,     setNombreUsuario]     = useState('');
+  // Vínculo EXPLÍCITO cuenta→cuadrilla: el admin ata cada capataz a su cuadrilla
+  // (Usuarios.capatazNombre). Es la fuente de identidad más confiable y evita
+  // depender de calces difusos de nombre (p.ej. "marcelinoaraya26" vs la cuadrilla
+  // "ARAYA QUISPE CONDORI MARCELINO").
+  const [capatazVinculado,  setCapatazVinculado]  = useState('');
   useEffect(() => {
-    if (!user?.uid) { setProyectoIdUsuario(null); setNombreUsuario(''); return; }
+    if (!user?.uid) { setProyectoIdUsuario(null); setNombreUsuario(''); setCapatazVinculado(''); return; }
     getDoc(doc(db, 'Usuarios', user.uid))
       .then(snap => {
         if (snap.exists()) {
           const d = snap.data();
           setProyectoIdUsuario(d.proyectoIdAsignado || null);
           setNombreUsuario(d.nombre || d.nombreCompleto || d.displayName || '');
+          setCapatazVinculado(d.capatazNombre || '');
         } else {
           setProyectoIdUsuario(null);
           setNombreUsuario('');
+          setCapatazVinculado('');
         }
       })
-      .catch(() => { setProyectoIdUsuario(null); setNombreUsuario(''); });
+      .catch(() => { setProyectoIdUsuario(null); setNombreUsuario(''); setCapatazVinculado(''); });
   }, [user?.uid]);
   const proyectoIdParaRegistro = proyectoIdUsuario || proyectoActivoId;
 
@@ -98,19 +111,19 @@ export default function Capataz({
   const [confirmDialog, setConfirmDialog] = useState(null);
   const confirmar = (opts) => new Promise((resolve) => setConfirmDialog({ ...opts, resolve }));
   const cerrarConfirm = (val) => setConfirmDialog((d) => { d?.resolve?.(val); return null; });
-  // Jornada legal de HN por día de la semana (HE no tiene límite)
-  //   lun-vie: 8.5h | sáb: SIN TOPE | dom: 0h
+  // Tope de HN por día de la semana (HE solo se habilita al COMPLETAR las HN):
+  //   lun-vie: 8.5h | sáb: 5.5h | dom: 0h (solo HE)
   const limiteHNPorFecha = (fechaStr) => {
-    if (!fechaStr) return 8.5;
+    if (!fechaStr) return JORNADA_LEGAL;
     const [y, m, d] = String(fechaStr).slice(0, 10).split('-').map(Number);
     const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay(); // 0=dom, 6=sáb
-    if (dow === 0) return 0;          // domingo: solo HE
-    if (dow === 6) return Infinity;   // sábado: sin tope de HN
-    return 8.5;                       // lunes a viernes
+    if (dow === 0) return 0;             // domingo: solo HE
+    if (dow === 6) return JORNADA_SABADO;// sábado: media jornada
+    return JORNADA_LEGAL;                // lunes a viernes
   };
 
-  // ¿El día seleccionado no tiene tope de HN? (sábado)
-  const sinTopeHN = !Number.isFinite(limiteHNPorFecha(fecha));
+  // Tope de HN del día seleccionado (8.5 / 5.5 / 0). Manda en validación y UI.
+  const limiteHN = limiteHNPorFecha(fecha);
 
   const obtenerSemana = f => obtSem(f, FECHA_INICIO_PROYECTO);
 
@@ -163,10 +176,10 @@ export default function Capataz({
     let r = construir(cuadrillasDB);
     if (!Object.keys(r).length) r = construir(cuadrillasDirectas);
 
-    // Si NO hay ninguna cuadrilla real: si el usuario es capataz, mostrarlo
+    // Si NO hay ninguna cuadrilla real: si el usuario es un capataz REAL, mostrarlo
     // SOLO a él (con su nombre real), nunca los genéricos "Capataz 1/2/3".
     if (!Object.keys(r).length) {
-      if (rol === 'capataz' && nombreUsuario) return { [nombreUsuario]: [] };
+      if (esCapatazReal && nombreUsuario) return { [nombreUsuario]: [] };
       return cuadrillasActivas || {};
     }
 
@@ -174,7 +187,7 @@ export default function Capataz({
     // usuario — eso generaba un capataz fantasma cuando su nombre de cuenta
     // (ej. "marcelinoaraya26") no coincidía con su cuadrilla real.
     return r;
-  }, [cuadrillasDB, cuadrillasDirectas, cuadrillasActivas, personalDB, rol, nombreUsuario, filtrarPorContexto]);
+  }, [cuadrillasDB, cuadrillasDirectas, cuadrillasActivas, personalDB, esCapatazReal, nombreUsuario, filtrarPorContexto]);
 
   // ── Miembros de la cuadrilla ──
   // Incluye al capataz como primer miembro (también puede realizar actividades y registrar sus HH)
@@ -199,29 +212,48 @@ export default function Capataz({
   // Auto-selección de la cuadrilla del capataz logueado: así, al entrar con su
   // cuenta, NO tiene que buscarse en una lista — su nombre ya viene puesto y ve
   // directo las 2 áreas (Tareo / Metrado).
+  //
+  // REGLA DE ORO (anti-suplantación): SOLO se auto-selecciona una cuadrilla que
+  // pertenezca de forma VERIFICABLE al usuario logueado. NUNCA por "solo hay una
+  // cuadrilla en el proyecto" (ese atajo convertía a cualquiera —incluido un admin
+  // entrando al área— en el único capataz de la obra). Sin calce positivo se deja
+  // vacío y el usuario CONFIRMA su cuadrilla en el selector.
   useEffect(() => {
     if (capataz) return;                                // respeta elección manual
     const opciones = Object.keys(cuadrillasParaSelect);
     if (!opciones.length) return;
-    // Solo un CAPATAZ real auto-selecciona su cuadrilla. Un admin/ingeniero que entra
-    // al área de capataz NUNCA debe quedar "convertido" en el capataz de otra cuadrilla
-    // (p.ej. Franklin admin viendo a Marcelino): a ellos se les muestra el selector.
-    if (rol !== 'capataz' || !nombreUsuario) return;
-    // 1) Una sola cuadrilla en el proyecto = es la suya → autoselecciona.
-    if (opciones.length === 1) { setCapataz(opciones[0]); return; }
-    // 2) Varias cuadrillas → intenta calzar por el nombre de su usuario.
+    // Solo un capataz REAL (por rol asignado, no por área activa) auto-selecciona.
+    // Admin/ingeniero que previsualizan el área eligen manualmente.
+    if (!esCapatazReal) return;
+
     const DIACRIT = new RegExp('[\\u0300-\\u036f]', 'g');
     const norm = s => String(s || '')
       .toLowerCase().normalize('NFD').replace(DIACRIT, '').trim();
+
+    // 1) Vínculo EXPLÍCITO (Usuarios.capatazNombre): identidad confiable.
+    if (capatazVinculado) {
+      const exacto = opciones.find(o => norm(o) === norm(capatazVinculado));
+      if (exacto) setCapataz(exacto);
+      // Si tiene vínculo pero esa cuadrilla NO está en este proyecto, no es su
+      // obra → no autoselecciona nada (se queda en el selector / aviso).
+      return;
+    }
+
+    // 2) Sin vínculo: calce FUERTE por el nombre de la cuenta (igualdad, contención
+    //    o token significativo compartido). Si no calza, NO se asigna ninguna.
+    if (!nombreUsuario) return;
     const u = norm(nombreUsuario);
     const tokensU = u.split(/\s+/).filter(w => w.length > 3);
     const match = opciones.find(o => {
       const c = norm(o);
       if (c === u || c.includes(u) || u.includes(c)) return true;
-      return tokensU.some(w => c.includes(w));
+      const tokensC = c.split(/\s+/).filter(w => w.length > 3);
+      return tokensU.some(w => tokensC.includes(w));
     });
     if (match) setCapataz(match);
-  }, [rol, capataz, nombreUsuario, cuadrillasParaSelect]);
+    // Sin calce → se queda vacío: InicioCapataz muestra el selector para que el
+    // capataz confirme su cuadrilla (acción explícita, jamás suplantación silenciosa).
+  }, [esCapatazReal, capataz, nombreUsuario, capatazVinculado, cuadrillasParaSelect]);
 
   const crearActividadConMiembros = useCallback(() => ({
     ...newActividadItem(),
@@ -501,7 +533,6 @@ export default function Capataz({
         return (hh || 0) * 60 + (mm || 0);
       };
 
-      const limiteHN = limiteHNPorFecha(fecha);
       const act = actividades.find(a => a.id === actId);
       if (!act) return;
 
@@ -975,6 +1006,7 @@ export default function Capataz({
         miembrosCuadrilla={miembrosCuadrilla}
         setCapataz={setCapataz}
         rol={rol}
+        esCapatazReal={esCapatazReal}
         cargandoCuadrilla={cuadrillasDirectas === null}
         obtenerSemana={obtenerSemana}
         isMobile={isMobile}
@@ -1118,7 +1150,7 @@ export default function Capataz({
                   actividadActiva={actividadActiva}
                   isMobile={isMobile}
                   buscarTrab={buscarTrab}
-                  sinTopeHN={sinTopeHN}
+                  limiteHN={limiteHN}
                   importandoFacial={importandoFacial}
                   fecha={fecha}
                   showToast={showToast}

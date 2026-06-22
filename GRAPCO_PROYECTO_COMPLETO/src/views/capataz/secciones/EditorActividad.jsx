@@ -7,7 +7,7 @@
 // El modelo de datos es el mismo `actividad`; solo cambia qué secciones se ven.
 import React, { useState } from 'react';
 import { BASE, inp } from '../../../utils/styles';
-import { CATALOGO_MASTER, JORNADA_LEGAL } from '../../../utils/constants';
+import { CATALOGO_MASTER } from '../../../utils/constants';
 import FotoUploader from '../../../components/FotoUploader';
 import SelectPremium from '../../../components/SelectPremium';
 import TrabajadorCard from './TrabajadorCard';
@@ -16,7 +16,7 @@ export default function EditorActividad({
   actividadActiva,
   isMobile,
   buscarTrab,
-  sinTopeHN,
+  limiteHN,
   importandoFacial,
   fecha,
   showToast,
@@ -284,7 +284,7 @@ export default function EditorActividad({
               })()}
             </p>
             <p style={{ fontSize: '10px', color: BASE.muted }}>
-              {sinTopeHN ? 'Sábado · HN sin tope' : `Saldo = ${JORNADA_LEGAL}h − HN del día`}
+              {limiteHN <= 0 ? 'Domingo · solo HE' : `Tope HN = ${limiteHN}h · luego HE`}
             </p>
           </div>
 
@@ -317,7 +317,7 @@ export default function EditorActividad({
                     isMobile={isMobile}
                     acumHN={hhAcumPorTrab[t.nombre]?.hn || 0}
                     acumHE={hhAcumPorTrab[t.nombre]?.he || 0}
-                    sinTopeHN={sinTopeHN}
+                    limiteHN={limiteHN}
                     actividadActivaId={actividadActiva.id}
                     updTareo={onUpdTareo}
                   />
