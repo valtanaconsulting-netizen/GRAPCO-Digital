@@ -21,6 +21,7 @@ export default function SalidaMaterial({ showToast, onSaved }) {
   const [historial, setHistorial] = useState([]);
   const [guardando, setGuardando] = useState(false);
   const [partidaIdSeleccionada, setPartidaIdSeleccionada] = useState('');
+  const errorAvisado = useRef(false);
 
   // Form
   const [almacenId, setAlmacenId] = useState('');
@@ -37,16 +38,25 @@ export default function SalidaMaterial({ showToast, onSaved }) {
   const [firmando, setFirmando] = useState(false);
 
   useEffect(() => {
+    // Aviso UNA vez si falla una lectura: el operario NO debe emitir un vale de salida
+    // sobre stock incompleto (sin señal / cache frío). Mejor saberlo que fallar en silencio.
+    const avisar = (tag) => (e) => {
+      console.error(`[${tag}]`, e);
+      if (!errorAvisado.current) {
+        errorAvisado.current = true;
+        showToast?.('No se pudo cargar el stock — revisa tu conexión antes de emitir la salida', 'error');
+      }
+    };
     const u1 = onSnapshot(query(collection(db, 'Almacenes'), where('activo', '==', true)),
-      (snap) => setAlmacenes(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+      (snap) => setAlmacenes(snap.docs.map(d => ({ id: d.id, ...d.data() }))), avisar('Almacenes'));
     const u2 = onSnapshot(query(collection(db, 'Materiales'), orderBy('codigo')),
-      (snap) => setMateriales(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(m => m.activo !== false && !m.esEquipo)));
+      (snap) => setMateriales(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(m => m.activo !== false && !m.esEquipo)), avisar('Materiales'));
     const u3 = onSnapshot(query(collection(db, 'Kardex_Movimientos'), orderBy('fecha', 'desc')),
-      (snap) => setMovimientos(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true })));
+      (snap) => setMovimientos(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true })), avisar('Kardex'));
     const u4 = onSnapshot(collection(db, 'Personal'),
-      (snap) => setPersonalDB(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true })));
+      (snap) => setPersonalDB(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true })), avisar('Personal'));
     const u5 = onSnapshot(query(collection(db, 'Historial'), orderBy('fecha', 'desc')),
-      (snap) => setHistorial(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+      (snap) => setHistorial(snap.docs.map(d => ({ id: d.id, ...d.data() }))), avisar('Historial'));
     const u6 = onSnapshot(collection(db, 'Partidas'),
       (snap) => setPartidas(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
       () => setPartidas([]));

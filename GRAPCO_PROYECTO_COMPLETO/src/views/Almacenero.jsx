@@ -2,7 +2,7 @@
 // Mobile-first PWA: entradas, salidas, stock, requerimientos pendientes
 // Espejo del UX del Capataz pero para almacen
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { collection, onSnapshot, query, orderBy, where } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { BASE } from '../utils/styles';
@@ -24,14 +24,24 @@ export default function Almacenero({ showToast }) {
   const [almacenes, setAlmacenes] = useState([]);
   const [materiales, setMateriales] = useState([]);
   const [movimientos, setMovimientos] = useState([]);
+  const errorAvisado = useRef(false);
 
   useEffect(() => {
+    // Si una lectura falla (sin señal / cache frío / permiso) avisamos UNA vez al
+    // almacenero para que NO opere sobre stock incompleto, en vez de fallar en silencio.
+    const avisar = (tag) => (e) => {
+      console.error(`[${tag}]`, e);
+      if (!errorAvisado.current) {
+        errorAvisado.current = true;
+        showToast?.('No se pudo cargar parte del almacén — revisa tu conexión antes de operar', 'error');
+      }
+    };
     const u1 = onSnapshot(query(collection(db, 'Almacenes')),
-      (snap) => setAlmacenes(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+      (snap) => setAlmacenes(snap.docs.map(d => ({ id: d.id, ...d.data() }))), avisar('Almacenes'));
     const u2 = onSnapshot(collection(db, 'Materiales'),
-      (snap) => setMateriales(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+      (snap) => setMateriales(snap.docs.map(d => ({ id: d.id, ...d.data() }))), avisar('Materiales'));
     const u3 = onSnapshot(query(collection(db, 'Kardex_Movimientos'), orderBy('fecha', 'desc')),
-      (snap) => setMovimientos(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true })));
+      (snap) => setMovimientos(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true })), avisar('Kardex'));
     return () => { u1(); u2(); u3(); };
   }, [filtrarPorContexto]);
 

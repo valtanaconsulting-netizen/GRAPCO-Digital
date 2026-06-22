@@ -58,9 +58,11 @@ export default function EntradaMaterial({ showToast, onSaved }) {
 
   useEffect(() => {
     const u1 = onSnapshot(query(collection(db, 'Almacenes'), where('activo', '==', true)),
-      (snap) => setAlmacenes(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+      (snap) => setAlmacenes(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+      (e) => console.error('[Almacenes]', e));
     const u2 = onSnapshot(query(collection(db, 'Materiales'), orderBy('codigo')),
-      (snap) => setMateriales(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(m => m.activo !== false)));
+      (snap) => setMateriales(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(m => m.activo !== false)),
+      (e) => console.error('[Materiales]', e));
     const u3 = onSnapshot(query(collection(db, 'Partidas'), orderBy('codigo')),
       (snap) => setPartidas(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
       () => setPartidas([]));

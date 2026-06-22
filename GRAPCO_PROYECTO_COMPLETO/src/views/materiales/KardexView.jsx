@@ -1,8 +1,9 @@
 // src/views/materiales/KardexView.jsx — Movimientos historicos con filtros (B19)
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
+import { suscribir } from '../../hooks/firestoreSuscribir';
 import { BASE } from '../../utils/styles';
 import { TIPOS_MOVIMIENTO, fmtCantidad, fmtSoles, kardexPorMaterial } from '../../utils/materialesAnalytics';
 import EmptyState from '../../components/EmptyState';
@@ -14,6 +15,7 @@ export default function KardexView() {
   const [materiales, setMateriales] = useState([]);
   const [almacenes, setAlmacenes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [errorCarga, setErrorCarga] = useState(false);
 
   const [filtroTipo, setFiltroTipo] = useState('');
   const [filtroAlmacen, setFiltroAlmacen] = useState('');
@@ -22,13 +24,17 @@ export default function KardexView() {
   const [filtroHasta, setFiltroHasta] = useState('');
 
   useEffect(() => {
+    const onErr = () => { setLoading(false); setErrorCarga(true); };
     const unsubs = [
-      onSnapshot(query(collection(db, 'Kardex_Movimientos'), orderBy('fecha', 'desc')),
-        (snap) => { setMovs(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true })); setLoading(false); }),
-      onSnapshot(collection(db, 'Materiales'),
-        (snap) => setMateriales(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
-      onSnapshot(collection(db, 'Almacenes'),
-        (snap) => setAlmacenes(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
+      suscribir(query(collection(db, 'Kardex_Movimientos'), orderBy('fecha', 'desc')),
+        (snap) => { setMovs(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })), { ignorarFrente: true })); setLoading(false); setErrorCarga(false); },
+        { label: 'Kardex', onError: onErr }),
+      suscribir(collection(db, 'Materiales'),
+        (snap) => setMateriales(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+        { label: 'Materiales', onError: onErr }),
+      suscribir(collection(db, 'Almacenes'),
+        (snap) => setAlmacenes(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+        { label: 'Almacenes', onError: onErr }),
     ];
     return () => unsubs.forEach(u => u());
   }, [filtrarPorContexto]);
@@ -66,6 +72,7 @@ export default function KardexView() {
     return { entradas, salidas, valEntradas, valSalidas };
   }, [filtrados]);
 
+  if (errorCarga) return <EmptyState icono="⚠️" titulo="No se pudo cargar el kardex" descripcion="Revisa tu conexión. Sin señal, los movimientos se mostrarán al reconectar — no registres salidas sobre datos incompletos." />;
   if (loading) return <p style={{ padding: 30, textAlign: 'center', color: BASE.muted }}>⏳ Cargando movimientos...</p>;
 
   return (
