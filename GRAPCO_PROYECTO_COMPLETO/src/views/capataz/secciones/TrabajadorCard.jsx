@@ -31,12 +31,12 @@ export default function TrabajadorCard({
       background: '#fff',
       border: `2px solid ${excedido ? '#fca5a5' : tieneHoras ? BASE.green : BASE.border}`,
       borderRadius: '12px',
-      padding: isMobile ? '8px 6px' : '12px',
+      padding: isMobile ? '12px 11px' : '14px',
       boxShadow: tieneHoras ? `0 2px 8px ${BASE.green}22` : 'none',
       transition: 'border-color 0.15s, box-shadow 0.15s',
     }}>
       {/* Cabecera en UNA sola línea: avatar + nombre (ancho completo) + cargo a la derecha. Sin DNI. */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
         <span style={{
           width: '26px', height: '26px', borderRadius: '8px',
           background: tieneHoras ? BASE.green : BASE.navy,
@@ -62,8 +62,8 @@ export default function TrabajadorCard({
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
-        gap: isMobile ? '8px' : '10px',
-        marginBottom: '8px',
+        gap: isMobile ? '10px' : '12px',
+        marginBottom: '10px',
       }}>
         {[
           { lab: 'HN', sub: 'Normales', key: 'hn', color: BASE.navy, bg: BASE.navy + '0d' },
@@ -74,15 +74,15 @@ export default function TrabajadorCard({
           <div key={key} style={{
             background: bg,
             borderRadius: '10px',
-            padding: isMobile ? '7px 4px 6px' : '8px 6px 6px',
+            padding: isMobile ? '9px 7px 8px' : '10px 8px 8px',
             border: `1.5px solid ${t[key] > 0 ? color : 'transparent'}`,
             minWidth: 0,
           }}>
-            <div style={{ textAlign: 'center', marginBottom: '5px' }}>
+            <div style={{ textAlign: 'center', marginBottom: '7px' }}>
               <span style={{ fontSize: '11px', fontWeight: '800', color, letterSpacing: '0.5px' }}>{lab}</span>
               <span style={{ fontSize: '9px', color: BASE.muted, marginLeft: '4px' }}>{sub}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '2px' : '6px', minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '5px' : '6px', minWidth: 0 }}>
               <button type="button"
                 onClick={() => updTareo(actividadActivaId, t.nombre, key, (t[key] || 0) - 0.5)}
                 style={{
@@ -125,7 +125,7 @@ export default function TrabajadorCard({
       {/* Saldo + desglose HE */}
       <div style={{
         fontSize: '11px',
-        padding: '5px 10px',
+        padding: '7px 11px',
         background: excedido ? BASE.redLight : BASE.bgSoft,
         borderRadius: '8px',
         display: 'flex', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap',

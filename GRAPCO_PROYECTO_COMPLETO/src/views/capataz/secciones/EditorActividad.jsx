@@ -49,11 +49,11 @@ export default function EditorActividad({
     <div style={{
       background: BASE.white, borderRadius: '14px',
       border: `1px solid ${BASE.border}`,
-      padding: isMobile ? '12px 4px' : '20px',
+      padding: isMobile ? '14px 12px' : '20px',
       marginBottom: '14px',
       boxShadow: BASE.shadowSm,
     }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
         {/* ── IDENTIFICACIÓN (solo en TAREO; en metrado va fija) ──
             Toda la sección Partida/Subpartida/Actividad va PLEGADA tras una
             cabecera. El capataz la despliega con un toque y desde ahí corre la
@@ -260,19 +260,19 @@ export default function EditorActividad({
         {/* ── TAREO DE PERSONAL (solo en TAREO) — siempre 1 columna ── */}
         {esTareo && (
         <div style={{
-          // En móvil el bloque de tareo va A ANCHO COMPLETO: sin marco gris ni padding
-          // lateral, y con margen negativo que cancela el padding del editor → las
-          // tarjetas (nombre + cuadritos HN/HE) llegan de borde a borde de la pantalla.
+          // En móvil el bloque de tareo se separa de los selectores con una línea
+          // divisoria arriba (se lee como su propio grupo) y respira con paddingTop;
+          // las tarjetas quedan ligeramente embutidas, no pegadas al borde.
           background: isMobile ? 'transparent' : BASE.bgSoft,
           border: isMobile ? 'none' : `1px solid ${BASE.border}`,
-          borderRadius: '12px',
-          padding: isMobile ? '2px 0 0' : '14px',
-          margin: isMobile ? '0 -4px' : 0,
+          borderTop: isMobile ? `1px solid ${BASE.border}` : undefined,
+          borderRadius: isMobile ? 0 : '12px',
+          padding: isMobile ? '16px 0 0' : '14px',
+          margin: 0,
         }}>
           <div style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            marginBottom: '10px', flexWrap: 'wrap', gap: '6px',
-            padding: isMobile ? '0 4px' : 0,
+            marginBottom: '14px', flexWrap: 'wrap', gap: '6px',
           }}>
             <p style={{ fontSize: '11px', fontWeight: '800', color: BASE.navy, letterSpacing: '0.6px' }}>
               👷 TAREO DE PERSONAL · {(() => {
@@ -308,7 +308,7 @@ export default function EditorActividad({
               );
             }
             return (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 {lista.map((t, i) => (
                   <TrabajadorCard
                     key={t.nombre}
