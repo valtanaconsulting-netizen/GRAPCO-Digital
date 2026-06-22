@@ -138,6 +138,20 @@ export default function SidebarCapataz({
                 </button>
               )}
 
+              {/* Ver Tareo (PDF): acción frecuente → visible directo en Opciones
+                  (antes estaba escondida dentro de "Más opciones"). */}
+              {actividades.length > 0 && onVerTareo && (
+                <button type="button" onClick={onVerTareo} style={{
+                  padding: '11px 12px', background: BASE.navy, color: '#fff',
+                  border: 'none', borderRadius: '8px',
+                  fontSize: '12.5px', fontWeight: '800', cursor: 'pointer',
+                  textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px',
+                }}>
+                  <span style={{ fontSize: '16px' }}>📄</span>
+                  <span>Ver Tareo (PDF)</span>
+                </button>
+              )}
+
               {/* Más opciones — desplegable: lo secundario no distrae al capataz */}
               <button type="button" onClick={() => setVerMas(v => !v)} style={{
                 padding: '9px 12px', background: 'transparent', color: BASE.muted,
@@ -159,17 +173,6 @@ export default function SidebarCapataz({
                     <span style={{ fontSize: '16px' }}>📅</span>
                     <span>Editar día anterior</span>
                   </button>
-                  {actividades.length > 0 && onVerTareo && (
-                    <button type="button" onClick={onVerTareo} style={{
-                      padding: '10px 12px', background: BASE.navy, color: '#fff',
-                      border: 'none', borderRadius: '8px',
-                      fontSize: '12px', fontWeight: '800', cursor: 'pointer',
-                      textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px',
-                    }}>
-                      <span style={{ fontSize: '16px' }}>📄</span>
-                      <span>Ver Tareo (PDF)</span>
-                    </button>
-                  )}
                 </div>
               )}
             </div>

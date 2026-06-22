@@ -735,29 +735,39 @@ export default function Capataz({
     if (actsReales.length === 0)
       return showToast('Ninguna actividad tiene horas. Asígnalas en el tareo primero.', 'warning');
 
-    // 1) Validaciones de datos básicos + regla de bajo rendimiento (spec)
+    // 1) Validaciones de datos básicos.
+    //    El METRADO es OPCIONAL para enviar: si el capataz solo manda el tareo
+    //    (las horas del día), NO se le exige metrado. PERO si SÍ coloca un
+    //    metrado, debe acompañarlo con una OBSERVACIÓN de lo ocurrido (y, solo
+    //    en bajo rendimiento, además una foto del avance).
     const errores = [];
     actsReales.forEach((a, i) => {
       if (!a.partida || !a.subpartida || !a.actividad)
         errores.push(`Act #${i + 1}: falta partida/subpartida/actividad`);
-      const met = parseFloat(a.metrado);
-      if (isNaN(met) || met < 0)
-        errores.push(`Act "${a.actividad || `#${i + 1}`}": metrado inválido — complétalo en el paso de Metrado`);
-      const totalHH = a.detalleTareo.reduce((s, t) => s + (t.hn || 0) + (t.he || 0), 0);
 
-      // SPEC: si IP real > IP meta (rendimiento peor que esperado),
-      // exigir observación/restricción + al menos una foto.
-      if (met > 0 && totalHH > 0) {
+      const metradoTexto = String(a.metrado ?? '').trim();
+      if (metradoTexto === '') return;          // sin metrado → se envía solo el tareo
+
+      const met = parseFloat(metradoTexto);
+      if (isNaN(met) || met < 0) {
+        errores.push(`Act "${a.actividad || `#${i + 1}`}": metrado inválido`);
+        return;
+      }
+      if (met === 0) return;                     // metrado 0 = sin avance que sustentar
+
+      // Con metrado > 0: la OBSERVACIÓN de lo ocurrido es obligatoria.
+      if (!a.observacion || !a.observacion.trim()) {
+        errores.push(`Act "${a.actividad}": coloca una OBSERVACIÓN de lo ocurrido (obligatoria al registrar metrado)`);
+      }
+
+      // Bajo rendimiento (IP real > IP meta): además, foto del avance.
+      const totalHH = a.detalleTareo.reduce((s, t) => s + (t.hn || 0) + (t.he || 0), 0);
+      if (totalHH > 0) {
         const info = INFO_MAP[String(a.actividad || '').trim().toUpperCase()] || {};
         const ipReal = totalHH / met;
         const ipMeta = info.ipM;
-        if (ipMeta && ipReal > ipMeta * 1.05) { // 5% tolerancia
-          if (!a.observacion || !a.observacion.trim()) {
-            errores.push(`Act "${a.actividad}": rendimiento bajo (IP ${ipReal.toFixed(2)} > meta ${ipMeta.toFixed(2)}) — campo OBSERVACIÓN obligatorio`);
-          }
-          if (!Array.isArray(a.fotos) || a.fotos.length === 0) {
-            errores.push(`Act "${a.actividad}": rendimiento bajo — FOTO obligatoria del avance`);
-          }
+        if (ipMeta && ipReal > ipMeta * 1.05 && (!Array.isArray(a.fotos) || a.fotos.length === 0)) {
+          errores.push(`Act "${a.actividad}": rendimiento bajo (IP ${ipReal.toFixed(2)} > meta ${ipMeta.toFixed(2)}) — FOTO del avance obligatoria`);
         }
       }
     });
