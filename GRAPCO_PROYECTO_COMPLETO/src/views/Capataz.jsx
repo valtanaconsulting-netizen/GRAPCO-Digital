@@ -892,13 +892,6 @@ export default function Capataz({
   };
   const irInicio = () => setVista('inicio');
 
-  // Cerrar el módulo TAREO: guarda el borrador y vuelve a los 2 módulos. Desde
-  // ahí el capataz entra (cuando quiera) al módulo METRADO, ya desbloqueado.
-  const listoTareo = async () => {
-    await guardarBorrador();
-    irInicio();
-  };
-
   // ════════════════════════════════════════════════════════════
   // RENDER — Layout sidebar + main + sticky actions
   // ════════════════════════════════════════════════════════════
@@ -1138,7 +1131,6 @@ export default function Capataz({
           actividadesCount={vista === 'metrado' ? actividadesConHH.length : actividades.length}
           onGuardar={guardarBorrador}
           onSubir={subir}
-          onListoTareo={listoTareo}
           onEliminar={() => actividadActiva && eliminarActividad(actividadActiva.id)}
           puedeEliminar={!!actividadActiva}
         />
