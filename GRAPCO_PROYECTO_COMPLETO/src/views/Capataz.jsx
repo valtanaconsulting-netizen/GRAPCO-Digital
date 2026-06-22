@@ -1085,7 +1085,8 @@ export default function Capataz({
         {/* MAIN */}
         <main style={{
           flex: 1,
-          padding: isMobile ? '12px 14px 100px' : '20px 24px',
+          minWidth: 0,
+          padding: isMobile ? '12px 0 100px' : '20px 24px',
           overflowX: 'hidden',
         }}>
 
@@ -1096,6 +1097,7 @@ export default function Capataz({
                 onIrInicio={irInicio}
                 isMobile={isMobile}
                 onAbrirMenu={() => setMenuAbierto(true)}
+                onAgregarActividad={agregarActividad}
               />
 
               <TabsActividades
@@ -1119,7 +1121,6 @@ export default function Capataz({
                   hhAcumPorTrab={hhAcumPorTrab}
                   onUpdActividad={updActividad}
                   onEliminarActividad={eliminarActividad}
-                  onAbrirCatalogoWbs={() => setShowWbs(true)}
                   onImportarFacial={importarDesdeAsistenciaFacial}
                   onUpdTareo={updTareo}
                 />

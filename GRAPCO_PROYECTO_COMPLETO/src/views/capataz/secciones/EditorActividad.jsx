@@ -24,7 +24,6 @@ export default function EditorActividad({
   hhAcumPorTrab,
   onUpdActividad,
   onEliminarActividad,
-  onAbrirCatalogoWbs,
   onImportarFacial,
   onUpdTareo,
   modo = 'tareo',
@@ -83,15 +82,9 @@ export default function EditorActividad({
         {/* ── IDENTIFICACIÓN (solo en TAREO; en metrado va fija) ── */}
         {esTareo && (
           <>
-            {/* Botón catálogo */}
-            <button type="button" onClick={onAbrirCatalogoWbs} style={{
-              padding: '12px 16px',
-              background: `linear-gradient(135deg, ${BASE.goldLight} 0%, #fff 100%)`,
-              color: BASE.navy,
-              border: `1.5px dashed ${BASE.gold}`, borderRadius: '10px',
-              fontSize: '12px', fontWeight: '800', cursor: 'pointer', textAlign: 'center',
-            }}>📚 Buscar en catálogo (toda la WBS)</button>
-
+            {/* El catálogo (buscar en toda la WBS) ahora vive SOLO en el menú de
+                Opciones — aquí el editor va directo a los selectores para no
+                duplicar accesos ni robar ancho. */}
             {/* Selectores Partida / Subpartida */}
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
               <div>

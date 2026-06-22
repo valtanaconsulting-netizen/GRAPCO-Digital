@@ -10,8 +10,9 @@ const TITULO = {
   metrado: 'Metrado y observaciones',
 };
 
-export default function StepperCapataz({ vista, onIrInicio, isMobile, onAbrirMenu }) {
+export default function StepperCapataz({ vista, onIrInicio, isMobile, onAbrirMenu, onAgregarActividad }) {
   const titulo = TITULO[vista] || TITULO.tareo;
+  const esTareo = vista === 'tareo';
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
       <button
@@ -48,9 +49,33 @@ export default function StepperCapataz({ vista, onIrInicio, isMobile, onAbrirMen
           <span style={{ fontSize: '17px', lineHeight: 1 }}>☰</span> Opciones
         </button>
       )}
-      <h2 style={{ flex: 1, fontSize: '15px', fontWeight: '800', color: BASE.navy, letterSpacing: '-0.2px', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>
-        {titulo}
-      </h2>
+      {/* En el PASO de tareo, el lugar del título es un acceso directo para
+          añadir otra actividad (letras más chicas). En metrado se mantiene el
+          título plano del módulo. */}
+      {esTareo && onAgregarActividad ? (
+        <button
+          type="button"
+          onClick={onAgregarActividad}
+          aria-label="Agregar otra actividad"
+          className="btn-feedback"
+          style={{
+            marginLeft: 'auto', minWidth: 0, flexShrink: 1,
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+            height: '40px', padding: '0 14px', borderRadius: '11px',
+            border: 'none', background: BASE.green, color: '#fff',
+            fontSize: '12px', fontWeight: '800', cursor: 'pointer',
+            boxShadow: `0 2px 8px ${BASE.green}55`,
+            whiteSpace: 'nowrap', overflow: 'hidden',
+          }}
+        >
+          <span style={{ fontSize: '15px', lineHeight: 1 }}>➕</span>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>Agregar otra actividad</span>
+        </button>
+      ) : (
+        <h2 style={{ flex: 1, fontSize: '13px', fontWeight: '800', color: BASE.navy, letterSpacing: '-0.2px', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>
+          {titulo}
+        </h2>
+      )}
     </div>
   );
 }
