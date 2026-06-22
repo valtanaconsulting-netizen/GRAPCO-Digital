@@ -1,5 +1,5 @@
 // src/views/Ingeniero.jsx — V3 con Alertas, Ranking, CPI%, Costos HE
-import React, { useState, useMemo, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback, useLayoutEffect, lazy, Suspense } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, deleteDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { CATALOGO_MASTER, INFO_MAP, FECHA_INICIO_PROYECTO } from '../utils/constants';
@@ -32,7 +32,8 @@ import ImpactoTesis from './ImpactoTesis';
 import VDC from './VDC';
 import ControlGerencial from './ControlGerencial';
 import CockpitEjecutivo from './CockpitEjecutivo';
-import BIM from './BIM';
+// BIM (visor 3D + vendor-charts) cargado SOLO al abrir la pestaña, no dentro del chunk de Ingeniero.
+const BIM = lazy(() => import('./BIM'));
 import EditorWbsIsp from './modulos/wbsEditor/EditorWbsIsp';
 import { useCatalogoWBS } from '../hooks/useCatalogoWBS';
 import { ALIAS_ACTIVIDADES } from '../data/aliasesActividades';
@@ -1042,7 +1043,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
       {view==='graficos'   && <Graficos grafData={grafData} filtrados={filtrados} wbs={wbs}/>}
       {view==='hhcross'    && <AnalisisHHCross filtrados={filtrados} personalDB={personalDB}/>}
       {view==='tendencias' && <Tendencias filtrados={filtrados} historial={historialEnriquecido} wbs={wbs}/>}
-      {view==='bim'        && <BIM historialEnriquecido={historialEnriquecido} showToast={showToast}/>}
+      {view==='bim'        && <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: BASE.muted }}>Cargando visor BIM…</div>}><BIM historialEnriquecido={historialEnriquecido} showToast={showToast}/></Suspense>}
       {view==='tareo'      && <Tareo historial={historialEnriquecido} filtrados={filtrados} personalDB={personalDB} cuadrillasActivas={cuadrillasActivas} cuadrillasDB={cuadrillasDB} costosCustomMap={costosCustomMap} isMobile={isMobile} showToast={showToast} fDesde={fDesde} fHasta={fHasta} fCapataz={fCapataz} setFDesde={setFDesde} setFHasta={setFHasta} setFCapataz={setFCapataz}/>}
       {view==='gestion'    && <Personal cuadrillasDB={cuadrillasDB} personalDB={personalDB} configuracion={configuracion} showToast={showToast}/>}
       {view==='pago-obreros' && <PagoObreros historial={historialEnriquecido} cuadrillasActivas={cuadrillasActivas} configuracion={configuracion} personalDB={personalDB} showToast={showToast}/>}

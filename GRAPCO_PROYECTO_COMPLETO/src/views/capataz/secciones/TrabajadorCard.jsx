@@ -22,11 +22,12 @@ const aMedios = (n) => Math.round(n * 2) / 2; // múltiplos de 0.5
 function CampoHora({ lab, sub, color, bg, value, max, disabled, onChange, isMobile }) {
   const [editando, setEditando] = useState(false);
   const [draft, setDraft] = useState('');
-  const btn = isMobile ? 36 : 44;
+  const btn = isMobile ? 30 : 34;
 
   const tope  = Number.isFinite(max) ? max : Infinity;
   const clamp = (n) => Math.min(tope, Math.max(0, aMedios(n)));
   const num   = Number(value) || 0;
+  const activo = num > 0;
 
   const step = (delta) => {
     if (disabled) return;
@@ -41,24 +42,28 @@ function CampoHora({ lab, sub, color, bg, value, max, disabled, onChange, isMobi
     <div style={{
       background: bg,
       borderRadius: '10px',
-      padding: isMobile ? '9px 7px 8px' : '10px 8px 8px',
-      border: `1.5px solid ${num > 0 ? color : 'transparent'}`,
+      padding: isMobile ? '8px 6px 7px' : '8px 8px 8px',
+      border: `1.5px solid ${activo ? color : 'transparent'}`,
+      boxShadow: activo ? `0 1px 6px ${color}22` : 'none',
       minWidth: 0,
-      opacity: disabled ? 0.5 : 1,
+      opacity: disabled ? 0.45 : 1,
+      transition: 'border-color .15s ease, box-shadow .15s ease',
     }}>
-      <div style={{ textAlign: 'center', marginBottom: '7px' }}>
-        <span style={{ fontSize: '11px', fontWeight: '800', color, letterSpacing: '0.5px' }}>{lab}</span>
-        <span style={{ fontSize: '9px', color: BASE.muted, marginLeft: '4px' }}>{sub}</span>
+      <div style={{ textAlign: 'center', marginBottom: '6px', whiteSpace: 'nowrap' }}>
+        <span style={{ fontSize: '9px', fontWeight: '800', color, letterSpacing: '0.4px' }}>{lab}</span>
+        <span style={{ fontSize: '8px', color: BASE.muted, marginLeft: '3px', fontWeight: '600' }}>{sub}</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '5px' : '6px', minWidth: 0 }}>
         <button type="button" disabled={disabled}
           onClick={() => step(-0.5)}
+          aria-label={`Quitar media hora de ${lab}`}
           style={{
             width: btn, height: btn, borderRadius: '8px',
-            border: 'none', background: '#fff',
-            color, fontSize: isMobile ? '20px' : '22px', fontWeight: '800',
+            border: `1.5px solid ${color}33`, background: '#fff',
+            color, fontSize: isMobile ? '17px' : '19px', fontWeight: '800',
             cursor: disabled ? 'default' : 'pointer', lineHeight: 1, flexShrink: 0,
             boxShadow: BASE.shadowSm, opacity: disabled ? 0.6 : 1,
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           }}>−</button>
         <input
           // type="text" + inputMode decimal: en iPad/PWA `type=number` NO permite
@@ -89,19 +94,22 @@ function CampoHora({ lab, sub, color, bg, value, max, disabled, onChange, isMobi
           }}
           style={{
             flex: 1, minWidth: 0, width: '100%', textAlign: 'center',
-            fontWeight: '900', color, fontSize: isMobile ? '18px' : '22px',
+            fontWeight: '900', color: activo ? color : BASE.mutedSoft,
+            fontSize: isMobile ? '17px' : '20px',
             border: 'none', background: 'transparent', outline: 'none',
-            padding: '0',
+            padding: '0', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.4px',
           }}
         />
         <button type="button" disabled={disabled}
           onClick={() => step(0.5)}
+          aria-label={`Agregar media hora de ${lab}`}
           style={{
             width: btn, height: btn, borderRadius: '8px',
             border: 'none', background: color, color: '#fff',
-            fontSize: isMobile ? '20px' : '22px', fontWeight: '800',
+            fontSize: isMobile ? '17px' : '19px', fontWeight: '800',
             cursor: disabled ? 'default' : 'pointer', lineHeight: 1, flexShrink: 0,
-            boxShadow: BASE.shadowSm, opacity: disabled ? 0.6 : 1,
+            boxShadow: `0 2px 8px ${color}55`, opacity: disabled ? 0.6 : 1,
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           }}>+</button>
       </div>
     </div>
@@ -136,30 +144,33 @@ export default function TrabajadorCard({
     <div style={{
       background: '#fff',
       border: `2px solid ${excedido ? '#fca5a5' : tieneHoras ? BASE.green : BASE.border}`,
-      borderRadius: '12px',
-      padding: isMobile ? '12px 11px' : '14px',
+      borderRadius: '10px',
+      padding: isMobile ? '10px 9px' : '11px',
       boxShadow: tieneHoras ? `0 2px 8px ${BASE.green}22` : 'none',
       transition: 'border-color 0.15s, box-shadow 0.15s',
     }}>
       {/* Cabecera en UNA sola línea: avatar + nombre (ancho completo) + cargo a la derecha. Sin DNI. */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '9px' }}>
         <span style={{
-          width: '26px', height: '26px', borderRadius: '8px',
+          width: '22px', height: '22px', borderRadius: '7px',
           background: tieneHoras ? BASE.green : BASE.navy,
           color: '#fff',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '12px', fontWeight: '900', flexShrink: 0,
+          fontSize: '11px', fontWeight: '900', flexShrink: 0,
+          boxShadow: tieneHoras ? `0 2px 6px ${BASE.green}44` : 'none',
+          transition: 'background .15s ease',
         }}>{letra}</span>
         <strong style={{
           flex: 1, minWidth: 0,
-          fontSize: '12.5px', color: BASE.text,
+          fontSize: '11px', color: BASE.text,
           lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }} title={t.nombre}>{t.nombre}</strong>
         <span style={{
           flexShrink: 0,
-          fontSize: '10px', fontWeight: '700',
-          background: BASE.navy + '15', color: BASE.navy,
-          padding: '3px 9px', borderRadius: '12px',
+          fontSize: '9px', fontWeight: '800', letterSpacing: '0.3px',
+          background: BASE.navy + '12', color: BASE.navy,
+          border: `1px solid ${BASE.navy}1f`,
+          padding: '2px 8px', borderRadius: '999px',
         }}>{(CARGOS_CORTO && CARGOS_CORTO[t.cargo]) || t.cargo}</span>
       </div>
 
@@ -168,17 +179,21 @@ export default function TrabajadorCard({
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
-        gap: isMobile ? '10px' : '12px',
-        marginBottom: '10px',
+        gap: isMobile ? '8px' : '9px',
+        marginBottom: '8px',
       }}>
+        {/* Fondos calibrados a la MISMA luminosidad (≈L96) para que HN (frío) y HE
+            (cálido) pesen visualmente igual: ni la columna navy se ve gris apagada
+            ni la dorada acapara la atención. El color de marca lo cargan label,
+            número y botones, no el relleno. */}
         <CampoHora
-          lab="HN" sub="Normales" color={BASE.navy} bg={BASE.navy + '0d'}
+          lab="HN" sub="Normales" color={BASE.navy} bg="#EDF1F7"
           value={t.hn} max={maxHNCampo} disabled={esDomingo}
           isMobile={isMobile}
           onChange={(n) => updTareo(actividadActivaId, t.nombre, 'hn', n)}
         />
         <CampoHora
-          lab="HE" sub="Extras" color={BASE.gold} bg={BASE.gold + '15'}
+          lab="HE" sub="Extras" color={BASE.gold} bg="#FBF3DC"
           value={t.he} max={Infinity} disabled={!heHabilitada}
           isMobile={isMobile}
           onChange={(n) => updTareo(actividadActivaId, t.nombre, 'he', n)}
@@ -187,9 +202,10 @@ export default function TrabajadorCard({
 
       {/* Estado del día + desglose HE */}
       <div style={{
-        fontSize: '11px',
-        padding: '7px 11px',
+        fontSize: '10px',
+        padding: '6px 9px',
         background: excedido ? BASE.redLight : BASE.bgSoft,
+        border: `1px solid ${excedido ? '#fca5a5' : BASE.border}`,
         borderRadius: '8px',
         display: 'flex', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap',
       }}>
@@ -206,7 +222,7 @@ export default function TrabajadorCard({
                 : `✓ Saldo HN: ${saldo.toFixed(1)}h`}
         </span>
         {acumHE > 0 && (
-          <span style={{ color: BASE.muted, fontSize: '10px' }}>
+          <span style={{ color: BASE.muted, fontSize: '9px' }}>
             <strong style={{ color: BASE.gold }}>{he60.toFixed(1)}</strong>@60%
             {' · '}
             <strong style={{ color: BASE.red }}>{he100.toFixed(1)}</strong>@100%

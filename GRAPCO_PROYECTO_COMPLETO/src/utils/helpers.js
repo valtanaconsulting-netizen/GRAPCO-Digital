@@ -178,9 +178,9 @@ export const mismaActividad = (cat, reg, umbral = 0.7) => {
   return similitudActividad(cat, reg) >= umbral;
 };
 
-export const buscarActividadCanonica = (textoActividad) => {
-  if (!textoActividad) return null;
-  const txt = textoActividad.trim();
+// Núcleo del matcher: escanea el catálogo (3 niveles) buscando la actividad canónica.
+// Costoso (O(catálogo) por llamada), por eso se cachea en buscarActividadCanonica.
+const _buscarActividadCanonicaNucleo = (txt) => {
   let mejor = null, mejorScore = 0;
   for (const partida of Object.keys(CATALOGO_MASTER)) {
     for (const subpartida of Object.keys(CATALOGO_MASTER[partida])) {
@@ -196,6 +196,20 @@ export const buscarActividadCanonica = (textoActividad) => {
     }
   }
   return mejor;
+};
+
+// Cache por texto: CATALOGO_MASTER es constante, así que el match de un mismo nombre
+// nunca cambia. Los nombres de actividad se repiten masivamente entre los 1000+
+// registros → escanear el catálogo solo una vez por nombre único, no por registro.
+const _canonicaCache = new Map();
+
+export const buscarActividadCanonica = (textoActividad) => {
+  if (!textoActividad) return null;
+  const txt = textoActividad.trim();
+  if (_canonicaCache.has(txt)) return _canonicaCache.get(txt);
+  const resultado = _buscarActividadCanonicaNucleo(txt);
+  _canonicaCache.set(txt, resultado);
+  return resultado;
 };
 
 // ──────────────────────────────────────────────────────────────

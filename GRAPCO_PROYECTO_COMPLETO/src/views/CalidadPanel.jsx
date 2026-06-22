@@ -1,6 +1,6 @@
 // src/views/CalidadPanel.jsx — Wrapper modulo Calidad (Bloque 20)
 
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { BASE } from '../utils/styles';
 import VistaHeader from '../components/VistaHeader';
 import Icon from '../components/Icon';
@@ -15,7 +15,8 @@ import ArchivoProtocolosView from './calidad/ArchivoProtocolosView';
 import NoConformidadesView from './calidad/NoConformidadesView';
 import EnsayosView from './calidad/EnsayosView';
 import PETsView from './modulos/petsWBS/PETsView';
-import BIM from './BIM';
+// BIM (visor 3D + vendor-charts) cargado SOLO al abrir la pestaña, no dentro del chunk del panel.
+const BIM = lazy(() => import('./BIM'));
 import PlanosView from './calidad/PlanosView';
 
 const TABS = [
@@ -196,7 +197,7 @@ export default function CalidadPanel({ showToast, tabExterna, onChangeTab }) {
           {tab === 'pets'       && <PETsView showToast={showToast} />}
           {tab === 'ncs'        && <NoConformidadesView showToast={showToast} />}
           {tab === 'ensayos'    && <EnsayosView showToast={showToast} />}
-          {tab === 'bim'        && <BIM showToast={showToast} />}
+          {tab === 'bim'        && <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: BASE.muted }}>Cargando visor BIM…</div>}><BIM showToast={showToast} /></Suspense>}
           {tab === 'planos'     && <PlanosView showToast={showToast} />}
         </div>
       </div>

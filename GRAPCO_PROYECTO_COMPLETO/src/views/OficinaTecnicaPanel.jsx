@@ -1,7 +1,7 @@
 // src/views/OficinaTecnicaPanel.jsx — Wrapper modulo Oficina Tecnica (Bloque 20)
 // Navegación de 2 niveles: GRUPOS → SUB-TABS. Orden por flujo: Resumen → Contrato → Ejecución → Facturación.
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, lazy, Suspense } from 'react';
 import { BASE } from '../utils/styles';
 import VistaHeader from '../components/VistaHeader';
 import Icon from '../components/Icon';
@@ -15,7 +15,8 @@ import SustentoMetrados from './oficinatecnica/SustentoMetrados';
 import RegistroFotografico from './oficinatecnica/RegistroFotografico';
 import InformeSustento from './oficinatecnica/InformeSustento';
 import ROPanel from './modulos/resultadoOperativo/ROPanel';
-import BIM from './BIM';
+// BIM (visor 3D + vendor-charts) cargado SOLO al abrir la pestaña, no dentro del chunk del panel.
+const BIM = lazy(() => import('./BIM'));
 
 // Definición de grupos en orden de flujo natural
 // `icon` = nombre del SVG (Icon) — presentación formal GRAPCO; el campo `icono`
@@ -266,7 +267,7 @@ export default function OficinaTecnicaPanel({ showToast, tabExterna, onChangeTab
           {tab === 'informe'     && <InformeSustento />}
           {tab === 'partidas'    && <PresupuestoView showToast={showToast} />}
           {tab === 'rdo'         && <RDOView showToast={showToast} />}
-          {tab === 'bim'         && <BIM showToast={showToast} />}
+          {tab === 'bim'         && <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: BASE.muted }}>Cargando visor BIM…</div>}><BIM showToast={showToast} /></Suspense>}
         </div>
       </div>
     </RoleGuard>

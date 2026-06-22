@@ -56,20 +56,20 @@ export default function TabsActividades({
       background: BASE.white,
       borderRadius: '14px',
       border: `1px solid ${BASE.border}`,
-      padding: '12px',
-      marginBottom: '14px',
+      padding: '11px',
+      marginBottom: '18px',
       boxShadow: BASE.shadowSm,
     }}>
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        marginBottom: '10px',
+        marginBottom: '9px',
       }}>
-        <p style={{ fontSize: '11px', fontWeight: '800', color: BASE.navy, letterSpacing: '0.6px' }}>
+        <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.navy, letterSpacing: '0.6px' }}>
           📌 ACTIVIDADES DEL DÍA
         </p>
         <span style={{
-          fontSize: '10px', fontWeight: '800', color: BASE.gold,
-          background: BASE.goldLight, padding: '3px 10px', borderRadius: '12px',
+          fontSize: '9px', fontWeight: '800', color: BASE.gold,
+          background: BASE.goldLight, padding: '2px 9px', borderRadius: '12px',
         }}>{actividades.length}</span>
       </div>
       <div style={{
@@ -92,10 +92,11 @@ export default function TabsActividades({
               border: esActiva ? `2px solid ${BASE.gold}` : `1.5px solid ${BASE.border}`,
               background: esActiva ? BASE.navy : BASE.white,
               color: esActiva ? '#fff' : BASE.text,
-              fontSize: '11px', fontWeight: '700', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: '7px',
+              fontSize: '10px', fontWeight: '700', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '6px',
               width: '100%', boxSizing: 'border-box', textAlign: 'left',
               transition: 'all 0.15s',
+              boxShadow: esActiva ? '0 3px 10px -2px rgba(15,42,71,0.30)' : BASE.shadowSm,
               flexShrink: 0,
               scrollSnapAlign: 'start',
             }}>

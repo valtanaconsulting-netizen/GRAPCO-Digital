@@ -53,7 +53,7 @@ export default function EditorActividad({
       marginBottom: '14px',
       boxShadow: BASE.shadowSm,
     }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {/* ── IDENTIFICACIÓN (solo en TAREO; en metrado va fija) ──
             Toda la sección Partida/Subpartida/Actividad va PLEGADA tras una
             cabecera. El capataz la despliega con un toque y desde ahí corre la
@@ -68,8 +68,8 @@ export default function EditorActividad({
               aria-expanded={identAbierta}
               style={{
                 width: '100%', boxSizing: 'border-box', textAlign: 'left',
-                display: 'flex', alignItems: 'center', gap: '10px',
-                padding: isMobile ? '11px 12px' : '12px 14px',
+                display: 'flex', alignItems: 'center', gap: '9px',
+                padding: isMobile ? '9px 11px' : '10px 13px',
                 borderRadius: '12px',
                 border: `1.5px solid ${identAbierta ? BASE.gold : BASE.border}`,
                 background: identAbierta ? BASE.goldSoft : BASE.bgSoft,
@@ -78,14 +78,14 @@ export default function EditorActividad({
                 transition: 'border-color .15s, background .15s, box-shadow .15s',
               }}
             >
-              <span style={{ fontSize: '16px', flexShrink: 0 }}>📋</span>
+              <span style={{ fontSize: '14px', flexShrink: 0 }}>📋</span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: 'block', fontSize: '10px', fontWeight: 800, color: BASE.muted, letterSpacing: '0.6px' }}>
+                <span style={{ display: 'block', fontSize: '9px', fontWeight: 800, color: BASE.muted, letterSpacing: '0.6px' }}>
                   ACTIVIDAD
                 </span>
                 <span style={{
                   display: 'block', marginTop: '1px',
-                  fontSize: '12.5px',
+                  fontSize: '11.5px',
                   fontWeight: actividadActiva.actividad ? 700 : 600,
                   color: actividadActiva.actividad ? BASE.navy : BASE.mutedSoft,
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -267,25 +267,37 @@ export default function EditorActividad({
           border: isMobile ? 'none' : `1px solid ${BASE.border}`,
           borderTop: isMobile ? `1px solid ${BASE.border}` : undefined,
           borderRadius: isMobile ? 0 : '12px',
-          padding: isMobile ? '16px 0 0' : '14px',
+          padding: isMobile ? '20px 0 0' : '14px',
           margin: 0,
         }}>
           <div style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            marginBottom: '14px', flexWrap: 'wrap', gap: '6px',
+            marginBottom: '12px', flexWrap: 'wrap', gap: '6px',
           }}>
-            <p style={{ fontSize: '11px', fontWeight: '800', color: BASE.navy, letterSpacing: '0.6px' }}>
-              👷 TAREO DE PERSONAL · {(() => {
-                const q = buscarTrab.trim().toLowerCase();
-                const tot = actividadActiva.detalleTareo.length;
-                if (!q) return tot;
-                const f = actividadActiva.detalleTareo.filter(t => (t.nombre || '').toLowerCase().includes(q)).length;
-                return `${f} de ${tot}`;
-              })()}
+            <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.navy, letterSpacing: '0.6px', display: 'inline-flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+              👷 TAREO DE PERSONAL
+              <span style={{
+                fontSize: '9px', fontWeight: '800', color: BASE.navy,
+                background: BASE.navySoft, padding: '2px 8px', borderRadius: '999px',
+              }}>
+                {(() => {
+                  const q = buscarTrab.trim().toLowerCase();
+                  const tot = actividadActiva.detalleTareo.length;
+                  if (!q) return tot;
+                  const f = actividadActiva.detalleTareo.filter(t => (t.nombre || '').toLowerCase().includes(q)).length;
+                  return `${f} de ${tot}`;
+                })()}
+              </span>
             </p>
-            <p style={{ fontSize: '10px', color: BASE.muted }}>
-              {limiteHN <= 0 ? 'Domingo · solo HE' : `Tope HN = ${limiteHN}h · luego HE`}
-            </p>
+            <span style={{
+              fontSize: '9px', fontWeight: '700',
+              color: limiteHN <= 0 ? BASE.goldDark : BASE.muted,
+              background: limiteHN <= 0 ? BASE.goldSoft : BASE.bgSoft,
+              border: `1px solid ${limiteHN <= 0 ? BASE.gold + '55' : BASE.border}`,
+              padding: '3px 9px', borderRadius: '999px', whiteSpace: 'nowrap',
+            }}>
+              {limiteHN <= 0 ? '🟡 Domingo · solo HE' : `Tope HN ${limiteHN}h · luego HE`}
+            </span>
           </div>
 
           {(() => {
@@ -308,7 +320,7 @@ export default function EditorActividad({
               );
             }
             return (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {lista.map((t, i) => (
                   <TrabajadorCard
                     key={t.nombre}
