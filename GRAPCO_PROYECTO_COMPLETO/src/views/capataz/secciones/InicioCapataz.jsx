@@ -9,8 +9,6 @@
 // resolver cuál es la suya, aparece un mini-selector de respaldo.)
 import React from 'react';
 import { BASE, LOGO, LOGO_FALLBACK } from '../../../utils/styles';
-import { HERO_VIDEO } from '../../../utils/heroVideo';
-import { conexionLenta } from '../../../utils/connection';
 import SelectorCapataz from './SelectorCapataz';
 
 // "ARAYA QUISPE CONDORI MARCELINO" → "Araya Quispe Condori Marcelino"
@@ -147,22 +145,12 @@ export default function InicioCapataz({
       display: 'flex', flexDirection: 'column',
       fontFamily: BASE.font,
     }}>
-      {/* Mismo fondo que el selector de áreas: video de la obra + lavado navy cohesivo. */}
-      {!conexionLenta() && (
-        <video autoPlay loop muted playsInline preload="auto" aria-hidden="true"
-          poster="/brand/grapco-bg-poster.jpg"
-          onCanPlay={(e) => { e.currentTarget.style.opacity = '0.82'; e.currentTarget.play?.().catch(() => {}); }}
-          onError={(e) => { e.currentTarget.style.display = 'none'; }}
-          style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.82, filter: 'saturate(1) brightness(0.9) contrast(1.06)', transition: 'opacity 0.4s ease', zIndex: 0, pointerEvents: 'none' }}>
-          <source src={HERO_VIDEO} type="video/mp4" />
-        </video>
-      )}
+      {/* Fondo NAVY SÓLIDO con profundidad sutil (solo CSS, sin foto ni video). */}
       <div aria-hidden="true" style={{
         position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
         background:
-          'radial-gradient(55% 38% at 50% 2%, rgba(40,74,118,0.55) 0%, transparent 62%),'
-          + 'linear-gradient(180deg, rgba(8,20,38,0.90) 0%, rgba(12,30,55,0.55) 46%, rgba(7,16,30,0.92) 100%),'
-          + 'radial-gradient(130% 110% at 50% 42%, transparent 52%, rgba(4,11,22,0.78) 100%)',
+          'radial-gradient(60% 40% at 50% 0%, rgba(40,74,118,0.45) 0%, transparent 60%),'
+          + 'radial-gradient(130% 110% at 50% 45%, transparent 50%, rgba(4,11,22,0.6) 100%)',
       }} />
 
       {/* Loader mientras se resuelve la cuadrilla del capataz → evita el parpadeo
@@ -188,7 +176,11 @@ export default function InicioCapataz({
         </div>
       )}
 
-      <div className="anim-fade-in" style={{ position: 'relative', zIndex: 2, maxWidth: '760px', margin: 'auto', width: '100%' }}>
+      <div className="anim-fade-in" style={{
+        position: 'relative', zIndex: 2, maxWidth: '760px', width: '100%',
+        marginLeft: 'auto', marginRight: 'auto',
+        flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center',
+      }}>
 
         {/* Marca GRAPCO (logo + título) — mismo header que el selector de áreas */}
         <div style={{ textAlign: 'center', marginBottom: isMobile ? '12px' : '20px' }}>
@@ -218,13 +210,13 @@ export default function InicioCapataz({
         {/* Saludo */}
         <p style={{
           margin: 0, color: '#fff', fontSize: isMobile ? '18px' : '25px', fontWeight: 900,
-          letterSpacing: '0.4px', lineHeight: 1.18,
+          letterSpacing: '0.4px', lineHeight: 1.18, textAlign: 'center',
         }}>
           {saludo}{capataz ? <>, <span style={{ color: BASE.gold }}>{titulteCase(capataz)}</span></> : ''}
         </p>
 
-        {/* Fecha + Semana + Proyecto */}
-        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginTop: '9px' }}>
+        {/* Fecha + Semana */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: '8px', marginTop: '9px' }}>
           {fechaLarga && (
             <span style={{ fontSize: '12.5px', color: 'rgba(255,255,255,0.66)', fontWeight: 600 }}>{fechaLarga}</span>
           )}
@@ -234,19 +226,6 @@ export default function InicioCapataz({
             padding: '3px 12px', fontSize: '11.5px', fontWeight: 800,
           }}>Semana {obtenerSemana(fecha)} del proyecto</span>
         </div>
-        {(proyectoNombre || clienteNombre) && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
-            <span style={{ fontSize: '14px' }}>🏗️</span>
-            <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', fontWeight: 700 }}>
-              {proyectoNombre || '—'}{clienteNombre ? <span style={{ color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}> · {clienteNombre}</span> : null}
-            </span>
-          </div>
-        )}
-        {capataz && miembrosCuadrilla?.length > 0 && (
-          <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'rgba(255,255,255,0.55)' }}>
-            👥 Tu cuadrilla: {miembrosCuadrilla.length} {miembrosCuadrilla.length === 1 ? 'persona' : 'personas'}
-          </p>
-        )}
 
         {/* Mini-selector SOLO si no se pudo resolver su cuadrilla */}
         {necesitaElegir && (
@@ -262,16 +241,8 @@ export default function InicioCapataz({
           </div>
         )}
 
-        {/* Pregunta */}
-        <p style={{
-          margin: isMobile ? '10px 0 8px' : '22px 0 14px', color: 'rgba(255,255,255,0.6)',
-          fontSize: '12px', fontWeight: 700, letterSpacing: '0.6px',
-        }}>
-          ¿En qué vas a trabajar hoy? Elige un área 👇
-        </p>
-
-        {/* Áreas */}
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? '10px' : '14px' }}>
+        {/* Áreas — los 2 módulos son el foco de la pantalla */}
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? '12px' : '14px', marginTop: isMobile ? '16px' : '22px' }}>
           <AreaCard
             icon="👷" paso="ÁREA 1 · TAREO" titulo="Tareo"
             descripcion="Escoge las actividades del día y coloca a tu gente con sus horas (HN/HE). Puedes importar las horas del marcador facial."
@@ -293,7 +264,7 @@ export default function InicioCapataz({
         </div>
 
         {/* Mini-resumen del día */}
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: isMobile ? '10px' : '18px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', flexWrap: 'wrap', marginTop: isMobile ? '14px' : '18px' }}>
           {[
             { l: 'ACTIVIDADES', v: actividadesCount },
             { l: 'CON HORAS', v: actividadesConHHCount },

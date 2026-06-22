@@ -29,6 +29,7 @@ import SidebarCapataz from './capataz/secciones/SidebarCapataz';
 import EditorActividad from './capataz/secciones/EditorActividad';
 import InicioCapataz from './capataz/secciones/InicioCapataz';
 import StepperCapataz from './capataz/secciones/StepperCapataz';
+import ConfirmModal from '../components/ConfirmModal';
 import { useAuth } from '../contexts/AuthContext';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 
@@ -91,6 +92,12 @@ export default function Capataz({
   const [showHistorial,  setShowHistorial]  = useState(false);
   const [menuAbierto,    setMenuAbierto]    = useState(false); // drawer lateral en móvil
   const [historialDelCap,setHistorialDelCap]= useState([]);
+  // Confirmación PREMIUM centrada (ConfirmModal), nunca window.confirm nativo.
+  // `confirmar(opts)` devuelve una Promise<boolean> para usar igual que confirm():
+  //   if (!(await confirmar({ ... }))) return;
+  const [confirmDialog, setConfirmDialog] = useState(null);
+  const confirmar = (opts) => new Promise((resolve) => setConfirmDialog({ ...opts, resolve }));
+  const cerrarConfirm = (val) => setConfirmDialog((d) => { d?.resolve?.(val); return null; });
   // Jornada legal de HN por día de la semana (HE no tiene límite)
   //   lun-vie: 8.5h | sáb: SIN TOPE | dom: 0h
   const limiteHNPorFecha = (fechaStr) => {
@@ -386,10 +393,18 @@ export default function Capataz({
   const eliminarActividad = async (id) => {
     const act = actividades.find(a => a.id === id);
     const yaSubida = !!act?._registroExistenteId;
-    const msg = yaSubida
-      ? '¿Eliminar esta actividad? También se borrará el registro YA SUBIDO de este día — desaparece del dashboard/CPI. No se puede deshacer.'
-      : '¿Eliminar esta actividad del borrador?';
-    if (!window.confirm(msg)) return;
+    const ok = await confirmar({
+      tono: 'peligro',
+      icono: '🗑️',
+      titulo: '¿Eliminar esta actividad?',
+      mensaje: yaSubida
+        ? 'También se borrará el registro YA SUBIDO de este día.'
+        : 'Se quitará esta actividad del borrador de hoy.',
+      detalle: yaSubida ? 'Desaparece del dashboard/CPI. No se puede deshacer.' : undefined,
+      textoConfirmar: 'Sí, eliminar',
+      textoCancelar: 'Cancelar',
+    });
+    if (!ok) return;
 
     // 1) Quitar del estado local (la UI responde de inmediato)
     const next = actividades.filter(a => a.id !== id);
@@ -819,7 +834,16 @@ export default function Capataz({
   // no reaparezca nada al recargar.
   const eliminarBorrador = async () => {
     const bId = borradorDocId || borradorId(fecha, capataz);
-    if (!window.confirm('¿Limpiar el día por completo? Se borrará el borrador y los registros ya subidos de este día en este proyecto/frente — desaparecen del dashboard/CPI. No se puede deshacer.')) return;
+    const ok = await confirmar({
+      tono: 'peligro',
+      icono: '🧹',
+      titulo: '¿Limpiar el día por completo?',
+      mensaje: 'Se borrará el borrador y los registros ya subidos de este día en este proyecto/frente.',
+      detalle: 'Desaparecen del dashboard/CPI. No se puede deshacer.',
+      textoConfirmar: 'Sí, limpiar el día',
+      textoCancelar: 'Cancelar',
+    });
+    if (!ok) return;
     try {
       // Borrar TODOS los registros subidos del día (solo de este proyecto)
       const snap = await getDocs(query(
@@ -964,6 +988,19 @@ export default function Capataz({
   return (
     <>
       {/* MODALES */}
+      <ConfirmModal
+        abierto={!!confirmDialog}
+        tono={confirmDialog?.tono}
+        icono={confirmDialog?.icono}
+        titulo={confirmDialog?.titulo}
+        mensaje={confirmDialog?.mensaje}
+        detalle={confirmDialog?.detalle}
+        textoConfirmar={confirmDialog?.textoConfirmar}
+        textoCancelar={confirmDialog?.textoCancelar}
+        onConfirmar={() => cerrarConfirm(true)}
+        onCancelar={() => cerrarConfirm(false)}
+      />
+
       {showWbs && (
         <WbsExplorer
           onClose={() => setShowWbs(false)}

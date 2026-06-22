@@ -29,10 +29,8 @@ export default function StepperCapataz({ vista, onIrInicio, isMobile, onAbrirMen
       >
         <span style={{ fontSize: '20px', lineHeight: 1, marginTop: '-2px' }}>‹</span> Volver
       </button>
-      <h2 style={{ flex: 1, fontSize: '15px', fontWeight: '800', color: BASE.navy, letterSpacing: '-0.2px', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {titulo}
-      </h2>
-      {/* Móvil: abre el menú lateral (drawer) con todas las opciones */}
+      {/* Móvil: abre el menú lateral (drawer) con todas las opciones — a la IZQUIERDA,
+          junto a "Volver", coherente con el drawer que entra por la izquierda. */}
       {isMobile && onAbrirMenu && (
         <button
           type="button"
@@ -50,6 +48,9 @@ export default function StepperCapataz({ vista, onIrInicio, isMobile, onAbrirMen
           <span style={{ fontSize: '17px', lineHeight: 1 }}>☰</span> Opciones
         </button>
       )}
+      <h2 style={{ flex: 1, fontSize: '15px', fontWeight: '800', color: BASE.navy, letterSpacing: '-0.2px', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>
+        {titulo}
+      </h2>
     </div>
   );
 }
