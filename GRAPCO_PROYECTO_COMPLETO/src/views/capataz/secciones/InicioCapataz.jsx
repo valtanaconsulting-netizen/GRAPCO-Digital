@@ -146,9 +146,10 @@ export default function InicioCapataz({
       {/* Mismo fondo que el selector de áreas: video de la obra + lavado navy cohesivo. */}
       {!conexionLenta() && (
         <video autoPlay loop muted playsInline preload="auto" aria-hidden="true"
+          poster="/brand/grapco-bg-poster.jpg"
           onCanPlay={(e) => { e.currentTarget.style.opacity = '0.82'; e.currentTarget.play?.().catch(() => {}); }}
           onError={(e) => { e.currentTarget.style.display = 'none'; }}
-          style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0, filter: 'saturate(1) brightness(0.9) contrast(1.06)', transition: 'opacity 1.1s ease', zIndex: 0, pointerEvents: 'none' }}>
+          style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.82, filter: 'saturate(1) brightness(0.9) contrast(1.06)', transition: 'opacity 0.4s ease', zIndex: 0, pointerEvents: 'none' }}>
           <source src={HERO_VIDEO} type="video/mp4" />
         </video>
       )}

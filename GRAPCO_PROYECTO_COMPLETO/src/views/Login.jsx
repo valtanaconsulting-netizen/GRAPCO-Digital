@@ -216,10 +216,11 @@ export default function Login() {
     width: '100%', boxSizing: 'border-box',
     padding: compact ? '13px 14px' : '14px 16px',
     borderRadius: '14px',
-    background: 'rgba(7,15,28,0.6)',
+    background: '#0f1d33',
     border: '1px solid rgba(255,255,255,0.28)',
-    color: '#fff', caretColor: '#fff', fontSize: '14px', fontWeight: 600, outline: 'none',
-    transition: 'border-color 0.18s, background 0.18s, box-shadow 0.18s',
+    color: '#fff', WebkitTextFillColor: '#fff', caretColor: '#fff',
+    fontSize: '14px', fontWeight: 600, outline: 'none',
+    transition: 'border-color 0.18s, box-shadow 0.18s',
     ...extra,
   });
 
@@ -528,20 +529,30 @@ export default function Login() {
           @keyframes grapco-spin {
             to { transform: rotate(360deg); }
           }
-          .login-glass-input::placeholder { color: rgba(255,255,255,0.55); }
-          .login-glass-input:focus {
-            border-color: rgba(243,193,78,0.85);
-            background: rgba(7,15,28,0.8);
-            box-shadow: 0 0 0 3px rgba(243,193,78,0.18);
-          }
-          /* Autofill de Chrome: forzar texto claro + fondo oscuro (si no, queda blanco/blanco) */
+          .login-glass-input::placeholder { color: rgba(255,255,255,0.55) !important; -webkit-text-fill-color: rgba(255,255,255,0.55) !important; }
+          /* Texto SIEMPRE blanco sobre fondo OSCURO SÓLIDO en TODOS los estados
+             (normal, hover, focus, y autofill de Chrome) → jamás blanco-sobre-blanco. */
+          .login-glass-input,
+          .login-glass-input:hover,
+          .login-glass-input:focus,
+          .login-glass-input:active,
           .login-glass-input:-webkit-autofill,
           .login-glass-input:-webkit-autofill:hover,
-          .login-glass-input:-webkit-autofill:focus {
+          .login-glass-input:-webkit-autofill:focus,
+          .login-glass-input:-webkit-autofill:active {
+            color: #fff !important;
             -webkit-text-fill-color: #fff !important;
-            -webkit-box-shadow: 0 0 0 1000px rgba(7,15,28,0.95) inset !important;
+            background-color: #0f1d33 !important;
+            background-image: none !important;
+            -webkit-box-shadow: 0 0 0 1000px #0f1d33 inset !important;
+            box-shadow: 0 0 0 1000px #0f1d33 inset !important;
             caret-color: #fff !important;
-            border-radius: 14px;
+            /* Defiende contra la animación de fondo del autofill de Chrome */
+            transition: background-color 99999s ease 0s !important;
+          }
+          .login-glass-input:focus {
+            border-color: rgba(243,193,78,0.85) !important;
+            box-shadow: 0 0 0 1000px #0f1d33 inset, 0 0 0 3px rgba(243,193,78,0.22) !important;
           }
           .btn-ingresar:not(:disabled):hover { transform: scale(1.02); box-shadow: 0 12px 30px rgba(216,154,58,0.55); }
           .btn-ingresar:not(:disabled):active { transform: scale(0.99); }
@@ -768,11 +779,12 @@ export default function Login() {
       {/* Video hero PTARI (fundido suave) — omitido en conexiones lentas / ahorro de datos */}
       {!conexionLenta() && <video
         className="grapco-hero-video"
-        autoPlay muted loop playsInline preload="metadata"
+        autoPlay muted loop playsInline preload="auto"
+        poster="/brand/grapco-bg-poster.jpg"
         onCanPlay={(e) => { setVideoReady(true); e.currentTarget.play?.().catch(() => {}); }}
         onPlaying={() => setVideoReady(true)}
         aria-hidden="true"
-        style={{ opacity: videoReady ? 0.62 : 0, transition: 'opacity 1.1s ease' }}
+        style={{ opacity: 0.62, transition: 'opacity 0.4s ease' }}
       >
         <source src={HERO_VIDEO} type="video/mp4" />
       </video>}

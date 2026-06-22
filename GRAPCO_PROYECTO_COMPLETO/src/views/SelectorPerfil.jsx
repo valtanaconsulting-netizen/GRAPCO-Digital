@@ -307,7 +307,8 @@ export default function SelectorPerfil() {
           así nunca se ve una imagen borrosa o lageada. */}
       {!conexionLenta() && <video
         ref={videoRef}
-        autoPlay loop muted playsInline preload="metadata"
+        autoPlay loop muted playsInline preload="auto"
+        poster="/brand/grapco-bg-poster.jpg"
         onCanPlay={(e) => { e.currentTarget.style.opacity = '0.82'; e.currentTarget.play?.().catch(() => {}); }}
         onError={() => { if (videoRef.current) videoRef.current.style.display = 'none'; }}
         aria-hidden="true"
@@ -315,11 +316,11 @@ export default function SelectorPerfil() {
           position: 'fixed', inset: 0,
           width: '100%', height: '100%',
           objectFit: 'cover',
-          opacity: 0,
+          opacity: 0.82,
           // Nítido y vívido (sin apagar el color): el navy overlay de abajo
           // mantiene la cohesión y la legibilidad de las tarjetas.
           filter: 'saturate(1) brightness(0.9) contrast(1.06)',
-          transition: 'opacity 1.1s ease',
+          transition: 'opacity 0.4s ease',
           zIndex: 0,
           pointerEvents: 'none',
         }}
