@@ -10,6 +10,7 @@ import { BASE, inp } from '../../../utils/styles';
 import { CATALOGO_MASTER, JORNADA_LEGAL } from '../../../utils/constants';
 import { codigoActividad } from '../../../utils/helpers';
 import FotoUploader from '../../../components/FotoUploader';
+import SelectPremium from '../../../components/SelectPremium';
 import TrabajadorCard from './TrabajadorCard';
 
 export default function EditorActividad({
@@ -95,34 +96,42 @@ export default function EditorActividad({
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
               <div>
                 <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', display: 'block', marginBottom: '5px' }}>PARTIDA</label>
-                <select value={actividadActiva.partida} style={inp({ fontSize: '12px' })}
-                  onChange={e => onUpdActividad(actividadActiva.id, 'partida', e.target.value)}>
-                  <option value="">Seleccionar...</option>
-                  {Object.keys(CATALOGO_MASTER).map(p => <option key={p} value={p}>{p}</option>)}
-                </select>
+                <SelectPremium
+                  value={actividadActiva.partida}
+                  onChange={v => onUpdActividad(actividadActiva.id, 'partida', v)}
+                  options={Object.keys(CATALOGO_MASTER)}
+                  isMobile={isMobile}
+                  title="Partida"
+                  fontSize="12px"
+                />
               </div>
               <div>
                 <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', display: 'block', marginBottom: '5px' }}>SUBPARTIDA</label>
-                <select value={actividadActiva.subpartida} style={inp({ fontSize: '12px' })}
-                  onChange={e => onUpdActividad(actividadActiva.id, 'subpartida', e.target.value)}
-                  disabled={!actividadActiva.partida}>
-                  <option value="">Seleccionar...</option>
-                  {actividadActiva.partida && Object.keys(CATALOGO_MASTER[actividadActiva.partida] || {}).map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
+                <SelectPremium
+                  value={actividadActiva.subpartida}
+                  onChange={v => onUpdActividad(actividadActiva.id, 'subpartida', v)}
+                  options={actividadActiva.partida ? Object.keys(CATALOGO_MASTER[actividadActiva.partida] || {}) : []}
+                  disabled={!actividadActiva.partida}
+                  isMobile={isMobile}
+                  title="Subpartida"
+                  fontSize="12px"
+                />
               </div>
             </div>
 
             <div>
               <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', display: 'block', marginBottom: '5px' }}>ACTIVIDAD</label>
-              <select value={actividadActiva.actividad} style={inp({ fontSize: '12px' })}
-                onChange={e => onUpdActividad(actividadActiva.id, 'actividad', e.target.value)}
-                disabled={!actividadActiva.subpartida}>
-                <option value="">Seleccionar...</option>
-                {actividadActiva.partida && actividadActiva.subpartida &&
-                  (CATALOGO_MASTER[actividadActiva.partida]?.[actividadActiva.subpartida] || []).map(a =>
-                    <option key={a} value={a}>{a}</option>
-                  )}
-              </select>
+              <SelectPremium
+                value={actividadActiva.actividad}
+                onChange={v => onUpdActividad(actividadActiva.id, 'actividad', v)}
+                options={(actividadActiva.partida && actividadActiva.subpartida)
+                  ? (CATALOGO_MASTER[actividadActiva.partida]?.[actividadActiva.subpartida] || [])
+                  : []}
+                disabled={!actividadActiva.subpartida}
+                isMobile={isMobile}
+                title="Actividad"
+                fontSize="12px"
+              />
             </div>
           </>
         )}

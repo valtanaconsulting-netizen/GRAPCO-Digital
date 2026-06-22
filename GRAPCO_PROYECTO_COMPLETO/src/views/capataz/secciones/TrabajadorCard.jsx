@@ -64,21 +64,24 @@ export default function TrabajadorCard({
         </div>
       </div>
 
-      {/* Inputs HN / HE — 1 columna en mobile, 2 en desktop. minmax(0,...) evita overflow. */}
+      {/* Inputs HN / HE — SIEMPRE lado a lado (2 columnas, también en móvil).
+          En móvil se compactan botones/tipografía para que ambos entren en la fila. */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : 'minmax(0, 1fr) minmax(0, 1fr)',
-        gap: '10px',
+        gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
+        gap: isMobile ? '8px' : '10px',
         marginBottom: '10px',
       }}>
         {[
           { lab: 'HN', sub: 'Normales', key: 'hn', color: BASE.navy, bg: BASE.navy + '0d' },
           { lab: 'HE', sub: 'Extras',   key: 'he', color: BASE.gold, bg: BASE.gold + '15' },
-        ].map(({ lab, sub, key, color, bg }) => (
+        ].map(({ lab, sub, key, color, bg }) => {
+          const btn = isMobile ? 36 : 44;
+          return (
           <div key={key} style={{
             background: bg,
             borderRadius: '10px',
-            padding: '8px 6px 6px',
+            padding: isMobile ? '7px 4px 6px' : '8px 6px 6px',
             border: `1.5px solid ${t[key] > 0 ? color : 'transparent'}`,
             minWidth: 0,
           }}>
@@ -86,13 +89,13 @@ export default function TrabajadorCard({
               <span style={{ fontSize: '11px', fontWeight: '800', color, letterSpacing: '0.5px' }}>{lab}</span>
               <span style={{ fontSize: '9px', color: BASE.muted, marginLeft: '4px' }}>{sub}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '2px' : '6px', minWidth: 0 }}>
               <button type="button"
                 onClick={() => updTareo(actividadActivaId, t.nombre, key, (t[key] || 0) - 0.5)}
                 style={{
-                  width: '44px', height: '44px', borderRadius: '8px',
+                  width: btn, height: btn, borderRadius: '8px',
                   border: 'none', background: '#fff',
-                  color: color, fontSize: '22px', fontWeight: '800',
+                  color: color, fontSize: isMobile ? '20px' : '22px', fontWeight: '800',
                   cursor: 'pointer', lineHeight: 1, flexShrink: 0,
                   boxShadow: BASE.shadowSm,
                 }}>−</button>
@@ -102,7 +105,7 @@ export default function TrabajadorCard({
                 onChange={e => updTareo(actividadActivaId, t.nombre, key, e.target.value)}
                 style={{
                   flex: 1, minWidth: 0, width: '100%', textAlign: 'center',
-                  fontWeight: '900', color, fontSize: '22px',
+                  fontWeight: '900', color, fontSize: isMobile ? '18px' : '22px',
                   border: 'none', background: 'transparent', outline: 'none',
                   padding: '0',
                 }}
@@ -110,15 +113,16 @@ export default function TrabajadorCard({
               <button type="button"
                 onClick={() => updTareo(actividadActivaId, t.nombre, key, (t[key] || 0) + 0.5)}
                 style={{
-                  width: '44px', height: '44px', borderRadius: '8px',
+                  width: btn, height: btn, borderRadius: '8px',
                   border: 'none', background: color, color: '#fff',
-                  fontSize: '22px', fontWeight: '800',
+                  fontSize: isMobile ? '20px' : '22px', fontWeight: '800',
                   cursor: 'pointer', lineHeight: 1, flexShrink: 0,
                   boxShadow: BASE.shadowSm,
                 }}>+</button>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Saldo + desglose HE */}

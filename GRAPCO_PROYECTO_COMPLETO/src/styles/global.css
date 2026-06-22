@@ -215,6 +215,11 @@ table {
   from { opacity: 0; transform: translateY(-8px) scale(0.96); }
   to   { opacity: 1; transform: translateY(0)    scale(1); }
 }
+/* Bottom-sheet (selector premium en movil): sube desde abajo */
+@keyframes gp-sheet-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
 
 /* Scroll suave */
 html { scroll-behavior: smooth; }
