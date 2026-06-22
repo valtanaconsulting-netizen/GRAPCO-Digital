@@ -15,6 +15,8 @@ export default function BarraInferior({
   onGuardar,
   onSubir,
   onListoTareo,
+  onEliminar,
+  puedeEliminar,
   modo = 'metrado',
 }) {
   const ocupado = estadoBorrador === 'guardando' || estadoBorrador === 'subiendo';
@@ -32,6 +34,20 @@ export default function BarraInferior({
       zIndex: 50,
       display: 'flex', gap: '10px',
     }}>
+      {esTareo && puedeEliminar && (
+        <button type="button" onClick={onEliminar} disabled={ocupado}
+          title="Eliminar actividad"
+          style={{
+            flexShrink: 0,
+            padding: '14px 16px',
+            background: BASE.redLight, color: BASE.red,
+            border: 'none', borderRadius: '12px',
+            fontSize: '18px', fontWeight: '800', cursor: 'pointer',
+            opacity: ocupado ? 0.6 : 1,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>🗑️</button>
+      )}
+
       <button type="button" onClick={onGuardar} disabled={ocupado}
         style={{
           flex: 1, maxWidth: '160px',

@@ -1120,7 +1120,6 @@ export default function Capataz({
                   showToast={showToast}
                   hhAcumPorTrab={hhAcumPorTrab}
                   onUpdActividad={updActividad}
-                  onEliminarActividad={eliminarActividad}
                   onImportarFacial={importarDesdeAsistenciaFacial}
                   onUpdTareo={updTareo}
                 />
@@ -1139,6 +1138,8 @@ export default function Capataz({
           onGuardar={guardarBorrador}
           onSubir={subir}
           onListoTareo={listoTareo}
+          onEliminar={() => actividadActiva && eliminarActividad(actividadActiva.id)}
+          puedeEliminar={!!actividadActiva}
         />
       )}
     </>

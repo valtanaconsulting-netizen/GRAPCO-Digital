@@ -8,7 +8,6 @@
 import React from 'react';
 import { BASE, inp } from '../../../utils/styles';
 import { CATALOGO_MASTER, JORNADA_LEGAL } from '../../../utils/constants';
-import { codigoActividad } from '../../../utils/helpers';
 import FotoUploader from '../../../components/FotoUploader';
 import SelectPremium from '../../../components/SelectPremium';
 import TrabajadorCard from './TrabajadorCard';
@@ -23,7 +22,6 @@ export default function EditorActividad({
   showToast,
   hhAcumPorTrab,
   onUpdActividad,
-  onEliminarActividad,
   onImportarFacial,
   onUpdTareo,
   modo = 'tareo',
@@ -34,50 +32,10 @@ export default function EditorActividad({
     <div style={{
       background: BASE.white, borderRadius: '14px',
       border: `1px solid ${BASE.border}`,
-      padding: isMobile ? '14px' : '20px',
+      padding: isMobile ? '12px 6px' : '20px',
       marginBottom: '14px',
       boxShadow: BASE.shadowSm,
     }}>
-      {/* Header */}
-      <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        marginBottom: '16px', paddingBottom: '12px',
-        borderBottom: `1px solid ${BASE.border}`,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
-          <span style={{
-            background: `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`,
-            color: '#fff', padding: '4px 10px',
-            borderRadius: '6px', fontFamily: 'monospace',
-            fontSize: '11px', fontWeight: '900', flexShrink: 0,
-            boxShadow: `0 2px 6px ${BASE.gold}55`,
-          }}>
-            {actividadActiva.partida && actividadActiva.subpartida && actividadActiva.actividad
-              ? codigoActividad(actividadActiva.partida, actividadActiva.subpartida, actividadActiva.actividad) || 'XX.XX.XX'
-              : 'XX.XX.XX'}
-          </span>
-          <span style={{
-            fontSize: '13px', fontWeight: '800', color: BASE.navy,
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          }}>
-            {actividadActiva.actividad || 'EDITAR ACTIVIDAD'}
-          </span>
-          {actividadActiva._registroExistenteId && (
-            <span style={{
-              background: BASE.greenLight, color: BASE.greenDark, padding: '3px 9px',
-              borderRadius: '12px', fontSize: '10px', fontWeight: '800', flexShrink: 0,
-            }}>✓ SUBIDO</span>
-          )}
-        </div>
-        {esTareo && (
-          <button type="button" onClick={() => onEliminarActividad(actividadActiva.id)} style={{
-            padding: '6px 10px', background: BASE.redLight, color: BASE.red,
-            border: 'none', borderRadius: '7px', fontSize: '11px',
-            fontWeight: '700', cursor: 'pointer', flexShrink: 0,
-          }}>🗑️</button>
-        )}
-      </div>
-
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         {/* ── IDENTIFICACIÓN (solo en TAREO; en metrado va fija) ── */}
         {esTareo && (
@@ -212,7 +170,7 @@ export default function EditorActividad({
           background: BASE.bgSoft,
           border: `1px solid ${BASE.border}`,
           borderRadius: '12px',
-          padding: '14px',
+          padding: isMobile ? '12px 5px' : '14px',
         }}>
           <div style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
