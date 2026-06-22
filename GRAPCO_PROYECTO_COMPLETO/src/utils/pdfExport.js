@@ -7,7 +7,7 @@ const CDN_AUTOTABLE = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.
 
 let jspdfPromise = null;
 
-const cargarJsPDF = () => {
+export const cargarJsPDF = () => {
   if (jspdfPromise) return jspdfPromise;
   if (window.jspdf) return Promise.resolve(window.jspdf);
 

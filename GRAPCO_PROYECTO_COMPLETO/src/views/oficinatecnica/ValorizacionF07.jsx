@@ -15,6 +15,7 @@ import { db } from '../../firebaseConfig';
 import { BASE, LOGO } from '../../utils/styles';
 import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import useAvanceF07Vivo from '../../hooks/useAvanceF07Vivo';
+import { generarPDFValorizacionF07 } from '../../utils/valorizacionF07Pdf';
 import EmptyState from '../../components/EmptyState';
 
 const soles = (n) => 'S/ ' + (Number(n) || 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -29,6 +30,7 @@ export default function ValorizacionF07({ showToast }) {
   const [loading, setLoading] = useState(true);
   const [valSel, setValSel] = useState(null);
   const [fuente, setFuente] = useState('oficial'); // 'oficial' (F07) | 'vivo' (producción)
+  const [genPdf, setGenPdf] = useState(false);
   // Avance EN VIVO desde el metrado de la plataforma (capataz/sustentos), por quincena.
   const { avancesVivo, cobertura } = useAvanceF07Vivo({ proyId, presu, enabled: fuente === 'vivo' });
   const avances = fuente === 'vivo' ? avancesVivo : avancesOficial;
@@ -141,6 +143,20 @@ export default function ValorizacionF07({ showToast }) {
                 {(periodos.length ? periodos : [{ valN: 1, label: fuente === 'vivo' ? 'Q-01' : 'V-01' }]).map(p => <option key={p.valN} value={p.valN}>{/LIQUID/i.test(p.label) ? 'LIQUIDACIÓN' : `${fuente === 'vivo' ? 'Quincena' : 'Valorización'} N° ${String(p.valN).padStart(2, '0')}`}</option>)}
               </select>
             </label>
+            <button
+              onClick={async () => {
+                setGenPdf(true);
+                const r = await generarPDFValorizacionF07({
+                  presu, ejecPorItem, tot,
+                  meta: { tituloPeriodo, obra, cliente, contratista: 'GRAPCO SAC', supervision: proyectoActivo?.supervision || 'Diseños Racionales SAC', ubicacion: ubic, fuente, fecha: new Date().toLocaleDateString('es-PE') },
+                });
+                setGenPdf(false);
+                if (showToast) showToast(r.ok ? `PDF generado: ${r.nombre}` : 'No se pudo generar el PDF', r.ok ? 'success' : 'error');
+              }}
+              disabled={genPdf || !presu.length}
+              style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: genPdf ? BASE.muted : BASE.gold, color: '#fff', fontSize: 13, fontWeight: 800, cursor: genPdf ? 'wait' : 'pointer', whiteSpace: 'nowrap' }}>
+              {genPdf ? '⏳ Generando…' : '📄 PDF'}
+            </button>
           </div>
         </div>
       </div>
