@@ -1,9 +1,10 @@
 // src/views/capataz/secciones/TabsActividades.jsx
 // Si no hay actividades → empty state con CTA "Crear primera actividad".
-// Si hay → lista vertical compacta (filas a todo el ancho, ~3 visibles y el
-// resto con scroll para no crecer). La activa se resalta con borde dorado y
-// fondo navy. Cada fila muestra # de orden, nombre, HH del día y check si ya
-// se subió ese registro.
+// Si hay → grilla compacta de 3 filas que crece en columnas (column-major):
+// se ven 2 columnas (6 actividades) y se desliza horizontalmente de 3 en 3
+// para ver el resto, ocupando el mismo espacio. La activa se resalta con
+// borde dorado y fondo navy. Cada celda muestra # de orden, nombre, HH del
+// día y check si ya se subió ese registro.
 import React from 'react';
 import { BASE } from '../../../utils/styles';
 
@@ -72,9 +73,15 @@ export default function TabsActividades({
         }}>{actividades.length}</span>
       </div>
       <div style={{
-        display: 'flex', flexDirection: 'column', gap: '5px',
-        maxHeight: '108px', overflowY: 'auto',
+        display: 'grid',
+        gridAutoFlow: 'column',
+        gridTemplateRows: 'repeat(3, auto)',
+        gridAutoColumns: 'calc(50% - 3px)',
+        columnGap: '6px', rowGap: '5px',
+        overflowX: 'auto', overflowY: 'hidden',
+        paddingBottom: '4px',
         marginRight: '-6px', paddingRight: '6px',
+        scrollSnapType: 'x proximity',
       }}>
         {actividades.map((a, i) => {
           const esActiva = a.id === actActivaId;
@@ -90,6 +97,7 @@ export default function TabsActividades({
               width: '100%', boxSizing: 'border-box', textAlign: 'left',
               transition: 'all 0.15s',
               flexShrink: 0,
+              scrollSnapAlign: 'start',
             }}>
               <span style={{
                 fontSize: '9px', fontWeight: '800',
