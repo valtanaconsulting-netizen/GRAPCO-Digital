@@ -510,7 +510,10 @@ export default function Capataz({
     }
   };
 
-  const updActividad = (id, campo, valor) => {
+  // useCallback con deps [] → referencia ESTABLE. Solo usan setActividades (setter
+  // estable) e INFO_MAP (constante de módulo). Estabilizar updTareo es lo que permite
+  // que React.memo(TrabajadorCard) evite re-renderizar TODA la cuadrilla por cada tecla.
+  const updActividad = useCallback((id, campo, valor) => {
     setActividades(prev => prev.map(a => {
       if (a.id !== id) return a;
       const nuevo = { ...a, [campo]: valor };
@@ -522,9 +525,9 @@ export default function Capataz({
       if (campo === 'subpartida') { nuevo.actividad = ''; nuevo.unidad = 'UND'; }
       return nuevo;
     }));
-  };
+  }, []);
 
-  const updTareo = (actId, nombre, campo, val) => {
+  const updTareo = useCallback((actId, nombre, campo, val) => {
     const num = Math.max(0, parseFloat(val) || 0);
     setActividades(prev => prev.map(a => {
       if (a.id !== actId) return a;
@@ -535,7 +538,7 @@ export default function Capataz({
         ),
       };
     }));
-  };
+  }, []);
 
   // Importar HN/HE desde el Marcador Facial (Asistencia_Diaria del día).
   // Hace match por nombre (case-insensitive). Aplica split HN/HE por jornada legal.

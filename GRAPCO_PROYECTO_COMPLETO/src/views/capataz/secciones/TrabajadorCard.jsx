@@ -116,7 +116,7 @@ function CampoHora({ lab, sub, color, bg, value, max, disabled, onChange, isMobi
   );
 }
 
-export default function TrabajadorCard({
+function TrabajadorCard({
   t,
   idx,
   isMobile,
@@ -232,3 +232,7 @@ export default function TrabajadorCard({
     </div>
   );
 }
+
+// React.memo: con updTareo estable (useCallback en Capataz) y `t` estable por
+// trabajador, teclear HN/HE en UNA tarjeta ya no re-renderiza toda la cuadrilla.
+export default React.memo(TrabajadorCard);

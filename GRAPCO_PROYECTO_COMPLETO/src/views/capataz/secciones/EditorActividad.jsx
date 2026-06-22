@@ -5,7 +5,7 @@
 //   modo="metrado" → identificación en SOLO LECTURA (ya viene del tareo) +
 //                    metrado avanzado + observaciones + fotos del avance.
 // El modelo de datos es el mismo `actividad`; solo cambia qué secciones se ven.
-import React, { useState } from 'react';
+import React, { useState, useDeferredValue } from 'react';
 import { BASE, inp } from '../../../utils/styles';
 import { CATALOGO_MASTER } from '../../../utils/constants';
 import FotoUploader from '../../../components/FotoUploader';
@@ -28,6 +28,10 @@ export default function EditorActividad({
 }) {
   const esTareo = modo === 'tareo';
   const esMetrado = modo === 'metrado';
+  // Búsqueda diferida: el input (controlado en Capataz) sigue respondiendo al
+  // instante; el filtrado de la cuadrilla se recalcula con baja prioridad → sin
+  // lag de teclado en cuadrillas grandes (móvil de obra).
+  const buscarTrabDiferido = useDeferredValue(buscarTrab);
   // Tokens para encadenar la apertura de selectores: al elegir Partida se abre
   // sola la Subpartida; al elegir Subpartida se abre sola la Actividad.
   const [openSubToken, setOpenSubToken] = useState(0);
@@ -281,7 +285,7 @@ export default function EditorActividad({
                 background: BASE.navySoft, padding: '2px 8px', borderRadius: '999px',
               }}>
                 {(() => {
-                  const q = buscarTrab.trim().toLowerCase();
+                  const q = buscarTrabDiferido.trim().toLowerCase();
                   const tot = actividadActiva.detalleTareo.length;
                   if (!q) return tot;
                   const f = actividadActiva.detalleTareo.filter(t => (t.nombre || '').toLowerCase().includes(q)).length;
@@ -301,7 +305,7 @@ export default function EditorActividad({
           </div>
 
           {(() => {
-            const q = buscarTrab.trim().toLowerCase();
+            const q = buscarTrabDiferido.trim().toLowerCase();
             const lista = q
               ? actividadActiva.detalleTareo.filter(t => (t.nombre || '').toLowerCase().includes(q))
               : actividadActiva.detalleTareo;
