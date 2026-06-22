@@ -104,7 +104,7 @@ function AreaCard({ icon, paso, titulo, descripcion, tags, color, bloqueada, mot
 
 export default function InicioCapataz({
   fecha, capataz, proyectoNombre, clienteNombre,
-  cuadrillasParaSelect, miembrosCuadrilla, setCapataz, obtenerSemana, isMobile,
+  cuadrillasParaSelect, miembrosCuadrilla, setCapataz, rol, cargandoCuadrilla, obtenerSemana, isMobile,
   actividadesCount, actividadesConHHCount, totalHH, tieneTareo,
   onAbrirTareo, onAbrirMetrado,
 }) {
@@ -121,10 +121,12 @@ export default function InicioCapataz({
   const opcionesCapataz = Object.entries(cuadrillasParaSelect || {}).map(([nombre, miembros]) => ({
     nombre, miembros: Array.isArray(miembros) ? miembros.length : null,
   }));
-  // Se pide elegir cuadrilla siempre que NO haya una seleccionada y existan opciones.
-  // Un capataz real ya viene autoseleccionado (no se muestra); un admin/ingeniero que
-  // entra al área SÍ debe elegir explícitamente (no se le asigna una ajena por defecto).
-  const necesitaElegir = !capataz && opcionesCapataz.length > 0;
+  // Mientras un CAPATAZ real resuelve su cuadrilla (carga + auto-selección de 1 opción)
+  // mostramos un loader, NO el selector ni las tarjetas bloqueadas → sin parpadeo al cargar.
+  const resolviendo = !capataz && rol === 'capataz' && (cargandoCuadrilla || opcionesCapataz.length === 1);
+  // Se pide elegir cuadrilla cuando NO se resuelve sola y existen opciones (admin/ingeniero,
+  // o capataz con varias cuadrillas sin coincidencia de nombre).
+  const necesitaElegir = !capataz && !resolviendo && opcionesCapataz.length > 0;
 
   return (
     <div style={{
@@ -143,7 +145,7 @@ export default function InicioCapataz({
     }}>
       {/* Mismo fondo que el selector de áreas: video de la obra + lavado navy cohesivo. */}
       {!conexionLenta() && (
-        <video autoPlay loop muted playsInline preload="metadata" aria-hidden="true"
+        <video autoPlay loop muted playsInline preload="auto" aria-hidden="true"
           onCanPlay={(e) => { e.currentTarget.style.opacity = '0.82'; e.currentTarget.play?.().catch(() => {}); }}
           onError={(e) => { e.currentTarget.style.display = 'none'; }}
           style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0, filter: 'saturate(1) brightness(0.9) contrast(1.06)', transition: 'opacity 1.1s ease', zIndex: 0, pointerEvents: 'none' }}>
@@ -157,6 +159,30 @@ export default function InicioCapataz({
           + 'linear-gradient(180deg, rgba(8,20,38,0.90) 0%, rgba(12,30,55,0.55) 46%, rgba(7,16,30,0.92) 100%),'
           + 'radial-gradient(130% 110% at 50% 42%, transparent 52%, rgba(4,11,22,0.78) 100%)',
       }} />
+
+      {/* Loader mientras se resuelve la cuadrilla del capataz → evita el parpadeo
+          del selector / tarjetas bloqueadas al cargar. */}
+      {resolviendo && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 6,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '20px',
+          background: 'linear-gradient(180deg, rgba(8,20,38,0.94), rgba(7,16,30,0.97))',
+        }}>
+          <div style={{
+            width: '72px', height: '72px', background: 'linear-gradient(150deg,#fff,#eef3f9)',
+            borderRadius: '18px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            padding: '2px', overflow: 'hidden', boxShadow: `0 13px 30px -16px rgba(0,0,0,0.6), 0 0 0 1.5px ${BASE.gold}40`,
+          }}>
+            <img src={LOGO} alt="GRAPCO"
+              onError={(e) => { if (!e.target.dataset.fallback) { e.target.dataset.fallback = '1'; e.target.src = LOGO_FALLBACK; } }}
+              style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '14px', transform: 'scale(1.25)' }} />
+          </div>
+          <div style={{ width: '26px', height: '26px', border: '3px solid rgba(255,255,255,0.18)', borderTopColor: BASE.gold, borderRadius: '50%', animation: 'cap-spin 0.8s linear infinite' }} />
+          <span style={{ color: 'rgba(255,255,255,0.82)', fontWeight: 700, fontSize: '12px', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Preparando tu cuadrilla…</span>
+          <style>{`@keyframes cap-spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+      )}
+
       <div className="anim-fade-in" style={{ position: 'relative', zIndex: 2, maxWidth: '760px', margin: 'auto', width: '100%' }}>
 
         {/* Marca GRAPCO (logo + título) — mismo header que el selector de áreas */}

@@ -946,6 +946,8 @@ export default function Capataz({
         cuadrillasParaSelect={cuadrillasParaSelect}
         miembrosCuadrilla={miembrosCuadrilla}
         setCapataz={setCapataz}
+        rol={rol}
+        cargandoCuadrilla={cuadrillasDirectas === null}
         obtenerSemana={obtenerSemana}
         isMobile={isMobile}
         actividadesCount={actividades.length}
