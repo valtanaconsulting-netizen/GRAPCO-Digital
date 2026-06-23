@@ -87,21 +87,25 @@ export default function DashboardEjecutivo({ showToast, isMobile }) {
   const [ncs, setNcs] = useState([]);
   const [compromisos, setCompromisos] = useState([]);
   const [inspecciones, setInspecciones] = useState([]);
+  const [errorCarga, setErrorCarga] = useState(false);
 
   useEffect(() => {
+    // onError marca un aviso visible: gerencia NO debe leer 0 protocolos/NCs como
+    // dato real cuando en verdad la lectura falló (sin señal / cache frío / permiso).
+    const onErr = (tag) => (e) => { console.warn(`[DashEjec ${tag}]`, e); setErrorCarga(true); };
     const unsubs = [
       onSnapshot(collection(db, 'Protocolos'),
         (s) => setProtocolos(s.docs.map((d) => ({ id: d.id, ...d.data() }))),
-        (e) => console.warn('[DashEjec Protocolos]', e)),
+        onErr('Protocolos')),
       onSnapshot(collection(db, 'NoConformidades'),
         (s) => setNcs(s.docs.map((d) => ({ id: d.id, ...d.data() }))),
-        (e) => console.warn('[DashEjec NCs]', e)),
+        onErr('NCs')),
       onSnapshot(collection(db, 'PPC_Compromisos'),
         (s) => setCompromisos(s.docs.map((d) => ({ id: d.id, ...d.data() }))),
-        (e) => console.warn('[DashEjec PPC]', e)),
+        onErr('PPC')),
       onSnapshot(collection(db, 'InspeccionesSeguridad'),
         (s) => setInspecciones(s.docs.map((d) => ({ id: d.id, ...d.data() }))),
-        (e) => console.warn('[DashEjec Inspecciones]', e)),
+        onErr('Inspecciones')),
     ];
     return () => unsubs.forEach((u) => { try { u(); } catch { /* noop */ } });
   }, []);
@@ -297,6 +301,11 @@ export default function DashboardEjecutivo({ showToast, isMobile }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
+      {errorCarga && (
+        <div style={{ padding: '8px 12px', borderRadius: '8px', background: BASE.redLight, border: `1px solid ${BASE.red}55`, color: BASE.red, fontSize: '12px', fontWeight: 700 }}>
+          ⚠️ No se pudo cargar parte de los indicadores — revisa tu conexión. Algunas cifras podrían estar incompletas.
+        </div>
+      )}
       {/* ── Encabezado + acciones ── */}
       <div style={{
         background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,

@@ -23,20 +23,29 @@ export default function RDOView({ showToast }) {
   const [editando, setEditando] = useState(null);
   const [guardando, setGuardando] = useState(false);
   const [generando, setGenerando] = useState(false);
+  const [errorCarga, setErrorCarga] = useState(false);
 
   const canvasFirmaRef = useRef(null);
   const [firmando, setFirmando] = useState(false);
 
   useEffect(() => {
+    // onError en cada lectura: sin esto, un fallo (sin señal / cache frío) dejaba el
+    // spinner colgado para siempre (setLoading vivía solo en el éxito del RDO) y el
+    // resto se vaciaba en silencio.
+    const onErr = (tag) => (e) => { console.error(`[RDO ${tag}]`, e); setLoading(false); setErrorCarga(true); };
     const unsubs = [
       onSnapshot(query(collection(db, 'RDO'), orderBy('fecha', 'desc')),
-        (snap) => { setRDOs(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })))); setLoading(false); }),
+        (snap) => { setRDOs(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })))); setLoading(false); setErrorCarga(false); },
+        onErr('RDO')),
       onSnapshot(query(collection(db, 'Historial'), orderBy('fecha', 'desc')),
-        (snap) => setHistorial(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() }))))),
+        (snap) => setHistorial(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
+        onErr('Historial')),
       onSnapshot(collection(db, 'Registros_Campo'),
-        (snap) => setTareos(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() }))))),
+        (snap) => setTareos(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
+        onErr('Registros_Campo')),
       onSnapshot(collection(db, 'CuadrillasActivas'),
-        (snap) => setCuadrillas(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() }))))),
+        (snap) => setCuadrillas(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
+        onErr('CuadrillasActivas')),
     ];
     return () => unsubs.forEach(u => u());
   }, [filtrarPorContexto]);
@@ -148,6 +157,7 @@ export default function RDOView({ showToast }) {
     }
   };
 
+  if (errorCarga && !rdos.length) return <p style={{ padding: 30, textAlign: 'center', color: BASE.red }}>⚠️ No se pudo cargar el RDO. Revisa tu conexión — los datos aparecerán al reconectar.</p>;
   if (loading) return <p style={{ padding: 30, textAlign: 'center', color: BASE.muted }}>⏳ Cargando RDOs...</p>;
 
   return (

@@ -11,17 +11,18 @@ export default function DashboardOT() {
   const [rdos, setRDOs] = useState([]);
   const [valorizaciones, setValorizaciones] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [errorCarga, setErrorCarga] = useState(false);
   // Presupuesto desde la fuente única (base contractual + overrides), igual que el RO.
   const { totales: tPres, partidas: partidasPres } = usePresupuestoContractual();
 
   useEffect(() => {
     const unsubs = [
       onSnapshot(query(collection(db, 'RDO'), orderBy('fecha', 'desc'), limit(60)),
-        (snap) => { setRDOs(snap.docs.map(d => ({ id: d.id, ...d.data() }))); setLoading(false); },
-        (e) => { console.error('[RDO]', e); setLoading(false); }),
+        (snap) => { setRDOs(snap.docs.map(d => ({ id: d.id, ...d.data() }))); setLoading(false); setErrorCarga(false); },
+        (e) => { console.error('[RDO]', e); setLoading(false); setErrorCarga(true); }),
       onSnapshot(query(collection(db, 'ValorizacionesContractuales'), orderBy('numeroValorizacion', 'desc')),
         (snap) => setValorizaciones(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
-        (e) => console.error('[Val]', e)),
+        (e) => { console.error('[Val]', e); setErrorCarga(true); }),
     ];
     return () => unsubs.forEach(u => u());
   }, []);
@@ -53,6 +54,11 @@ export default function DashboardOT() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      {errorCarga && (
+        <div style={{ padding: '8px 12px', borderRadius: '8px', background: BASE.redLight, border: `1px solid ${BASE.red}55`, color: BASE.red, fontSize: '12px', fontWeight: 700 }}>
+          ⚠️ No se pudo cargar parte de los datos — revisa tu conexión. Las cifras podrían estar incompletas.
+        </div>
+      )}
       {/* KPIs financieros */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(216px, 1fr))', gap: '10px' }}>
         <KPI label="PRESUPUESTO CONTRACTUAL" valor={fmtSoles(stats.presupuestoContractual)}

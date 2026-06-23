@@ -76,7 +76,7 @@ export default function VDC({
           setRestriccionesFS(filtrarPorContexto(todos));
         }
         catch (e) { console.warn('[snap Restr]', e); }
-      });
+      }, (e) => console.warn('[VDC Restricciones] error de lectura:', e?.code || e?.message, e));
     } catch (e) { console.warn('[useEffect Restr]', e); }
   }, [filtrarPorContexto]);
 
@@ -88,7 +88,7 @@ export default function VDC({
           setLecciones(filtrarPorContexto(todos));
         }
         catch (e) { console.warn('[snap Lecc]', e); }
-      });
+      }, (e) => console.warn('[VDC Lecciones] error de lectura:', e?.code || e?.message, e));
     } catch (e) { console.warn('[useEffect Lecc]', e); }
   }, [filtrarPorContexto]);
 
