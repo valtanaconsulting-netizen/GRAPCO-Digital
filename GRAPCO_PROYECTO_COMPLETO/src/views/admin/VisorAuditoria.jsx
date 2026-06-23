@@ -82,7 +82,7 @@ export default function VisorAuditoria({ showToast }) {
         display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center',
       }}>
         <input type="text" value={busqueda} onChange={e => setBusqueda(e.target.value)}
-          placeholder="🔍 Buscar en eventos..."
+          placeholder="🔍 Buscar en eventos..." aria-label="Buscar en eventos"
           style={{
             flex: 1, minWidth: '200px',
             padding: '9px 14px', borderRadius: '8px',

@@ -356,7 +356,7 @@ export default function Personal({ cuadrillasDB: cuadrillasTodas, personalDB: pe
               <p style={{fontSize:'11px',fontWeight:'700',color:BASE.navy,marginBottom:'10px',letterSpacing:'0.5px'}}>➕ AGREGAR TRABAJADORES</p>
               <div style={{display:'flex',gap:'8px',marginBottom:'10px',flexWrap:'wrap'}}>
                 <input type="text" value={busqCuadModal} onChange={e=>setBusqCuadModal(e.target.value)}
-                  placeholder="🔍 Buscar..."
+                  placeholder="🔍 Buscar..." aria-label="Buscar trabajador"
                   style={{flex:2,minWidth:'140px',padding:'8px 10px',borderRadius:'7px',border:`1px solid ${BASE.border}`,fontSize:'12px',outline:'none',background:'#fff'}}/>
                 <select value={filtroCargo} onChange={e=>setFiltroCargo(e.target.value)}
                   style={{flex:1,minWidth:'130px',padding:'8px 10px',borderRadius:'7px',border:`1px solid ${BASE.border}`,fontSize:'12px',fontWeight:'700',outline:'none',background:'#fff',color:BASE.navy}}>
@@ -559,7 +559,7 @@ export default function Personal({ cuadrillasDB: cuadrillasTodas, personalDB: pe
 
           <div style={{display:'flex',gap:'10px',marginBottom:'12px',flexWrap:'wrap'}}>
             <input type="text" value={busqTrab} onChange={e=>setBusqTrab(e.target.value)}
-              placeholder="🔍 Buscar por nombre o DNI..."
+              placeholder="🔍 Buscar por nombre o DNI..." aria-label="Buscar por nombre o DNI"
               style={{flex:2,minWidth:'200px',padding:'9px 14px',borderRadius:'8px',border:`1px solid ${BASE.border}`,fontSize:'12px',outline:'none'}}
             />
             <select value={filtroCargTrab} onChange={e=>setFiltroCargTrab(e.target.value)}

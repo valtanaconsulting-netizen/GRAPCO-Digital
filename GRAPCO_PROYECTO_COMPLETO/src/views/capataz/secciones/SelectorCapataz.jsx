@@ -115,7 +115,7 @@ export default function SelectorCapataz({
                 autoFocus
                 value={buscar}
                 onChange={e => setBuscar(e.target.value)}
-                placeholder="Buscar capataz…"
+                placeholder="Buscar capataz…" aria-label="Buscar capataz"
                 style={{
                   width: '100%', padding: '8px 10px', borderRadius: '8px',
                   border: `1px solid ${BASE.border}`, fontSize: '12px',

@@ -96,7 +96,7 @@ export default function ProyectosListView({ onEdit, onNuevo, showToast }) {
             </p>
           </div>
           <input type="text" value={busqueda} onChange={e => setBusqueda(e.target.value)}
-            placeholder="🔍 Buscar..." style={{ ...inpS, minWidth: '180px' }} />
+            placeholder="🔍 Buscar..." aria-label="Buscar proyecto" style={{ ...inpS, minWidth: '180px' }} />
           <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)} style={{ ...selS, minWidth: '160px' }}>
             <option value="">Todos los estados</option>
             {Object.entries(ESTADOS).map(([k, e]) => <option key={k} value={k}>{e.i} {e.l}</option>)}

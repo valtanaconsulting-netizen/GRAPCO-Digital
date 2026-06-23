@@ -131,7 +131,7 @@ export default function ProtocolosView({ showToast, onEdit }) {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '8px', marginTop: '12px' }}>
           <input type="text" value={busqueda} onChange={e => setBusqueda(e.target.value)}
-            placeholder="🔍 Buscar codigo, elemento..." style={inpS} />
+            placeholder="🔍 Buscar codigo, elemento..." aria-label="Buscar protocolo" style={inpS} />
           <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)} style={selS}>
             <option value="">Todos los tipos</option>
             {Object.entries(TIPOS_PROTOCOLO).map(([k, t]) => (

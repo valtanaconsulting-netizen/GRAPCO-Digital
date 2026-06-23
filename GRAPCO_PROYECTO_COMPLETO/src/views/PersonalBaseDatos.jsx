@@ -146,7 +146,7 @@ export default function PersonalBaseDatos({ personalTodos = [], cuadrillasDB = {
 
         {/* Búsqueda + filtro por función */}
         <div style={{ padding: '12px 22px', borderBottom: `1px solid ${BASE.border}`, display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <input value={busq} onChange={e => setBusq(e.target.value)} placeholder="🔍 Buscar por nombre, DNI, teléfono o proyecto…"
+          <input value={busq} onChange={e => setBusq(e.target.value)} placeholder="🔍 Buscar por nombre, DNI, teléfono o proyecto…" aria-label="Buscar persona"
             style={{ flex: '1 1 280px', minWidth: 0, padding: '10px 14px', borderRadius: '10px', border: `1.5px solid ${BASE.border}`, fontSize: '13px', fontWeight: 600, boxSizing: 'border-box' }} />
           <select value={filtroFuncion} onChange={e => setFiltroFuncion(e.target.value)}
             title="Filtrar por tipo de función (especialidad de cuadrilla)"

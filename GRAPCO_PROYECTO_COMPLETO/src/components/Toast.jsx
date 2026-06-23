@@ -27,7 +27,7 @@ export default function Toast({ msg, type, onClose }) {
       }}>
         <span style={{fontSize:'20px'}}>{cfg.icon}</span>
         <span style={{fontSize:'13px',fontWeight:'600',color:cfg.color,flex:1}}>{msg}</span>
-        <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:cfg.color,fontSize:'18px',padding:0}}>×</button>
+        <button onClick={onClose} aria-label="Cerrar aviso" style={{background:'none',border:'none',cursor:'pointer',color:cfg.color,fontSize:'18px',padding:0}}>×</button>
       </div>
     </>
   );

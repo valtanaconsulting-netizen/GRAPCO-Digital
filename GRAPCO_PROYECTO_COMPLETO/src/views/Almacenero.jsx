@@ -281,7 +281,7 @@ function StockDetalle({ stockGlobal, materiales, miAlmacen }) {
           {lista.length} materiales con stock
         </p>
         <input type="text" value={filtro} onChange={e => setFiltro(e.target.value)}
-          placeholder="🔍 Buscar..."
+          placeholder="🔍 Buscar..." aria-label="Buscar"
           style={{
             width: '100%', marginTop: '10px',
             padding: '9px 14px', borderRadius: '8px', border: `1.5px solid ${BASE.border}`,

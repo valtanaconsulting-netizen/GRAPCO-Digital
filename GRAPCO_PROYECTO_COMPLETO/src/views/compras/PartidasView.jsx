@@ -98,7 +98,7 @@ export default function PartidasView({ showToast }) {
           </p>
         </div>
         <input type="text" value={busqueda} onChange={e => setBusqueda(e.target.value)}
-          placeholder="🔍 Buscar..."
+          placeholder="🔍 Buscar..." aria-label="Buscar partida"
           style={{ padding: '9px 14px', borderRadius: '8px', border: `1.5px solid ${BASE.border}`, fontSize: '12.5px', minWidth: '180px' }} />
         <button onClick={() => { setForm({ ...FORM_INICIAL, proyectoId: proyectoActivoId }); setEditando('NUEVO'); }} style={{
           padding: '10px 20px', borderRadius: '8px',

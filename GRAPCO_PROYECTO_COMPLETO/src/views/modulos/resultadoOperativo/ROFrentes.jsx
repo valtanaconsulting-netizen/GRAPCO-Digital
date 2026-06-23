@@ -54,7 +54,7 @@ export default function ROFrentes() {
     );
   }
 
-  const margenPct = (ev, ac) => ev > 0 ? ((ev - ac) / ev) * 100 : 0;
+  const margenPct = (ev, ac) => ev > 0 ? ((ev - (ac || 0)) / ev) * 100 : 0;
   const cpiOf = (ev, ac) => ac > 0 ? ev / ac : 0;
   const cv = (ev, ac) => ev - ac;
 

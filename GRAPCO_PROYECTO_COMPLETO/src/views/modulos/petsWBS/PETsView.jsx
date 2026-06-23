@@ -212,7 +212,7 @@ export default function PETsView({ showToast }) {
               </p>
             </div>
             <input type="text" value={busqueda} onChange={e => setBusqueda(e.target.value)}
-              placeholder="🔍 Buscar..." style={{ ...inpS, minWidth: '200px' }} />
+              placeholder="🔍 Buscar..." aria-label="Buscar PET" style={{ ...inpS, minWidth: '200px' }} />
             {(rol === 'admin' || rol === 'ingeniero' || rol === 'calidad') && (
               <>
                 <button onClick={importarPETsBase} disabled={importando} style={{

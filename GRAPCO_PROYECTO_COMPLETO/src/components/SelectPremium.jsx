@@ -157,6 +157,7 @@ export default function SelectPremium({
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder="Buscar…"
+            aria-label="Buscar opción"
             style={{
               width: '100%', padding: '9px 11px', boxSizing: 'border-box',
               border: `1px solid ${BASE.border}`, borderRadius: '8px',

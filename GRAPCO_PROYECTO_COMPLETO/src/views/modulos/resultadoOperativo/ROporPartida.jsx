@@ -38,7 +38,7 @@ export default function ROporPartida() {
             </p>
           </div>
           <input type="text" value={busqueda} onChange={e => setBusqueda(e.target.value)}
-            placeholder="🔍 Buscar..." style={{ ...inpS, minWidth: '180px' }} />
+            placeholder="🔍 Buscar..." aria-label="Buscar partida" style={{ ...inpS, minWidth: '180px' }} />
           <select value={filtroSev} onChange={e => setFiltroSev(e.target.value)} style={{ ...selS, minWidth: '140px' }}>
             <option value="">Todas las severidades</option>
             <option value="ok">✅ OK</option>

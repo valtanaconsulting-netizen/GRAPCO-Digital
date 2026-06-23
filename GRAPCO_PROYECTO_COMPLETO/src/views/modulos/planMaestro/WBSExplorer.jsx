@@ -69,7 +69,7 @@ export default function WBSExplorer({ showToast, onEdit, onNuevo }) {
             </p>
           </div>
           <input type="text" value={filtro} onChange={e => setFiltro(e.target.value)}
-            placeholder="🔍 Buscar..." style={inpS} />
+            placeholder="🔍 Buscar..." aria-label="Buscar actividad" style={inpS} />
           <button onClick={expandirTodo} style={btnSec}>⬇ Expandir</button>
           <button onClick={colapsarTodo} style={btnSec}>⬆ Colapsar</button>
           <button onClick={() => onNuevo?.()} style={{

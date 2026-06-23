@@ -162,7 +162,7 @@ export default function CotizacionesView({ showToast }) {
           </p>
         </div>
         <input type="text" value={busqueda} onChange={e => setBusqueda(e.target.value)}
-          placeholder="🔍 Buscar material o proveedor..."
+          placeholder="🔍 Buscar material o proveedor..." aria-label="Buscar material o proveedor"
           style={{ padding: '9px 14px', borderRadius: '8px', border: `1.5px solid ${BASE.border}`, fontSize: '12.5px', minWidth: '220px', flex: '1 1 220px' }} />
         <button onClick={abrirNuevo} style={{
           padding: '10px 20px', borderRadius: '8px',

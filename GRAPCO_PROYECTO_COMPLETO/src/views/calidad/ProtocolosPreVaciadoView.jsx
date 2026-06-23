@@ -105,7 +105,7 @@ export default function ProtocolosPreVaciadoView({ onEdit, onNuevo }) {
       {/* ── Filtros ── */}
       <div style={filtrosStyle}>
         <input type="text" value={busqueda} onChange={e => setBusqueda(e.target.value)}
-          placeholder="🔍 Buscar por N° Registro, elemento, ejes..." style={inpStyle} />
+          placeholder="🔍 Buscar por N° Registro, elemento, ejes..." aria-label="Buscar protocolo" style={inpStyle} />
         <select value={filtroFrente} onChange={e => setFiltroFrente(e.target.value)} style={selStyle}>
           <option value="">Todos los frentes</option>
           {frentesDelProyecto.map(f => (

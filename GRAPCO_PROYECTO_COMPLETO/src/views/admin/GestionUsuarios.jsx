@@ -95,7 +95,7 @@ export default function GestionUsuarios({ showToast }) {
       }}>
         <input
           type="text" value={busqueda} onChange={e => setBusqueda(e.target.value)}
-          placeholder="🔍 Buscar por nombre o email..."
+          placeholder="🔍 Buscar por nombre o email..." aria-label="Buscar por nombre o email"
           style={{
             flex: 1, minWidth: '200px',
             padding: '9px 14px', borderRadius: '8px',

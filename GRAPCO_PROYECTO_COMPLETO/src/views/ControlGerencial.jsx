@@ -229,7 +229,7 @@ function ReporteTareos({ historial, tarifaPromedio, partidaExpandida, setPartida
       }}>
         <input
           type="text" value={buscar} onChange={e => setBuscar(e.target.value)}
-          placeholder="🔍 Buscar partida…"
+          placeholder="🔍 Buscar partida…" aria-label="Buscar partida"
           style={{
             flex: '1 1 200px', minWidth: '180px',
             padding: '8px 12px', borderRadius: '8px',

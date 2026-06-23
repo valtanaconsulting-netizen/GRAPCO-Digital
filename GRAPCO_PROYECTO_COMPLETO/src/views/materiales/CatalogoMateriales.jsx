@@ -132,7 +132,7 @@ export default function CatalogoMateriales({ showToast }) {
         </div>
         <input
           type="text" value={filtro} onChange={e => setFiltro(e.target.value)}
-          placeholder="🔍 Buscar..."
+          placeholder="🔍 Buscar..." aria-label="Buscar material"
           style={{ padding: '9px 14px', borderRadius: '8px', border: `1.5px solid ${BASE.border}`, fontSize: '12.5px', minWidth: '180px' }}
         />
         <select value={filtroCat} onChange={e => setFiltroCat(e.target.value)} style={{

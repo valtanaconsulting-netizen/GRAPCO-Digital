@@ -151,7 +151,7 @@ export default function WbsExplorer({ onClose, onSelect, isMobile }) {
             type="text"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="🔍  Buscar actividad, partida o código..."
+            placeholder="🔍  Buscar actividad, partida o código..." aria-label="Buscar actividad, partida o código"
             style={{
               width: '100%', padding: '10px 14px',
               border: `1.5px solid ${BASE.border}`,
