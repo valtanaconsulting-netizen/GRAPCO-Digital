@@ -647,10 +647,8 @@ export default function SelectorPerfil() {
               Registro de Personal · Facial
             </span>
           </div>
-          <p style={{ fontSize: '11.5px', color: BASE.muted, lineHeight: 1.5, margin: 0, flex: 1 }}>
-            Control inteligente de asistencia y accesos mediante reconocimiento facial, con información en tiempo real para una gestión eficiente, confiable y trazable del personal.
-          </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+          {/* Sin párrafo: los usuarios no lo leen. Las etiquetas comunican el área de un vistazo. */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', alignContent: 'flex-start', flex: 1 }}>
             {['Entrada/Salida', 'Sin perfil', 'Kiosko'].map(a => (
               <span key={a} style={{
                 background: BASE.bg, color: BASE.muted, border: `1px solid ${BASE.border}`,
@@ -751,16 +749,11 @@ export default function SelectorPerfil() {
               </span>
             </div>
 
-            {/* Descripción COMPLETA — explica qué hace cada área */}
-            <p style={{
-              fontSize: '11.5px', color: BASE.muted,
-              lineHeight: 1.5, margin: 0, flex: 1,
-            }}>
-              {p.descripcion}
-            </p>
+            {/* Sin párrafo descriptivo: los usuarios no lo leen. Las etiquetas
+                de abajo comunican de un vistazo qué hay en cada área/módulo. */}
 
             {/* Etiquetas completas (todos los módulos del área, sin recortar) */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', alignContent: 'flex-start', flex: 1 }}>
               {p.accesos.map(a => (
                 <span key={a} style={{
                   background: BASE.bg,
