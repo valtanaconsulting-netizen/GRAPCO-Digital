@@ -42,6 +42,33 @@ const newActividadItem = () => ({
   fotos: [],  // Bloque 8: array de {url, path, subidaEn}
 });
 
+// Re-hidrata el detalleTareo de una actividad contra la cuadrilla ACTUAL.
+// El borrador (y el snapshot WIP de una sesión con bug) solo guardan trabajadores
+// CON horas; volcarlos tal cual dejaba el tareo "vacío" (TAREO DE PERSONAL 0)
+// aunque la cuadrilla tuviera miembros. Esta función parte de TODOS los miembros
+// —para que ninguno desaparezca por no tener horas aún— y fusiona las horas ya
+// guardadas por nombre, conservando además a quien tuviera horas pero ya no esté
+// en la cuadrilla. Es la fuente única para que el tareo nunca se muestre vacío
+// teniendo cuadrilla.
+const fusionarDetalleConCuadrilla = (miembros, detalleGuardado) => {
+  const horas = Array.isArray(detalleGuardado) ? detalleGuardado : [];
+  const norm = (t) => ({
+    nombre: t.nombre, cargo: t.cargo || 'Operario', dni: t.dni || '',
+    hn: parseFloat(t.hn) || 0, he: parseFloat(t.he) || 0,
+  });
+  if (!miembros?.length) return horas.filter(t => t?.nombre).map(norm);
+  const base = miembros.map(m => {
+    const t = horas.find(x => x?.nombre === m.nombre);
+    return {
+      nombre: m.nombre, cargo: m.cargo, dni: m.dni,
+      hn: parseFloat(t?.hn) || 0, he: parseFloat(t?.he) || 0,
+    };
+  });
+  const enBase = new Set(base.map(t => t.nombre));
+  const extra = horas.filter(t => t?.nombre && !enBase.has(t.nombre)).map(norm);
+  return [...base, ...extra];
+};
+
 export default function Capataz({
   cuadrillasActivas, cuadrillasDB, personalDB, isMobile, showToast,
 }) {
@@ -357,10 +384,9 @@ export default function Capataz({
               // = borrado intencional—. Si no, se toman del registro subido.
               fotos: Array.isArray(a.fotos) ? a.fotos : (reg?.fotos || []),
               _registroExistenteId: a._registroExistenteId || reg?.regId || null,
-              detalleTareo: (a.detalleTareo || []).map(t => ({
-                nombre: t.nombre, cargo: t.cargo || 'Operario', dni: t.dni || '',
-                hn: parseFloat(t.hn) || 0, he: parseFloat(t.he) || 0,
-              })),
+              // El borrador solo persiste trabajadores CON horas; re-hidratamos
+              // contra la cuadrilla actual para no mostrar el tareo vacío.
+              detalleTareo: fusionarDetalleConCuadrilla(miembrosCuadrilla, a.detalleTareo),
             };
           });
           setActividades(acts);
@@ -393,13 +419,7 @@ export default function Capataz({
               unidad: r.unidad || 'UND', metrado: String(r.metrado || ''),
               observacion: r.observacion || '',
               fotos: r.fotos || [],  // Bloque 8: cargar fotos guardadas
-              detalleTareo: miembrosCuadrilla.map(m => {
-                const t = (r.detalleTareo || []).find(x => x?.nombre === m.nombre);
-                return {
-                  nombre: m.nombre, cargo: m.cargo, dni: m.dni,
-                  hn: parseFloat(t?.hn) || 0, he: parseFloat(t?.he) || 0,
-                };
-              }),
+              detalleTareo: fusionarDetalleConCuadrilla(miembrosCuadrilla, r.detalleTareo),
             };
           });
           setActividades(acts);
@@ -452,7 +472,14 @@ export default function Capataz({
     const w = wipRef.current;
     if (w && w.fecha === fecha && w.capataz === capataz) {
       if ((w.t || 0) >= (draftTsRef.current || 0) && Array.isArray(w.actividades) && w.actividades.length) {
-        setActividades(w.actividades);
+        // Re-hidratar el tareo contra la cuadrilla actual: un snapshot WIP de una
+        // sesión anterior pudo guardar el detalleTareo vacío; aquí se reconstruye
+        // (fusionando las horas que sí tuviera) para no restaurar una cuadrilla sin
+        // miembros. Las pulsaciones sin guardar se conservan por nombre.
+        setActividades(w.actividades.map(a => ({
+          ...a,
+          detalleTareo: fusionarDetalleConCuadrilla(miembrosCuadrilla, a.detalleTareo),
+        })));
         setActActivaId(w.actActivaId || w.actividades[0]?.id || null);
         if (w.vista) setVista(w.vista);
       } else if (w.vista) {
