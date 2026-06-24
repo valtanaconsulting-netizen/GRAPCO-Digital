@@ -33,8 +33,9 @@ const TABS = [
   { id: 'seed',        l: '🚀 Datos Demo',       t: 'Datos Demo',      icon: 'package',     desc: 'Cargar seed PTARI para sustentación' },
 ];
 
-export default function AdminPanel({ showToast }) {
-  const [tab, setTab] = useState('resumen');
+export default function AdminPanel({ showToast, tabInicial }) {
+  // tabInicial: deep-link desde el SelectorPerfil (ej. 'usuarios', 'auditoria'). Siembra inicial.
+  const [tab, setTab] = useState(tabInicial || 'resumen');
 
   return (
     <RoleGuard roles={['admin']}>

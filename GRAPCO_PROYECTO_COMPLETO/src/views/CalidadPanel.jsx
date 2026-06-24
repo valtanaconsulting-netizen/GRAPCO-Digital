@@ -45,8 +45,10 @@ const KEY_TO_TAB = {
   'calidad.bim': 'bim',
 };
 
-export default function CalidadPanel({ showToast, tabExterna, onChangeTab }) {
-  const [tabInterno, setTabInterno] = useState('dashboard');
+export default function CalidadPanel({ showToast, tabExterna, onChangeTab, tabInicial }) {
+  // tabInicial: deep-link desde el SelectorPerfil (puede llegar como key 'calidad.pets'
+  // o como id de tab 'pets'). Solo siembra el estado inicial; luego manda el usuario.
+  const [tabInterno, setTabInterno] = useState(() => KEY_TO_TAB[tabInicial] || tabInicial || 'dashboard');
   // Si recibimos tabExterna como key del sidebar (calidad.protocolos), la mapeamos.
   // Si no, usamos el state interno (modo standalone, retrocompatible).
   const tab = tabExterna ? (KEY_TO_TAB[tabExterna] || 'dashboard') : tabInterno;

@@ -271,6 +271,10 @@ function AppInner() {
   const [moduloIngeniero, setModuloIngeniero] = useState(() => leerRutaHash()?.modulo || 'dashboard');
   const [moduloOT, setModuloOT] = useState('ot.dashboard'); // sub-módulo activo del área Oficina Técnica (menú lateral)
   const [moduloAlmacen, setModuloAlmacen] = useState('materiales.dashboard'); // sub-módulo activo del área Almacén (menú lateral)
+  // Pestaña inicial de paneles con tabs internos, para que el SelectorPerfil pueda
+  // hacer deep-link a una sección concreta (ej. Admin→Usuarios, Calidad→PETs).
+  const [adminTab, setAdminTab] = useState('resumen');
+  const [calidadTab, setCalidadTab] = useState('calidad.dashboard');
   const [drawerOpen, setDrawerOpen] = useState(false); // menú móvil (hamburguesa)
 
   // Si el módulo activo no está permitido para el área actual, salta al primero permitido.
@@ -287,6 +291,28 @@ function AppInner() {
   useEffect(() => {
     if (rol) escribirRutaHash(rol, moduloIngeniero);
   }, [rol, moduloIngeniero]);
+
+  // Deep-link desde el SelectorPerfil: una etiqueta del área lleva DIRECTO a su
+  // sección. Cada área tiene su propio sistema de navegación interno, así que
+  // dejamos el destino en el estado correcto ANTES de activar el rol (mismo
+  // render → entra ya posicionado en la sección, sin parpadeo en el dashboard).
+  const irASeccion = useCallback((rolDestino, destino) => {
+    if (destino) {
+      if (rolDestino === 'ingeniero' || rolDestino === 'planeamiento') {
+        setModuloIngeniero(destino);
+      } else if (rolDestino === 'admin') {
+        setModuloIngeniero('admin');
+        setAdminTab(destino);
+      } else if (rolDestino === 'almacenero' || rolDestino === 'logistica') {
+        setModuloAlmacen(destino);
+      } else if (rolDestino === 'oficina_tecnica') {
+        setModuloOT(destino);
+      } else if (rolDestino === 'calidad' || rolDestino === 'supervisor_cliente') {
+        setCalidadTab(destino);
+      }
+    }
+    entrarComoRol(rolDestino);
+  }, [entrarComoRol]);
 
   // Sidebar colapsado (solo iconos) — persistido en localStorage para que el usuario
   // mantenga su preferencia entre sesiones.
@@ -538,7 +564,7 @@ function AppInner() {
         </div>
       );
     }
-    return <SelectorPerfil />;
+    return <SelectorPerfil onIrASeccion={irASeccion} />;
   }
 
   const salir = () => logout();
@@ -1073,7 +1099,7 @@ function AppInner() {
 
             {/* Panel Admin (solo si rol === admin) */}
             {moduloIngeniero === 'admin' && rol === 'admin' && (
-              <AdminPanel showToast={showToast} />
+              <AdminPanel showToast={showToast} tabInicial={adminTab} />
             )}
               </div>
             </div>
@@ -1110,12 +1136,12 @@ function AppInner() {
 
         {/* ── ROL: CALIDAD (Bloque 20) ── */}
         {rol === 'calidad' && (
-          <CalidadPanel showToast={showToast} isMobile={isMobile} />
+          <CalidadPanel showToast={showToast} isMobile={isMobile} tabInicial={calidadTab} />
         )}
 
         {/* ── ROL: SUPERVISOR CLIENTE (Bloque 20) ── */}
         {rol === 'supervisor_cliente' && (
-          <CalidadPanel showToast={showToast} isMobile={isMobile} />
+          <CalidadPanel showToast={showToast} isMobile={isMobile} tabInicial={calidadTab} />
         )}
 
         {/* ── ROL: OFICINA TÉCNICA ── */}
@@ -1124,7 +1150,7 @@ function AppInner() {
             usa sus pestañas internas (sin sidebar fijo que tape el contenido). */}
         {rol === 'oficina_tecnica' && (
           isMobile ? (
-            <OficinaTecnicaPanel showToast={showToast} isMobile={isMobile} />
+            <OficinaTecnicaPanel showToast={showToast} isMobile={isMobile} tabInicial={moduloOT} />
           ) : (
             <div style={{ position: 'relative' }}>
               <AreaSidebar

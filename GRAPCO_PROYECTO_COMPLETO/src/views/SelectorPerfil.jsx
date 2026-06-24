@@ -38,7 +38,15 @@ const PERFILES = [
     iconName: 'package',
     color: '#B45309',
     descripcion: 'Control y gestión de recursos, documentación y procesos administrativos que respaldan la operación del proyecto con orden, trazabilidad y eficiencia.',
-    accesos: ['Administración', 'Recursos', 'Documentación'],
+    // Etiquetas = secciones REALES del Almacén (MaterialesPanel). Cada una entra directo.
+    accesos: [
+      { l: 'Stock valorizado', go: 'materiales.reporteS10' },
+      { l: 'Vales / Salidas',  go: 'materiales.salida' },
+      { l: 'Entradas',         go: 'materiales.entrada' },
+      { l: 'Kardex',           go: 'materiales.kardex' },
+      { l: 'Catálogo',         go: 'materiales.catalogo' },
+      { l: 'Importar S10',     go: 'materiales.importar' },
+    ],
   },
   {
     rol: 'ingeniero',
@@ -46,7 +54,18 @@ const PERFILES = [
     iconName: 'barChart3',
     color: '#047857',
     descripcion: 'Planificación, programación y control integral de obra bajo metodologías Lean Construction y VDC, orientadas a maximizar productividad, cumplimiento y desempeño operativo.',
-    accesos: ['Producción', 'Registro', 'Carta Balance', 'Sala de Operaciones', 'Plan Maestro', 'Pull Planning', 'Materiales'],
+    // Módulos REALES del área (moduloIngeniero). "Plan Maestro" se retiró: no es accesible para este rol.
+    accesos: [
+      { l: 'Producción',          go: 'dashboard' },
+      { l: 'Registro',            go: 'registro' },
+      { l: 'Carta Balance',       go: 'carta' },
+      { l: 'Sala de Operaciones', go: 'warroom' },
+      { l: 'Cronograma',          go: 'cronogramaobra' },
+      { l: 'Last Planner',        go: 'lps' },
+      { l: 'Pull Planning',       go: 'pullplanning' },
+      { l: 'Materiales',          go: 'materiales' },
+      { l: 'BIM',                 go: 'bim' },
+    ],
   },
   {
     rol: 'oficina_tecnica',
@@ -54,7 +73,15 @@ const PERFILES = [
     iconName: 'coins',
     color: '#1D4ED8',
     descripcion: 'Gestión centralizada de RO, valorizaciones, adicionales, deductivos, garantizando control económico, trazabilidad y soporte para la toma de decisiones.',
-    accesos: ['RO', 'Valorizaciones', 'Sustento', 'Partidas', 'BIM'],
+    // Secciones REALES del área (moduloOT / ot.*). Entran directo vía tabExterna.
+    accesos: [
+      { l: 'Resultado Operativo', go: 'ot.ro.dashboard' },
+      { l: 'Valorización',        go: 'ot.valoriz' },
+      { l: 'Presupuesto',         go: 'ot.partidas' },
+      { l: 'Sustento',            go: 'ot.sustento' },
+      { l: 'RDO',                 go: 'ot.rdo' },
+      { l: 'BIM',                 go: 'ot.bim' },
+    ],
   },
   {
     rol: 'calidad',
@@ -62,7 +89,15 @@ const PERFILES = [
     iconName: 'shield',
     color: '#7E22CE',
     descripcion: 'Administración integral de protocolos, ensayos, liberaciones y no conformidades para asegurar el cumplimiento de estándares, especificaciones y requisitos del proyecto.',
-    accesos: ['Protocolos', 'PETs', 'No Conformidades', 'Ensayos', 'BIM'],
+    // Pestañas REALES de CalidadPanel (KEY_TO_TAB). Entran directo vía tabExterna/tabInicial.
+    accesos: [
+      { l: 'Protocolos',       go: 'calidad.protocolos' },
+      { l: 'PETs',             go: 'calidad.pets' },
+      { l: 'No Conformidades', go: 'calidad.ncs' },
+      { l: 'Ensayos',          go: 'calidad.ensayos' },
+      { l: 'Planos',           go: 'calidad.planos' },
+      { l: 'BIM',              go: 'calidad.bim' },
+    ],
   },
   // SSOMA (Seguridad, Salud y Medio Ambiente) movido a la plataforma independiente SIGMA (2026-06-15).
   {
@@ -71,7 +106,14 @@ const PERFILES = [
     iconName: 'shieldAdmin',
     color: BASE.navy,
     descripcion: 'Configuración y control global de la plataforma, gestión de usuarios, permisos y auditoría de información. Garantiza seguridad, gobernanza y trazabilidad sobre todos los procesos del sistema.',
-    accesos: ['Todos los módulos', 'Usuarios', 'Auditoría'],
+    // Sub-pestañas REALES de AdminPanel. Entran directo vía tabInicial.
+    accesos: [
+      { l: 'Resumen',       go: 'resumen' },
+      { l: 'Usuarios',      go: 'usuarios' },
+      { l: 'Asistencia',    go: 'asistencia' },
+      { l: 'Auditoría',     go: 'auditoria' },
+      { l: 'Configuración', go: 'config' },
+    ],
     destacado: true,
   },
 ];
@@ -127,8 +169,56 @@ const logoClienteConocido = (nombre) => {
   return '';
 };
 
-export default function SelectorPerfil() {
+// Etiqueta-acceso: ahora es un BOTÓN que ENTRA directo a esa sección del área (deep-link).
+// Tinte sutil del color del área (cohesión visual) + realce claro al pasar el mouse, para
+// que se lea como algo clickeable y ordenado (no como texto suelto).
+function ChipAcceso({ label, acento, onClick }) {
+  return (
+    <span
+      role="button" tabIndex={0}
+      title={`Ir directo a ${label}`}
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onClick(); } }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = `${acento}1f`;
+        e.currentTarget.style.borderColor = `${acento}99`;
+        e.currentTarget.style.color = BASE.navy;
+        e.currentTarget.style.transform = 'translateY(-1px)';
+        e.currentTarget.style.boxShadow = `0 5px 12px -7px ${acento}cc`;
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = `${acento}0d`;
+        e.currentTarget.style.borderColor = `${acento}33`;
+        e.currentTarget.style.color = '#33445c';
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = 'none';
+      }}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: '5px',
+        background: `${acento}0d`, color: '#33445c',
+        border: `1px solid ${acento}33`,
+        padding: '4px 9px 4px 7px', borderRadius: '8px',
+        fontSize: '10px', fontWeight: 700, letterSpacing: '0.1px', lineHeight: 1.2,
+        cursor: 'pointer', userSelect: 'none', transition: 'all 0.16s ease',
+      }}
+    >
+      <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: acento, flexShrink: 0 }} />
+      {label}
+    </span>
+  );
+}
+
+// Rótulo "IR DIRECTO A" sobre el grupo de etiquetas — da estructura y avisa que son navegables.
+const eyebrowAccesos = (acento) => ({
+  fontSize: '8.5px', fontWeight: 900, letterSpacing: '1.2px',
+  textTransform: 'uppercase', color: acento, opacity: 0.72,
+});
+
+export default function SelectorPerfil({ onIrASeccion }) {
   const { user, entrarComoRol, logout, rolPermitido } = useAuth();
+  // Deep-link a una sección concreta del área. Si el padre no pasó el handler
+  // (uso suelto del componente), cae a entrar al área sin sección específica.
+  const irA = (rol, go) => (onIrASeccion ? onIrASeccion(rol, go) : entrarComoRol(rol));
   const { proyectos, proyectoActivo, frentesDelProyecto, proyectoActivoId, setProyectoActivoId, frenteActivoId, setFrenteActivoId, fechaInicioProyecto } = useProyectoActivo();
   const [modoMarcador, setModoMarcador] = useState(false);
   const [modoPin, setModoPin] = useState(false);
@@ -647,14 +737,14 @@ export default function SelectorPerfil() {
               Registro de Personal · Facial
             </span>
           </div>
-          {/* Sin párrafo: los usuarios no lo leen. Las etiquetas comunican el área de un vistazo. */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', alignContent: 'flex-start', flex: 1 }}>
-            {['Entrada/Salida', 'Sin perfil', 'Kiosko'].map(a => (
-              <span key={a} style={{
-                background: BASE.bg, color: BASE.muted, border: `1px solid ${BASE.border}`,
-                padding: '3px 9px', borderRadius: '999px', fontSize: '9.5px', fontWeight: 700, letterSpacing: '0.2px',
-              }}>{a}</span>
-            ))}
+          {/* Etiquetas clickeables: cualquiera abre el kiosko de registro facial. */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
+            <span style={eyebrowAccesos(BASE.gold)}>Registro facial</span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignContent: 'flex-start' }}>
+              {['Entrada/Salida', 'Sin perfil', 'Kiosko'].map(a => (
+                <ChipAcceso key={a} label={a} acento={BASE.gold} onClick={() => setModoMarcador(true)} />
+              ))}
+            </div>
           </div>
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -749,20 +839,14 @@ export default function SelectorPerfil() {
               </span>
             </div>
 
-            {/* Sin párrafo descriptivo: los usuarios no lo leen. Las etiquetas
-                de abajo comunican de un vistazo qué hay en cada área/módulo. */}
-
-            {/* Etiquetas completas (todos los módulos del área, sin recortar) */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', alignContent: 'flex-start', flex: 1 }}>
-              {p.accesos.map(a => (
-                <span key={a} style={{
-                  background: BASE.bg,
-                  color: BASE.muted,
-                  border: `1px solid ${BASE.border}`,
-                  padding: '3px 9px', borderRadius: '999px',
-                  fontSize: '9.5px', fontWeight: 700, letterSpacing: '0.2px',
-                }}>{a}</span>
-              ))}
+            {/* Accesos directos: cada etiqueta ENTRA a esa sección del módulo (deep-link). */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
+              <span style={eyebrowAccesos(acento)}>Ir directo a</span>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignContent: 'flex-start' }}>
+                {p.accesos.map(a => (
+                  <ChipAcceso key={a.go} label={a.l} acento={acento} onClick={() => irA(p.rol, a.go)} />
+                ))}
+              </div>
             </div>
 
             <div style={{

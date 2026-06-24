@@ -131,8 +131,9 @@ const KEY_TO_RO_SECCION = {
   'ot.ro.deductivos':  'deductivos',
 };
 
-export default function OficinaTecnicaPanel({ showToast, tabExterna, onChangeTab }) {
-  const [tabInterno, setTabInterno]   = useState('dashboard');
+export default function OficinaTecnicaPanel({ showToast, tabExterna, onChangeTab, tabInicial }) {
+  // tabInicial: deep-link móvil desde el SelectorPerfil (key 'ot.valoriz' o id 'valoriz'). Siembra inicial.
+  const [tabInterno, setTabInterno]   = useState(() => KEY_TO_TAB_OT[tabInicial] || tabInicial || 'dashboard');
   const tab = tabExterna ? (KEY_TO_TAB_OT[tabExterna] || 'dashboard') : tabInterno;
   // Sección del RO a abrir cuando la entrada del sidebar es ot.ro.<x> (null = ROPanel con sus chips).
   const roSeccion = tabExterna ? (KEY_TO_RO_SECCION[tabExterna] || null) : null;
