@@ -22,6 +22,16 @@
 export function activarPantallaCompletaEnPrimerToque() {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
+  // ── DESACTIVADO (23/06/2026) ────────────────────────────────────────────
+  // Ya NO forzamos pantalla completa. El usuario quiere que se VEAN la barra de
+  // estado (hora/batería) y los 3 botones de navegación del sistema. Pedir la
+  // Fullscreen API los OCULTABA, que es justo lo contrario. La PWA ahora corre
+  // en modo "standalone" (manifest), que mantiene ambas barras visibles con el
+  // navy de theme-color. Dejamos la función como no-op para no tocar el wiring
+  // en main.jsx y conservar el historial/explicación.
+  return;
+  // eslint-disable-next-line no-unreachable
+
   // App nativa (Capacitor): la barra de estado la maneja inicializarNativo()
   // con el plugin StatusBar. No usamos la Fullscreen API web aquí.
   if (window.Capacitor?.isNativePlatform?.()) return;
