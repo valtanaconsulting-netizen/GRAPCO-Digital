@@ -172,7 +172,9 @@ const logoClienteConocido = (nombre) => {
 // Etiqueta-acceso: ahora es un BOTÓN que ENTRA directo a esa sección del área (deep-link).
 // Tinte sutil del color del área (cohesión visual) + realce claro al pasar el mouse, para
 // que se lea como algo clickeable y ordenado (no como texto suelto).
-function ChipAcceso({ label, acento, onClick }) {
+// `fill`: estira el chip para ocupar toda su celda de la grilla, de modo que las
+// etiquetas queden alineadas en columnas (A B C / A B C), no empacadas a la izquierda.
+function ChipAcceso({ label, acento, onClick, fill = false }) {
   return (
     <span
       role="button" tabIndex={0}
@@ -194,10 +196,13 @@ function ChipAcceso({ label, acento, onClick }) {
         e.currentTarget.style.boxShadow = 'none';
       }}
       style={{
-        display: 'inline-flex', alignItems: 'center', gap: '5px',
+        display: fill ? 'flex' : 'inline-flex',
+        width: fill ? '100%' : undefined,
+        boxSizing: 'border-box',
+        alignItems: 'center', justifyContent: 'flex-start', gap: '5px',
         background: `${acento}0d`, color: '#33445c',
         border: `1px solid ${acento}33`,
-        padding: '4px 9px 4px 7px', borderRadius: '8px',
+        padding: '4px 8px 4px 7px', borderRadius: '8px',
         fontSize: '10px', fontWeight: 700, letterSpacing: '0.1px', lineHeight: 1.2,
         cursor: 'pointer', userSelect: 'none', transition: 'all 0.16s ease',
       }}
@@ -840,9 +845,11 @@ export default function SelectorPerfil({ onIrASeccion }) {
             {/* Accesos directos: cada etiqueta ENTRA a esa sección del módulo (deep-link). */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
               <span style={eyebrowAccesos(acento)}>Ir directo a</span>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignContent: 'flex-start' }}>
+              {/* Grilla de 3 columnas: las etiquetas comparten columna y quedan
+                  alineadas (A B C / A B C), en vez de empacarse a la izquierda. */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '6px', alignItems: 'stretch', alignContent: 'flex-start' }}>
                 {p.accesos.map(a => (
-                  <ChipAcceso key={a.go} label={a.l} acento={acento} onClick={() => irA(p.rol, a.go)} />
+                  <ChipAcceso key={a.go} label={a.l} acento={acento} fill onClick={() => irA(p.rol, a.go)} />
                 ))}
               </div>
             </div>
