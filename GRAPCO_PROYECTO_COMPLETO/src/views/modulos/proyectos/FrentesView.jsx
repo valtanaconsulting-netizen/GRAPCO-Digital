@@ -143,7 +143,7 @@ export default function FrentesView({ showToast }) {
         <EmptyState icono="📍" titulo="Sin frentes en este proyecto"
           descripcion="Crea frentes para dividir el proyecto en zonas de trabajo (ej: Norte, Sur, Central). Cada frente tiene sus propios indicadores." />
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '12px' }}>
           {sortedFrentes.map(f => (
             <div key={f.id} style={{
               background: BASE.white, border: `1px solid ${BASE.border}`,

@@ -218,7 +218,7 @@ export default function Tareo({ historial, filtrados, personalDB, cuadrillasActi
       {/* Datos del encabezado */}
       <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,padding:'18px'}}>
         <h4 style={{fontSize:'13px',fontWeight:'800',color:BASE.navy,borderLeft:`4px solid ${BASE.orange}`,paddingLeft:'10px',marginBottom:'14px'}}>📋 DATOS DEL ENCABEZADO</h4>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))',gap:'10px'}}>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%, 160px),1fr))',gap:'10px'}}>
           {[
             ['SUPERVISOR',tareoSupervisor,setTareoSupervisor,'text','Nombre del supervisor'],
             ['ZONA / OBRA',tareoZona,setTareoZona,'text','Zona de trabajo'],
@@ -240,7 +240,7 @@ export default function Tareo({ historial, filtrados, personalDB, cuadrillasActi
       {/* Vista previa stats */}
       <div style={{background:BASE.navy,borderRadius:'12px',padding:'18px',color:'#fff'}}>
         <p style={{fontSize:'11px',opacity:0.7,fontWeight:'700',letterSpacing:'1px',marginBottom:'10px'}}>📊 VISTA PREVIA DEL RANGO SELECCIONADO</p>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(110px,1fr))',gap:'10px'}}>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%, 110px),1fr))',gap:'10px'}}>
           {[
             ['REGISTROS',tareoStats.registros],
             ['DÍAS',tareoStats.dias],

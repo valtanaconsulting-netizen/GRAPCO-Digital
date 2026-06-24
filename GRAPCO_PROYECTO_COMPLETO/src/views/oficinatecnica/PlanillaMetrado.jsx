@@ -141,7 +141,7 @@ export default function PlanillaMetrado({ tipo = 'concreto', unidad, detalle = [
       <p style={{ fontSize: '10px', fontWeight: 900, color: BASE.muted, letterSpacing: '0.7px', marginBottom: '8px' }}>
         TIPO DE METRADO — ELIGE EL FORMATO
       </p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '8px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))', gap: '8px' }}>
         {Object.entries(TIPOS_METRADO).map(([k, t]) => {
           const activo = tipo === k;
           return (

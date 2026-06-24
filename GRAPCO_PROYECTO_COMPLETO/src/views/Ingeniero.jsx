@@ -1,7 +1,7 @@
 // src/views/Ingeniero.jsx — V3 con Alertas, Ranking, CPI%, Costos HE
 import React, { useState, useMemo, useEffect, useRef, useCallback, useLayoutEffect, lazy, Suspense } from 'react';
 import { db } from '../firebaseConfig';
-import { doc, deleteDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, deleteDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { CATALOGO_MASTER, INFO_MAP, FECHA_INICIO_PROYECTO } from '../utils/constants';
 import { BASE, inp } from '../utils/styles';
 import {
@@ -40,6 +40,17 @@ import { ALIAS_ACTIVIDADES } from '../data/aliasesActividades';
 import { normActividad } from '../utils/normalizacion'; // idioma común (cruce tareo↔catálogo)
 import { crearResolverNombre } from '../utils/nombresCanonicos'; // nombres canónicos (filtro por persona)
 
+// Semana del proyecto (LPS) correspondiente a HOY. Semana 1 = lunes de
+// FECHA_INICIO_PROYECTO. Sirve para que el dashboard arranque en la semana en curso.
+const semanaActualProyecto = () => {
+  try {
+    const hoy = new Date();
+    const iso = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+    const n = obtenerSemana(iso, FECHA_INICIO_PROYECTO);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  } catch { return null; }
+};
+
 export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, personalDB, planesDiarios, configuracion, asistencia, isMobile, showToast, vistaInicial, soloPlaneamiento }) {
   const [view, setView] = useState(vistaInicial || 'auditoria');
   const [grupoActivo, setGrupoActivo] = useState(soloPlaneamiento ? 'planificacion' : 'produccion');
@@ -48,7 +59,9 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
   const [fPartida,    setFPartida]    = useState('');
   const [fSubpartida, setFSubpartida] = useState('');
   const [fActividad,  setFActividad]  = useState('');
-  const [fSemana,     setFSemana]     = useState('');
+  // Por defecto el dashboard muestra la SEMANA ACTUAL del proyecto (no "todas"):
+  // el ingeniero entra y ve directamente la semana en curso. Cambiable con el filtro.
+  const [fSemana,     setFSemana]     = useState(() => { const n = semanaActualProyecto(); return n ? String(n) : ''; });
   const [fDesde,      setFDesde]      = useState('');
   const [fHasta,      setFHasta]      = useState('');
   const [fCapataz,    setFCapataz]    = useState('');
@@ -96,6 +109,31 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
       showToast('Registro eliminado', 'info');
     } catch (err) {
       showToast(`Error: ${err.message}`, 'error');
+    }
+  };
+
+  // Guarda el metrado de UN registro (desde el modal "Metrar" de Auditoría).
+  // Acepta valor directo o el resultado de una planilla de cómputo (PlanillaMetrado):
+  // persiste el total y, si vino de un formato, también su sustento (tipo/detalle/meta)
+  // para poder re-editarlo. El IP Real y el CPI se recalculan solos (metrado vivo).
+  const guardarMetrado = async (r, payload) => {
+    if (!r?.id) return;
+    try {
+      const data = {
+        metrado: Number(payload.metrado) || 0,
+        // Sustento de la planilla (o limpio si fue valor directo)
+        tipoMetrado: payload.tipoMetrado || null,
+        detalleMetrado: Array.isArray(payload.detalleMetrado) ? payload.detalleMetrado : [],
+        metaMetrado: payload.metaMetrado || {},
+        metradoActualizadoEn: serverTimestamp(),
+        metradoActualizadoPor: user?.email || 'desconocido',
+      };
+      if (payload.unidad) data.unidad = payload.unidad;   // el formato define la unidad
+      await updateDoc(doc(db, 'Registros_Campo', r.id), data);
+      showToast('Metrado actualizado ✓', 'success');
+    } catch (err) {
+      console.error('[guardarMetrado]', err);
+      showToast(`Error al guardar metrado: ${err.message}`, 'error');
     }
   };
 
@@ -159,7 +197,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
 
   // ── Auto-migración silenciosa para admin: re-asigna proyectoId a Registros_Campo huérfanos
   // usando el mapa nombre→proyectoIdAsignado de /Usuarios. Idempotente y se ejecuta una vez por sesión.
-  const { rol: rolUsuario } = useAuth();
+  const { rol: rolUsuario, user } = useAuth();
   const autoMigradoRef = useRef(false);
   useEffect(() => {
     if (rolUsuario !== 'admin') return;
@@ -272,7 +310,10 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
       const s = parseInt(r.semana);
       if (Number.isFinite(s) && s > 0) set.add(s);
     });
-    const max = Math.max(24, ...(set.size ? Array.from(set) : [0]));
+    // Incluye SIEMPRE la semana actual del proyecto, aunque aún no tenga registros
+    // (el filtro arranca en ella por defecto, así que debe existir como opción).
+    const actual = semanaActualProyecto() || 0;
+    const max = Math.max(24, actual, ...(set.size ? Array.from(set) : [0]));
     return Array.from({ length: max }, (_, i) => i + 1);
   }, [historialEnriquecido]);
 
@@ -939,7 +980,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
           )}
 
           {/* Filtros en una sola fila: 6 selects (incl. Persona) + Desde/Hasta */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: '12px', alignItems: 'end' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%, 150px),1fr))', gap: '12px', alignItems: 'end' }}>
             {[
               { label: 'Partida',    val: fPartida,    set: v => { setFPartida(v); setFSubpartida(''); setFActividad(''); }, opts: Object.keys(catWbs).map(p => ({ v: p, l: p })) },
               { label: 'Subpartida', val: fSubpartida, set: v => { setFSubpartida(v); setFActividad(''); }, opts: fPartida ? Object.keys(catWbs[fPartida] || {}).map(s => ({ v: s, l: s })) : [] },
@@ -1007,7 +1048,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
               {/* Resto de KPIs en grilla compacta */}
               <div style={{
                 flex: '1 1 320px', minWidth: 0, paddingLeft: '24px',
-                display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(130px,1fr))',
+                display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%, 130px),1fr))',
                 gap: '14px', alignContent: 'center',
               }}>
                 {restoKpis.map((s, i) => (
@@ -1029,7 +1070,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
 
       {/* === VISTAS === */}
       {view==='cockpit'    && <CockpitEjecutivo historial={historialEnriquecido} wbs={wbs} filtrados={filtrados} costosCustomMap={costosCustomMap} isMobile={isMobile}/>}
-      {view==='auditoria'  && <Auditoria filtrados={filtrados} eliminar={eliminar} hhPorSemana={hhPorSemana} hhTotales={hhTotales} totalBaseDatos={(historial||[]).length}/>}
+      {view==='auditoria'  && <Auditoria filtrados={filtrados} eliminar={eliminar} guardarMetrado={guardarMetrado} hhPorSemana={hhPorSemana} hhTotales={hhTotales} totalBaseDatos={(historial||[]).length}/>}
       {view==='analisis'   && <CpiEac wbs={wbs} historial={historialEnriquecido} filtrados={filtrados} infoMap={infoWbs} onModificarWBS={() => handleSetView('wbs-editor')} onActualizarFlags={actualizarFlagsActividad}/>}
       {view==='wbs-editor' && <EditorWbsIsp showToast={showToast}/>}
       {view==='control'    && <ControlGerencial historialEnriquecido={historialEnriquecido} wbs={wbs} personalDB={personalDB} configuracion={configuracion} asistencia={asistencia} isMobile={isMobile}/>}
@@ -1096,7 +1137,7 @@ function ExportarSimple({ icono, titulo, desc, colorBoton, onClick, contadores, 
         </div>
       </div>
       <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))',
         gap: '10px', marginTop: '20px', marginBottom: '24px',
       }}>
         {(contadores || []).map((c, i) => (

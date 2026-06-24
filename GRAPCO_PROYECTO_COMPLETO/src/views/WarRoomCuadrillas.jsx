@@ -190,7 +190,7 @@ export default function WarRoomCuadrillas({ historial = [] }) {
       {/* KPIS GLOBALES */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))',
         gap: '12px',
       }}>
         <KPIGrande
@@ -278,7 +278,7 @@ export default function WarRoomCuadrillas({ historial = [] }) {
       ) : (
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))',
           gap: '12px',
         }}>
           {grupos.map(g => (

@@ -4,9 +4,12 @@ import { BASE } from '../utils/styles';
 import { calcCPI, getEstado, fmt1, fmtCPIPct } from '../utils/helpers';
 import { FotoGaleriaCompacta } from '../components/FotoUploader';
 import VistaHeader from '../components/VistaHeader';
+import Modal from '../components/Modal';
+import PlanillaMetrado, { TIPOS_METRADO, parcialFila } from './oficinatecnica/PlanillaMetrado';
 
-export default function Auditoria({ filtrados, eliminar, hhPorSemana = [], hhTotales = { hn:0, he:0, total:0 }, totalBaseDatos = 0 }) {
+export default function Auditoria({ filtrados, eliminar, guardarMetrado, hhPorSemana = [], hhTotales = { hn:0, he:0, total:0 }, totalBaseDatos = 0 }) {
   const [hhOpen, setHhOpen] = useState(false);
+  const [metrarReg, setMetrarReg] = useState(null);   // registro al que se le está editando el metrado
 
   const calcularHHRegistro = (r) => {
     let hn = 0, he = 0;
@@ -113,7 +116,29 @@ export default function Auditoria({ filtrados, eliminar, hhPorSemana = [], hhTot
                       <td style={{padding:'10px 13px',textAlign:'center',color:BASE.navy,fontWeight:'700',fontSize:'11px'}}>
                         <span style={{background:BASE.navySoft,padding:'2px 8px',borderRadius:'10px',border:`1px solid ${BASE.border}`}}>{r.unidad || '—'}</span>
                       </td>
-                      <td style={{padding:'10px 13px',textAlign:'center',color:metZero?BASE.red:BASE.text,fontWeight:metZero?'700':'400'}}>{r.metrado}</td>
+                      <td style={{padding:'6px 8px',textAlign:'center'}}>
+                        {guardarMetrado ? (
+                          <button
+                            onClick={()=>setMetrarReg(r)}
+                            title={metZero ? 'Metrar: ingresar valor directo o usar formato (concreto, acero, encofrado…)' : 'Editar metrado'}
+                            style={{
+                              display:'inline-flex',alignItems:'center',gap:'4px',
+                              padding:'4px 9px',borderRadius:'7px',cursor:'pointer',
+                              fontSize:'12px',fontWeight:metZero?'800':'700',
+                              fontFamily:'var(--grapco-font-mono, monospace)',
+                              color:metZero?BASE.gold:BASE.navy,
+                              background:metZero?'#fffaf2':BASE.bgSoft,
+                              border:`1px solid ${metZero?BASE.gold:BASE.border}`,
+                              transition:'all 0.12s',
+                            }}
+                            onMouseEnter={e=>{e.currentTarget.style.borderColor=BASE.gold;e.currentTarget.style.background='#fffaf2';}}
+                            onMouseLeave={e=>{e.currentTarget.style.borderColor=metZero?BASE.gold:BASE.border;e.currentTarget.style.background=metZero?'#fffaf2':BASE.bgSoft;}}>
+                            {metZero ? <>✎ metrar</> : <>{r.metrado} <span style={{fontSize:'9px',opacity:0.55}}>✎</span></>}
+                          </button>
+                        ) : (
+                          <span style={{color:metZero?BASE.red:BASE.text,fontWeight:metZero?'700':'400'}}>{r.metrado}</span>
+                        )}
+                      </td>
                       <td style={{padding:'10px 13px',textAlign:'center',color:BASE.text}}>{fmt1(hn)}</td>
                       <td style={{padding:'10px 13px',textAlign:'center',color:he>0?BASE.orange:BASE.muted,fontWeight:he>0?'700':'400'}}>{fmt1(he)}</td>
                       <td style={{padding:'10px 13px',textAlign:'center',fontWeight:'700',color:BASE.navy}}>{fmt1(total)}</td>
@@ -158,6 +183,181 @@ export default function Auditoria({ filtrados, eliminar, hhPorSemana = [], hhTot
           <span><span style={{color:BASE.muted}}>∅</span> Sin metrado</span>
         </div>
       </div>
+
+      {/* MODAL: metrar un registro — valor directo o planilla de cómputo (formato) */}
+      {metrarReg && (
+        <ModalMetrado
+          registro={metrarReg}
+          onCerrar={()=>setMetrarReg(null)}
+          onGuardar={async (payload)=>{ await guardarMetrado(metrarReg, payload); }}
+        />
+      )}
     </div>
+  );
+}
+
+// Infiere el TIPO de formato de metrado a partir de la partida / actividad / unidad
+// del registro. Es solo un valor inicial: el selector de la planilla permite cambiarlo.
+function inferirTipoMetrado(r) {
+  const txt = `${r._partidaCanonica || r.partida || ''} ${r._actividadCanonica || r.actividad || ''}`
+    .normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
+  if (/ACERO|REFUERZO|VARILLA|FIERRO/.test(txt)) return 'acero';
+  if (/ENCOFRAD/.test(txt)) return 'encofrado';
+  if (/TARRAJEO|SOLAQUEO|REVOQUE/.test(txt)) return 'tarrajeo';
+  if (/DEMOLIC/.test(txt)) return 'demolicion';
+  if (/ELIMINAC|DESMONTE|ACARREO|VOLQUETE/.test(txt)) return 'eliminacion';
+  if (/EXCAVAC/.test(txt)) return 'excavacion';
+  if (/RELLENO/.test(txt)) return 'relleno';
+  if (/CONCRETO|VACIAD|ZAPATA|COLUMNA|VIGA|LOSA|SOLADO|CIMIENTO|PLACA/.test(txt)) return 'concreto';
+  // Respaldo por unidad del registro
+  const u = (r.unidad || '').toLowerCase();
+  if (u === 'kg') return 'acero';
+  if (u === 'm2') return 'encofrado';
+  if (u === 'm3') return 'concreto';
+  return 'generico';
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Modal para METRAR un registro: dos modos — (1) valor directo o (2) usar un
+// FORMATO (PlanillaMetrado: concreto m³, acero kg, encofrado m², excavación,
+// eliminación/volquetes, demolición…). El total calculado se guarda como el
+// metrado del registro; el IP Real y el CPI se recalculan solos.
+// ────────────────────────────────────────────────────────────────────────────
+function ModalMetrado({ registro: r, onCerrar, onGuardar }) {
+  const tipoInicial = r.tipoMetrado || inferirTipoMetrado(r);
+  const tieneFormato = Array.isArray(r.detalleMetrado) && r.detalleMetrado.length > 0;
+  const [modo, setModo] = useState(tieneFormato ? 'formato' : 'directo'); // 'directo' | 'formato'
+
+  // Modo directo
+  const [valor, setValor] = useState(r.metrado != null ? String(r.metrado) : '');
+  const [unidadDir, setUnidadDir] = useState(r.unidad || '');
+
+  // Modo formato (planilla)
+  const totalInicial = (r.detalleMetrado || []).reduce((s, f) => s + parcialFila(tipoInicial, f), 0);
+  const [pTipo, setPTipo]     = useState(tipoInicial);
+  const [pUnidad, setPUnidad] = useState(r.unidad || TIPOS_METRADO[tipoInicial]?.unidad || 'und');
+  const [pDetalle, setPDetalle] = useState(r.detalleMetrado || []);
+  const [pMeta, setPMeta]     = useState(r.metaMetrado || {});
+  const [pTotal, setPTotal]   = useState(Math.round(totalInicial * 1000) / 1000);
+
+  const [guardando, setGuardando] = useState(false);
+
+  const guardar = async () => {
+    setGuardando(true);
+    try {
+      if (modo === 'directo') {
+        await onGuardar({
+          metrado: parseFloat(valor) || 0,
+          unidad: unidadDir || undefined,
+          tipoMetrado: null, detalleMetrado: [], metaMetrado: {},
+        });
+      } else {
+        await onGuardar({
+          metrado: pTotal,
+          unidad: pUnidad,
+          tipoMetrado: pTipo,
+          detalleMetrado: pDetalle,
+          metaMetrado: pMeta,
+        });
+      }
+      onCerrar();
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const partida = r._partidaCanonica || r.partida || '—';
+  const totalMostrar = modo === 'directo' ? (parseFloat(valor) || 0) : pTotal;
+  const unidadMostrar = modo === 'directo' ? (unidadDir || r.unidad || '') : pUnidad;
+
+  return (
+    <Modal onClose={onCerrar} title="Metrar registro" maxW="900px">
+      {/* Contexto del registro */}
+      <div style={{
+        display:'flex',flexWrap:'wrap',gap:'10px',alignItems:'center',
+        background:BASE.bgSoft,border:`1px solid ${BASE.border}`,borderRadius:'10px',
+        padding:'10px 14px',marginBottom:'14px',
+      }}>
+        <div style={{flex:1,minWidth:0}}>
+          <p style={{fontSize:'9.5px',fontWeight:'800',color:BASE.muted,letterSpacing:'0.5px',margin:0}}>{partida}</p>
+          <p style={{fontSize:'13px',fontWeight:'800',color:BASE.navy,margin:'2px 0 0',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{r.actividad}</p>
+          <p style={{fontSize:'10px',color:BASE.muted,margin:'2px 0 0'}}>S{r.semana} · {r.fecha}</p>
+        </div>
+        <div style={{textAlign:'right'}}>
+          <p style={{fontSize:'9.5px',fontWeight:'800',color:BASE.muted,letterSpacing:'0.5px',margin:0}}>METRADO A GUARDAR</p>
+          <p style={{fontSize:'20px',fontWeight:'900',color:BASE.goldDark,margin:'2px 0 0',fontFamily:'var(--grapco-font-mono, monospace)'}}>
+            {Number(totalMostrar).toLocaleString('es-PE', { maximumFractionDigits: 3 })}
+            <span style={{fontSize:'11px',color:BASE.muted,marginLeft:'5px'}}>{unidadMostrar}</span>
+          </p>
+        </div>
+      </div>
+
+      {/* Selector de modo: valor directo vs formato */}
+      <div style={{display:'inline-flex',background:'#f1f5f9',borderRadius:'10px',padding:'4px',gap:'4px',marginBottom:'16px'}}>
+        {[
+          { key:'directo', label:'① Valor directo', icono:'⌨️' },
+          { key:'formato', label:'② Usar formato',  icono:'📐' },
+        ].map(b => {
+          const activo = modo === b.key;
+          return (
+            <button key={b.key} type="button" onClick={()=>setModo(b.key)} style={{
+              padding:'8px 16px',
+              background: activo ? BASE.navy : 'transparent',
+              color: activo ? '#fff' : BASE.muted,
+              border:'none',borderRadius:'8px',fontSize:'12px',fontWeight:'800',cursor:'pointer',
+              display:'inline-flex',alignItems:'center',gap:'7px',transition:'all 0.15s',
+            }}>
+              <span style={{fontSize:'14px'}}>{b.icono}</span>{b.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {modo === 'directo' ? (
+        <div style={{display:'grid',gridTemplateColumns:'2fr 1fr',gap:'12px',alignItems:'end'}}>
+          <div>
+            <label style={{display:'block',fontSize:'10px',fontWeight:'800',color:BASE.muted,marginBottom:'5px',letterSpacing:'0.4px'}}>METRADO</label>
+            <input
+              type="number" min="0" step="0.01" autoFocus
+              value={valor} onChange={e=>setValor(e.target.value)}
+              placeholder="0.00"
+              style={{width:'100%',padding:'11px 13px',borderRadius:'9px',border:`1.5px solid ${BASE.border}`,fontSize:'16px',fontWeight:'700',fontFamily:'var(--grapco-font-mono, monospace)',boxSizing:'border-box',outline:'none'}}
+            />
+          </div>
+          <div>
+            <label style={{display:'block',fontSize:'10px',fontWeight:'800',color:BASE.muted,marginBottom:'5px',letterSpacing:'0.4px'}}>UNIDAD</label>
+            <input
+              type="text" value={unidadDir} onChange={e=>setUnidadDir(e.target.value)}
+              placeholder="m3, kg, m2…"
+              style={{width:'100%',padding:'11px 13px',borderRadius:'9px',border:`1.5px solid ${BASE.border}`,fontSize:'14px',fontWeight:'700',textAlign:'center',boxSizing:'border-box',outline:'none'}}
+            />
+          </div>
+        </div>
+      ) : (
+        <PlanillaMetrado
+          tipo={pTipo}
+          unidad={pUnidad}
+          detalle={pDetalle}
+          meta={pMeta}
+          onChange={({ tipo, unidad, detalle, total, meta }) => {
+            setPTipo(tipo); setPUnidad(unidad); setPDetalle(detalle);
+            setPTotal(total); setPMeta(meta || {});
+          }}
+        />
+      )}
+
+      {/* Acciones */}
+      <div style={{display:'flex',justifyContent:'flex-end',gap:'10px',marginTop:'18px'}}>
+        <button onClick={onCerrar} disabled={guardando} style={{
+          padding:'10px 20px',borderRadius:'9px',background:'#fff',color:BASE.navy,
+          border:`1.5px solid ${BASE.border}`,fontSize:'12px',fontWeight:'700',cursor:'pointer',
+        }}>Cancelar</button>
+        <button onClick={guardar} disabled={guardando} style={{
+          padding:'10px 22px',borderRadius:'9px',background:BASE.navy,color:'#fff',
+          border:'none',fontSize:'12px',fontWeight:'800',cursor:'pointer',letterSpacing:'0.4px',
+          opacity: guardando ? 0.6 : 1,
+        }}>{guardando ? 'Guardando…' : 'Guardar metrado'}</button>
+      </div>
+    </Modal>
   );
 }

@@ -115,7 +115,7 @@ export default function CurvaS({ historialEnriquecido }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {/* KPIs EVM */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%, 170px),1fr))', gap: '10px' }}>
         <KpiCard
           icon="💰" titulo="CPI · COST INDEX"
           valor={fmtCPIPct(totales.cpi)}
@@ -230,7 +230,7 @@ export default function CurvaS({ historialEnriquecido }) {
             </h3>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: '10px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%, 180px),1fr))', gap: '10px' }}>
             <div style={{ background: BASE.bgSoft, borderRadius: '10px', padding: '12px 14px' }}>
               <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>BAC · BUDGET</p>
               <p style={{ fontSize: '20px', fontWeight: '900', color: BASE.navy, marginTop: '4px' }}>

@@ -109,7 +109,7 @@ export default function TipoCambioView({ showToast }) {
             <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.navy, marginBottom: '10px' }}>
               REGISTRO MANUAL (feriados / cuando SUNAT no publica)
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', alignItems: 'flex-end' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '10px', alignItems: 'flex-end' }}>
               <Field label="Fecha *">
                 <input type="date" value={formManual.fecha} onChange={e => setFormManual({...formManual, fecha: e.target.value})} style={inpS} />
               </Field>

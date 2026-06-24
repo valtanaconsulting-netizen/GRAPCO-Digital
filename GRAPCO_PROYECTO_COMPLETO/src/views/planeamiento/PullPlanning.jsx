@@ -106,7 +106,7 @@ export default function PullPlanning() {
             <span style={{ fontSize: '9.5px', fontWeight: 800, color: BASE.white, background: BASE.navy, borderRadius: '999px', padding: '3px 12px', letterSpacing: '0.6px', textTransform: 'uppercase' }}>{dec.alternativa}</span>
             <span style={{ ...LABEL, marginLeft: 'auto', letterSpacing: '0.5px' }}>Alternativa seleccionada</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(118px, 1fr))', gap: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 118px), 1fr))', gap: '8px' }}>
             {[
               ['Fecha inicio', fmtFecha(dec.inicio), BASE.navy],
               ['Fecha fin', fmtFecha(dec.fin), BASE.navy],

@@ -110,7 +110,7 @@ export default function AlertasPanel({ alertas = [] }) {
             marginBottom: '10px',
             border: `1px solid ${BASE.border}`,
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))',
             gap: '8px',
             alignItems: 'end',
           }}>

@@ -212,7 +212,7 @@ const toolbarStyle = {
   boxShadow: '0 2px 6px rgba(15,23,42,0.04)',
 };
 const filtrosStyle = {
-  display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 8,
+  display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: 8,
   background: BASE.white, border: `1px solid ${BASE.border}`,
   borderRadius: 12, padding: 10,
 };

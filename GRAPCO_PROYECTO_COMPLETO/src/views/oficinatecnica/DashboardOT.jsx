@@ -60,7 +60,7 @@ export default function DashboardOT() {
         </div>
       )}
       {/* KPIs financieros */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(216px, 1fr))', gap: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 216px), 1fr))', gap: '10px' }}>
         <KPI label="PRESUPUESTO CONTRACTUAL" valor={fmtSoles(stats.presupuestoContractual)}
           color={BASE.navy} sub={`${stats.totalPartidas} partidas`} icono="📋" />
         <KPI label="VALORIZADO ACUMULADO" valor={fmtSoles(stats.totalValorizado)}
@@ -93,7 +93,7 @@ export default function DashboardOT() {
       </Seccion>
 
       {/* RDOs y Valorizaciones recientes */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(330px, 1fr))', gap: '12px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 330px), 1fr))', gap: '12px' }}>
         <Seccion titulo={`RDOs RECIENTES (${stats.totalRDOs})`} icono="📅">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
             {rdos.slice(0, 7).length === 0 ? (

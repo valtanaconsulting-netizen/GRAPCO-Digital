@@ -374,7 +374,7 @@ export default function ProyectoEditor({ proyecto, onClose, showToast }) {
             </Field>
 
             <Field label="Tipo de obra">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '8px' }}>
                 {TIPOS_OBRA.map(t => {
                   const sel = form.tipoObra === t.id;
                   return (
@@ -579,7 +579,7 @@ export default function ProyectoEditor({ proyecto, onClose, showToast }) {
             </h3>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px', marginTop: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '12px', marginTop: '14px' }}>
             <ResumenCard label="Identificación" datos={[
               ['Código', form.codigo],
               ['Nombre', form.nombre],

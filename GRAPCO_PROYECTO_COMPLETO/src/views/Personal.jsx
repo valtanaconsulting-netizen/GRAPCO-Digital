@@ -457,7 +457,7 @@ export default function Personal({ cuadrillasDB: cuadrillasTodas, personalDB: pe
             </div>
 
             {/* Fechas de gestión del trabajador (todas opcionales) */}
-            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))',gap:'10px'}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%, 150px),1fr))',gap:'10px'}}>
               <div>
                 <label style={{fontSize:'10px',fontWeight:'700',color:BASE.muted,letterSpacing:'0.6px',display:'block',marginBottom:'5px'}}>Fecha de ingreso</label>
                 <input type="date" value={formTrabajador.fechaIngreso} onChange={e=>setFormTrabajador(p=>({...p,fechaIngreso:e.target.value}))} style={inp()}/>
@@ -653,7 +653,7 @@ export default function Personal({ cuadrillasDB: cuadrillasTodas, personalDB: pe
               </button>
             </div>
           ) : (
-            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(300px,1fr))',gap:'12px'}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%, 300px),1fr))',gap:'12px'}}>
               {Object.entries(cuadrillasDB).map(([id,c])=>(
                 <div key={id} style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,padding:'18px'}}>
                   <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'12px'}}>

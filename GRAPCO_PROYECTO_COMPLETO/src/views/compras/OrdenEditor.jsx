@@ -241,7 +241,7 @@ export default function OrdenEditor({ tipoOrden = 'OC', ordenExistente = null, s
       {/* Datos cabecera */}
       <div style={{ background: BASE.bgSoft, padding: '16px', borderRadius: '12px', marginBottom: '14px' }}>
         <p style={lblSec}>DATOS GENERALES</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '10px' }}>
           <Field label="Numero *">
             <input type="text" value={form.numero} onChange={e => setForm({...form, numero: e.target.value})} style={inpS} />
           </Field>

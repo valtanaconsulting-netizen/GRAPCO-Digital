@@ -266,7 +266,7 @@ export default function InformeSustento() {
               {r.fotos?.length > 0 && (
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))',
                   gap: '6px',
                 }}>
                   {r.fotos.map((f, j) => (

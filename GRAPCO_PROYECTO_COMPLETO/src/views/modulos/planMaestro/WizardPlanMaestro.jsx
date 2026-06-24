@@ -178,7 +178,7 @@ export default function WizardPlanMaestro({ onClose, showToast }) {
       {paso === 1 && (
         <div>
           <h4 style={titH4}>Elige una plantilla según el tipo de obra</h4>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '12px' }}>
             {PLANTILLAS.map(p => {
               const sel = plantillaId === p.id;
               const totalAct = p.actividades.length;
@@ -273,7 +273,7 @@ export default function WizardPlanMaestro({ onClose, showToast }) {
         <div>
           <h4 style={titH4}>Vista previa de actividades a crear</h4>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px', marginBottom: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '10px', marginBottom: '14px' }}>
             <Stat label="Total actividades" valor={resumen.total} color={BASE.navy} />
             <Stat label="Actividades hoja" valor={resumen.hojas} color={CHART_PALETTE[3]} />
             <Stat label="Presupuesto total" valor={fmtSoles(resumen.presupuesto)} color={BASE.gold} chico />

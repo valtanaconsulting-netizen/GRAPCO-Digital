@@ -83,7 +83,7 @@ export default function CostoRealOficial() {
       </div>
 
       {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 11 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: 11 }}>
         {[
           { l: 'HH Total', v: HH(totalRow.hh), c: '#6366f1', ico: '⏱️' },
           { l: 'Costo MO', v: S(totalRow.mo, false), c: '#7c3aed', ico: '👷' },

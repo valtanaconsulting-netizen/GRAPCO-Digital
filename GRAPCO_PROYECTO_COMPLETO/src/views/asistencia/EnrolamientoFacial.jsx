@@ -217,7 +217,7 @@ export default function EnrolamientoFacial({ showToast }) {
             </button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px,1fr) minmax(280px,1fr)', gap: SPACING.md }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(min(100%, 280px),1fr) minmax(min(100%, 280px),1fr)', gap: SPACING.md }}>
             {/* Cámara */}
             <div style={{ background: '#000', borderRadius: RADIUS.lg, overflow: 'hidden', position: 'relative', aspectRatio: '4/3' }}>
               <video ref={videoRef} autoPlay playsInline muted

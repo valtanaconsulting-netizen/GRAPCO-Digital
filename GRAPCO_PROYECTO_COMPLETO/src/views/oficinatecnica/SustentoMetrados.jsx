@@ -275,7 +275,7 @@ export default function SustentoMetrados({ showToast }) {
 
                 {/* Tarjetas compactas de la carpeta */}
                 {abierto && (
-                  <div style={{ padding: '12px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '10px' }}>
+                  <div style={{ padding: '12px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 220px), 1fr))', gap: '10px' }}>
                     {g.lista.map(it => (
                       <div key={it.id} style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '11px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                         <div onClick={() => it.fotos?.length && setVerDetalle(it)} style={{ height: '108px', background: BASE.bgSoft, position: 'relative', overflow: 'hidden', cursor: it.fotos?.length ? 'pointer' : 'default' }}>
@@ -467,7 +467,7 @@ export default function SustentoMetrados({ showToast }) {
               {verDetalle.fotos?.length > 0 ? (
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 180px), 1fr))',
                   gap: '8px',
                 }}>
                   {verDetalle.fotos.map((f, i) => (

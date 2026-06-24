@@ -443,7 +443,7 @@ export default function LastPlannerPro() {
       </div>
 
       {/* ══ 3) PPC + PARETO CNC ══ */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(340px,1fr))', gap: '12px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%, 340px),1fr))', gap: '12px' }}>
         <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '14px', padding: '16px 12px', boxShadow: BASE.shadowMd }}>
           <div style={{ padding: '0 6px' }}>{tit('3 · PPC SEMANAL — % DE PLAN COMPLETADO')}</div>
           {ppcData.length === 0 ? (

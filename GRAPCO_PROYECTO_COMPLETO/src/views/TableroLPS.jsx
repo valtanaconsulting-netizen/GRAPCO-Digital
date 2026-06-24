@@ -137,7 +137,7 @@ export default function TableroLPS({
             <span style={{ fontSize: '10px', fontWeight: 800, color: BASE.gold }}>Should · Can · Will · Did</span>
             <span style={{ marginLeft: 'auto', fontSize: '10px', color: 'rgba(255,255,255,0.6)', fontWeight: 700 }}>Semana activa S{semanaActiva}</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '10px' }}>
             {saludTiles.map(t => {
               const color = t.tipo === 'pct' ? toneLPS(t.v) : (t.v > 0 ? BASE.red : BASE.greenDark);
               return (
@@ -160,7 +160,7 @@ export default function TableroLPS({
       )}
 
       {/* KPIs superiores */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '10px' }}>
         {[
           { l: 'PPC GLOBAL', v: salud.ppc == null ? '—' : `${salud.ppc}%`, c: ppcColor, sub: 'Plan cumplido (oficial)' },
           { l: 'PROGRAMADO (LAP)', v: salud.progTotal ?? 0, c: BASE.navy, sub: `${salud.bloqProg ?? 0} 🔒 en riesgo` },
@@ -176,7 +176,7 @@ export default function TableroLPS({
       </div>
 
       {/* Fila 1: Lookahead + Restricciones */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '12px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: '12px' }}>
         {/* 1. Lookahead */}
         <div style={panel}>
           <p style={titulo}>1 · Planificación a 6 semanas (Lookahead)</p>
@@ -254,7 +254,7 @@ export default function TableroLPS({
       </div>
 
       {/* Fila 2: Plan semanal + PPC */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '12px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: '12px' }}>
         {/* 3. Plan de trabajo semanal */}
         <div style={panel}>
           <p style={titulo}>3 · Plan de Trabajo Semanal (S{semanaActiva})</p>
@@ -308,7 +308,7 @@ export default function TableroLPS({
       </div>
 
       {/* Fila 3: CNC Pareto + Indicadores */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '12px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: '12px' }}>
         {/* 5. CNC Pareto */}
         <div style={panel}>
           <p style={titulo}>5 · CNC · Causas de Incumplimiento</p>
@@ -334,7 +334,7 @@ export default function TableroLPS({
         {/* 6. Indicadores */}
         <div style={panel}>
           <p style={titulo}>6 · Indicadores de Gestión</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 130px), 1fr))', gap: '8px' }}>
             {[
               { l: 'TMR · tareas listas', v: salud.tmr == null ? '—' : `${salud.tmr}%`, c: BASE.greenDark },
               { l: 'PPR · act. sin restricción', v: salud.ppr == null ? '—' : `${salud.ppr}%`, c: BASE.navy },

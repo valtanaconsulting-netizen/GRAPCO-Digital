@@ -338,7 +338,7 @@ export default function ResultadoOperativoOficial({ showToast }) {
       </div>
 
       {/* KPIs del total */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: 10 }}>
         {[
           { l: 'Presupuesto (BAC)', v: <>S/ {S(t.bac)}</>, c: '#f59e0b' },
           { l: 'Valorizado (EV)', v: <>S/ {S(t.ev)}</>, c: '#10b981' },

@@ -108,7 +108,7 @@ export default function PresupuestoView({ showToast }) {
       </div>
 
       {/* KPIs compactos del pie comercial */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: 8 }}>
         <Kpi label="Costo Directo" valor={fmtSoles(t.cd)} color={BASE.navy} />
         <Kpi label={`Gastos Grales · ${pct(t.ggPct)}`} valor={fmtSoles(t.gg)} color="#7c3aed" />
         <Kpi label={`Utilidad · ${pct(t.utilidadPct)}`} valor={fmtSoles(t.utilidad)} color={BASE.green} />
@@ -206,7 +206,7 @@ function ResumenLente({ partidas, t }) {
     ['COSTO TOTAL (VENTA)', t.total, 'total'],
   ];
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 1fr) minmax(260px, 0.9fr)', gap: 12 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(min(100%, 280px), 1fr) minmax(min(100%, 260px), 0.9fr)', gap: 12 }}>
       <Card titulo="Partidas (Costo Directo)">
         <div style={{ overflowX: 'auto' }}>
           <table style={tabla}>
@@ -434,7 +434,7 @@ function ImportadorPPTO({ proyId, partidasActuales, user, onClose, showToast }) 
 
       {parsed && (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 130px), 1fr))', gap: 8 }}>
             <Kpi label="Partidas" valor={parsed.partidas.length} color={BASE.navy} chico />
             <Kpi label="Costo Directo" valor={fmtSoles(r.cd)} color={BASE.green} chico />
             <Kpi label={`GG ${Math.round(r.ggPct || PCT_DEFAULT.ggPct)}%`} valor={fmtSoles(r.gg)} color="#7c3aed" chico />

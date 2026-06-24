@@ -187,7 +187,7 @@ export default function ImportadorPlanMaestro({ showToast }) {
             <p style={{ fontSize: '11.5px', fontWeight: '900', color: BASE.navy, letterSpacing: '0.4px', marginBottom: '10px' }}>
               COLUMNAS DETECTADAS AUTOMÁTICAMENTE
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '8px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '8px' }}>
               {[
                 { key: 'cPart', label: 'Partida' },
                 { key: 'cSub',  label: 'Subpartida' },
@@ -216,7 +216,7 @@ export default function ImportadorPlanMaestro({ showToast }) {
 
           {/* Stats */}
           {totales && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '10px' }}>
               <Stat label="Filas leídas" valor={parsed.csv.rows.length} color={BASE.navy} />
               <Stat label="Actividades válidas" valor={totales.total} color="#16a34a" />
               <Stat label="Partidas" valor={totales.partidas} color={CHART_PALETTE[3]} />

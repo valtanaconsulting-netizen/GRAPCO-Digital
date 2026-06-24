@@ -95,7 +95,7 @@ export default function ResumenAdmin() {
 
       <div style={{
         display: 'grid', gap: '10px',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(216px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 216px), 1fr))',
       }}>
         {tarjetas.map((t, i) => (
           <KPI key={i} icono={t.ico} color={t.c} label={t.l}

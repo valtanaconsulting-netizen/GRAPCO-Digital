@@ -142,7 +142,7 @@ export default function EnsayosView({ showToast }) {
           }}>➕ NUEVO ENSAYO</button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '8px', marginTop: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '8px', marginTop: '12px' }}>
           <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)} style={selS}>
             <option value="">Todos los tipos</option>
             {TIPOS_ENSAYO.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}

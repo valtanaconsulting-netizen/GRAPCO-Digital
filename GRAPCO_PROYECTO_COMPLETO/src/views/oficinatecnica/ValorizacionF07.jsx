@@ -117,7 +117,7 @@ export default function ValorizacionF07({ showToast }) {
             ))}
           </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0', borderTop: `1px solid ${BASE.border}` }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '0', borderTop: `1px solid ${BASE.border}` }}>
           {[['OBRA', obra], ['CLIENTE', cliente], ['CONTRATISTA', 'GRAPCO SAC'], ['SUPERVISIÓN', proyectoActivo?.supervision || 'Diseños Racionales SAC'], ['DENOMINACIÓN', `PPTO ${obra}`], ['PRESUPUESTO', 'Contractual (PTARI)'], ['UBICACIÓN', ubic], [fuente === 'vivo' ? 'QUINCENA N°' : 'VALORIZACIÓN N°', codPeriodo]].map(([k, v]) => (
             <div key={k} style={{ display: 'flex', fontSize: 10.5, borderRight: `1px solid ${BASE.border}`, borderBottom: `1px solid ${BASE.border}` }}>
               <span style={{ padding: '6px 8px', fontWeight: 800, color: BASE.muted, minWidth: 86, background: BASE.bgSoft }}>{k}</span>
@@ -162,7 +162,7 @@ export default function ValorizacionF07({ showToast }) {
       </div>
 
       {/* KPIs por bloque (S/.) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: 8 }}>
         <Kpi label="Presupuesto (parcial)" v={soles(tot.parcial)} c={BASE.navy} />
         <Kpi label="Acum. anterior" v={soles(tot.ant)} c={BASE.muted} />
         <Kpi label={`Actual · ${codPeriodo}`} v={soles(tot.act)} c={BASE.gold} />

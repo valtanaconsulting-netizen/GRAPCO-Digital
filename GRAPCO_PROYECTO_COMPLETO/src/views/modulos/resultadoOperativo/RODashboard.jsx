@@ -41,7 +41,7 @@ export default function RODashboard() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
       {/* KPIs financieros principales */}
       <p style={SEC}>📌 Resultado a la fecha</p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(216px, 1fr))', gap: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 216px), 1fr))', gap: '10px' }}>
         <KPI label="VENDIDO (EV)" valor={fmtSoles(evShow)}
           color={BASE.gold} sub={ro.evReal ? 'Valorizado al cliente' : `${fmtPct(indicadoresGlobales.pctAvanceFisico)} avance físico`} icono="💵" />
         <KPI label="COSTO APLICADO" valor={fmtSoles(totales.costoAplicado)}
@@ -62,7 +62,7 @@ export default function RODashboard() {
         <p style={{ fontSize: '11px', fontWeight: '900', color: BASE.gold, letterSpacing: '1.4px', marginBottom: '12px' }}>
           🎯 EVM · EARNED VALUE MANAGEMENT (PMI/PMBOK)
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '10px' }}>
           <EVMCard label="BAC" valor={fmtSoles(bacShow)} desc={hayAj ? 'Presup. + adic − deduct' : 'Presupuesto total'} />
           <EVMCard label="PV" valor={fmtSoles(totales.PV)} desc="Valor planificado" />
           <EVMCard label="EV" valor={fmtSoles(evShow)} desc={ro.evReal ? 'Valorizado real' : 'Valor ganado'} />
@@ -77,7 +77,7 @@ export default function RODashboard() {
 
       {/* Proyecciones */}
       <p style={SEC}>🔮 Proyección al cierre</p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(216px, 1fr))', gap: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 216px), 1fr))', gap: '10px' }}>
         <KPI label="EAC (Proyección al cierre)" valor={fmtSoles(indicadoresGlobales.EAC)}
           color={indicadoresGlobales.EAC > totales.BAC ? BASE.red : BASE.green}
           sub={indicadoresGlobales.EAC > totales.BAC
@@ -94,7 +94,7 @@ export default function RODashboard() {
 
       {/* Layout 2 columnas: Críticas + Estrella */}
       <p style={SEC}>🚦 Partidas — dónde mirar</p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '12px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: '12px' }}>
         {/* Partidas críticas */}
         <Card titulo={`🔴 PARTIDAS CRÍTICAS (${partidasCriticas.length})`} color={BASE.red}>
           {partidasCriticas.length === 0 ? (

@@ -386,7 +386,7 @@ export default function CartaBalanceAnalisis() {
             <p style={{ fontSize: 10, opacity: 0.6, marginTop: 8 }}>Meta TP {tpMeta}%</p>
           </div>
           {/* Cuadritos de métricas TP / TC / TNC en fila */}
-          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, minWidth: 0 }}>
+          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 80px), 1fr))', gap: 10, minWidth: 0 }}>
             {[
               { l: 'Productivo', sub: 'TP', v: k.pTP, c: CB_COL.TP, tx: '#4ade80' },
               { l: 'Contributorio', sub: 'TC', v: k.pTC, c: CB_COL.TC, tx: '#fbbf24' },

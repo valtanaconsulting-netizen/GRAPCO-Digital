@@ -108,7 +108,7 @@ export default function ROFrentes() {
       </div>
 
       {/* KPIs comparativos rápidos */}
-      <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(220px, 1fr))`, gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, 220px), 1fr))`, gap: 10 }}>
         {porFrente.map(({ frente, ro }) => {
           const cpi = cpiOf(ro.totales.EV, ro.totales.AC);
           return (

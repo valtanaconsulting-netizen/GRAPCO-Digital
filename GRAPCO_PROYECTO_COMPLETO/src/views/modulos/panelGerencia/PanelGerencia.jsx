@@ -153,7 +153,7 @@ export default function PanelGerencia({ showToast }) {
 
         {/* KPIs FINANCIEROS */}
         {ro && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '12px' }}>
             <KPI label="MARGEN REAL ACTUAL" valor={fmtPct(ro.indicadoresGlobales.margenReal)}
               color={colorMargen(ro.indicadoresGlobales.margenReal, 15)}
               sub={`Meta: ${ro.indicadoresGlobales.margenMeta}%`}
@@ -177,7 +177,7 @@ export default function PanelGerencia({ showToast }) {
 
         {/* AVANCE FÍSICO + GRÁFICA EVM */}
         {ro && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))', gap: '14px' }}>
             <Card titulo="AVANCE FÍSICO DEL PROYECTO" color={BASE.gold}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '8px' }}>
                 <span style={{ fontSize: '24px', fontWeight: '900', color: BASE.navy, letterSpacing: '-0.4px' }}>
@@ -194,7 +194,7 @@ export default function PanelGerencia({ showToast }) {
                   transition: 'width 0.6s ease',
                 }} />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginTop: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 85px), 1fr))', gap: '8px', marginTop: '10px' }}>
                 <Mini label="Total" valor={avanceGlobal.total} color={BASE.navy} />
                 <Mini label="En ejec." valor={avanceGlobal.enEjec} color="#f59e0b" />
                 <Mini label="Completas" valor={avanceGlobal.completas} color={BASE.green} />
@@ -214,7 +214,7 @@ export default function PanelGerencia({ showToast }) {
         )}
 
         {/* INDICADORES POR PILAR (5 columnas: LPS, Materiales, Calidad, OT, BIM) */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '12px' }}>
           <Pillar titulo="CALIDAD" color={CHART_PALETTE[3]}>
             <PillarKPI label="% Liberación" valor={fmtPct(calidadStats.pctLiberacion, 0)}
               color={calidadStats.pctLiberacion >= 80 ? BASE.green : '#f59e0b'} />
@@ -299,7 +299,7 @@ export default function PanelGerencia({ showToast }) {
         {/* PARTIDAS ESTRELLA */}
         {ro && ro.partidasEstrella.length > 0 && (
           <Card titulo={`PARTIDAS ESTRELLA (Margen sobre meta)`} color={BASE.green}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '8px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '8px' }}>
               {ro.partidasEstrella.slice(0, 6).map(p => (
                 <div key={p.codigo} style={{
                   background: '#dcfce7', border: '1px solid #16a34a55',

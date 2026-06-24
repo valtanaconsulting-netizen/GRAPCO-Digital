@@ -513,7 +513,7 @@ export default function VDC({
               <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', marginBottom: '6px', display: 'block' }}>
                 TIPO DE FLUJO LEAN (7 flujos)
               </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '6px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '6px' }}>
                 {RESTRICCION_TIPOS.map(t => {
                   const sel = formRestriccion.tipoFlujo === t.id;
                   return (
@@ -671,7 +671,7 @@ export default function VDC({
               <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', marginBottom: '6px', display: 'block' }}>
                 CATEGORÍA (asociada a tipo RNC)
               </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '6px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 130px), 1fr))', gap: '6px' }}>
                 {RNC_CATEGORIAS.map(c => {
                   const sel = formLeccion.categoria === c.id;
                   return (
@@ -896,7 +896,7 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
 
       {/* PANEL MAKE-READY de la ventana (KPIs superiores al Excel: PCR, PPR, en riesgo) */}
       {!verTodasSem && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '10px' }}>
           {[
             { l: 'PCR · RESTRICCIONES REMOVIDAS', v: makeReady.pcr == null ? '—' : makeReady.pcr + '%', c: BASE.greenDark, sub: `${makeReady.liberadas} de ${makeReady.total} liberadas` },
             { l: 'PPR · ACTIVIDADES LISTAS', v: makeReady.ppr == null ? '—' : makeReady.ppr + '%', c: BASE.navy, sub: `${makeReady.listas} de ${makeReady.nAct} sin pendientes` },
@@ -952,7 +952,7 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
       </div>
 
       {/* KPIs Restricciones */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '10px' }}>
         {[
           { l: 'TOTAL', v: kpi.total, c: BASE.navy, sub: 'Restricciones registradas' },
           { l: 'PENDIENTES', v: kpi.pendientes + kpi.enProceso, c: BASE.gold, sub: `${kpi.enProceso} en proceso` },
@@ -980,7 +980,7 @@ function Restricciones({ restricciones, onNueva, onEditar, onLiberar, onEliminar
             DISTRIBUCIÓN POR FLUJO LEAN
           </h3>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '8px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '8px' }}>
           {RESTRICCION_TIPOS.map(t => {
             const count = kpi.porTipo[t.id] || 0;
             const pct = kpi.total > 0 ? (count / kpi.total) * 100 : 0;
@@ -1183,7 +1183,7 @@ function ModalEvidencia({ restriccion, evidencias, onAdd, onDel, onClose }) {
         {evidencias.length > 0 && (
           <div>
             <p style={{ fontSize: 11, fontWeight: 800, color: BASE.navy, margin: '4px 0 8px' }}>EVIDENCIAS GUARDADAS ({evidencias.length})</p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 120px), 1fr))', gap: 8 }}>
               {evidencias.map(ev => (
                 <div key={ev.id} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', border: `1px solid ${BASE.border}` }}>
                   <img src={ev.fotoB64} alt="" style={{ width: '100%', height: 90, objectFit: 'cover', display: 'block' }} />
@@ -1221,7 +1221,7 @@ function Lecciones({ lecciones, sugerencias, onNueva, onEditar, onEliminar, retr
         {retro.length === 0 ? (
           <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', background: 'rgba(255,255,255,0.06)', borderRadius: '8px', padding: '12px' }}>✅ Sin hallazgos críticos: el sistema no detecta causas recurrentes ni compromisos en riesgo ahora mismo.</p>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '10px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '10px' }}>
             {retro.map((r, i) => {
               const c = sevColor[r.sev] || BASE.gold;
               return (
@@ -1246,7 +1246,7 @@ function Lecciones({ lecciones, sugerencias, onNueva, onEditar, onEliminar, retr
       </div>
 
       {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '10px' }}>
         <div style={{ background: BASE.white, borderRadius: '12px', border: `1px solid ${BASE.border}`, padding: '14px 16px', boxShadow: BASE.shadowSm }}>
           <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>LECCIONES TOTALES</p>
           <p style={{ fontSize: '28px', fontWeight: '900', color: BASE.navy, marginTop: '4px' }}>{kpi.total}</p>
@@ -1367,7 +1367,7 @@ function Lecciones({ lecciones, sugerencias, onNueva, onEditar, onEliminar, retr
           </p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '12px' }}>
           {lecciones.map(l => {
             const cat = RNC_CATEGORIAS.find(c => c.id === l.categoria) || { icon: '📌', label: 'Otro', color: BASE.muted };
             return (
@@ -1662,7 +1662,7 @@ function HuddleDiario({ semanaActiva, setSemanaActiva, saludLPS = {}, restriccio
         <p style={{ fontSize: 10, fontWeight: 900, color: BASE.gold, letterSpacing: 1.4 }}>🔔 HUDDLE DEL DÍA</p>
         <h2 style={{ fontSize: 19, fontWeight: 900, color: '#fff', marginTop: 2, textTransform: 'capitalize' }}>{fechaLarga}</h2>
         <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>Reunión diaria de obra · Semana activa {semanaActiva} · {foco.length} actividades programadas</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 70px), 1fr))', gap: 8, marginTop: 14 }}>
           {kpi.map(k => (
             <div key={k.l} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '9px 6px', textAlign: 'center', borderTop: `3px solid ${k.c}` }}>
               <p style={{ fontSize: 8.5, fontWeight: 800, color: BASE.gold, letterSpacing: 0.4 }}>{k.l}</p>
@@ -1779,7 +1779,7 @@ function PlanVsReal({ lapPlan = [], lapProgramado = [], ppcOficial = {}, saludLP
       </div>
 
       {/* KPIs ejecutivos */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: 10 }}>
         {kpis.map(k => (
           <div key={k.l} style={{ ...card, borderTop: `4px solid ${k.c}` }}>
             <p style={{ fontSize: 9.5, fontWeight: 800, color: BASE.muted, letterSpacing: 0.4 }}>{k.l}</p>
@@ -1895,7 +1895,7 @@ function RetrospectivaProyecto({ saludLPS = {}, ppcOficial = {}, restricciones =
       {/* Resultados finales */}
       <div>
         <p style={{ fontSize: 11, fontWeight: 900, color: BASE.navy, letterSpacing: 0.4, marginBottom: 8 }}>① RESULTADOS FINALES</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: 10 }}>
           {kpis.map(k => (
             <div key={k.l} style={{ ...card, borderTop: `4px solid ${k.c}` }}>
               <p style={{ fontSize: 9, fontWeight: 800, color: BASE.muted, letterSpacing: 0.4 }}>{k.l}</p>
@@ -1939,7 +1939,7 @@ function RetrospectivaProyecto({ saludLPS = {}, ppcOficial = {}, restricciones =
         {retro.length === 0 ? (
           <div style={{ ...card }}><p style={{ fontSize: 12, color: BASE.greenDark, fontWeight: 700 }}>✅ Sin hallazgos críticos — el proyecto cerró con el sistema bajo control.</p></div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: 10 }}>
             {retro.map((r, i) => (
               <div key={i} style={{ ...card, borderLeft: `4px solid ${sevC[r.sev] || BASE.gold}`, display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}><span style={{ fontSize: 15 }}>{r.icon}</span><span style={{ fontSize: 12, fontWeight: 900, color: BASE.navy, lineHeight: 1.2 }}>{r.titulo}</span></div>
@@ -1954,7 +1954,7 @@ function RetrospectivaProyecto({ saludLPS = {}, ppcOficial = {}, restricciones =
       {/* Qué reutilizar */}
       <div>
         <p style={{ fontSize: 11, fontWeight: 900, color: BASE.navy, letterSpacing: 0.4, marginBottom: 8 }}>④ QUÉ REUTILIZAR · PLANTILLA DEL PRÓXIMO PROYECTO</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: 10 }}>
           {reutilizar.map((r, i) => (
             <div key={i} style={{ ...card, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
               <span style={{ fontSize: 20, flexShrink: 0 }}>{r.ic}</span>
@@ -2021,7 +2021,7 @@ function ModalNuevaActividad({ secciones = [], onAdd, onClose }) {
             placeholder="Ej: ESTRUCTURAS (agrupa la actividad)" style={inp({ marginTop: 4 })} />
           <datalist id="secLookahead">{secciones.map((s, i) => <option key={i} value={s} />)}</datalist>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 110px), 1fr))', gap: 8 }}>
           <div><label style={lbl}>UND</label><input value={f.und} onChange={e => set('und', e.target.value)} placeholder="m3" style={inp({ marginTop: 4 })} /></div>
           <div><label style={lbl}>METRADO</label><input type="number" value={f.metrado} onChange={e => set('metrado', e.target.value)} placeholder="120" style={inp({ marginTop: 4 })} /></div>
           <div><label style={lbl}>HH</label><input type="number" value={f.hh} onChange={e => set('hh', e.target.value)} placeholder="80" style={inp({ marginTop: 4 })} /></div>

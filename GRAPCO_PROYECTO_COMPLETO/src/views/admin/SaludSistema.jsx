@@ -188,7 +188,7 @@ export default function SaludSistema() {
         <h4 style={{ fontSize: '11px', fontWeight: '900', color: BASE.muted, letterSpacing: '0.6px', marginBottom: '10px' }}>
           🖥️ INFORMACIÓN DEL NAVEGADOR
         </h4>
-        <div style={{ display: 'grid', gap: '6px', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
+        <div style={{ display: 'grid', gap: '6px', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))' }}>
           <Info label="Plataforma" value={navigator.platform} />
           <Info label="User Agent" value={navigator.userAgent.slice(0, 80) + '...'} />
           <Info label="Idioma" value={navigator.language} />

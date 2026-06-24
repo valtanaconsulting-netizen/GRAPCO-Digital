@@ -89,7 +89,7 @@ export default function SeedDemoView({ showToast }) {
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '12px' }}>
           <Card icono="📦" titulo="1 Proyecto" valor="PTARI Lima Sur" color={CHART_PALETTE[2]} />
           <Card icono="📍" titulo="3 Frentes" valor="Norte · Sur · Central" color={CHART_PALETTE[3]} />
           <Card icono="📐" titulo="~30 Actividades" valor="Plantilla hidráulica" color={BASE.navy} />
@@ -160,7 +160,7 @@ export default function SeedDemoView({ showToast }) {
           </p>
 
           {diagnostico ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px', marginBottom: '14px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '10px', marginBottom: '14px' }}>
               <DiagCard label="Almacenes" total={diagnostico.almacenes.total} sin={diagnostico.almacenes.sinProyecto} />
               <DiagCard label="Movimientos Kardex" total={diagnostico.kardex.total} sin={diagnostico.kardex.sinProyecto} />
               <DiagCard label="Registros Campo" total={diagnostico.registrosCampo.total} sin={diagnostico.registrosCampo.sinProyecto} />

@@ -310,7 +310,7 @@ export default function BimShell({ titulo, objetivo, accent = '#3B82F6', modelos
                 <p style={{ fontSize: '10.5px', fontWeight: 800, color: D.dim, letterSpacing: '1.2px', textTransform: 'uppercase' }}>Sectores · Niveles del modelo</p>
                 <p style={{ fontSize: '10.5px', color: D.dim, fontWeight: 600 }}>Volumen total <strong style={{ color: D.text, ...D.num }}>{fmtN(volTotalNiv)} m³</strong></p>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '10px', marginBottom: '18px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))', gap: '10px', marginBottom: '18px' }}>
                 {niveles.slice(0, 8).map(nv => {
                   const a = secSel.includes(nv.nivel);
                   const pct = Math.round((nv.vol / volTotalNiv) * 100);
@@ -369,7 +369,7 @@ export default function BimShell({ titulo, objetivo, accent = '#3B82F6', modelos
                     Todas las categorías
                   </button>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', alignItems: 'start' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '14px', alignItems: 'start' }}>
                   {MACROS.filter(mc => (catsPorMacro[mc.id] || []).length).map(mc => {
                     const volM = catsPorMacro[mc.id].reduce((s, c) => s + c.vol, 0);
                     return (

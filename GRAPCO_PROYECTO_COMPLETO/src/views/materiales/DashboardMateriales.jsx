@@ -53,7 +53,7 @@ export default function DashboardMateriales() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       {/* KPIs principales */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(216px, 1fr))', gap: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 216px), 1fr))', gap: '10px' }}>
         <KPI label="VALOR INVENTARIO" valor={fmtSoles(valorTotal)} color={BASE.gold} desc="Total stock actual" icono="💰" />
         <KPI label="MATERIALES EN CATALOGO" valor={totalMateriales} color={BASE.navy} desc={`${materiales.filter(m => m.activo !== false).length} activos`} icono="📋" />
         <KPI label="ALMACENES" valor={totalAlmacenes} color={BASE.navy} desc="Almacenes registrados" icono="🏬" />

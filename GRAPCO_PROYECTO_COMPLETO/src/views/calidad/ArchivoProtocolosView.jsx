@@ -153,7 +153,7 @@ export default function ArchivoProtocolosView({ onEdit }) {
           descripcion="Cuando subas el escaneado de un protocolo firmado, aparecerá aquí, clasificado automáticamente por frente y semana."
         />
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: 12 }}>
           {arbol.map(grupo => {
             const expandido = frenteAbierto === grupo.frente;
             return (

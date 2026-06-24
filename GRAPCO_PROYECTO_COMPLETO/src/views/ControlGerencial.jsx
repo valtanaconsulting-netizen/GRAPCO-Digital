@@ -434,7 +434,7 @@ function ControlVariaciones({ historial, numTrabajadores, isMobile, asistencia }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       {/* KPIs cards compactos (caben más por fila) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '8px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '8px' }}>
         {[
           { l: 'HH CAMPO TOTAL', v: fmt1(data.totales.hhCampo), c: BASE.navy, sub: 'Acumulado proyecto' },
           { l: 'HH META TOTAL', v: fmt1(data.totales.hhMeta), c: BASE.green, sub: 'Esperado ideal' },

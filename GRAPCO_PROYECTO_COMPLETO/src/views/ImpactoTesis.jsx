@@ -116,7 +116,7 @@ export default function ImpactoTesis({ historialEnriquecido, configuracion }) {
       </div>
 
       {/* KPIs HERO — los 3 números clave para la sustentación */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: '12px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%, 220px),1fr))', gap: '12px' }}>
         <KpiHero
           icon="📈"
           titulo="MEJORA EN CPI"
@@ -178,7 +178,7 @@ export default function ImpactoTesis({ historialEnriquecido, configuracion }) {
         <div style={{
           marginTop: '16px', padding: '12px 14px',
           background: BASE.bgSoft, borderRadius: '10px',
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))',
           gap: '8px',
         }}>
           {[
@@ -209,7 +209,7 @@ export default function ImpactoTesis({ historialEnriquecido, configuracion }) {
           </h3>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '12px' }}>
           {/* Etapa ANTES */}
           <div style={{ background: BASE.bgSoft, borderRadius: '12px', padding: '16px', border: `1.5px solid ${BASE.border}` }}>
             <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '1px' }}>

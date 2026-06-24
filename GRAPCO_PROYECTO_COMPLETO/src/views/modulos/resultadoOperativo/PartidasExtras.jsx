@@ -154,7 +154,7 @@ export default function PartidasExtras({ tipo, coleccion, titulo, subtitulo, col
       </div>
 
       {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: 8 }}>
         <Kpi label={titulo} valor={totales.n} color={color} />
         <Kpi label="Subtotal (cara venta)" valor={fmt(totales.subtotal)} color={BASE.navy} />
         <Kpi label="CD al RO (aprobados)" valor={fmt(totales.cdRO)} color="#2563eb" />

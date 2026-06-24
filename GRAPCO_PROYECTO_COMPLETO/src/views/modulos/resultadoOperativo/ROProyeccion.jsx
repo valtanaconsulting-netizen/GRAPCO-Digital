@@ -43,7 +43,7 @@ export default function ROProyeccion() {
       </div>
 
       {/* Detalle proyección */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '10px' }}>
         <Big label="EAC" titulo="Costo Total Proyectado al Cierre" valor={fmtSoles(indicadoresGlobales.EAC)}
           color={indicadoresGlobales.EAC > totales.BAC ? BASE.red : BASE.green}
           formula="EAC = BAC / CPI"

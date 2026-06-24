@@ -231,7 +231,7 @@ export default function AnalisisHHCross({ filtrados = [], personalDB = [] }) {
       </div>
 
       {/* ── KPIs ───────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '10px' }}>
         {[
           { l: 'HH TOTAL',     v: fmt1(kpis.hh),  c: BASE.navy,    sub: `${fmt1(kpis.hn)} HN + ${fmt1(kpis.he)} HE` },
           { l: viewMode === 'cuadrillas' ? 'CUADRILLAS' : 'PERSONAS', v: kpis.pers, c: BASE.gold },

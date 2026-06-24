@@ -53,7 +53,7 @@ export default function DashboardCalidad() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
       {/* ── KPIs principales ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(216px, 1fr))', gap: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 216px), 1fr))', gap: '10px' }}>
         <KPI label="% LIBERACIÓN" icono="✅"
           color={dash.protocolos.pctLiberacion >= 80 ? BASE.green : dash.protocolos.pctLiberacion >= 50 ? '#f59e0b' : BASE.red}
           valor={`${dash.protocolos.pctLiberacion}%`}
@@ -158,7 +158,7 @@ export default function DashboardCalidad() {
 
       {/* ── Resumen ejecutivo ── */}
       <Seccion titulo="RESUMEN EJECUTIVO">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '14px' }}>
 
           {/* Protocolos por estado — barra apilada + leyenda */}
           <div>
@@ -180,7 +180,7 @@ export default function DashboardCalidad() {
               })}
             </div>
             <div style={{
-              display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+              display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 120px), 1fr))',
               gap: '5px',
             }}>
               {Object.entries(ESTADOS_PROTOCOLO).map(([key, e]) => {

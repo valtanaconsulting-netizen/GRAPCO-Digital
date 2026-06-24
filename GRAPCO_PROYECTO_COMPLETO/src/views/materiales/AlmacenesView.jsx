@@ -103,7 +103,7 @@ export default function AlmacenesView({ showToast }) {
       {almacenesVisibles.length === 0 ? (
         <EmptyState icono="🏬" titulo="Sin almacenes" descripcion="Crea el primer almacen del proyecto." />
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '12px' }}>
           {almacenesVisibles.map(a => (
             <div key={a.id} style={{
               background: BASE.white, border: `1px solid ${BASE.border}`,

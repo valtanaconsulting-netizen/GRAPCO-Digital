@@ -129,7 +129,7 @@ export default function RegistroFotografico() {
           </span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '10px' }}>
           <div style={{ minWidth: 0 }}>
             <label style={{ fontSize: '10px', fontWeight: '700', color: BASE.muted, letterSpacing: '0.5px', display: 'block', marginBottom: '4px' }}>PARTIDA</label>
             <select value={fPartida} onChange={e => { setFPartida(e.target.value); setFSubpartida(''); setFActividad(''); }}
@@ -194,7 +194,7 @@ export default function RegistroFotografico() {
       ) : (
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 220px), 1fr))',
           gap: '12px',
         }}>
           {filtradas.map(f => (
@@ -243,7 +243,7 @@ export default function RegistroFotografico() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <img src={preview.url} alt=""
               style={{ width: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: '10px', background: BASE.bgSoft }} />
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '8px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '8px' }}>
               {[
                 ['Fecha',      fmtFechaCorta(preview.fecha)],
                 ['Semana',     `S${preview.semana}`],

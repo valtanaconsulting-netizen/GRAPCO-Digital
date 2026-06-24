@@ -389,7 +389,7 @@ export default function Tendencias({ filtrados, historial, wbs }) {
         subtitulo="Evolución del CPI con tendencia ponderada y proyección a futuro" />
 
       {/* KPIs */}
-      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(216px,1fr))',gap:'10px'}}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%, 216px),1fr))',gap:'10px'}}>
         <Kpi icon="🌐" titulo="CPI GLOBAL" color={getEstado(cpiGlobal).color}
           valor={fmtCPIPct(cpiGlobal)} sub="Acumulado (= ISP)"/>
         <Kpi icon="🎯" titulo="CPI ÚLTIMA SEMANA" color={getEstado(cpiActual).color}
@@ -410,7 +410,7 @@ export default function Tendencias({ filtrados, historial, wbs }) {
           <SectionTitle title="PROYECCIÓN DE CIERRE DE OBRA"
             subtitle={`A este ritmo${confiable ? ' (tendencia reciente)' : ' (CPI acumulado — tendencia poco fiable)'}: HH y semana estimadas de término`}
             color={BASE.navy}/>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(216px,1fr))',gap:'10px',marginBottom:'14px'}}>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%, 216px),1fr))',gap:'10px',marginBottom:'14px'}}>
             <Kpi icon="📐" titulo="AVANCE FÍSICO" color={BASE.navy}
               valor={`${Math.round(cierre.avancePct)}%`} sub="ponderado por HH-meta"/>
             <Kpi icon="🗓️" titulo="SEMANA FIN EST." color={BASE.navyLight}

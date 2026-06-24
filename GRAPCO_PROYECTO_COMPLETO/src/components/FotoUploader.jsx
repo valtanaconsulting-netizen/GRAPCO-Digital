@@ -149,7 +149,7 @@ export default function FotoUploader({ fotos = [], onChange, ruta = 'Fotos_Gener
       {/* Galería de miniaturas */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 80px), 1fr))',
         gap: '6px',
         marginBottom: fotos.length > 0 ? '10px' : 0,
       }}>

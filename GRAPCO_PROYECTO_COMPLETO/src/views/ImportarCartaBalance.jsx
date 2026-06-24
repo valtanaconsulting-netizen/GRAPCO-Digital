@@ -780,7 +780,7 @@ export default function ImportarCartaBalance({ showToast }) {
       </div>
 
       {/* KPIs en vivo */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '10px' }}>
         <Kpi l="TP · Productivo" v={`${Math.round(kpis.pTP)}%`} c={CB_COL.TP} sub={`${kpis.tp} obs`} />
         <Kpi l="TC · Contributorio" v={`${Math.round(kpis.pTC)}%`} c={CB_COL.TC} sub={`${kpis.tc} obs`} />
         <Kpi l="TNC · No contrib." v={`${Math.round(kpis.pTNC)}%`} c={CB_COL.TNC} sub={`${kpis.tnc} obs`} />
@@ -797,7 +797,7 @@ export default function ImportarCartaBalance({ showToast }) {
             Elige una plantilla en «📋 Cargar plantilla» o usa «⬆️ Subir TODAS a la base».
           </p>
         ) : (
-          <div style={{ padding: '12px 14px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
+          <div style={{ padding: '12px 14px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '12px' }}>
             {resumenCodigos.map(({ cat, total, items }) => (
               <div key={cat} style={{ border: `1px solid ${BASE.border}`, borderTop: `3px solid ${CB_COL[cat]}`, borderRadius: '10px', padding: '10px 12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>

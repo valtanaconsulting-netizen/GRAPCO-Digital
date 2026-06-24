@@ -241,7 +241,7 @@ export default function PETsView({ showToast }) {
           <EmptyState icono="📜" titulo="Sin PETs registrados"
             descripcion="Crea procedimientos escritos de trabajo seguro vinculados a las actividades del Plan Maestro WBS." />
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))', gap: '12px' }}>
             {filtrados.map(p => {
               const actividadesAplica = (p.aplicaActividadesWBS || []).map(c => actividadesConCodigoMap.get(c)).filter(Boolean);
               const firmas = p.firmasOperarios?.length || 0;

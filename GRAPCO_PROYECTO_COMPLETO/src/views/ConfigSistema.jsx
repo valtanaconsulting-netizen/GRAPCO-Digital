@@ -213,7 +213,7 @@ export default function ConfigSistema({ showToast }) {
           background: BASE.bgSoft, border: `1px dashed ${BASE.border}`,
           borderRadius: '10px', padding: '12px',
           display: 'grid', gap: '10px',
-          gridTemplateColumns: '160px 1fr 130px 100px',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 130px), 1fr))',
           alignItems: 'end',
         }}>
           <Campo label="Fecha" tipo="date"
@@ -363,7 +363,7 @@ function Seccion({ titulo, descripcion, children }) {
           {descripcion}
         </p>
       )}
-      <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
+      <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))' }}>
         {children}
       </div>
     </div>

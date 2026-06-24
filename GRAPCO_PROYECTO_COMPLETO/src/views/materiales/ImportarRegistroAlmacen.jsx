@@ -303,7 +303,7 @@ export default function ImportarRegistroAlmacen({ showToast }) {
             <p key={i} style={{ fontSize: 11.5, color: BASE.redDark, background: BASE.redLight, padding: '6px 10px', borderRadius: 6, marginBottom: 6 }}>⚠️ {a}</p>
           ))}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px,1fr))', gap: 8, marginBottom: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px),1fr))', gap: 8, marginBottom: 14 }}>
             <Stat label="MESES" valor={analisis.meses.length} color={BASE.navy} />
             <Stat label="MOVIMIENTOS (deltas)" valor={analisis.totalMovs} color={BASE.gold} />
             <Stat label="INSUMOS (catálogo)" valor={analisis.catalogo.length} color="#38bdf8" />

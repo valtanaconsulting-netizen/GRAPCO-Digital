@@ -190,7 +190,7 @@ export default function RDOView({ showToast }) {
         <EmptyState icono="📅" titulo="Sin RDOs"
           descripcion="Genera el RDO de hoy con un click. La plataforma agrega automaticamente personal, actividades, cuadrillas." />
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '10px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '10px' }}>
           {rdos.slice(0, 30).map(r => {
             const f = r.fecha?.toDate ? r.fecha.toDate() : new Date(r.fecha);
             const estadoColor = r.estado === 'firmado' ? BASE.green : r.estado === 'enviado_cliente' ? '#2563eb' : '#f59e0b';
@@ -243,7 +243,7 @@ export default function RDOView({ showToast }) {
           {/* Personal */}
           <div style={{ background: BASE.bgSoft, padding: '14px', borderRadius: '10px', marginBottom: '12px' }}>
             <p style={lblSec}>PERSONAL EN OBRA</p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 120px), 1fr))', gap: '10px' }}>
               <Field label="Obreros">
                 <input type="number" value={editando.personal?.obreros || 0}
                   onChange={e => setEditando({...editando, personal: { ...editando.personal, obreros: parseInt(e.target.value) || 0 }})}

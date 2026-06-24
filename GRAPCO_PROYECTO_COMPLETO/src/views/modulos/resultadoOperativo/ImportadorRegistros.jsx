@@ -188,7 +188,7 @@ export default function ImportadorRegistros({
           {/* Columnas detectadas */}
           <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 12, padding: '14px 18px' }}>
             <p style={{ fontSize: 11, fontWeight: 900, color: BASE.navy, letterSpacing: 0.4, marginBottom: 8 }}>COLUMNAS DETECTADAS</p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: 8 }}>
               {campos.map(c => {
                 const v = parsed.mapa[c.campo];
                 const falta = c.requerido && !v;
@@ -204,7 +204,7 @@ export default function ImportadorRegistros({
 
           {/* Stats */}
           {stats && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: 10 }}>
               <Stat label="Filas leídas" valor={stats.filas} color={BASE.navy} />
               <Stat label="Registros válidos" valor={stats.validas} color="#16a34a" />
               <Stat label={`Total ${stats.campoMonto || ''}`} valor={fmt(stats.total)} color={BASE.gold} chico />

@@ -642,7 +642,7 @@ export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMob
             </div>
           </div>
 
-          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'10px'}}>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(min(100%, 85px), 1fr))',gap:'10px'}}>
             {[
               {label:'TRABAJO PRODUCTIVO',pct:cbTotals.pctTP,count:cbTotals.gTP,color:CB_COL.TP},
               {label:'TRABAJO CONTRIBUTORIO',pct:cbTotals.pctTC,count:cbTotals.gTC,color:CB_COL.TC},

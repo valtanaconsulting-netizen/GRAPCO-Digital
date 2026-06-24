@@ -149,7 +149,7 @@ export default function ValorizacionesView({ showToast }) {
       </div>
 
       {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: 8 }}>
         <Kpi label="Presupuesto (CD)" valor={fmtSoles(cdContractual)} color={BASE.navy} />
         <Kpi label="Valorizado acumulado" valor={fmtSoles(acumTotal)} color={BASE.green} />
         <Kpi label="Por valorizar (saldo)" valor={fmtSoles(round2(cdContractual - acumTotal))} color={BASE.gold} />
@@ -371,7 +371,7 @@ function NuevaValorizacion({ proyId, user, numero, filas, acumPorCodigo, pctFisi
         )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: 8 }}>
         <Campo label="Período"><input value={periodoTexto} onChange={(e) => setPeriodoTexto(e.target.value)} style={inpS} /></Campo>
         <Campo label="Amort. Adelanto (S/)"><input type="number" step="0.01" value={adelanto} onChange={(e) => setAdelanto(e.target.value)} style={inpS} /></Campo>
         <Campo label="Retención FG (%)"><input type="number" step="0.1" value={fgPct} onChange={(e) => setFgPct(e.target.value)} style={inpS} /></Campo>
@@ -419,7 +419,7 @@ function NuevaValorizacion({ proyId, user, numero, filas, acumPorCodigo, pctFisi
       </div>
 
       {/* Liquidación */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: 8 }}>
         <Kpi label="Valorizado período (CD)" valor={fmtSoles(cdPeriodo)} color={BASE.navy} chico />
         <Kpi label={`Val. Bruta (CD+GG+Util)`} valor={fmtSoles(vbBruta)} color="#7c3aed" chico />
         <Kpi label={`+ IGV ${pctTxt(igvPct)}`} valor={fmtSoles(igv)} color="#0ea5e9" chico />
@@ -455,7 +455,7 @@ function DetalleValorizacion({ v }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <h3 style={{ fontSize: 17, fontWeight: 900, color: BASE.navy }}>Valorización V-{v.numeroValorizacion} · {v.periodoTexto}</h3>
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 1.1fr) minmax(240px, 0.9fr)', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(min(100%, 280px), 1.1fr) minmax(min(100%, 240px), 0.9fr)', gap: 12 }}>
         <Card titulo={`Partidas valorizadas (${v.partidasValorizadas?.length || 0})`}>
           <div style={{ overflowX: 'auto', maxHeight: '50vh', overflowY: 'auto' }}>
             <table style={tabla}>

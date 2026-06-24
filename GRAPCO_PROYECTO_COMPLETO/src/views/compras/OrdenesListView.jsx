@@ -122,7 +122,7 @@ export default function OrdenesListView({ tipoOrden = 'OC', showToast }) {
         }}>➕ NUEVA {tipoOrden}</button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '10px' }}>
         <Stat label="EMITIDAS" valor={stats.emitida} color={BASE.navy} icono="📤" />
         <Stat label="PARCIALES" valor={stats.parcial} color="#92400e" icono="📦" />
         <Stat label="RECIBIDAS" valor={stats.recibida} color="#065f46" icono="✅" />

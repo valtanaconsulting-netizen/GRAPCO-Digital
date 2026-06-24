@@ -192,7 +192,7 @@ export default function PagoObreros({ historial = [], cuadrillasActivas = {}, co
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '10px' }}>
           <div style={{ minWidth: 0 }}>
             <label style={{ fontSize: '10px', fontWeight: '700', color: BASE.muted, letterSpacing: '0.5px', display: 'block', marginBottom: '4px' }}>
               SEMANA {semanaActiva && <span style={{ color: BASE.gold, marginLeft: '4px' }}>● activa</span>}
@@ -249,7 +249,7 @@ export default function PagoObreros({ historial = [], cuadrillasActivas = {}, co
       </div>
 
       {/* GRAN TOTAL */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '10px' }}>
         {[
           { l: 'COSTO TOTAL',  v: fmtMoney(granTotal.costoTotal), c: BASE.navy,    sub: 'A pagar' },
           { l: 'TRABAJADORES', v: granTotal.personas,             c: CHART_PALETTE[3] },

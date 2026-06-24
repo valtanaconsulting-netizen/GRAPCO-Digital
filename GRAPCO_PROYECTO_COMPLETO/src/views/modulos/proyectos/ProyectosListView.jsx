@@ -120,7 +120,7 @@ export default function ProyectosListView({ onEdit, onNuevo, showToast }) {
         <EmptyState icono="🌎" titulo="Sin proyectos"
           descripcion="Crea tu primer proyecto. Puedes tener múltiples obras simultáneas, cada una con sus frentes." />
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '14px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 380px), 1fr))', gap: '14px' }}>
           {filtrados.map(p => {
             const frentesProy = frentesPorProy.get(p.id) || [];
             const estadoData = ESTADOS[p.estado] || ESTADOS.planificado;
@@ -183,7 +183,7 @@ export default function ProyectosListView({ onEdit, onNuevo, showToast }) {
                 </div>
 
                 {/* Datos clave */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginTop: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 100px), 1fr))', gap: '8px', marginTop: '12px' }}>
                   <Mini label="Presupuesto" valor={fmtSoles(p.presupuestoContractual, p.moneda)} color={BASE.navy} />
                   <Mini label="CPI" valor={Number(p.cpiActual || 1).toFixed(2)}
                     color={p.cpiActual >= 0.95 ? '#16a34a' : p.cpiActual >= 0.85 ? '#f59e0b' : '#dc2626'} />

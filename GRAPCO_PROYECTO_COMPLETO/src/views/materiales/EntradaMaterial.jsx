@@ -367,7 +367,7 @@ export default function EntradaMaterial({ showToast, onSaved }) {
       {/* Datos generales */}
       <div style={{ background: BASE.bgSoft, padding: '16px', borderRadius: '12px', marginBottom: '14px' }}>
         <p style={lblSec}>DATOS GENERALES</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '10px' }}>
           <Field label="Almacen destino *">
             <select value={almacenId} onChange={e => setAlmacenId(e.target.value)} style={selS}>
               <option value="">— Selecciona —</option>

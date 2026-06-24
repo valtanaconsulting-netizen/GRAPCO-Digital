@@ -165,7 +165,7 @@ export default function DashboardPlanMaestro() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
       {/* ── KPIs principales — fila compacta ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(216px, 1fr))', gap: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 216px), 1fr))', gap: '10px' }}>
         <KPI icono="📋" color={BASE.navy} label="ACTIVIDADES"
           valor={fmtNumero(stats.totalActividades, 0)}
           sub={`${stats.totalHojas} ejecutables en obra`} />
@@ -181,7 +181,7 @@ export default function DashboardPlanMaestro() {
       </div>
 
       {/* ── Avance + Estado, lado a lado ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(330px, 1fr))', gap: '12px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 330px), 1fr))', gap: '12px' }}>
 
         {/* Avance físico vs cronograma */}
         <Seccion titulo="AVANCE DEL PROYECTO">
@@ -232,7 +232,7 @@ export default function DashboardPlanMaestro() {
             })}
           </div>
           <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(125px, 1fr))',
+            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 125px), 1fr))',
             gap: '6px', marginTop: '10px',
           }}>
             {Object.entries(ESTADOS_ACTIVIDAD).map(([key, est]) => {

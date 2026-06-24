@@ -125,7 +125,7 @@ export default function ReporteValorizadoS10({ showToast }) {
 
         <div style={{
           display: 'grid', gap: '10px', marginTop: '14px',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))',
         }}>
           <Field label="Fecha de corte *">
             <input type="date" value={fechaCorte} onChange={e => setFechaCorte(e.target.value)} style={inpS} />
@@ -161,7 +161,7 @@ export default function ReporteValorizadoS10({ showToast }) {
       </div>
 
       {/* STATS */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '10px' }}>
         <Stat label="ITEMS CON STOCK" valor={filasFiltradas.length} color={BASE.navy} icono="📦" />
         <Stat label="VALOR TOTAL" valor={fmtSoles(totalFiltrado)} color="#16a34a" icono="💰" />
         <Stat label="ITEMS SIN COD. S10" valor={reporte.materialesSinS10} color={reporte.materialesSinS10 > 0 ? '#dc2626' : '#16a34a'} icono={reporte.materialesSinS10 > 0 ? '⚠️' : '✅'} />

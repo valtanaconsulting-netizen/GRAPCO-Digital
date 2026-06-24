@@ -149,7 +149,7 @@ export default function PortfolioDashboard() {
 
       {/* ── KPIs consolidados ── */}
       {totalesEmpresa && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(216px, 1fr))', gap: '10px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 216px), 1fr))', gap: '10px' }}>
           <KPI icono="💼" color={BASE.gold} label="CARTERA TOTAL"
             valor={fmtSoles(totalesEmpresa.BAC)}
             sub="Valor contractual (BAC)" />
@@ -183,7 +183,7 @@ export default function PortfolioDashboard() {
           })}
         </div>
         <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))',
           gap: '6px', marginTop: '10px',
         }}>
           {Object.entries(ESTADOS).map(([k, e]) => {

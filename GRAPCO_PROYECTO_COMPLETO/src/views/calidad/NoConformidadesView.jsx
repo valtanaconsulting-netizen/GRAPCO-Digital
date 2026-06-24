@@ -132,7 +132,7 @@ export default function NoConformidadesView({ showToast }) {
           </button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '8px', marginTop: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '8px', marginTop: '12px' }}>
           <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)} style={selS}>
             <option value="">Todos los estados</option>
             {Object.entries(ESTADOS_NC).map(([k, e]) => <option key={k} value={k}>{e.icono} {e.label}</option>)}

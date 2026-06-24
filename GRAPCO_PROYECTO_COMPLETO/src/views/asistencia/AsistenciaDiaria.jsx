@@ -183,7 +183,7 @@ export default function AsistenciaDiaria({ showToast }) {
       </div>
 
       {/* Selector de fecha + KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'auto repeat(4, 1fr)', gap: SPACING.md, alignItems: 'stretch' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: SPACING.md, alignItems: 'stretch' }}>
         <div style={card}>
           <p style={{ fontSize: '9px', fontWeight: '900', color: BASE.muted, letterSpacing: '0.8px' }}>FECHA</p>
           <input type="date" value={fecha} onChange={e => setFecha(e.target.value)}

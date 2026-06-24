@@ -234,7 +234,7 @@ export default function SalidaMaterial({ showToast, onSaved }) {
       {/* Datos del vale */}
       <div style={{ background: BASE.bgSoft, padding: '16px', borderRadius: '12px', marginBottom: '14px' }}>
         <p style={lblSec}>DATOS DEL VALE</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '10px' }}>
           <Field label="Almacen origen *">
             <select value={almacenId} onChange={e => setAlmacenId(e.target.value)} style={selS}>
               <option value="">— Selecciona —</option>

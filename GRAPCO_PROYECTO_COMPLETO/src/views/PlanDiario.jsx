@@ -600,7 +600,7 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${Mat
         <h4 style={{ fontSize: '13px', fontWeight: '800', color: BASE.navy, borderLeft: `4px solid ${BASE.green}`, paddingLeft: '10px', marginBottom: '14px' }}>
           CABECERA · PROGRAMACIÓN DIARIA
         </h4>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%, 190px),1fr))', gap: '12px' }}>
           <DateInput label="DÍA DE PROGRAMACIÓN" value={pdFecha} onChange={setPdFecha} getSemana={obtenerSemana} />
           <Campo label="OBRA"><input type="text" value={pdObra} onChange={e => setPdObra(e.target.value)} style={inp({ fontWeight: '600' })} /></Campo>
           <Campo label="SEMANA"><input type="text" value={obtenerSemana(pdFecha)} disabled style={inp({ background: '#f1f5f9', fontWeight: '700' })} /></Campo>
