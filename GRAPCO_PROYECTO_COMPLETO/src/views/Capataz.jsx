@@ -1,5 +1,5 @@
 // src/views/Capataz.jsx — V2
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { db } from '../firebaseConfig';
 import {
   collection, query, where, getDocs,
@@ -13,6 +13,7 @@ import {
   hoy, obtenerSemana as obtSem,
   borradorId,
 } from '../utils/helpers';
+import { registrarBack } from '../utils/backButton';
 
 // Capataz solo puede tocar tareo de HOY o AYER. Mas atras es informacion ya cerrada.
 const ayer = () => {
@@ -111,6 +112,21 @@ export default function Capataz({
   const [confirmDialog, setConfirmDialog] = useState(null);
   const confirmar = (opts) => new Promise((resolve) => setConfirmDialog({ ...opts, resolve }));
   const cerrarConfirm = (val) => setConfirmDialog((d) => { d?.resolve?.(val); return null; });
+
+  // ── Persistencia LOCAL del trabajo en curso (WIP, por usuario) ────────────
+  // El borrador "oficial" va a Firestore (red, solo al Guardar). Pero si Android
+  // mata el WebView mientras el capataz teclea, esas pulsaciones se perderían y
+  // volvería al inicio. Aquí espejamos el estado EXACTO (paso, actividad activa
+  // y tareo) en localStorage: instantáneo, offline y sobrevive a la recarga.
+  const KEY_WIP = user?.uid ? `grapco_cap_wip_${user.uid}` : null;
+  // Snapshot leído UNA vez en el primer render (antes de que cargue el borrador).
+  const wipRef = useRef(undefined);
+  if (wipRef.current === undefined) {
+    try { const raw = KEY_WIP ? localStorage.getItem(KEY_WIP) : null; wipRef.current = raw ? JSON.parse(raw) : null; }
+    catch { wipRef.current = null; }
+  }
+  const draftTsRef = useRef(0);          // ultActualizacion del borrador cargado
+  const [wipListo, setWipListo] = useState(false); // habilita el guardado local tras restaurar
   // Tope de HN por día de la semana (HE solo se habilita al COMPLETAR las HN):
   //   lun-vie: 8.5h | sáb: 5.5h | dom: 0h (solo HE)
   const limiteHNPorFecha = (fechaStr) => {
@@ -350,6 +366,7 @@ export default function Capataz({
           setActividades(acts);
           setActActivaId(acts[0]?.id || null);
           setBorradorDocId(bId);
+          draftTsRef.current = data.ultActualizacion || 0;
           setUltSubida(data.ultSubida || null);
           setEstadoBorrador('cargado');
           showToast(`✏️ Borrador cargado · ${acts.length} actividad${acts.length === 1 ? '' : 'es'}`, 'info');
@@ -388,6 +405,7 @@ export default function Capataz({
           setActividades(acts);
           setActActivaId(acts[0]?.id || null);
           setBorradorDocId(bId);
+          draftTsRef.current = 0;
           setUltSubida({ ts: Date.now(), n: acts.length });
           setEstadoBorrador('cargado');
           showToast(`📅 ${acts.length} registro(s) ya subidos — puedes corregirlos`, 'info');
@@ -396,6 +414,7 @@ export default function Capataz({
 
         // Nada existente
         setActividades([]); setActActivaId(null);
+        draftTsRef.current = 0;
         setBorradorDocId(bId); setUltSubida(null); setEstadoBorrador('vacio');
       } catch (err) {
         if (!cancelado) { console.warn('[cargar borrador]', err); setEstadoBorrador('vacio'); }
@@ -406,6 +425,64 @@ export default function Capataz({
     return () => { cancelado = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fecha, capataz, miembrosCuadrilla.length]);
+
+  // ── Guardado LOCAL (WIP): espeja el estado de trabajo en localStorage ─────
+  // Solo se activa DESPUÉS de restaurar (wipListo), para no pisar el snapshot
+  // antes de leerlo. Debounce 400ms: instantáneo para el usuario, barato.
+  useEffect(() => {
+    if (!wipListo || !KEY_WIP || !capataz || !fecha) return;
+    const id = setTimeout(() => {
+      try {
+        localStorage.setItem(KEY_WIP, JSON.stringify({
+          t: Date.now(), fecha, capataz, vista, actActivaId, actividades,
+        }));
+      } catch (_) { /* cuota llena u otro: ignorar */ }
+    }, 400);
+    return () => clearTimeout(id);
+  }, [wipListo, KEY_WIP, fecha, capataz, vista, actActivaId, actividades]);
+
+  // ── Restaurar el WIP UNA sola vez, al terminar de cargar el borrador ──────
+  // Aplica el snapshot local solo si es de esta misma fecha+capataz y MÁS NUEVO
+  // que el borrador de Firestore (= las últimas pulsaciones sin Guardar). Espera
+  // a que haya un capataz resuelto para no consumir el snapshot en vano.
+  useEffect(() => {
+    if (wipListo) return;
+    if (estadoBorrador !== 'cargado' && estadoBorrador !== 'vacio') return;
+    if (!capataz) return; // aún resolviendo la cuadrilla: esperar
+    const w = wipRef.current;
+    if (w && w.fecha === fecha && w.capataz === capataz) {
+      if ((w.t || 0) >= (draftTsRef.current || 0) && Array.isArray(w.actividades) && w.actividades.length) {
+        setActividades(w.actividades);
+        setActActivaId(w.actActivaId || w.actividades[0]?.id || null);
+        if (w.vista) setVista(w.vista);
+      } else if (w.vista) {
+        setVista(w.vista);
+      }
+    }
+    wipRef.current = null;     // consumir una sola vez
+    setWipListo(true);         // a partir de aquí, ya se persiste el WIP
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [estadoBorrador, fecha, capataz, wipListo]);
+
+  // ── Botón ATRÁS de Android dentro del panel del capataz ───────────────────
+  // Cierra modales/menú o retrocede de paso (metrado→tareo→inicio) en vez de
+  // salir de la app. En 'inicio' NO consume → App aplica "atrás de nuevo".
+  const estadoBackRef = useRef({});
+  estadoBackRef.current = { vista, menuAbierto, showWbs, showHistorial, confirmDialog };
+  useEffect(() => {
+    const off = registrarBack(() => {
+      const s = estadoBackRef.current;
+      if (s.confirmDialog) { setConfirmDialog(d => { d?.resolve?.(false); return null; }); return true; }
+      if (s.showWbs)       { setShowWbs(false); return true; }
+      if (s.showHistorial) { setShowHistorial(false); return true; }
+      if (s.menuAbierto)   { setMenuAbierto(false); return true; }
+      if (s.vista === 'metrado') { setVista('tareo'); return true; }
+      if (s.vista === 'tareo')   { setVista('inicio'); return true; }
+      return false; // en 'inicio': dejar que App decida (doble-atrás para salir)
+    });
+    return off;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── HH acumuladas por trabajador (todas las actividades del día) ──
   const hhAcumPorTrab = useMemo(() => {
@@ -440,7 +517,15 @@ export default function Capataz({
   const actividadesVista = vista === 'metrado' ? actividadesConHH : actividades;
 
   // Al cambiar de día o de capataz se vuelve al inicio (las 2 tarjetas).
-  useEffect(() => { setVista('inicio'); }, [capataz, fecha]);
+  useEffect(() => {
+    // No forzar 'inicio' si hay trabajo en curso (WIP) pendiente de restaurar
+    // para esta misma fecha+capataz: el restaurador pondrá el paso guardado.
+    const w = wipRef.current;
+    if (w && w.fecha === fecha && w.capataz === capataz &&
+        ((w.actividades?.length || 0) > 0 || (w.vista && w.vista !== 'inicio'))) return;
+    setVista('inicio');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [capataz, fecha]);
 
   // ── Acciones sobre actividades ──
   // En metrado la actividad activa debe pertenecer a la lista derivada del tareo.

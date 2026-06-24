@@ -7,6 +7,7 @@ import { ProyectoActivoProvider, useProyectoActivo } from './contexts/ProyectoAc
 import { BASE, LOGO } from './utils/styles';
 import { hoy } from './utils/helpers';
 import { leerRutaHash, escribirRutaHash } from './utils/urlNav';
+import { initBackButton } from './utils/backButton';
 
 import ErrorBoundary from './components/ErrorBoundary';
 import Navbar from './components/Navbar';
@@ -360,6 +361,12 @@ function AppInner() {
       titulo: msg,
     });
   }, [notify]);
+
+  // ── Botón ATRÁS de Android: no cerrar la app de golpe ──
+  // Evita que un atrás accidental cierre la app (y recargue todo al volver).
+  // Cada pantalla puede registrar su propio retroceso; en la raíz pide confirmar
+  // con "atrás de nuevo para salir". Solo aplica en la app nativa.
+  useEffect(() => { initBackButton(showToast); }, [showToast]);
 
   // ── COMANDOS DEL COMMAND PALETTE (Cmd+K) ──
   const comandos = useMemo(() => {
