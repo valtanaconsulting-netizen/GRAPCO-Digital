@@ -14,7 +14,7 @@ import {
   signOut,
   onAuthStateChanged,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, addDoc, collection, serverTimestamp, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, getDocFromCache, setDoc, addDoc, collection, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../firebaseConfig';
 import { leerRutaHash, escribirRutaHash, limpiarRutaHash } from '../utils/urlNav';
 
@@ -122,7 +122,18 @@ export function AuthProvider({ children }) {
     const uid = firebaseUser.uid;
     try {
       const ref = doc(db, 'Usuarios', uid);
-      const snap = await getDoc(ref);
+      // CACHE-FIRST: en arranques en caliente el perfil ya está en IndexedDB, así que
+      // resuelve al INSTANTE sin esperar el viaje al servidor (que era lo que dejaba
+      // colgada la pantalla "Cargando plataforma"). Si no está en cache (primer login
+      // o cache purgada), cae al getDoc normal (servidor). Un rol cambiado por el admin
+      // mientras la persona estaba fuera se refleja igual: el onSnapshot de más abajo
+      // se suscribe a /Usuarios/{uid} y actualiza rolPermitido EN VIVO al llegar el dato.
+      let snap;
+      try {
+        snap = await getDocFromCache(ref);
+      } catch {
+        snap = await getDoc(ref);
+      }
       if (!snap.exists()) {
         console.log('[Auth] Usuario sin perfil, auto-creando con rol MÍNIMO (capataz):', uid);
         const nuevoPerfil = {

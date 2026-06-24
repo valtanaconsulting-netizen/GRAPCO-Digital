@@ -5,12 +5,16 @@ import App from './App';
 import { activarPantallaCompletaEnPrimerToque } from './pantallaCompleta';
 import { inicializarNativo } from './nativo';
 // Fuentes AUTO-HOSPEDADAS (offline-first, sin Google Fonts ni cascada @import render-blocking).
+// Cargamos SOLO los pesos que mueven la aguja en el arranque:
+//   sans 400 (cuerpo) · 600 (semibold, 174 usos) · 700 (bold + base sintética de 800/900).
+//   mono 500 (códigos/IDs técnicos; el resto de pesos los sintetiza el navegador).
+// Quitados sans-500 (6 usos) y mono-700 → 6 → 4 archivos woff2 (~-39 KB en el arranque).
+// @fontsource ya declara font-display:swap → el texto aparece al instante con la
+// fuente del sistema y cambia a IBM Plex sin bloquear el primer pintado.
 import '@fontsource/ibm-plex-sans/latin-400.css';
-import '@fontsource/ibm-plex-sans/latin-500.css';
 import '@fontsource/ibm-plex-sans/latin-600.css';
 import '@fontsource/ibm-plex-sans/latin-700.css';
 import '@fontsource/ibm-plex-mono/latin-500.css';
-import '@fontsource/ibm-plex-mono/latin-700.css';
 import './styles/animatedBg.css';
 import './styles/global.css';
 

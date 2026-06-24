@@ -38,7 +38,31 @@ export default defineConfig({
           if (!id.includes('node_modules')) return;
           if (id.includes('react-dom') || id.includes('/react/') || id.includes('scheduler')) return 'vendor-react';
           if (id.includes('firebase') || id.includes('@firebase')) return 'vendor-firebase';
-          if (id.includes('recharts') || id.includes('d3-') || id.includes('victory-vendor')) return 'vendor-charts';
+          // @capacitor: el arranque (nativo.js / backButton.js) lo importa SOLO para
+          // detectar si corremos en la app nativa. Era el ÚNICO gancho eager hacia el
+          // 'vendor' genérico → arrastraba sus ~500 KB (lodash, deps de recharts, jspdf,
+          // etc.) a la carga inicial pese a ser código 100% lazy. Aislándolo en su propio
+          // chunk (pequeño), el 'vendor' genérico deja de ser eager y NO bloquea el boot.
+          // Verificar tras build: 'vendor-*.js' (catch-all) ya NO aparece en el
+          // modulepreload de index.html.
+          if (id.includes('@capacitor')) return 'vendor-capacitor';
+          // react-is / prop-types: micro-libs COMPARTIDAS entre el código eager y recharts.
+          // Si caen dentro de 'vendor-charts', el arranque (que las usa transitivamente)
+          // arrastra TODO recharts (~109 KB gz) pese a que ningún panel con gráficos se
+          // abrió. En su propio chunk (pocos KB) el arranque solo baja eso y 'vendor-charts'
+          // queda lazy. Esta regla DEBE ir antes que la de recharts.
+          if (id.includes('/react-is/') || id.includes('/prop-types/') || id.includes('/object-assign/')) return 'vendor-react-is';
+          // recharts + d3 + lodash (recharts trae lodash INLINEADO vía babel-plugin-lodash):
+          // NO los forzamos a un chunk nombrado. Nombrar 'vendor-charts' creaba una arista
+          // ESTÁTICA entry→vendor-charts (un helper compartido quedaba dentro del chunk y el
+          // arranque lo importaba) → se bajaban ~109 KB gz de gráficos en el boot pese a que
+          // TODAS las vistas con recharts son lazy (React.lazy). Devolviendo undefined,
+          // Rolldown los aísla como chunk(s) DINÁMICO(s) sin arista eager — mismo truco que
+          // ya se usa abajo con @react-pdf y html2pdf. Verificar: 0 'vendor-charts' en el
+          // modulepreload de index.html tras el build.
+          if (id.includes('recharts') || id.includes('d3-') || id.includes('victory-vendor')
+            || id.includes('/lodash/') || id.includes('react-smooth') || id.includes('recharts-scale')
+            || id.includes('internmap') || id.includes('fast-equals') || id.includes('eventemitter3')) return;
           if (id.includes('xlsx')) return 'vendor-xlsx';
           // ExcelJS (~0.9 MB) → chunk AISLADO. Solo se descarga al exportar el
           // Tareo F13 con estilos (lazy import), NO en el arranque.
@@ -49,7 +73,11 @@ export default defineConfig({
           // descargaban en el arranque (~150 KB gz) pese a ser 100% lazy. Devolviendo
           // undefined, Rolldown los aisla solo como chunk DINAMICO (await import desde
           // TareoPDFHtml). Verificar tras build: 0 imports de ese chunk en index-*.js.
-          if (id.includes('html2pdf') || id.includes('html2canvas') || id.includes('jspdf')) return;
+          // jspdf y sus deps de imagen/compresión (fast-png, iobuffer, pako): igual que
+          // arriba, en chunk DINÁMICO. fast-png filtraba ~19 KB gz al arranque pese a que
+          // jspdf solo se alcanza vía await import (export PDF).
+          if (id.includes('html2pdf') || id.includes('html2canvas') || id.includes('jspdf')
+            || id.includes('/fast-png') || id.includes('/iobuffer') || id.includes('/pako')) return;
           // TensorFlow + face-api → mismo chunk AISLADO (~0.6 MB). Solo se descarga al
           // abrir asistencia/reconocimiento facial (lazy), NO en el arranque.
           if (id.includes('face-api.js') || id.includes('@tensorflow') || id.includes('tfjs') || id.includes('seedrandom')) return 'vendor-faceapi';
@@ -64,7 +92,15 @@ export default defineConfig({
             || id.includes('png-js') || id.includes('linebreak') || id.includes('unicode-properties')
             || id.includes('unicode-trie') || id.includes('tiny-inflate') || id.includes('/brotli')
             || id.includes('/dfa/')) return;
-          return 'vendor';
+          // Catch-all: UN chunk POR PAQUETE en vez de un monolito 'vendor' de ~420 KB.
+          // Antes, cualquier módulo del arranque que tocara UNA sola lib de ese bucket
+          // (react-is, etc.) arrastraba los 420 KB enteros a la carga inicial. Con un
+          // chunk por paquete, el arranque solo baja los paquetes que realmente usa
+          // (pequeños) y el resto (DOMPurify, pako, etc.) queda lazy en su propio chunk.
+          const tras = id.split('node_modules/').pop();
+          const seg = tras.split('/');
+          const pkg = seg[0].startsWith('@') ? `${seg[0]}/${seg[1]}` : seg[0];
+          return `vendor-${pkg.replace(/^@/, '').replace(/[/.]/g, '-')}`;
         },
       },
     },
