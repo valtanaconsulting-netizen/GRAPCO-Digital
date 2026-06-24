@@ -32,7 +32,7 @@ export default function ValorizacionF07({ showToast }) {
   const [fuente, setFuente] = useState('oficial'); // 'oficial' (F07) | 'vivo' (producción)
   const [genPdf, setGenPdf] = useState(false);
   // Avance EN VIVO desde el metrado de la plataforma (capataz/sustentos), por quincena.
-  const { avancesVivo, cobertura } = useAvanceF07Vivo({ proyId, presu, enabled: fuente === 'vivo' });
+  const { avancesVivo } = useAvanceF07Vivo({ proyId, presu, enabled: fuente === 'vivo' });
   const avances = fuente === 'vivo' ? avancesVivo : avancesOficial;
 
   useEffect(() => {
@@ -246,16 +246,10 @@ export default function ValorizacionF07({ showToast }) {
           </tfoot>
         </table>
       </div>
-      {fuente === 'oficial' ? (
+      {fuente === 'oficial' && (
         <p style={{ fontSize: 10.5, color: BASE.muted }}>
           ◆ <b>Oficial (F07):</b> el <b>metrado de avance</b> proviene del <b>ISP</b> (cantidad ejecutada por partida), agrupado por quincena → cada valorización. <b>Actual</b> = acumulado de la val − acumulado de la anterior · <b>Saldo</b> = Cant − Acumulado. {!avances.length && <span style={{ color: BASE.gold, fontWeight: 800 }}>· Aún no se han cargado los avances de este proyecto.</span>}
         </p>
-      ) : (
-        <div style={{ fontSize: 10.5, color: BASE.muted, background: BASE.green + '0f', border: `1px solid ${BASE.green}33`, borderRadius: 8, padding: '8px 12px' }}>
-          🟢 <b>En vivo (producción):</b> metrado calculado desde la plataforma — <b>{cobertura.registros}</b> tareos + <b>{cobertura.sustentos}</b> sustentos — cruzados al ítem F07 (por descripción/código) y agrupados por quincena (sem 1-2 = Q1…).
-          {' '}<b style={{ color: BASE.navy }}>{cobertura.itemsVivo}</b> de {cobertura.totalItems} ítems reciben metrado · CD en vivo ≈ <b style={{ color: BASE.green }}>{soles(cobertura.cdVivo)}</b> ({cobertura.pctCD}% del presupuesto).
-          {cobertura.unmapped > 0 && <> <span style={{ color: BASE.gold, fontWeight: 700 }}>Aún no mapean 1:1</span> actividades de catálogo más grueso (acero, curado, eliminación…): <i>{cobertura.sinCruce.map(s => s.nombre).slice(0, 6).join(', ')}{cobertura.sinCruce.length > 6 ? '…' : ''}</i>. Para cruce completo, el catálogo de metrado del próximo proyecto debe usar los ítems del F07.</>}
-        </div>
       )}
     </div>
   );
