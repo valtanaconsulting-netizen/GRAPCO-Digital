@@ -46,6 +46,7 @@ const PERFILES = [
       { l: 'Kardex',           go: 'materiales.kardex' },
       { l: 'Catálogo',         go: 'materiales.catalogo' },
       { l: 'Importar S10',     go: 'materiales.importar' },
+      { l: 'Compras',          go: 'compras' },
     ],
   },
   {
@@ -63,7 +64,7 @@ const PERFILES = [
       { l: 'Cronograma',          go: 'cronogramaobra' },
       { l: 'Last Planner',        go: 'lps' },
       { l: 'Pull Planning',       go: 'pullplanning' },
-      { l: 'Materiales',          go: 'materiales' },
+      // 'Materiales' movido al área de Administración (almacenero) — 2026-06-24.
       { l: 'BIM',                 go: 'bim' },
     ],
   },

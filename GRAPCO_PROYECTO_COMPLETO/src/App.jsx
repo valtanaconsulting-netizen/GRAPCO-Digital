@@ -83,6 +83,11 @@ const ALMACEN_SIDEBAR = {
   'CARGA DE DATOS': [
     { key: 'materiales.importar',   label: 'Importar Registro S10', iconName: 'package',    color: BASE.gold },
   ],
+  // Compras y Logística vive ahora en esta área (antes estaba en Producción).
+  // Su key NO es 'materiales.*': el render del área la deriva a ComprasPanel.
+  'COMPRAS Y LOGÍSTICA': [
+    { key: 'compras',               label: 'Compras y Logística',   iconName: 'truck',      color: '#93c5fd' },
+  ],
 };
 // Reverso tab→key: cuando MaterialesPanel navega internamente (p.ej. al guardar una
 // salida salta a Kardex), traducimos el id de pestaña de vuelta a la key del sidebar.
@@ -202,7 +207,8 @@ const EstadoObra          = lazy(() => import('./views/modulos/estadoObra/Estado
 //   - admin      → null = TODOS los módulos (acceso completo)
 // Ingeniería de Producción ahora ABSORBE Planeamiento (Plan Maestro, Last Planner).
 // El APU (Análisis de Precios Unitarios) ya NO está en GRAPCO: es costos y vive en la plataforma de Costos aparte.
-const KEYS_PRODUCCION  = ['estadoObra', 'flujo', 'dashboard', 'radarProd', 'registro', 'carta', 'warroom', 'lps', 'cronogramaobra', 'normaltec', 'pullplanning', 'planvaciado', 'materiales', 'bim'];
+// 'materiales' y 'compras' se movieron al área de Administración (almacenero) — 2026-06-24.
+const KEYS_PRODUCCION  = ['estadoObra', 'flujo', 'dashboard', 'radarProd', 'registro', 'carta', 'warroom', 'lps', 'cronogramaobra', 'normaltec', 'pullplanning', 'planvaciado', 'bim'];
 const KEYS_PLANEAMIENTO = ['flujo', 'cronogramaobra', 'normaltec', 'pullplanning', 'lps', 'planvaciado'];
 // Devuelve la lista de keys permitidas para el rol, o null si ve todo (admin).
 const keysPermitidasPorRol = (rol) => {
@@ -724,9 +730,9 @@ function AppInner() {
             { key: 'registro',    label: 'Registro de Producción',  iconName: 'registro',    color: BASE.green,   group: 'PRODUCCIÓN' },
             { key: 'carta',       label: 'Carta Balance',           iconName: 'balance',     color: BASE.orange,  group: 'PRODUCCIÓN' },
             { key: 'warroom',     label: 'Sala de Operaciones',     iconName: 'target',      color: '#f87171',    group: 'PRODUCCIÓN' },
-            // ALMACÉN — abastecimiento y logística
-            { key: 'materiales',  label: 'Gestión de Materiales',   iconName: 'boxes',       color: '#c4b5fd',    group: 'ALMACÉN' },
-            { key: 'compras',     label: 'Compras y Logística',     iconName: 'truck',       color: '#93c5fd',    group: 'ALMACÉN' },
+            // ALMACÉN (Materiales + Compras) MOVIDO al área de Administración (almacenero) — 2026-06-24.
+            // Ya no aparece en Producción para ingeniero ni admin; se accede cambiando de área a
+            // "Administración" (ALMACEN_SIDEBAR + ComprasPanel). Render fallback aún vive abajo.
             // BIM
             { key: 'bim',         label: 'Coordinación BIM',        iconName: 'layers',      color: '#38bdf8',    group: 'BIM' },
             { key: 'calidad',     label: 'Gestión de Calidad',      iconName: 'checkSquare', color: '#f9a8d4',    group: 'GESTIÓN DE CALIDAD' },
@@ -1131,11 +1137,15 @@ function AppInner() {
                 sidebarWidth={SIDEBAR_W}
               />
               <div style={{ minWidth: 0 }}>
-                <MaterialesPanel
-                  showToast={showToast}
-                  tabExterna={moduloAlmacen}
-                  onChangeTab={(t) => setModuloAlmacen(TAB_TO_KEY_MAT[t] || 'materiales.dashboard')}
-                />
+                {moduloAlmacen === 'compras' ? (
+                  <ComprasPanel showToast={showToast} />
+                ) : (
+                  <MaterialesPanel
+                    showToast={showToast}
+                    tabExterna={moduloAlmacen}
+                    onChangeTab={(t) => setModuloAlmacen(TAB_TO_KEY_MAT[t] || 'materiales.dashboard')}
+                  />
+                )}
               </div>
             </div>
           )
