@@ -13,6 +13,14 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- Edge-to-edge: el contenido (navy) se dibuja DETRÁS de las barras del
+             sistema. La barra de estado (hora/batería) y la de navegación (los 3
+             botones) quedan transparentes y VISIBLES encima del navy. -->
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <!-- Dibuja dentro del notch/punch-hole (sin franja negra arriba). API 28+ -->
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
     </style>
 
 
