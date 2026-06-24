@@ -737,13 +737,11 @@ export default function SelectorPerfil({ onIrASeccion }) {
               Registro de Personal · Facial
             </span>
           </div>
-          {/* Etiquetas clickeables: cualquiera abre el kiosko de registro facial. */}
+          {/* Un solo acceso real: abre el kiosko de registro facial (entrada/salida). */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
             <span style={eyebrowAccesos(BASE.gold)}>Registro facial</span>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignContent: 'flex-start' }}>
-              {['Entrada/Salida', 'Sin perfil', 'Kiosko'].map(a => (
-                <ChipAcceso key={a} label={a} acento={BASE.gold} onClick={() => setModoMarcador(true)} />
-              ))}
+              <ChipAcceso label="Entrada/Salida" acento={BASE.gold} onClick={() => setModoMarcador(true)} />
             </div>
           </div>
           <div style={{
