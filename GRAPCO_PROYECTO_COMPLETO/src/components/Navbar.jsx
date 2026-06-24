@@ -136,13 +136,12 @@ export default function Navbar({ rol, isMobile, onSalir, onCambiarArea, onMenu }
         position: 'relative',
         overflow: 'hidden',
       }}>
-        {/* Solo el badge del PNG (anillo dorado + logo): recortamos el marco navy
-            externo (scale) y quitamos el plafón blanco CSS → mismo tamaño que el cliente. */}
+        {/* Logo limpio (sin marco navy): se monta directo, sin recortes ni plafón. */}
         <img
           src={LOGO}
           alt="GRAPCO"
           onError={(e) => { if (e.target.src !== window.location.origin + LOGO_FALLBACK) e.target.src = LOGO_FALLBACK; }}
-          style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scale(1.42)' }}
+          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
         />
       </div>
 

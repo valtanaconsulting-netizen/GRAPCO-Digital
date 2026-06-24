@@ -2,16 +2,17 @@
 // Paleta corporativa GRAPCO: navy del isotipo + dorado/amarillo de los edificios
 
 // Logos oficiales GRAPCO (provistos por el cliente, hospedados localmente):
-//   LOGO        → versión cuadrada (Logo Grapco SAC.jpeg) → favicon, navbar, cards
-//   LOGO_WIDE   → versión banner (grapco-logo.png) → headers anchos / hero
+//   LOGO        → versión cuadrada LIMPIA (solo el isotipo, sin marco navy) → navbar, cards, loaders
+//   LOGO_WIDE   → versión banner (grapco-logo-wide.png) → headers anchos / hero
 //   LOGO_FALLBACK → versión ancha como respaldo si el cuadrado falla
-// Logo oficial GRAPCO (re-renderizado desde el JPEG original a /brand/ con
-// sharp + lanczos para que se vea nítido en navbar/cards a cualquier tamaño).
-// La ruta /brand/ es nueva — el service worker no la tenía cacheada → se
-// descarga fresca en el próximo deploy.
-export const LOGO          = "/brand/grapco-192.png";
+// IMPORTANTE: los iconos /brand/grapco-*.png llevan el marco navy del tile de la
+// app (favicon/PWA/launcher). Dentro de la interfaz se montan sobre cajas blancas,
+// así que ese marco se veía como un grueso contorno azul. Para la UI usamos el
+// logo cuadrado limpio (fondo blanco, sin marco) y reservamos los PNG navy solo
+// para los iconos del sistema operativo.
+export const LOGO          = "/grapco-logo-square.jpeg";
 export const LOGO_WIDE     = "/grapco-logo-wide.png";
-export const LOGO_FALLBACK = "/brand/grapco-128.png";
+export const LOGO_FALLBACK = "/grapco-logo-wide.png";
 // Logo de Valtana Consultoría & Construcción — empresa que desarrolla y opera la
 // plataforma. Se muestra como co-marca en la cabecera del hub (proveedor del servicio).
 export const LOGO_VALTANA  = "/brand/valtana-logo.png";

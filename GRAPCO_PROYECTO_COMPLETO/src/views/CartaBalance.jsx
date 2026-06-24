@@ -631,7 +631,7 @@ export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMob
                   </p>
                 )}
               </div>
-              <img src={LOGO} alt="GRAPCO" style={{width:'48px',height:'48px',borderRadius:'10px',objectFit:'cover',opacity:0.9}}/>
+              <img src={LOGO} alt="GRAPCO" style={{width:'48px',height:'48px',borderRadius:'10px',objectFit:'contain',opacity:0.9}}/>
             </div>
             <div style={{display:'flex',gap:'6px',marginTop:'12px',flexWrap:'wrap'}}>
               {LETRAS.slice(0, cbNumTrab).map((l,i) => (

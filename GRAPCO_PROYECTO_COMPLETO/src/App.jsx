@@ -513,7 +513,7 @@ function AppInner() {
           <span style={{ width: 74, height: 74, borderRadius: 18, background: 'linear-gradient(160deg, #ffffff, #eef3f9)', padding: 2, overflow: 'hidden',
             boxShadow: `0 14px 36px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.8), 0 0 0 1px ${BASE.gold}55`,
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-            <img src={LOGO} alt="GRAPCO" style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scale(1.25)' }} />
+            <img src={LOGO} alt="GRAPCO" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </span>
         </div>
 

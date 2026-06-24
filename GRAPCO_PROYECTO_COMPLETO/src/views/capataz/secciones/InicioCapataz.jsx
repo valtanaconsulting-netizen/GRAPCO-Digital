@@ -168,7 +168,7 @@ export default function InicioCapataz({
           }}>
             <img src={LOGO} alt="GRAPCO"
               onError={(e) => { if (!e.target.dataset.fallback) { e.target.dataset.fallback = '1'; e.target.src = LOGO_FALLBACK; } }}
-              style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '14px', transform: 'scale(1.25)' }} />
+              style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '14px' }} />
           </div>
           <div style={{ width: '26px', height: '26px', border: '3px solid rgba(255,255,255,0.18)', borderTopColor: BASE.gold, borderRadius: '50%', animation: 'cap-spin 0.8s linear infinite' }} />
           <span style={{ color: 'rgba(255,255,255,0.82)', fontWeight: 700, fontSize: '12px', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Preparando tu cuadrilla…</span>
@@ -193,7 +193,7 @@ export default function InicioCapataz({
           }}>
             <img src={LOGO} alt="GRAPCO"
               onError={(e) => { if (!e.target.dataset.fallback) { e.target.dataset.fallback = '1'; e.target.src = LOGO_FALLBACK; } }}
-              style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '14px', transform: 'scale(1.25)' }} />
+              style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '14px' }} />
           </div>
           <h1 style={{ color: '#fff', fontSize: isMobile ? '19px' : '25px', fontWeight: 900, margin: '0 0 6px', letterSpacing: '0.5px' }}>
             GRAPCO <span style={{ color: BASE.gold }}>S.A.C.</span>

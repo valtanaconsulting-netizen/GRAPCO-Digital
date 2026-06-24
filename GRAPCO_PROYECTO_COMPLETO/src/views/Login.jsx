@@ -271,7 +271,7 @@ export default function Login() {
             src={LOGO}
             alt="GRAPCO"
             onError={(e) => { if (!e.target.dataset.fallback) { e.target.dataset.fallback = '1'; e.target.src = LOGO_FALLBACK; } }}
-            style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scale(1.25)' }}
+            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
           />
         </div>
 

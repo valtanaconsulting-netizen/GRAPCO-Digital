@@ -15,6 +15,7 @@ const APP_SHELL = [
   '/manifest.json',
   '/brand/grapco-192.png',
   '/brand/grapco-512.png',
+  '/grapco-logo-square.jpeg',
 ];
 
 self.addEventListener('install', (event) => {

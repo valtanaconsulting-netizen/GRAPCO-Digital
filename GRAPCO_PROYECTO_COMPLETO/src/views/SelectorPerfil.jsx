@@ -322,7 +322,7 @@ export default function SelectorPerfil({ onIrASeccion }) {
             }}>
               <img src={LOGO} alt="GRAPCO"
                 onError={(e) => { if (!e.target.dataset.fb) { e.target.dataset.fb = '1'; e.target.src = LOGO_FALLBACK; } }}
-                style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scale(1.25)' }} />
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
             <div>
               <p style={{ color: '#fff', fontSize: '17px', fontWeight: 900, letterSpacing: '0.4px' }}>
@@ -494,7 +494,7 @@ export default function SelectorPerfil({ onIrASeccion }) {
             src={LOGO}
             alt="GRAPCO"
             onError={(e) => { if (!e.target.dataset.fallback) { e.target.dataset.fallback = '1'; e.target.src = LOGO_FALLBACK; } }}
-            style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '14px', transform: 'scale(1.25)' }}
+            style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '14px' }}
           />
         </div>
         <h1 style={{

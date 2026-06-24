@@ -262,9 +262,9 @@ const padFilas = (arr = [], minRows = 4, factory = () => ({})) => {
 
 /**
  * Componente principal — recibe el doc del protocolo.
- * `data` = doc Firestore + opcionalmente `logoUrl` (default: /brand/grapco-192.png)
+ * `data` = doc Firestore + opcionalmente `logoUrl` (default: logo cuadrado limpio, sin marco navy)
  */
-export function ProtocoloPreVaciadoPDF({ data = {}, logoUrl = '/brand/grapco-192.png' }) {
+export function ProtocoloPreVaciadoPDF({ data = {}, logoUrl = '/grapco-logo-square.jpeg' }) {
   const items = (data.checklist?.length ? data.checklist : CHECKLIST_PREVACIADO.map(c => ({ ...c, valor: 'NO_LLENADO', obs: '' })));
   const guias = padFilas(data.guias || [], 5, () => ({ numGuia: '', placa: '', hSalida: '', hLlegada: '', hInicio: '', hFin: '' }));
   const obsLines = padFilas((data.observaciones || '').split('\n').filter(Boolean).map(o => ({ obs: o })), 4, () => ({ obs: '' }));
