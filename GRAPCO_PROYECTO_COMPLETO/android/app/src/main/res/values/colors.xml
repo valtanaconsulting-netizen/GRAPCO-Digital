@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Navy de marca GRAPCO (#0F2A47). Fondo de la pantalla de arranque para que
+         el cold-start sea navy sólido y empalme sin saltos con el loader web. -->
+    <color name="splashNavy">#0F2A47</color>
+</resources>

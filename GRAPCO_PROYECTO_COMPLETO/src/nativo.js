@@ -20,6 +20,16 @@ export async function inicializarNativo() {
   // Solo en la app nativa real. En web/PWA: no tocar nada.
   if (!Capacitor?.isNativePlatform?.()) return;
 
+  // ── Splash nativo: ocultarlo CUANTO ANTES (lo primero) ──
+  // El WebView ya está pintando el loader inline (#gp-boot navy del index.html),
+  // así que al quitar el splash de marca se ve DIRECTO el loader animado, sin la
+  // pantalla previa de logo + "PLATAFORMA GRAPCO S.A.C.". No lo encadenamos detrás
+  // del setup de la barra de estado (eso lo retrasaba ~1.5 s): se dispara ya, en
+  // paralelo. El cold-start nativo es navy sólido (styles.xml) → empalme sin saltos.
+  import('@capacitor/splash-screen')
+    .then(({ SplashScreen }) => SplashScreen.hide({ fadeOutDuration: 200 }))
+    .catch(() => { /* sin splash: ignorar */ });
+
   // ── Barra de estado: edge-to-edge, transparente y VISIBLE (no se oculta) ──
   try {
     const { StatusBar, Style } = await import('@capacitor/status-bar');
@@ -35,13 +45,5 @@ export async function inicializarNativo() {
     // quiere. Edge-to-edge con la barra visible es el comportamiento correcto.
   } catch {
     /* plugin ausente o sin soporte: la app sigue funcionando igual */
-  }
-
-  // ── Splash nativo: ocultarlo ahora que la UI ya está lista ──
-  try {
-    const { SplashScreen } = await import('@capacitor/splash-screen');
-    await SplashScreen.hide();
-  } catch {
-    /* sin splash: ignorar */
   }
 }

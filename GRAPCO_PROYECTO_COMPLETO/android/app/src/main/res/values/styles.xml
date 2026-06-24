@@ -24,7 +24,16 @@
     </style>
 
 
+    <!-- Pantalla de arranque: fondo NAVY sólido (no el splash con logo + texto
+         "PLATAFORMA GRAPCO S.A.C."). Así el arranque va DIRECTO al loader animado de
+         la web (el #gp-boot navy del index.html aparece al instante) sin mostrar antes
+         la pantalla de marca, que se sentía como un paso extra desagradable.
+         - windowSplashScreenBackground: fondo del splash del sistema en Android 12+.
+         - android:background: mismo navy para el windowBackground en versiones previas.
+         - postSplashScreenTheme: al terminar el splash se pasa al tema real (edge-to-edge). -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="android:background">@drawable/splash</item>
+        <item name="windowSplashScreenBackground">@color/splashNavy</item>
+        <item name="android:background">@color/splashNavy</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>

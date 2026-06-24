@@ -15,7 +15,14 @@ import SelectorCapataz from './SelectorCapataz';
 const titulteCase = (s) => String(s || '').trim().toLowerCase()
   .split(/\s+/).map(w => w ? w[0].toUpperCase() + w.slice(1) : w).join(' ');
 
-function AreaCard({ icon, paso, titulo, descripcion, tags, color, bloqueada, motivo, onClick, isMobile }) {
+// Tarjeta de ÁREA — versión COMPACTA y centrada (rediseño jun-2026).
+// Muestra SOLO: etiqueta de área (ÁREA 1/2) · ícono · título (TAREO/METRADO).
+// Sin descripción, sin chips, sin botón "Entrar": el cuadro entero es el botón.
+// A media anchura (2 columnas también en móvil) y con buen alto → contenido
+// distribuido verticalmente pero centrado. El estado BLOQUEADO conserva su
+// función (el metrado exige tareo previo): atenúa, marca el candado y deja un
+// hint de una línea para que el capataz sepa por qué no puede entrar todavía.
+function AreaCard({ icon, area, titulo, color, bloqueada, motivo, onClick, isMobile }) {
   const sombra = `inset 0 1px 0 rgba(255,255,255,0.9), 0 20px 46px -24px rgba(7,16,30,0.75), 0 5px 14px -10px rgba(7,16,30,0.45)`;
   return (
     <button
@@ -24,15 +31,16 @@ function AreaCard({ icon, paso, titulo, descripcion, tags, color, bloqueada, mot
       disabled={bloqueada}
       style={{
         cursor: bloqueada ? 'not-allowed' : 'pointer',
-        position: 'relative', overflow: 'hidden', textAlign: 'left',
+        position: 'relative', overflow: 'hidden', textAlign: 'center',
         background: bloqueada ? 'linear-gradient(180deg,#f8fafc 0%,#eef2f7 100%)' : 'linear-gradient(180deg, #ffffff 0%, #f5f8fc 100%)',
         border: `1px solid ${bloqueada ? 'rgba(15,42,71,0.10)' : color + '55'}`,
-        borderRadius: '18px', padding: isMobile ? '12px 14px 11px' : '18px 18px 15px',
-        display: 'flex', flexDirection: 'column', gap: isMobile ? '7px' : '10px',
+        borderRadius: '18px', padding: isMobile ? '20px 10px' : '26px 18px',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        gap: isMobile ? '11px' : '14px',
         opacity: bloqueada ? 0.72 : 1,
         boxShadow: bloqueada ? 'none' : sombra,
         transition: 'transform 0.24s cubic-bezier(0.34,1.4,0.64,1), box-shadow 0.24s, border-color 0.24s',
-        minHeight: isMobile ? 'auto' : '210px',
+        minHeight: isMobile ? '172px' : '210px',
       }}
       onMouseEnter={e => { if (!bloqueada) { e.currentTarget.style.transform = 'translateY(-5px)'; e.currentTarget.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.9), 0 30px 60px -20px ${color}5C, 0 0 0 1.5px ${color}`; } }}
       onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = bloqueada ? 'none' : sombra; }}
@@ -45,61 +53,48 @@ function AreaCard({ icon, paso, titulo, descripcion, tags, color, bloqueada, mot
           boxShadow: `0 0 12px ${color}99`,
         }} />
       )}
-      {bloqueada && (
+
+      {/* Etiqueta de área (la "parte superior que dice ÁREA 1 / ÁREA 2") */}
+      <span style={{
+        fontSize: isMobile ? '9.5px' : '10px', fontWeight: 900, letterSpacing: '1.6px',
+        color: bloqueada ? BASE.muted : color,
+      }}>{area}</span>
+
+      {/* Ícono (la "figura") */}
+      <span style={{
+        position: 'relative',
+        width: isMobile ? '62px' : '72px', height: isMobile ? '62px' : '72px', borderRadius: '18px',
+        background: bloqueada ? '#eef2f7' : `linear-gradient(145deg, ${color}22, ${color}0A)`,
+        border: `1px solid ${bloqueada ? BASE.border : color + '33'}`,
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: isMobile ? '32px' : '38px',
+        boxShadow: bloqueada ? 'none' : `inset 0 1px 0 rgba(255,255,255,0.6), 0 6px 14px -5px ${color}55`,
+      }}>
+        {icon}
+        {bloqueada && (
+          <span style={{
+            position: 'absolute', bottom: '-5px', right: '-5px',
+            width: '24px', height: '24px', borderRadius: '999px',
+            background: '#fff', border: `1px solid ${BASE.border}`,
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px',
+            boxShadow: '0 2px 6px rgba(7,16,30,0.18)',
+          }}>🔒</span>
+        )}
+      </span>
+
+      {/* Título (TAREO / METRADO) */}
+      <span style={{
+        fontSize: isMobile ? '18px' : '21px', fontWeight: 900, color: BASE.navy,
+        letterSpacing: '0.4px', lineHeight: 1.1,
+      }}>{titulo}</span>
+
+      {/* Hint de una línea SOLO si está bloqueada (mantiene la lógica metrado←tareo) */}
+      {bloqueada && motivo && (
         <span style={{
-          position: 'absolute', top: '14px', right: '14px',
-          background: '#eef2f7', color: BASE.muted,
-          fontSize: '9px', fontWeight: 900, letterSpacing: '0.6px',
-          padding: '4px 10px', borderRadius: '999px', border: `1px solid ${BASE.border}`,
-        }}>🔒 BLOQUEADO</span>
+          fontSize: '9.5px', fontWeight: 600, color: BASE.muted, lineHeight: 1.35,
+          maxWidth: '94%', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+        }}>{motivo}</span>
       )}
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
-        <span style={{
-          width: '46px', height: '46px', borderRadius: '13px', flexShrink: 0,
-          background: bloqueada ? '#eef2f7' : `linear-gradient(145deg, ${color}22, ${color}0A)`,
-          border: `1px solid ${bloqueada ? BASE.border : color + '33'}`,
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px',
-          boxShadow: bloqueada ? 'none' : `inset 0 1px 0 rgba(255,255,255,0.6), 0 4px 10px -4px ${color}55`,
-        }}>{icon}</span>
-        <div style={{ minWidth: 0 }}>
-          <p style={{ fontSize: '9.5px', fontWeight: 900, letterSpacing: '1.2px', color: bloqueada ? BASE.muted : color }}>{paso}</p>
-          <p style={{ fontSize: isMobile ? '17px' : '18px', fontWeight: 900, color: BASE.navy, lineHeight: 1.15, letterSpacing: '-0.01em' }}>{titulo}</p>
-        </div>
-      </div>
-
-      <p style={{
-        fontSize: isMobile ? '11px' : '11.5px', color: BASE.muted, lineHeight: 1.45, margin: 0, flex: 1,
-        minHeight: isMobile ? '31px' : 0,
-        ...(isMobile ? { display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } : {}),
-      }}>
-        {bloqueada ? motivo : descripcion}
-      </p>
-
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-        {tags.map(t => (
-          <span key={t} style={{
-            background: BASE.bg, color: BASE.muted, border: `1px solid ${BASE.border}`,
-            padding: '3px 9px', borderRadius: '999px', fontSize: '9.5px', fontWeight: 700,
-          }}>{t}</span>
-        ))}
-      </div>
-
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        borderTop: `1px solid ${BASE.borderSoft || BASE.border}`, paddingTop: '9px', marginTop: '1px',
-      }}>
-        <span style={{ fontSize: '10.5px', fontWeight: 900, color: bloqueada ? BASE.muted : color, letterSpacing: '1px', textTransform: 'uppercase' }}>
-          {bloqueada ? 'Completa el tareo' : 'Entrar'}
-        </span>
-        <span style={{
-          width: '28px', height: '28px', borderRadius: '999px',
-          background: bloqueada ? '#e2e8f0' : `linear-gradient(145deg, ${color}, ${color}cc)`,
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          color: bloqueada ? BASE.muted : '#fff', fontSize: '14px', fontWeight: 900,
-          boxShadow: bloqueada ? 'none' : `0 4px 10px -3px ${color}88`,
-        }}>{bloqueada ? '🔒' : '→'}</span>
-      </div>
     </button>
   );
 }
@@ -271,24 +266,21 @@ export default function InicioCapataz({
           </div>
         )}
 
-        {/* Áreas — los 2 módulos son el foco de la pantalla */}
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? '12px' : '14px', marginTop: isMobile ? '16px' : '22px' }}>
+        {/* Áreas — los 2 módulos son el foco. A MEDIA ANCHURA (2 columnas incluso en
+            móvil): tarjetas compactas, lado a lado, con solo ÁREA · ícono · título. */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: isMobile ? '12px' : '14px', marginTop: isMobile ? '16px' : '22px' }}>
           <AreaCard
-            icon="👷" paso="ÁREA 1 · TAREO" titulo="Tareo"
-            descripcion="Escoge las actividades del día y coloca a tu gente con sus horas (HN/HE). Puedes importar las horas del marcador facial."
-            tags={['Actividades', 'Horas', 'Marcador facial']}
+            icon="👷" area="ÁREA 1" titulo="TAREO"
             color={BASE.navy} isMobile={isMobile}
             bloqueada={!capataz}
             motivo="Confirma tu cuadrilla arriba para empezar."
             onClick={onAbrirTareo}
           />
           <AreaCard
-            icon="📏" paso="ÁREA 2 · METRADO" titulo="Metrado y observaciones"
-            descripcion="En las actividades de tu tareo, registra el metrado avanzado, observaciones y fotos. Luego se sube a la oficina técnica."
-            tags={['Metrado', 'Observaciones', 'Fotos']}
+            icon="📏" area="ÁREA 2" titulo="METRADO"
             color={BASE.gold} isMobile={isMobile}
             bloqueada={!tieneTareo}
-            motivo="Primero coloca al menos una actividad con horas en el TAREO. El metrado se llena sobre esas mismas actividades."
+            motivo="Primero registra el tareo."
             onClick={onAbrirMetrado}
           />
         </div>
