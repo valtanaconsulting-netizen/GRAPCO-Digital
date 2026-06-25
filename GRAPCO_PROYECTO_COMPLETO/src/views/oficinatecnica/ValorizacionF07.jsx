@@ -17,6 +17,7 @@ import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import useAvanceF07Vivo from '../../hooks/useAvanceF07Vivo';
 import { generarPDFValorizacionF07 } from '../../utils/valorizacionF07Pdf';
 import EmptyState from '../../components/EmptyState';
+import { colorPrefijo } from '../../utils/prefijos';
 
 const soles = (n) => 'S/ ' + (Number(n) || 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const cant = (n) => (Number(n) || 0).toLocaleString('es-PE', { maximumFractionDigits: 2 });
@@ -32,7 +33,7 @@ export default function ValorizacionF07({ showToast }) {
   const [fuente, setFuente] = useState('oficial'); // 'oficial' (F07) | 'vivo' (producción)
   const [genPdf, setGenPdf] = useState(false);
   // Avance EN VIVO desde el metrado de la plataforma (capataz/sustentos), por quincena.
-  const { avancesVivo } = useAvanceF07Vivo({ proyId, presu, enabled: fuente === 'vivo' });
+  const { avancesVivo, cobertura } = useAvanceF07Vivo({ proyId, presu, enabled: fuente === 'vivo' });
   const avances = fuente === 'vivo' ? avancesVivo : avancesOficial;
 
   useEffect(() => {
@@ -170,6 +171,9 @@ export default function ValorizacionF07({ showToast }) {
         <Kpi label="Saldo referencial" v={soles(tot.saldo)} c="#0ea5e9" />
       </div>
 
+      {/* COBERTURA POR PREFIJO — solo en modo en vivo: cuánto del avance cruza por familia */}
+      {fuente === 'vivo' && cobertura && <CoberturaPrefijos cobertura={cobertura} />}
+
       {/* Grilla F07 — panel congelado (estilo Excel): contenedor con scroll propio;
           encabezado fijo arriba (top) + columnas ITEM y DESCRIPCIÓN fijas a la
           izquierda (left). La barra horizontal abajo desliza el resto de columnas. */}
@@ -266,6 +270,41 @@ function bloque(cantBloque, cantPpto, pu, borde, color, fuerte) {
       <td style={td({ textAlign: 'right', color: BASE.muted })}>{q ? pct(porc) : '—'}</td>
       <td style={td({ textAlign: 'right', color: q ? color : BASE.mutedSoft, fontWeight: fuerte ? 700 : 500 })}>{q ? soles(total) : '—'}</td>
     </>
+  );
+}
+
+// Cobertura del avance en vivo agrupada por PREFIJO (familia). Hace visible qué
+// parte del metrado del capataz/sustentos cruza al F07 por familia y qué queda sin cruzar.
+function CoberturaPrefijos({ cobertura }) {
+  const { porPrefijo = [], pctCD = 0, cdVivo = 0, unmapped = 0, conPrefijos, sinCruce = [] } = cobertura;
+  const conData = porPrefijo.filter(p => p.cd > 0 || p.unmapped > 0);
+  return (
+    <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 12, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 11, fontWeight: 900, color: BASE.navy, letterSpacing: 0.4 }}>🔑 COBERTURA POR FAMILIA (PREFIJO)</span>
+        <span style={{ fontSize: 11, fontWeight: 800, color: BASE.green }}>CD vivo {soles(cdVivo)} · {pct(pctCD / 100)} del presupuesto</span>
+        {unmapped > 0 && <span style={{ fontSize: 11, fontWeight: 800, color: BASE.gold }}>· {cant(unmapped)} sin cruzar</span>}
+        {!conPrefijos && <span style={{ marginLeft: 'auto', fontSize: 10.5, color: BASE.gold, fontWeight: 700 }}>⚠ Asigna prefijos en OT → Códigos para afinar el cruce.</span>}
+      </div>
+      {conData.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {conData.map(p => (
+            <span key={p.prefijo} title={`${p.familia} · ${p.items} ítem(s) F07`}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 9px', borderRadius: 999, border: `1px solid ${BASE.border}`, background: BASE.bgSoft }}>
+              <span style={{ width: 9, height: 9, borderRadius: 3, background: p.prefijo === '(sin)' ? BASE.muted : colorPrefijo(p.prefijo) }} />
+              <b style={{ fontSize: 11, fontFamily: 'monospace', color: BASE.navy }}>{p.prefijo}</b>
+              <span style={{ fontSize: 10.5, color: BASE.green, fontWeight: 700 }}>{soles(p.cd)}</span>
+              {p.unmapped > 0 && <span style={{ fontSize: 10, color: BASE.gold, fontWeight: 700 }}>· {cant(p.unmapped)}↛</span>}
+            </span>
+          ))}
+        </div>
+      )}
+      {sinCruce.length > 0 && (
+        <p style={{ fontSize: 10, color: BASE.muted }}>
+          <b>Sin cruzar (top):</b> {sinCruce.slice(0, 6).map(s => `${s.nombre} (${cant(s.metrado)})`).join(' · ')}
+        </p>
+      )}
+    </div>
   );
 }
 
