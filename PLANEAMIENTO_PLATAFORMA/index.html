@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>PLANEAMIENTO · GRAPCO S.A.C.</title>
+
+    <!-- Favicon: logo oficial GRAPCO, ahora en /brand/ (ruta nueva para
+         evitar el caché del service worker y del launcher Android). -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/brand/grapco-favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/brand/grapco-favicon-16.png" />
+    <link rel="shortcut icon" href="/brand/grapco-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/brand/grapco-apple-180.png" />
+
+    <!-- PWA manifest -->
+    <link rel="manifest" href="/manifest.json?v=2026-06-23-standalone" />
+    <!-- Color de la barra de estado en Android -->
+    <meta name="theme-color" content="#0F2A47" />
+    <meta name="msapplication-TileColor" content="#1e3a5f" />
+    <meta name="msapplication-TileImage" content="/brand/grapco-192.png" />
+    <!-- iOS Safari -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Planeamiento" />
+
+    <!-- Loader inline: aparece INSTANTÁNEAMENTE, antes de que se descargue React.
+         Se reemplaza solo cuando React monta dentro de #root. -->
+    <style>
+      html, body { margin: 0; padding: 0; background: #0F2A47; }
+      #gp-boot {
+        position: fixed; inset: 0;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 18px;
+        background: radial-gradient(120% 90% at 50% 28%, #143256 0%, #0B1F39 46%, #061226 100%);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        color: #fff; z-index: 9999;
+        animation: gp-fade 0.35s ease-out;
+      }
+      #gp-boot .ring {
+        position: relative;
+        width: 96px; height: 96px;
+        display: inline-flex; align-items: center; justify-content: center;
+      }
+      #gp-boot .ring::before,
+      #gp-boot .ring::after {
+        content: ''; position: absolute; inset: 0;
+        border-radius: 50%; border: 3px solid transparent;
+      }
+      #gp-boot .ring::before {
+        border-top-color: #E5A82F;
+        border-right-color: #E5A82F;
+        animation: gp-spin 1.05s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
+      }
+      #gp-boot .ring::after {
+        border-bottom-color: rgba(229,168,47,0.22);
+        border-left-color: rgba(229,168,47,0.22);
+        animation: gp-spin 2.4s linear infinite reverse;
+      }
+      #gp-boot .logo {
+        width: 72px; height: 72px; border-radius: 16px;
+        background: #fff; padding: 6px;
+        box-shadow: 0 10px 28px rgba(15,42,71,0.14), 0 3px 8px rgba(15,42,71,0.10);
+        object-fit: contain;
+      }
+      #gp-boot .brand {
+        font-size: 20px; font-weight: 900; letter-spacing: 6px; color: #ffffff;
+        margin-top: 4px;
+      }
+      #gp-boot .sub {
+        font-size: 11px; font-weight: 600; letter-spacing: 2.5px;
+        color: #8198b3; text-transform: uppercase;
+      }
+      #gp-boot .dots { display: inline-block; min-width: 18px; text-align: left; }
+      #gp-boot .dots::after {
+        content: '.'; animation: gp-dots 1.4s steps(3, end) infinite;
+      }
+      @keyframes gp-spin { to { transform: rotate(360deg); } }
+      @keyframes gp-fade { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes gp-dots {
+        0%   { content: '.'; }
+        33%  { content: '..'; }
+        66%  { content: '...'; }
+        100% { content: '.'; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <div id="gp-boot" aria-label="Cargando plataforma GRAPCO">
+        <div class="ring">
+          <img class="logo" src="/grapco-logo-square.jpeg" alt="GRAPCO" />
+        </div>
+        <div class="brand">GRAPCO <span style="color:#E5A82F">S.A.C.</span></div>
+        <div class="sub">Cargando plataforma<span class="dots"></span></div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

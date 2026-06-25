@@ -108,16 +108,10 @@ const ROL_ITEMS = {
   carta_balance:     [{ key: 'carta',    label: 'Carta Balance',           iconName: 'balance',    color: '#7c3aed', group: 'MI ÁREA' }],
   almacenero:        [{ key: 'almacen',  label: 'Almacén',                 iconName: 'package',    color: '#7c3aed', group: 'MI ÁREA' }],
   logistica:         [{ key: 'almacen',  label: 'Logística',               iconName: 'cart',       color: '#2563eb', group: 'MI ÁREA' }],
-  calidad:           [{ key: 'calidad',  label: 'Gestión de Calidad',      iconName: 'shield',     color: '#ec4899', group: 'MI ÁREA' }],
-  supervisor_cliente:[{ key: 'calidad',  label: 'Supervisión del Cliente', iconName: 'shield',     color: '#0ea5e9', group: 'MI ÁREA' }],
   oficina_tecnica:   [{ key: 'ot',       label: 'Oficina Técnica',         iconName: 'fileText',   color: '#6366f1', group: 'MI ÁREA' }],
-  // SSOMA (Seguridad y Medio Ambiente) movido a la plataforma independiente SIGMA (2026-06-15).
-  planeamiento:      [
-    { key: 'lps',         label: 'Last Planner System',       iconName: 'target',     color: '#0d9488',    group: 'PLANEAMIENTO' },
-    { key: 'dashboard',   label: 'Producción',                iconName: 'dashboard',  color: BASE.navy,    group: 'ANÁLISIS' },
-    { key: 'warroom',     label: 'Sala de Operaciones',       iconName: 'target',     color: BASE.redDark, group: 'ANÁLISIS' },
-    { key: 'gerencia',    label: 'Tablero Ejecutivo',         iconName: 'building',   color: '#0f1a2e',    group: 'GERENCIA' },
-  ],
+  // SSOMA (Seguridad) → plataforma SIGMA (2026-06-15).
+  // Planeamiento → plataforma PLANEAMIENTO_PLATAFORMA y Calidad (roles calidad/supervisor_cliente)
+  // → plataforma CALIDAD_PLATAFORMA, ambas apps independientes (2026-06-24).
 };
 
 // Bloque 11 — UX Avanzada
@@ -154,7 +148,6 @@ const PRELOAD_BY_KEY = {
   materiales:  () => import('./views/MaterialesPanel'),
   compras:     () => import('./views/ComprasPanel'),
   almacen:     () => import('./views/Almacenero'),
-  calidad:     () => import('./views/CalidadPanel'),
   ot:          () => import('./views/OficinaTecnicaPanel'),
   planMaestro: () => import('./views/modulos/planMaestro/PlanMaestroPanel'),
   gerencia:    () => import('./views/modulos/panelGerencia/PanelGerencia'),
@@ -162,13 +155,7 @@ const PRELOAD_BY_KEY = {
   portfolio:   () => import('./views/modulos/portfolio/PortfolioPanel'),
   bim:         () => import('./views/BIM'),
   capataz:     () => import('./views/capataz/CapatazPanel'),
-  lps:         () => import('./views/planeamiento/LastPlannerPro'),
-  // Planeamiento (faltaban → por eso se demoraban al cambiar de módulo)
-  flujo:          () => import('./views/planeamiento/FlujoPlaneamiento'),
-  pullplanning:   () => import('./views/planeamiento/PullPlanning'),
-  planvaciado:    () => import('./views/planeamiento/PlanVaciado'),
-  cronogramaobra: () => import('./views/planeamiento/CronogramaPro'),
-  normaltec:      () => import('./views/planeamiento/NormalTecnologica'),
+  // Planeamiento (lps/flujo/pullplanning/planvaciado/cronogramaobra/normaltec) → app PLANEAMIENTO_PLATAFORMA (2026-06-24).
   radarProd:      () => import('./views/modulos/radarProduccion/RadarProduccion'),
   dashEjecutivo:  () => import('./views/modulos/dashboardEjecutivo/DashboardEjecutivo'),
   estadoObra:     () => import('./views/modulos/estadoObra/EstadoObra'),
@@ -182,15 +169,10 @@ const AdminPanel          = lazy(() => import('./views/admin/AdminPanel'));
 const MaterialesPanel     = lazy(() => import('./views/MaterialesPanel'));
 const ComprasPanel        = lazy(() => import('./views/ComprasPanel'));
 const Almacenero          = lazy(() => import('./views/Almacenero'));
-const CalidadPanel        = lazy(() => import('./views/CalidadPanel'));
 const OficinaTecnicaPanel = lazy(() => import('./views/OficinaTecnicaPanel'));
 const PlanMaestroPanel    = lazy(() => import('./views/modulos/planMaestro/PlanMaestroPanel'));
-const FlujoPlaneamiento   = lazy(() => import('./views/planeamiento/FlujoPlaneamiento'));
-const PullPlanning        = lazy(() => import('./views/planeamiento/PullPlanning'));
-const PlanVaciado         = lazy(() => import('./views/planeamiento/PlanVaciado'));
-const CronogramaPro       = lazy(() => import('./views/planeamiento/CronogramaPro'));
-const LastPlannerPro      = lazy(() => import('./views/planeamiento/LastPlannerPro'));
-const NormalTecnologica   = lazy(() => import('./views/planeamiento/NormalTecnologica'));
+// Planeamiento (Flujo/Cronograma/LPS/PullPlanning/PlanVaciado/NormalTecnológica) y
+// Calidad (CalidadPanel) → apps independientes PLANEAMIENTO_PLATAFORMA / CALIDAD_PLATAFORMA (2026-06-24).
 const PanelGerencia       = lazy(() => import('./views/modulos/panelGerencia/PanelGerencia'));
 const ProyectosPanel      = lazy(() => import('./views/modulos/proyectos/ProyectosPanel'));
 const PortfolioPanel      = lazy(() => import('./views/modulos/portfolio/PortfolioPanel'));
@@ -208,12 +190,12 @@ const EstadoObra          = lazy(() => import('./views/modulos/estadoObra/Estado
 // Ingeniería de Producción ahora ABSORBE Planeamiento (Plan Maestro, Last Planner).
 // El APU (Análisis de Precios Unitarios) ya NO está en GRAPCO: es costos y vive en la plataforma de Costos aparte.
 // 'materiales' y 'compras' se movieron al área de Administración (almacenero) — 2026-06-24.
-const KEYS_PRODUCCION  = ['estadoObra', 'flujo', 'dashboard', 'radarProd', 'registro', 'carta', 'warroom', 'lps', 'cronogramaobra', 'normaltec', 'pullplanning', 'planvaciado', 'bim'];
-const KEYS_PLANEAMIENTO = ['flujo', 'cronogramaobra', 'normaltec', 'pullplanning', 'lps', 'planvaciado'];
+// Planeamiento (flujo/cronogramaobra/normaltec/pullplanning/lps/planvaciado) se
+// extrajo a la app PLANEAMIENTO_PLATAFORMA → ya no son keys de Producción (2026-06-24).
+const KEYS_PRODUCCION  = ['estadoObra', 'dashboard', 'radarProd', 'registro', 'carta', 'warroom', 'bim'];
 // Devuelve la lista de keys permitidas para el rol, o null si ve todo (admin).
 const keysPermitidasPorRol = (rol) => {
   if (rol === 'admin') return null;            // acceso total
-  if (rol === 'planeamiento') return KEYS_PLANEAMIENTO;
   if (rol === 'ingeniero') return KEYS_PRODUCCION;
   return null;
 };
@@ -260,8 +242,8 @@ function AppInner() {
     const cancel = window.cancelIdleCallback || clearTimeout;
     // Precarga en segundo plano TODOS los módulos del ÁREA del usuario (vía el mapa),
     // así cualquier cambio de módulo es instantáneo. Se SALTAN los pesados que
-    // arrastran vendors grandes (Calidad→PDF): esos cargan on-demand al hover/clic.
-    const SKIP = new Set(['calidad', 'admin']);
+    // arrastran vendors grandes: esos cargan on-demand al hover/clic.
+    const SKIP = new Set(['admin']);
     const keys = keysPermitidasPorRol(rol) || Object.keys(PRELOAD_BY_KEY);
     const tasks = [...new Set(keys)].filter(k => PRELOAD_BY_KEY[k] && !SKIP.has(k)).map(k => PRELOAD_BY_KEY[k]);
     const ids = [];
@@ -281,7 +263,6 @@ function AppInner() {
   // Pestaña inicial de paneles con tabs internos, para que el SelectorPerfil pueda
   // hacer deep-link a una sección concreta (ej. Admin→Usuarios, Calidad→PETs).
   const [adminTab, setAdminTab] = useState('resumen');
-  const [calidadTab, setCalidadTab] = useState('calidad.dashboard');
   const [drawerOpen, setDrawerOpen] = useState(false); // menú móvil (hamburguesa)
 
   // Si el módulo activo no está permitido para el área actual, salta al primero permitido.
@@ -305,7 +286,7 @@ function AppInner() {
   // render → entra ya posicionado en la sección, sin parpadeo en el dashboard).
   const irASeccion = useCallback((rolDestino, destino) => {
     if (destino) {
-      if (rolDestino === 'ingeniero' || rolDestino === 'planeamiento') {
+      if (rolDestino === 'ingeniero') {
         setModuloIngeniero(destino);
       } else if (rolDestino === 'admin') {
         setModuloIngeniero('admin');
@@ -314,8 +295,6 @@ function AppInner() {
         setModuloAlmacen(destino);
       } else if (rolDestino === 'oficina_tecnica') {
         setModuloOT(destino);
-      } else if (rolDestino === 'calidad' || rolDestino === 'supervisor_cliente') {
-        setCalidadTab(destino);
       }
     }
     entrarComoRol(rolDestino);
@@ -662,7 +641,7 @@ function AppInner() {
 
       {/* Navbar */}
       <Navbar rol={rol} isMobile={isMobile} onSalir={salir} onCambiarArea={cambiarArea}
-        onMenu={['admin', 'ingeniero', 'planeamiento'].includes(rol) ? () => setDrawerOpen(true) : undefined} />
+        onMenu={['admin', 'ingeniero'].includes(rol) ? () => setDrawerOpen(true) : undefined} />
 
       {/* Selector global Proyecto + Frente MOVIDO a la pantalla de entrada (SelectorPerfil):
           el proyecto y el frente se eligen al ingresar desde el Módulo de áreas. Aquí ya no va. */}
@@ -706,22 +685,17 @@ function AppInner() {
           />
         )}
 
-        {/* ── ROL: INGENIERO + ADMIN + PLANEAMIENTO (modo demo entra como ingeniero) ── */}
-        {(rol === 'ingeniero' || rol === 'admin' || rol === 'planeamiento') && (() => {
+        {/* ── ROL: INGENIERO + ADMIN (modo demo entra como ingeniero) ── */}
+        {(rol === 'ingeniero' || rol === 'admin') && (() => {
           // Items del sidebar agrupados por área. Nomenclatura profesional alineada a la
           // gestión de obras de construcción y a estándares de control de producción.
           // Nota: paleta calibrada para el sidebar navy oscuro — todos los colores tienen
           // luminancia suficiente para contrastar contra el fondo del sidebar y se ven en
           // estado activo (background del botón) y como icono (sin tornarse invisibles).
           const ITEMS_FULL = [
-            // PLANEAMIENTO — flujo de proceso, WBS, cronograma (va primero).
-            // El APU (Análisis de Precios) ya NO está en GRAPCO → migra a la plataforma de Costos aparte.
-            { key: 'flujo',       label: 'Flujo de Planeamiento',   iconName: 'target',      color: '#e5a82f',    group: 'PLANEAMIENTO' },
-            { key: 'cronogramaobra', label: 'Cronograma de Obra',   iconName: 'clock',       color: '#34d399',    group: 'PLANEAMIENTO' },
-            { key: 'normaltec',   label: 'Normal Tecnológica',      iconName: 'layers',      color: '#fb923c',    group: 'PLANEAMIENTO' },
-            { key: 'pullplanning', label: 'Pull Planning',          iconName: 'target',      color: '#a78bfa',    group: 'PLANEAMIENTO' },
-            { key: 'lps',         label: 'Last Planner System',     iconName: 'target',      color: '#34d399',    group: 'PLANEAMIENTO' },
-            { key: 'planvaciado', label: 'Plan de Vaciado',         iconName: 'target',      color: '#38bdf8',    group: 'PLANEAMIENTO' },
+            // PLANEAMIENTO (Flujo, Cronograma, Normal Tecnológica, Pull Planning, Last Planner,
+            // Plan de Vaciado) → app independiente PLANEAMIENTO_PLATAFORMA (2026-06-24).
+            // El APU (Análisis de Precios) → plataforma de Costos aparte.
             // RESUMEN — el tablero "estado de obra" que reúne todo
             { key: 'estadoObra',  label: 'Estado de Obra',          iconName: 'dashboard',   color: BASE.gold,    group: 'RESUMEN' },
             // PRODUCCIÓN — control de avance, productividad y carta balance
@@ -735,7 +709,7 @@ function AppInner() {
             // "Administración" (ALMACEN_SIDEBAR + ComprasPanel). Render fallback aún vive abajo.
             // BIM
             { key: 'bim',         label: 'Coordinación BIM',        iconName: 'layers',      color: '#38bdf8',    group: 'BIM' },
-            { key: 'calidad',     label: 'Gestión de Calidad',      iconName: 'checkSquare', color: '#f9a8d4',    group: 'GESTIÓN DE CALIDAD' },
+            // Gestión de Calidad → app independiente CALIDAD_PLATAFORMA (2026-06-24).
             { key: 'ot',          label: 'Oficina Técnica',         iconName: 'ruler',       color: '#a5b4fc',    group: 'OFICINA TÉCNICA' },
             // SSOMA (Seguridad y Medio Ambiente) movido a la plataforma independiente SIGMA (2026-06-15).
             // GERENCIA — vista ejecutiva multi-proyecto
@@ -1015,21 +989,8 @@ function AppInner() {
               <RadarProduccion isMobile={isMobile} />
             )}
 
-            {/* Planeamiento — Flujo de Planeamiento (hub del proceso Last Planner/VDC) */}
-            {moduloIngeniero === 'flujo' && (
-              <FlujoPlaneamiento setModuloIngeniero={setModuloIngeniero} />
-            )}
-
-            {/* Planeamiento — Métricas VDC (tablero ejecutivo de objetivos) */}
-
-            {/* Planeamiento — secciones del cronograma importadas del Excel */}
-            {moduloIngeniero === 'cronogramaobra' && <CronogramaPro />}
-            {moduloIngeniero === 'normaltec' && <GateProyectoLegacy modulo='La Normal Tecnológica' icono='ruler'><NormalTecnologica /></GateProyectoLegacy>}
-            {moduloIngeniero === 'pullplanning' && <GateProyectoLegacy modulo='El Pull Planning' icono='layers'><PullPlanning /></GateProyectoLegacy>}
-            {moduloIngeniero === 'planvaciado' && <GateProyectoLegacy modulo='El Plan de Vaciado' icono='cube'><PlanVaciado /></GateProyectoLegacy>}
-
-            {/* Planeamiento — Last Planner System (módulo lateral propio) */}
-            {moduloIngeniero === 'lps' && <LastPlannerPro />}
+            {/* PLANEAMIENTO (Flujo, Cronograma, Normal Tecnológica, Pull Planning,
+                Last Planner, Plan de Vaciado) → app independiente PLANEAMIENTO_PLATAFORMA (2026-06-24). */}
 
             {/* Registro de producción (vista capataz para ingeniero) */}
             {moduloIngeniero === 'registro' && (
@@ -1098,10 +1059,7 @@ function AppInner() {
               <DashboardEjecutivo showToast={showToast} isMobile={isMobile} />
             )}
 
-            {/* Calidad — Modulo Bloque 20 */}
-            {moduloIngeniero === 'calidad' && (
-              <CalidadPanel showToast={showToast} isMobile={isMobile} />
-            )}
+            {/* Gestión de Calidad → app independiente CALIDAD_PLATAFORMA (2026-06-24). */}
 
             {/* Oficina Tecnica — Modulo Bloque 20 */}
             {moduloIngeniero === 'ot' && (
@@ -1151,15 +1109,7 @@ function AppInner() {
           )
         )}
 
-        {/* ── ROL: CALIDAD (Bloque 20) ── */}
-        {rol === 'calidad' && (
-          <CalidadPanel showToast={showToast} isMobile={isMobile} tabInicial={calidadTab} />
-        )}
-
-        {/* ── ROL: SUPERVISOR CLIENTE (Bloque 20) ── */}
-        {rol === 'supervisor_cliente' && (
-          <CalidadPanel showToast={showToast} isMobile={isMobile} tabInicial={calidadTab} />
-        )}
+        {/* ── ROLES CALIDAD / SUPERVISOR_CLIENTE → app independiente CALIDAD_PLATAFORMA (2026-06-24) ── */}
 
         {/* ── ROL: OFICINA TÉCNICA ── */}
         {/* Desktop: menú lateral navy (igual que Producción y Planeamiento) que maneja
@@ -1189,7 +1139,7 @@ function AppInner() {
         {/* ── ROL: SEGURIDAD / SSOMA → movido a la plataforma independiente SIGMA (2026-06-15) ── */}
 
         {/* ── ROL NO RECONOCIDO ── */}
-        {rol && !['capataz', 'carta_balance', 'ingeniero', 'admin', 'almacenero', 'logistica', 'calidad', 'supervisor_cliente', 'oficina_tecnica'].includes(rol) && (
+        {rol && !['capataz', 'carta_balance', 'ingeniero', 'admin', 'almacenero', 'logistica', 'oficina_tecnica'].includes(rol) && (
           <div style={{
             maxWidth: '400px',
             margin: '60px auto',

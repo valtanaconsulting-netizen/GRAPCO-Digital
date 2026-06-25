@@ -1,0 +1,67 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Variables de entorno con claves — NO subir
+.env
+.env.*.local
+
+# Artefactos de despliegue Firebase
+.firebase/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Credenciales admin (NUNCA subir a git)
+serviceAccount.json
+serviceAccount*.json
+*serviceAccount*.json
+
+# Respaldos de datos (locales, no versionar)
+scripts/backups/
+*.backup.json
+
+# Análisis/volcados de costos CREDITEX (scratch local — NO versionar)
+_scratch_costos/
+
+# Código retirado de la plataforma viva, preservado fuera del bundle (ver _ARCHIVO_RETIRADO/README.md)
+_ARCHIVO_RETIRADO/
+
+# Scripts de diagnóstico de un solo uso y sus salidas (scratch — NO versionar)
+scripts/scratch/
+scripts/_costos_catalog/
+scripts/_almacen_normalized.json
+
+# Artefactos de build nativo Android (regenerables)
+android/build/
+android/.gradle/
+
+# Config local de Claude Code, backups de reglas y salidas de prueba (no versionar)
+settings.local.json
+*.original.bak
+scripts/test-*
+
+# design-sync (claude.ai/design) — build artifacts & machine state (durable inputs under .design-sync/ ARE committed)
+.ds-sync/
+ds-bundle/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules

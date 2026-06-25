@@ -1,0 +1,81 @@
+{
+  "name": "PLATAFORMA GRAPCO S.A.C.",
+  "short_name": "GRAPCO",
+  "description": "Plataforma integral de gestión de obra GRAPCO SAC — Productividad, Calidad, Oficina Técnica y Planeamiento.",
+  "id": "/?source=pwa",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui",
+    "browser"
+  ],
+  "background_color": "#0F2A47",
+  "theme_color": "#0F2A47",
+  "lang": "es",
+  "dir": "ltr",
+  "categories": [
+    "business",
+    "productivity",
+    "utilities"
+  ],
+  "icons": [
+    { "src": "/brand/grapco-72.png",  "type": "image/png", "sizes": "72x72",   "purpose": "any" },
+    { "src": "/brand/grapco-96.png",  "type": "image/png", "sizes": "96x96",   "purpose": "any" },
+    { "src": "/brand/grapco-128.png", "type": "image/png", "sizes": "128x128", "purpose": "any" },
+    { "src": "/brand/grapco-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
+    { "src": "/brand/grapco-256.png", "type": "image/png", "sizes": "256x256", "purpose": "any" },
+    { "src": "/brand/grapco-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" },
+    { "src": "/brand/grapco-192-mask.png", "type": "image/png", "sizes": "192x192", "purpose": "maskable" },
+    { "src": "/brand/grapco-512-mask.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Registro de Producción",
+      "short_name": "Producción",
+      "description": "Ingresar reporte de producción diario",
+      "url": "/?modo=capataz",
+      "icons": [
+        {
+          "src": "/brand/grapco-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Dashboard CPI",
+      "short_name": "Dashboard",
+      "description": "Análisis de desempeño y CPI",
+      "url": "/?modo=ingeniero",
+      "icons": [
+        {
+          "src": "/brand/grapco-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Carta Balance",
+      "short_name": "C.Balance",
+      "description": "Iniciar medición de productividad",
+      "url": "/?modo=carta_balance",
+      "icons": [
+        {
+          "src": "/brand/grapco-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/brand/grapco-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Plataforma GRAPCO"
+    }
+  ],
+  "prefer_related_applications": false
+}

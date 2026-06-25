@@ -11,6 +11,7 @@ import RDOView from './oficinatecnica/RDOView';
 import ValorizacionesView from './oficinatecnica/ValorizacionesView';
 import ValorizacionF07 from './oficinatecnica/ValorizacionF07';
 import PresupuestoView from './oficinatecnica/PresupuestoView';
+import PrefijosCodigos from './oficinatecnica/PrefijosCodigos';
 import SustentoMetrados from './oficinatecnica/SustentoMetrados';
 import RegistroFotografico from './oficinatecnica/RegistroFotografico';
 import InformeSustento from './oficinatecnica/InformeSustento';
@@ -40,6 +41,16 @@ const GRUPOS = {
     tagline: 'Presupuesto contractual y control de partidas',
     items: [
       { id: 'partidas', l: 'Presupuesto',   icono: '📋', icon: 'fileText', desc: 'PPTTO · CD · GG · Utilidad · IGV' },
+    ],
+  },
+  codigos: {
+    label: 'CÓDIGOS',
+    icono: '🔑',
+    icon: 'layers',
+    color: '#0891b2',
+    tagline: 'Prefijos que unen ISP, Valorización y RO',
+    items: [
+      { id: 'prefijos', l: 'Prefijos / Códigos', icono: '🔑', icon: 'layers', desc: 'Designa el prefijo de cada actividad · ISP ↔ Valorización' },
     ],
   },
   ejecucion: {
@@ -83,6 +94,7 @@ const GRUPOS = {
 const TAB_TO_GRUPO = {
   dashboard:  'resumen',
   partidas:   'contrato',
+  prefijos:   'codigos',
   ro:         'ro',
   rdo:        'ejecucion',
   fotografico:'ejecucion',
@@ -113,6 +125,7 @@ const KEY_TO_TAB_OT = {
   'ot.fotografico': 'fotografico',
   'ot.informe':     'informe',
   'ot.partidas':    'partidas',
+  'ot.prefijos':    'prefijos',
   'ot.rdo':         'rdo',
   'ot.bim':         'bim',
 };
@@ -267,6 +280,7 @@ export default function OficinaTecnicaPanel({ showToast, tabExterna, onChangeTab
           {tab === 'fotografico' && <RegistroFotografico />}
           {tab === 'informe'     && <InformeSustento />}
           {tab === 'partidas'    && <PresupuestoView showToast={showToast} />}
+          {tab === 'prefijos'    && <PrefijosCodigos showToast={showToast} />}
           {tab === 'rdo'         && <RDOView showToast={showToast} />}
           {tab === 'bim'         && <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: BASE.muted }}>Cargando visor BIM…</div>}><BIM showToast={showToast} /></Suspense>}
         </div>

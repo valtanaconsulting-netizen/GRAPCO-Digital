@@ -1,0 +1,1884 @@
+{
+  "meta": {
+    "fuente": "Prefijos_Actividades.xlsx",
+    "descripcion": "Presupuesto detallado CREDITEX-PTAR por prefijo de actividad. Volcado FIEL (as-is); corregir vía este archivo.",
+    "totalFilas": 249,
+    "totalActividades": 164,
+    "nota": "El prefijo es la LLAVE. El diccionario \"prefijos\" mapea cada código a su familia del presupuesto/ISP y es editable."
+  },
+  "prefijos": {
+    "PRE1": {
+      "tipo": "actividad",
+      "nombre": "Preliminares · Seguridad y Salud",
+      "familia": "TRABAJOS PRELIMINARES"
+    },
+    "PRE2": {
+      "tipo": "actividad",
+      "nombre": "Preliminares · Topografía",
+      "familia": "TRABAJOS PRELIMINARES"
+    },
+    "PRE3": {
+      "tipo": "actividad",
+      "nombre": "Preliminares · Acarreo de materiales",
+      "familia": "TRABAJOS PRELIMINARES"
+    },
+    "PRE4": {
+      "tipo": "actividad",
+      "nombre": "Preliminares · Diseño",
+      "familia": "TRABAJOS PRELIMINARES"
+    },
+    "PRO1": {
+      "tipo": "actividad",
+      "nombre": "Obras provisionales · Movilización",
+      "familia": "OBRAS PROVISIONALES"
+    },
+    "PRO2": {
+      "tipo": "actividad",
+      "nombre": "Obras provisionales · Campamento",
+      "familia": "OBRAS PROVISIONALES"
+    },
+    "PRO3": {
+      "tipo": "actividad",
+      "nombre": "Obras provisionales · Cerramiento",
+      "familia": "OBRAS PROVISIONALES"
+    },
+    "PRO4": {
+      "tipo": "actividad",
+      "nombre": "Obras provisionales · Adecuación de terreno",
+      "familia": "OBRAS PROVISIONALES"
+    },
+    "MOV1": {
+      "tipo": "actividad",
+      "nombre": "Mov. tierras · Movilización y facilidades",
+      "familia": "MOVIMIENTO DE TIERRAS"
+    },
+    "MOV2": {
+      "tipo": "actividad",
+      "nombre": "Mov. tierras · Excavación/Relleno/Eliminación",
+      "familia": "MOVIMIENTO DE TIERRAS"
+    },
+    "CON": {
+      "tipo": "actividad",
+      "nombre": "Concreto",
+      "familia": "CONCRETO"
+    },
+    "ENC": {
+      "tipo": "actividad",
+      "nombre": "Encofrado",
+      "familia": "ENCOFRADO"
+    },
+    "ACE": {
+      "tipo": "actividad",
+      "nombre": "Acero",
+      "familia": "ACERO"
+    },
+    "CUR": {
+      "tipo": "actividad",
+      "nombre": "Curado",
+      "familia": "CURADO"
+    },
+    "VAE": {
+      "tipo": "actividad",
+      "nombre": "Varios estructura",
+      "familia": "VARIOS ESTRUCTURA"
+    },
+    "VAA": {
+      "tipo": "actividad",
+      "nombre": "Varios arquitectura",
+      "familia": "VARIOS ARQUITECTURA"
+    },
+    "IMP": {
+      "tipo": "actividad",
+      "nombre": "Impermeabilización",
+      "familia": "IMPERMEABILIZACION"
+    },
+    "BIT": {
+      "tipo": "actividad",
+      "nombre": "Impermeabilización bituminosa",
+      "familia": "BITUMEN"
+    },
+    "SLQ": {
+      "tipo": "actividad",
+      "nombre": "Solaqueo",
+      "familia": "VARIOS ARQUITECTURA"
+    },
+    "TAR": {
+      "tipo": "actividad",
+      "nombre": "Tarrajeo",
+      "familia": "VARIOS ARQUITECTURA",
+      "revisar": true
+    },
+    "CZO": {
+      "tipo": "actividad",
+      "nombre": "Contrazócalo",
+      "familia": "VARIOS ARQUITECTURA"
+    },
+    "PRH": {
+      "tipo": "actividad",
+      "nombre": "Prueba hidráulica / estanqueidad",
+      "familia": "PRUEBA HIDRAULICA"
+    },
+    "IISS": {
+      "tipo": "actividad",
+      "nombre": "Instalaciones sanitarias",
+      "familia": "INSTALACIONES SANITARIAS"
+    },
+    "N2": {
+      "tipo": "nivel",
+      "nombre": "Título nivel 2 (capítulo)"
+    },
+    "N3": {
+      "tipo": "nivel",
+      "nombre": "Título nivel 3 (sub-partida)"
+    },
+    "N4": {
+      "tipo": "nivel",
+      "nombre": "Título nivel 4 (grupo)"
+    }
+  },
+  "actividades": [
+    {
+      "fila": 1,
+      "prefijo": "N2",
+      "wbs": "1",
+      "descripcion": "TRABAJOS PRELIMINARES",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 2,
+      "prefijo": "N3",
+      "wbs": "1.1",
+      "descripcion": "SEGURIDAD Y SALUD OCUPACIONAL",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 3,
+      "prefijo": "PRE1",
+      "wbs": "1.1.1",
+      "descripcion": "ALQUILER DE ANDAMIOS PARA TRABAJOS",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 4,
+      "prefijo": "PRE1",
+      "wbs": "1.1.2",
+      "descripcion": "ALQUILER DE ANDAMIOS ESCALERAS PARA ACCESOS",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 5,
+      "prefijo": "PRE1",
+      "wbs": "1.1.3",
+      "descripcion": "ARMADO Y DESARMADO DE ANDAMIOS ESCALERAS PARA ACCESOS",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 6,
+      "prefijo": "PRE1",
+      "wbs": "1.1.4",
+      "descripcion": "SEÑALIZACION TEMPORAL DE SEGURIDAD",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 7,
+      "prefijo": "PRE1",
+      "wbs": "1.1.5",
+      "descripcion": "ILUMINACION DE ACCESOS Y FRENTES DE TRABAJO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 8,
+      "prefijo": "PRE1",
+      "wbs": "1.1.6",
+      "descripcion": "LIMPIEZA GENERAL Y PERMANENTE EN OBRA",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 9,
+      "prefijo": "N3",
+      "wbs": "1.2",
+      "descripcion": "TOPOGRAFÍA",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 10,
+      "prefijo": "PRE2",
+      "wbs": "1.2.1",
+      "descripcion": "TRAZO Y REPLANTEO TOPOGRAFICO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 11,
+      "prefijo": "N3",
+      "wbs": "1.3",
+      "descripcion": "ACARREO DE MATERIALES",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 12,
+      "prefijo": "PRE3",
+      "wbs": "1.3.1",
+      "descripcion": "ACARREO VERTICAL DE ENCOFRADO PETARI Y MATERIALES C/ CAMION GRUA",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 13,
+      "prefijo": "PRE3",
+      "wbs": "1.3.2",
+      "descripcion": "ACARREO HORIZONTAL Y VERTICAL DE MATERIALES",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 14,
+      "prefijo": "N3",
+      "wbs": "1.4",
+      "descripcion": "DISEÑO",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 15,
+      "prefijo": "PRE4",
+      "wbs": "1.4.1",
+      "descripcion": "DISEÑO ESTRUCTURAL",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 16,
+      "prefijo": "PRE4",
+      "wbs": "1.4.2",
+      "descripcion": "DISEÑO ARQUITECTURA",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 17,
+      "prefijo": "PRE4",
+      "wbs": "1.4.3",
+      "descripcion": "DISEÑO INST. ELECTRICAS",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 18,
+      "prefijo": "PRE4",
+      "wbs": "1.4.4",
+      "descripcion": "DISEÑO INSTALACIONES SANITARIAS",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 19,
+      "prefijo": "PRE4",
+      "wbs": "1.4.5",
+      "descripcion": "DISEÑO ARQUITECTURA ADICIONAL",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 20,
+      "prefijo": "PRE4",
+      "wbs": "1.4.6",
+      "descripcion": "TRAMITE MUNICIPAL",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 21,
+      "prefijo": "N2",
+      "wbs": "2",
+      "descripcion": "OBRAS PROVISIONALES",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 22,
+      "prefijo": "N3",
+      "wbs": "2.1",
+      "descripcion": "MOVILIZACIÓN",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 23,
+      "prefijo": "PRO1",
+      "wbs": "2.1.1",
+      "descripcion": "MOVILIZACION Y DESMOVILIZACION DE MAQUINARIA, EQUIPOS Y HERRAMIENTAS",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 24,
+      "prefijo": "N3",
+      "wbs": "2.2",
+      "descripcion": "CAMPAMENTO",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 25,
+      "prefijo": "PRO2",
+      "wbs": "2.2.1",
+      "descripcion": "CASETA DE OFICINA (42 M2)",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 26,
+      "prefijo": "PRO2",
+      "wbs": "2.2.2",
+      "descripcion": "CASETA DE SUPERVISIÓN  (25M2)",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 27,
+      "prefijo": "PRO2",
+      "wbs": "2.2.3",
+      "descripcion": "CASETA PARA ALMACEN DE HERRAMIENTAS, EQUIPOS Y MATERIALES(25M2)",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 28,
+      "prefijo": "PRO2",
+      "wbs": "2.2.4",
+      "descripcion": "COMEDOR PARA PERSONAL OBRERO (60 M2: 50 Personas)",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 29,
+      "prefijo": "PRO2",
+      "wbs": "2.2.5",
+      "descripcion": "VESTUARIO PARA PERSONAL OBRERO (30M2)",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 30,
+      "prefijo": "PRO2",
+      "wbs": "2.2.6",
+      "descripcion": "INSTALACIONES PROVISIONALES DE IIEE",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 31,
+      "prefijo": "PRO2",
+      "wbs": "2.2.7",
+      "descripcion": "INSTALACIONES PROVISIONALES DE IISS",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 32,
+      "prefijo": "PRO2",
+      "wbs": "2.2.8",
+      "descripcion": "BAÑOS QUÍMICOS, LAVAMANOS PORTÁTILES y DUCHAS PORTÁTILES",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 33,
+      "prefijo": "N3",
+      "wbs": "2.3",
+      "descripcion": "CERRAMIENTO",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 34,
+      "prefijo": "PRO3",
+      "wbs": "2.3.1",
+      "descripcion": "CERCO PERIMETRICO CON PANELES METALICOS EN FACHADA H=2.40m y MALLA RASHEL",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 35,
+      "prefijo": "PRO3",
+      "wbs": "2.3.2",
+      "descripcion": "INSTALACION Y DESMONTAJE DE CERRAMIENTO DE DRYWALL EN TIENDA DE TELAS",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 36,
+      "prefijo": "PRO3",
+      "wbs": "2.3.3",
+      "descripcion": "DESMONTAJE Y MONTAJE DE TIMPANO DE TIENDA DE TELAS",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 37,
+      "prefijo": "N3",
+      "wbs": "2.4",
+      "descripcion": "ADECUACION DE TERRENO",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 38,
+      "prefijo": "PRO4",
+      "wbs": "2.4.1",
+      "descripcion": "DEMOLICION DE LOSA EXISTENTE",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 39,
+      "prefijo": "PRO4",
+      "wbs": "2.4.4",
+      "descripcion": "ELIMINACIÓN DE DESMONTE Y DESPERDICIOS",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 40,
+      "prefijo": "PRO4",
+      "wbs": "2.4.3",
+      "descripcion": "RELLENO DE POZA EXISTENTE",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 41,
+      "prefijo": "PRO4",
+      "wbs": "2.4.4",
+      "descripcion": "ELIMINACIÓN DE DESMONTE Y DESPERDICIOS",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 42,
+      "prefijo": "N2",
+      "wbs": "3",
+      "descripcion": "MOVIMIENTO DE TIERRAS",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 43,
+      "prefijo": "N3",
+      "wbs": "3.1",
+      "descripcion": "MOVILIZACION Y FACILIDADES",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 44,
+      "prefijo": "MOV1",
+      "wbs": "3.1.1",
+      "descripcion": "MOVILIZACION Y DESMOVILIZACIÓN DE EQUIPOS PARA MOV DE TIERRAS",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 45,
+      "prefijo": "MOV1",
+      "wbs": "3.1.2",
+      "descripcion": "MITIGACIÓN DE POLVO DURANTE EL MOVIMIENTO DE TIERRAS",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 46,
+      "prefijo": "N3",
+      "wbs": "3.2",
+      "descripcion": "PTAR",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 47,
+      "prefijo": "MOV2",
+      "wbs": "3.2.1",
+      "descripcion": "EXCAVACION MASIVA",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 48,
+      "prefijo": "MOV2",
+      "wbs": "3.2.2",
+      "descripcion": "EXCAVACIÓN LOCALIZADA C/ EQUIPO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 49,
+      "prefijo": "MOV2",
+      "wbs": "3.2.3",
+      "descripcion": "NIVELACION Y COMPACTACION DE SUBRASANTE",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 50,
+      "prefijo": "MOV2",
+      "wbs": "3.2.4",
+      "descripcion": "EXCAVACION MANUAL",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 51,
+      "prefijo": "MOV2",
+      "wbs": "3.2.5",
+      "descripcion": "RELLENO CON MATERIAL PROPIO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 52,
+      "prefijo": "MOV2",
+      "wbs": "3.2.6",
+      "descripcion": "ELIMINACIÓN DE DESMONTE Y DESPERDICIOS",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 53,
+      "prefijo": "N2",
+      "wbs": "4",
+      "descripcion": "ESTRUCTURAS",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 54,
+      "prefijo": "N3",
+      "wbs": "4.1",
+      "descripcion": "CALZADURAS DE MURO VECINO PARA TANQUE DE HOMOGENIZACION Y OXIDACION",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 55,
+      "prefijo": "MOV2",
+      "wbs": "4.1.1",
+      "descripcion": "EXCAVACION LOCALIZADA MANUAL",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 56,
+      "prefijo": "MOV2",
+      "wbs": "4.1.2",
+      "descripcion": "ACARREO DE EXCAVACION",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 57,
+      "prefijo": "MOV2",
+      "wbs": "4.1.3",
+      "descripcion": "ELIMINACIÓN DE DESMONTE Y DESPERDICIOS",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 58,
+      "prefijo": "ENC",
+      "wbs": "4.1.4",
+      "descripcion": "ENCOFRADO Y DESENCOFRADO DE CIMIENTO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 59,
+      "prefijo": "CON",
+      "wbs": "4.1.5",
+      "descripcion": "CONCRETO CICLOPEO 1:10 PARA CALZADURAS (HECHO EN OBRA)",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 60,
+      "prefijo": "N3",
+      "wbs": "4.2",
+      "descripcion": "TANQUE DE HOMOGENIZACION Y OXIDACION",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 61,
+      "prefijo": "N4",
+      "wbs": "4.2.1",
+      "descripcion": "CONCRETO SIMPLE",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 62,
+      "prefijo": "CON",
+      "wbs": "4.2.1.1",
+      "descripcion": "CONCRETO F'C= 100 KG/CM2 EN SOLADO (PREMEZCLADO) H=0.10 M",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 63,
+      "prefijo": "N4",
+      "wbs": "4.2.2",
+      "descripcion": "ZAPATAS",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 64,
+      "prefijo": "ACE",
+      "wbs": "4.2.2.1",
+      "descripcion": "HABILITADO Y COLOCADO DE ACERO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 65,
+      "prefijo": "CON",
+      "wbs": "4.2.2.2",
+      "descripcion": "CONCRETO F'C= 350 KG/CM2 EN LOSA (PREMEZCLADO)",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 66,
+      "prefijo": "N4",
+      "wbs": "4.2.3",
+      "descripcion": "LOSA DE CIMENTACIÓN",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 67,
+      "prefijo": "ACE",
+      "wbs": "4.2.3.1",
+      "descripcion": "HABILITADO Y COLOCADO DE ACERO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 68,
+      "prefijo": "VAE",
+      "wbs": "4.2.3.2",
+      "descripcion": "WATER STOP EN JUNTA FRIA",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 69,
+      "prefijo": "ENC",
+      "wbs": "4.2.3.3",
+      "descripcion": "ENCOFRADO Y DESENCOFRADO DE CIMIENTO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 70,
+      "prefijo": "CON",
+      "wbs": "4.2.3.4",
+      "descripcion": "CONCRETO F'C= 350 KG/CM2 EN LOSA (PREMEZCLADO)",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 71,
+      "prefijo": "CUR",
+      "wbs": "4.2.3.5",
+      "descripcion": "CURADO DE CONCRETO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 72,
+      "prefijo": "N4",
+      "wbs": "4.2.4",
+      "descripcion": "COLUMNAS",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 73,
+      "prefijo": "ACE",
+      "wbs": "4.2.4.1",
+      "descripcion": "HABILITADO Y COLOCADO DE ACERO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 74,
+      "prefijo": "ENC",
+      "wbs": "4.2.4.2",
+      "descripcion": "ENCOFRADO Y DESENCOFRADO DE COLUMNA H>3.5M",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 75,
+      "prefijo": "CON",
+      "wbs": "4.2.4.3",
+      "descripcion": "CONCRETO F'C= 350 KG/CM2 EN VERTICALES (PREMEZCLADO)",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 76,
+      "prefijo": "CUR",
+      "wbs": "4.2.4.4",
+      "descripcion": "CURADO DE CONCRETO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 77,
+      "prefijo": "N4",
+      "wbs": "4.2.5",
+      "descripcion": "MURO DE CONTENCIÓN",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 78,
+      "prefijo": "ACE",
+      "wbs": "4.2.5.1",
+      "descripcion": "HABILITADO Y COLOCADO DE ACERO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 79,
+      "prefijo": "ENC",
+      "wbs": "4.2.5.2",
+      "descripcion": "ENCOFRADO Y DESENCOFRADO DE PLACAS A DOBLE CARA",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 80,
+      "prefijo": "ENC",
+      "wbs": "4.2.5.3",
+      "descripcion": "ENCOFRADO Y DESENCOFRADO DE PLACAS A UNA CARA H>3.5M",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 81,
+      "prefijo": "ACE",
+      "wbs": "4.2.5.4",
+      "descripcion": "HABILITACION DE BARANDAS PARA VACEADO DE CONCRETO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 82,
+      "prefijo": "CON",
+      "wbs": "4.2.5.5",
+      "descripcion": "CONCRETO F'C= 350 KG/CM2 EN VERTICALES (PREMEZCLADO)",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 83,
+      "prefijo": "CUR",
+      "wbs": "4.2.5.6",
+      "descripcion": "CURADO DE CONCRETO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 84,
+      "prefijo": "N4",
+      "wbs": "4.2.6",
+      "descripcion": "VIGAS",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 85,
+      "prefijo": "ENC",
+      "wbs": "4.2.6.1",
+      "descripcion": "ENCOFRADO Y DESENCOFRADO DE VIGAS H=7.0mts",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 86,
+      "prefijo": "ACE",
+      "wbs": "4.2.6.2",
+      "descripcion": "HABILITADO Y COLOCADO DE ACERO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 87,
+      "prefijo": "CON",
+      "wbs": "4.2.6.3",
+      "descripcion": "CONCRETO F'C= 280 KG/CM2 EN VIGAS (PREMEZCLADO)",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 88,
+      "prefijo": "CUR",
+      "wbs": "4.2.6.4",
+      "descripcion": "CURADO DE CONCRETO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 89,
+      "prefijo": "N4",
+      "wbs": "4.2.7",
+      "descripcion": "LOSAS",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 90,
+      "prefijo": "ENC",
+      "wbs": "4.2.7.1",
+      "descripcion": "ENCOFRADO Y DESENCOFRADO DE LOSA MACIZA H=7.30M",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 91,
+      "prefijo": "ACE",
+      "wbs": "4.2.7.2",
+      "descripcion": "HABILITADO Y COLOCADO DE ACERO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 92,
+      "prefijo": "CON",
+      "wbs": "4.2.7.3",
+      "descripcion": "CONCRETO F'C= 280 KG/CM2 EN LOSA (PREMEZCLADO)",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 93,
+      "prefijo": "CUR",
+      "wbs": "4.2.7.4",
+      "descripcion": "CURADO DE CONCRETO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 94,
+      "prefijo": "N2",
+      "wbs": "5",
+      "descripcion": "ARQUITECTURA",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 95,
+      "prefijo": "N3",
+      "wbs": "5.1",
+      "descripcion": "TANQUE DE HOMOGENIZACION Y OXIDACION",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 96,
+      "prefijo": "N4",
+      "wbs": "5.1.1",
+      "descripcion": "ALBAÑILERIA",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 97,
+      "prefijo": "SLQ",
+      "wbs": "5.1.1.1",
+      "descripcion": "RECTIFICACIONES EN MUROS Y COLUMNAS",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 98,
+      "prefijo": "SLQ",
+      "wbs": "5.1.1.2",
+      "descripcion": "SOLAQUEO EXTERIOR",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 99,
+      "prefijo": "N4",
+      "wbs": "5.1.2",
+      "descripcion": "IMPERMEABILIZACIÓN",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 100,
+      "prefijo": "IMP",
+      "wbs": "5.1.2.1",
+      "descripcion": "APLICACIÓN IMPERMEABILIZADO SIKAGUARD 63 CL",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 101,
+      "prefijo": "IMP",
+      "wbs": "5.1.2.2",
+      "descripcion": "APLICACIÓN DE IMPERMEABILIZADO INTERIOR MAPELASTIC - PLANISEAL",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 102,
+      "prefijo": "BIT",
+      "wbs": "5.1.2.3",
+      "descripcion": "IMPERMEABILIZACION CON PINTURA BITUMINOSA",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 103,
+      "prefijo": "PRH",
+      "wbs": "5.1.2.4",
+      "descripcion": "PRUEBA HIDRAULICA DE ESTANQUEIDAD",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 104,
+      "prefijo": "N2",
+      "wbs": "6",
+      "descripcion": "ADICIONAL N°01: CERCO PERIMETRICO INTERIOR",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 105,
+      "prefijo": "N3",
+      "wbs": "6.1",
+      "descripcion": "CERCO PERIMETRICO INTERIOR",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 106,
+      "prefijo": "PRO3",
+      "wbs": "6.1.1",
+      "descripcion": "CERCO PERIMETRICO INTERIOR",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 107,
+      "prefijo": "N2",
+      "wbs": "7",
+      "descripcion": "ADICIONAL N°02: INST. DE PUERTA METALICA Y ACCESO",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 108,
+      "prefijo": "N3",
+      "wbs": "7.1",
+      "descripcion": "TRABAJOS PRELIMINARES",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 109,
+      "prefijo": "PRO4",
+      "wbs": "7.1.1",
+      "descripcion": "CORTE DE LOSA EXISTENTE",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 110,
+      "prefijo": "PRO4",
+      "wbs": "7.1.2",
+      "descripcion": "DEMOLICION MANUAL DE LOSA EXISTENTE",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 111,
+      "prefijo": "PRO4",
+      "wbs": "7.1.3",
+      "descripcion": "ACARREO MANUAL DE MATERIAL DEMOLIDO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 112,
+      "prefijo": "N2",
+      "wbs": "7.2",
+      "descripcion": "MOVIMIENTO DE TIERRAS",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 113,
+      "prefijo": "MOV2",
+      "wbs": "7.2.1",
+      "descripcion": "EXCAVACION LOCALIZADA",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 114,
+      "prefijo": "MOV2",
+      "wbs": "7.2.2",
+      "descripcion": "NIVELACION Y COMPACTACION MANUAL",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 115,
+      "prefijo": "MOV2",
+      "wbs": "7.2.3",
+      "descripcion": "PERFILADO MANUAL",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 116,
+      "prefijo": "N2",
+      "wbs": "7.3",
+      "descripcion": "MURO LATERAL",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 117,
+      "prefijo": "ENC",
+      "wbs": "7.3.1",
+      "descripcion": "ENCOFRADO Y DESENCOFRADO EN MURO PARA ESCALERA",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 118,
+      "prefijo": "CON",
+      "wbs": "7.3.2",
+      "descripcion": "CONCRETO F'C=210 KG/CM2 (HECHO EN OBRA)",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 119,
+      "prefijo": "CUR",
+      "wbs": "7.3.3",
+      "descripcion": "CURADO DE CONCRETO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 120,
+      "prefijo": "N2",
+      "wbs": "7.4",
+      "descripcion": "GRADAS",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 121,
+      "prefijo": "ENC",
+      "wbs": "2.4.1",
+      "descripcion": "ENCOFRADO Y DESENCOFRADO DE GRADAS",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 122,
+      "prefijo": "CON",
+      "wbs": "2.4.2",
+      "descripcion": "CONCRETO F'C=210 KG/CM2 (HECHO EN OBRA)",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 123,
+      "prefijo": "CUR",
+      "wbs": "2.4.3",
+      "descripcion": "CURADO DE CONCRETO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 124,
+      "prefijo": "N2",
+      "wbs": "7.5",
+      "descripcion": "PISO DE FONDO",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 125,
+      "prefijo": "CON",
+      "wbs": "7.5.1",
+      "descripcion": "CONCRETO F'C=210 KG/CM2 (HECHO EN OBRA)",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 126,
+      "prefijo": "CUR",
+      "wbs": "7.5.2",
+      "descripcion": "CURADO DE CONCRETO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 127,
+      "prefijo": "N2",
+      "wbs": "7.6",
+      "descripcion": "ARQUITECTURA",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 128,
+      "prefijo": "VAE",
+      "wbs": "7.6.1",
+      "descripcion": "CEMENTO PULIDO BARRIDO FONDO DE LOSA",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 129,
+      "prefijo": "VAE",
+      "wbs": "7.6.2",
+      "descripcion": "CEMENTO PULIDO BARRIDO DE GRADAS (PASO Y CONTRAPASO)",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 130,
+      "prefijo": "TAR",
+      "wbs": "7.6.3",
+      "descripcion": "TARRAJEO EN MUROS",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 131,
+      "prefijo": "N2",
+      "wbs": "7.7",
+      "descripcion": "PUERTA METALICA",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 132,
+      "prefijo": "VAA",
+      "wbs": "7.7.1",
+      "descripcion": "PUERTA METALICA",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 133,
+      "prefijo": "N2",
+      "wbs": "7.8",
+      "descripcion": "REPARACION DE ACCESO",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 134,
+      "prefijo": "VAE",
+      "wbs": "7.8.1",
+      "descripcion": "PICADO MANUAL DE MURO EXISTENTE Y CIMENTACION",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 135,
+      "prefijo": "VAE",
+      "wbs": "7.8.2",
+      "descripcion": "ELIMINACION DEL PICADO MANUAL",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 136,
+      "prefijo": "CON",
+      "wbs": "7.8.3",
+      "descripcion": "CONCRETO F'C=210 KG/CM2 (HECHO EN OBRA)",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 137,
+      "prefijo": "ACE",
+      "wbs": "7.8.4",
+      "descripcion": "HABILITADO Y COLOCADO DE ACERO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 138,
+      "prefijo": "ENC",
+      "wbs": "7.8.5",
+      "descripcion": "ENCOFRADO Y DESENCOFRADO DE PLACAS A DOBLE CARA",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 139,
+      "prefijo": "CUR",
+      "wbs": "7.8.6",
+      "descripcion": "CURADO DE CONCRETO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 140,
+      "prefijo": "VAE",
+      "wbs": "7.8.7",
+      "descripcion": "RESANES Y ACABADOS",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 141,
+      "prefijo": "MOV2",
+      "wbs": "7.8.8",
+      "descripcion": "RELLENO EN EXCAVACION A NIVEL DE PLANTA (N 0.00)",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 142,
+      "prefijo": "CON",
+      "wbs": "7.8.9",
+      "descripcion": "COLOCACION DE CONCRETO A NIVEL DE PLANTA (N 0.00)",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 143,
+      "prefijo": "N2",
+      "wbs": "8",
+      "descripcion": "ADICIONAL N°03: CERCO PERIMÉTRICO INTERIOR EN ZONA DE TANQUES",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 144,
+      "prefijo": "N3",
+      "wbs": "8.1",
+      "descripcion": "CERCO PERIMÉTRICO INTERIOR EN ZONA DE TANQUES",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 145,
+      "prefijo": "PRO3",
+      "wbs": "8.1.1",
+      "descripcion": "CERCO PERIMÉTRICO INTERIOR",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 146,
+      "prefijo": "PRO3",
+      "wbs": "8.1.2",
+      "descripcion": "DESMONTAJE PANELES",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 147,
+      "prefijo": "N2",
+      "wbs": "9",
+      "descripcion": "ADICIONAL N°06: FALSA ZAPATA",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 148,
+      "prefijo": "N3",
+      "wbs": "9.1",
+      "descripcion": "TANQUE DE OXIDACION",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 149,
+      "prefijo": "N4",
+      "wbs": "9.1.1",
+      "descripcion": "MOVIMIENTO DE TIERRAS",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 150,
+      "prefijo": "MOV2",
+      "wbs": "9.1.1.1",
+      "descripcion": "EXCAVACIÓN LOCALIZADA C/ EQUIPO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 151,
+      "prefijo": "MOV2",
+      "wbs": "9.1.1.2",
+      "descripcion": "NIVELACION Y COMPACTACION DE SUBRASANTE",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 152,
+      "prefijo": "MOV2",
+      "wbs": "9.1.1.3",
+      "descripcion": "ELIMINACIÓN DE DESMONTE Y DESPERDICIOS",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 153,
+      "prefijo": "N4",
+      "wbs": "9.1.2",
+      "descripcion": "CONCRETO SIMPLE",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 154,
+      "prefijo": "CON",
+      "wbs": "9.1.2.1",
+      "descripcion": "CONCRETO FC=100kG/CM2 + 25 % PM FALSA ZAPATA",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 155,
+      "prefijo": "CUR",
+      "wbs": "9.1.2.2",
+      "descripcion": "CURADO DE CONCRETO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 156,
+      "prefijo": "N2",
+      "wbs": "10",
+      "descripcion": "ADICIONAL N°07: FALSO MURO",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 157,
+      "prefijo": "N3",
+      "wbs": "10.1",
+      "descripcion": "CONCRETO SIMPLE",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 158,
+      "prefijo": "PRE1",
+      "wbs": "10.1.1",
+      "descripcion": "ALQUILER DE ANDAMIOS PARA TRABAJOS LOCALIZADOS",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 159,
+      "prefijo": "ENC",
+      "wbs": "10.1.2",
+      "descripcion": "PERFORACION Y ANCLAJE DE ACERO 3/8\"",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 160,
+      "prefijo": "ACE",
+      "wbs": "10.1.3",
+      "descripcion": "HABILITADO Y COLOCADO DE ACERO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 161,
+      "prefijo": "ENC",
+      "wbs": "10.1.4",
+      "descripcion": "ENCOFRADO Y DESENCOFRADO DE PLACAS A UNA CARA",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 162,
+      "prefijo": "CON",
+      "wbs": "10.1.5",
+      "descripcion": "CONCRETO FC=100kG/CM2",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 163,
+      "prefijo": "CUR",
+      "wbs": "10.1.6",
+      "descripcion": "CURADO DE CONCRETO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 164,
+      "prefijo": "N2",
+      "wbs": "11",
+      "descripcion": "ADICIONAL N°08: SELLADO IMPERMEABILIZANTE DE TANQUE EXISTENTE",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 165,
+      "prefijo": "N3",
+      "wbs": "11.1",
+      "descripcion": "SELLADO IMPERMEABILIZANTE DE TANQUE EXISTENTE",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 166,
+      "prefijo": "VAE",
+      "wbs": "11.1.1",
+      "descripcion": "LIMPIEZA DE SUPERFICIE CONA AMOLADORA",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 167,
+      "prefijo": "VAE",
+      "wbs": "11.1.2",
+      "descripcion": "SELLADO DE FISURAS CON MAT. EPOX.",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 168,
+      "prefijo": "N2",
+      "wbs": "12",
+      "descripcion": "ADICIONAL N°06': MAYOR METRADO DE ADICIONAL N°06 FALSA ZAPATA",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 169,
+      "prefijo": "N3",
+      "wbs": "12.1",
+      "descripcion": "DECANTADOR",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 170,
+      "prefijo": "N4",
+      "wbs": "12.1.1",
+      "descripcion": "MOVIMIENTO DE TIERRAS",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 171,
+      "prefijo": "MOV2",
+      "wbs": "12.1.1.1",
+      "descripcion": "EXCAVACIÓN LOCALIZADA C/ EQUIPO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 172,
+      "prefijo": "MOV2",
+      "wbs": "12.1.1.2",
+      "descripcion": "ELIMINACIÓN DE DESMONTE Y DESPERDICIOS",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 173,
+      "prefijo": "N4",
+      "wbs": "12.1.2",
+      "descripcion": "CONCRETO SIMPLE",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 174,
+      "prefijo": "CON",
+      "wbs": "12.1.2.1",
+      "descripcion": "CONCRETO FC=100kG/CM2 + 25 % PM FALSA ZAPATA",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 175,
+      "prefijo": "ENC",
+      "wbs": "12.1.2.2",
+      "descripcion": "ENCOFRADO Y DESENCOFRADO DE FALSA ZAPATA",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 176,
+      "prefijo": "N2",
+      "wbs": "13",
+      "descripcion": "ADICIONAL N°09: COLOCACIÓN DE CORDÓN BENTONÍTICO Y ACABADOS",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 177,
+      "prefijo": "N3",
+      "wbs": "13.1",
+      "descripcion": "TANQUE DE HOMOGENIZACION, OXIDACION Y DECANTADOR",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 178,
+      "prefijo": "IMP",
+      "wbs": "13.1.1",
+      "descripcion": "COLOCACION DE JUNTA HIDRO EXPANSIVA 13X10 MM - CARA HUMEDA",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 179,
+      "prefijo": "IMP",
+      "wbs": "13.1.2",
+      "descripcion": "COLOCACION DE JUNTA HIDRO EXPANSIVA 25X20MM - EJE CENTRAL",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 180,
+      "prefijo": "CZO",
+      "wbs": "13.1.3",
+      "descripcion": "CONTRAZOCALO DE CEMENTO ( MEDIA CAÑA) ENTRE LOSA DE PISO Y MUROS",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 181,
+      "prefijo": "N2",
+      "wbs": "14",
+      "descripcion": "ADICIONAL N°10: INSTALACION DE LINEA DN350 HDPE EN DECANTADOR",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 182,
+      "prefijo": "N3",
+      "wbs": "14.1",
+      "descripcion": "DECANTADOR",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 183,
+      "prefijo": "IISS",
+      "wbs": "14.1.1",
+      "descripcion": "INSTALACION DE TUBERIA DN255 HDPE EN DECANTADOR",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 184,
+      "prefijo": "N2",
+      "wbs": "15",
+      "descripcion": "ADICIONAL N°11: PRUEBA DE ESTANQUEIDAD (LANZA SECA)",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 185,
+      "prefijo": "N3",
+      "wbs": "15.1",
+      "descripcion": "IMPERMEABILIZACIÓN",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 186,
+      "prefijo": "PRH",
+      "wbs": "15.1.1",
+      "descripcion": "PRUEBA DE ESTANQUEIDAD (LANZA SECA)",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 187,
+      "prefijo": "N2",
+      "wbs": "16",
+      "descripcion": "ADICIONAL N°12: EDIFICIO DE RECUPERACIÓN",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 188,
+      "prefijo": "N3",
+      "wbs": "16.1",
+      "descripcion": "MOVIMIENTO DE TIERRAS",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 189,
+      "prefijo": "N4",
+      "wbs": "16.1.1",
+      "descripcion": "MOVIMIENTO DE TIERRAS NAVE",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 190,
+      "prefijo": "MOV2",
+      "wbs": "16.1.1.1",
+      "descripcion": "EXCAVACIÓN LOCALIZADA C/ EQUIPO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 191,
+      "prefijo": "MOV2",
+      "wbs": "16.1.1.2",
+      "descripcion": "NIVELACION Y COMPACTACION DE SUBRASANTE",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 192,
+      "prefijo": "MOV2",
+      "wbs": "16.1.1.3",
+      "descripcion": "PERFILADO DE EXCAVACION LOCALIZADA C/EQUIPO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 193,
+      "prefijo": "MOV2",
+      "wbs": "16.1.1.4",
+      "descripcion": "ACARREO DE EXCAVACION",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 194,
+      "prefijo": "MOV2",
+      "wbs": "16.1.1.5",
+      "descripcion": "EXCAVACION LOCALIZADA MANUAL",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 195,
+      "prefijo": "N3",
+      "wbs": "16.2",
+      "descripcion": "ESTRUCTURAS",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 196,
+      "prefijo": "N4",
+      "wbs": "16.2.1",
+      "descripcion": "CONCRETO SIMPLE",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 197,
+      "prefijo": "ENC",
+      "wbs": "16.2.1.1",
+      "descripcion": "ENCOFRADO Y DESENCOFRADO DE FALSA ZAPATA",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 198,
+      "prefijo": "CON",
+      "wbs": "16.2.1.2",
+      "descripcion": "CONCRETO FC=100kG/CM2 + 25 % PM FALSA ZAPATA",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 199,
+      "prefijo": "CUR",
+      "wbs": "16.2.1.3",
+      "descripcion": "CURADO DE CONCRETO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 200,
+      "prefijo": "N4",
+      "wbs": "16.2.2",
+      "descripcion": "ZAPATAS",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 201,
+      "prefijo": "ACE",
+      "wbs": "16.2.2.1",
+      "descripcion": "HABILITADO Y COLOCADO DE ACERO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 202,
+      "prefijo": "CON",
+      "wbs": "16.2.2.2",
+      "descripcion": "CONCRETO F'C= 210 KG/CM2 (PREMEZCLADO) EN ZAPATAS",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 203,
+      "prefijo": "CUR",
+      "wbs": "16.2.2.3",
+      "descripcion": "CURADO DE CONCRETO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 204,
+      "prefijo": "N4",
+      "wbs": "16.2.3",
+      "descripcion": "PEDESTALES",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 205,
+      "prefijo": "ACE",
+      "wbs": "16.2.3.1",
+      "descripcion": "HABILITADO Y COLOCADO DE ACERO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 206,
+      "prefijo": "N3",
+      "wbs": "17",
+      "descripcion": "ADICIONAL N°13: SUMINISTRO E INSTALACIÓN DE CODO HDPE PARA REBOSE EN DECANTADOR",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 207,
+      "prefijo": "N4",
+      "wbs": "17.1",
+      "descripcion": "DECANTADOR",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 208,
+      "prefijo": "IISS",
+      "wbs": "17.1.1",
+      "descripcion": "SUMINISTRO E INSTALACIÓN DE CODO HDPE PARA REBOSE EN DECANTADOR",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 209,
+      "prefijo": "IMP",
+      "wbs": "17.1.2",
+      "descripcion": "RELLENO EXTERIOR DE TUBERÁ (SELLADO)",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 210,
+      "prefijo": "N2",
+      "wbs": "18",
+      "descripcion": "ADICIONAL N°14: SUMINISTRO E INSTALACIÓN DE TUBERIA PVC PARA REBOSE EN DECANTADOR",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 211,
+      "prefijo": "N3",
+      "wbs": "18.1",
+      "descripcion": "TANQUE DE OXIDACIÓN",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 212,
+      "prefijo": "N4",
+      "wbs": "18.1.1",
+      "descripcion": "MOVIMIENTO DE TIERRAS",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 213,
+      "prefijo": "MOV2",
+      "wbs": "18.1.1.1",
+      "descripcion": "EXCAVACION LOCALIZADA MANUAL",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 214,
+      "prefijo": "MOV2",
+      "wbs": "18.1.1.2",
+      "descripcion": "ACARREO DE EXCAVACION",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 215,
+      "prefijo": "N4",
+      "wbs": "18.1.2",
+      "descripcion": "INSTALACIONES SANITARIAS",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 216,
+      "prefijo": "IISS",
+      "wbs": "18.1.2.1",
+      "descripcion": "INSTALACION DE TUBERIA PVC 6\"",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 217,
+      "prefijo": "IISS",
+      "wbs": "18.1.2.2",
+      "descripcion": "CAJA DE REGISTRO 0.60 x0.60",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 218,
+      "prefijo": "IISS",
+      "wbs": "18.1.2.3",
+      "descripcion": "CAJA DE REGISTRO 0.40 x0.40",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 219,
+      "prefijo": "N2",
+      "wbs": "19",
+      "descripcion": "ADICIONAL N°15: PEDESTALES INC. ANCLAJES EN NAVE",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 220,
+      "prefijo": "N3",
+      "wbs": "19.1",
+      "descripcion": "TANQUE DE OXIDACIÓN",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 221,
+      "prefijo": "ENC",
+      "wbs": "19.1.1",
+      "descripcion": "ENCOFRADO Y DESENCOFRADO DE PEDESTALES",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 222,
+      "prefijo": "CON",
+      "wbs": "19.1.3",
+      "descripcion": "CONCRETO F'C= 210 KG/CM2 (PREMEZCLADO) EN ZAPATAS Y PEDESTALES",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 223,
+      "prefijo": "CUR",
+      "wbs": "19.1.4",
+      "descripcion": "CURADO DE CONCRETO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 224,
+      "prefijo": "N2",
+      "wbs": "20",
+      "descripcion": "ADICIONAL N°16: RAMPAS Y VEREDAS",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 225,
+      "prefijo": "N3",
+      "wbs": "20.1",
+      "descripcion": "PTAR",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 226,
+      "prefijo": "N4",
+      "wbs": "20.1.1",
+      "descripcion": "CORTE DE LOSA EXISTENTE",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 227,
+      "prefijo": "VAE",
+      "wbs": "20.1.1.1",
+      "descripcion": "CORTE DE LOSA EXISTENTE CON PAVIMENTADORA",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 228,
+      "prefijo": "N4",
+      "wbs": "20.1.2",
+      "descripcion": "JUNTA",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 229,
+      "prefijo": "VAE",
+      "wbs": "20.1.2.1",
+      "descripcion": "JUNTAS DE AISLAMIENTO (JA)",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 230,
+      "prefijo": "VAE",
+      "wbs": "20.1.2.2",
+      "descripcion": "JUNTAS DE RETRACCION (JR)",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 231,
+      "prefijo": "N4",
+      "wbs": "20.1.3",
+      "descripcion": "RAMPA",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 232,
+      "prefijo": "CON",
+      "wbs": "20.1.3.1",
+      "descripcion": "CONCRETO F'C= 210 KG/CM2 e=16cms, acabado semipulido bruñado c/endurecedor",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 233,
+      "prefijo": "N4",
+      "wbs": "20.1.4",
+      "descripcion": "MOVIMIENTO DE TIERRAS",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 234,
+      "prefijo": "CON",
+      "wbs": "20.1.4.1",
+      "descripcion": "CONCRETO F'C= 210 KG/CM2 e=16cms, acabado semipulido  c/endurecedor",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 235,
+      "prefijo": "N2",
+      "wbs": "21",
+      "descripcion": "ADICIONAL N°17: MOV. TIERRAS",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 236,
+      "prefijo": "N3",
+      "wbs": "21.1",
+      "descripcion": "RELLENO Y COMPACTACION CON MATERIAL DE PRESTAMO",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 237,
+      "prefijo": "MOV2",
+      "wbs": "21.1.1",
+      "descripcion": "RELLENO Y COMPACTACION CON AFIRMADO EN ZONA TIPO \"L\"",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 238,
+      "prefijo": "MOV2",
+      "wbs": "21.1.2",
+      "descripcion": "RELLENO Y COMPACTACION CON AFIRMADO EN ZONA DE NAVE",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 239,
+      "prefijo": "N2",
+      "wbs": "22",
+      "descripcion": "ADICIONAL N°18: REPOSICION DE TUBERIA PVC 8\"",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 240,
+      "prefijo": "N3",
+      "wbs": "22.1",
+      "descripcion": "TANQUE DE OXIDACIÓN",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 241,
+      "prefijo": "N4",
+      "wbs": "22.1.1",
+      "descripcion": "MOVIMIENTO DE TIERRAS",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 242,
+      "prefijo": "VAE",
+      "wbs": "22.1.1.1",
+      "descripcion": "CORTE DE LOSA",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 243,
+      "prefijo": "VAE",
+      "wbs": "22.1.1.2",
+      "descripcion": "DEMOLICION MANUAL DE LOSA EXISTENTE",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 244,
+      "prefijo": "VAE",
+      "wbs": "22.1.1.3",
+      "descripcion": "EXCAVACION LOCALIZADA MANUAL",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 245,
+      "prefijo": "VAE",
+      "wbs": "22.1.1.4",
+      "descripcion": "ACARREO MANUAL DE MATERIAL DEMOLIDO",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 246,
+      "prefijo": "VAE",
+      "wbs": "22.1.1.5",
+      "descripcion": "ACARREO DE EXCAVACION",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 247,
+      "prefijo": "VAE",
+      "wbs": "22.1.1.6",
+      "descripcion": "ELIMINACIÓN DE DESMONTE Y DESPERDICIOS",
+      "tipo": "actividad"
+    },
+    {
+      "fila": 248,
+      "prefijo": "N4",
+      "wbs": "22.1.2",
+      "descripcion": "INSTALACIONES SANITARIAS",
+      "tipo": "nivel"
+    },
+    {
+      "fila": 249,
+      "prefijo": "VAE",
+      "wbs": "22.1.2.1",
+      "descripcion": "SUMINISTRO E INSTALACION DE TUBERIA PVC 8\"",
+      "tipo": "actividad"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "appId": "com.grapco.planeamiento",
+  "appName": "Planeamiento GRAPCO",
+  "webDir": "dist",
+  "backgroundColor": "#0F2A47",
+  "android": {
+    "backgroundColor": "#0F2A47",
+    "allowMixedContent": false
+  },
+  "ios": {
+    "backgroundColor": "#0F2A47",
+    "contentInset": "never"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0,
+      "launchFadeOutDuration": 250,
+      "launchAutoHide": true,
+      "backgroundColor": "#0F2A47",
+      "showSpinner": false,
+      "androidScaleType": "CENTER_CROP",
+      "splashFullScreen": false,
+      "splashImmersive": false
+    },
+    "StatusBar": {
+      "overlaysWebView": true,
+      "style": "DARK",
+      "backgroundColor": "#0F2A47"
+    }
+  }
+}

@@ -82,17 +82,16 @@ const AUTO_AREA = {
   carta_balance: 'carta_balance',
   almacenero: 'almacenero',
   logistica: 'almacenero',
-  supervisor_cliente: 'supervisor_cliente',
 };
 // Roles que un rolPermitido puede activar. admin/ingeniero = cualquiera (null).
 // Para cualquier rol no listado, solo se permite su propio rol (sin escalada).
 const ROLES_PERMITIDOS = {
   admin: null,
   ingeniero: null,
-  oficina_tecnica: ['oficina_tecnica', 'planeamiento', 'calidad'],
-  planeamiento: ['planeamiento', 'oficina_tecnica'],
-  calidad: ['calidad'],
-  // SSOMA (rol 'seguridad') movido a la plataforma independiente SIGMA (2026-06-15).
+  oficina_tecnica: ['oficina_tecnica'],
+  // SSOMA (rol 'seguridad') → plataforma SIGMA (2026-06-15).
+  // Planeamiento (rol 'planeamiento') → app PLANEAMIENTO_PLATAFORMA; Calidad
+  // (roles 'calidad' / 'supervisor_cliente') → app CALIDAD_PLATAFORMA (2026-06-24).
 };
 const rolEsValido = (rolPermitido, rolElegido) => {
   if (rolPermitido === 'admin' || rolPermitido === 'ingeniero') return true;

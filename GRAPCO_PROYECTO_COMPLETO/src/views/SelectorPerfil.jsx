@@ -27,7 +27,7 @@ const optKiosk = { color: '#0F2A47', background: '#ffffff', fontWeight: 700 };
 // venir de Firestore (`Configuracion/pins`), pero para campo es suficiente.
 const PINS_OBRA = {
   '1234': 'capataz',
-  '5050': 'calidad',
+  // Calidad (PIN 5050) → app independiente CALIDAD_PLATAFORMA (2026-06-24).
   // ingeniero/admin NO entran por PIN: solo por login Firebase con su rol asignado.
 };
 
@@ -51,20 +51,18 @@ const PERFILES = [
   },
   {
     rol: 'ingeniero',
-    titulo: 'Planeamiento y Producción',
+    titulo: 'Producción',
     iconName: 'barChart3',
     color: '#047857',
-    descripcion: 'Planificación, programación y control integral de obra bajo metodologías Lean Construction y VDC, orientadas a maximizar productividad, cumplimiento y desempeño operativo.',
-    // Módulos REALES del área (moduloIngeniero). "Plan Maestro" se retiró: no es accesible para este rol.
+    descripcion: 'Control integral de avance, productividad y carta balance bajo Lean Construction, orientado a maximizar cumplimiento y desempeño operativo.',
+    // Módulos REALES del área (moduloIngeniero). Planeamiento (Cronograma/Last Planner/
+    // Pull Planning) → app PLANEAMIENTO_PLATAFORMA; 'Materiales' → Administración (2026-06-24).
     accesos: [
       { l: 'Producción',          go: 'dashboard' },
       { l: 'Registro',            go: 'registro' },
       { l: 'Carta Balance',       go: 'carta' },
       { l: 'Sala de Operaciones', go: 'warroom' },
-      { l: 'Cronograma',          go: 'cronogramaobra' },
-      { l: 'Last Planner',        go: 'lps' },
-      { l: 'Pull Planning',       go: 'pullplanning' },
-      // 'Materiales' movido al área de Administración (almacenero) — 2026-06-24.
+      { l: 'Estado de Obra',      go: 'estadoObra' },
       { l: 'BIM',                 go: 'bim' },
     ],
   },
@@ -84,23 +82,8 @@ const PERFILES = [
       { l: 'BIM',                 go: 'ot.bim' },
     ],
   },
-  {
-    rol: 'calidad',
-    titulo: 'Gestión de Calidad',
-    iconName: 'shield',
-    color: '#7E22CE',
-    descripcion: 'Administración integral de protocolos, ensayos, liberaciones y no conformidades para asegurar el cumplimiento de estándares, especificaciones y requisitos del proyecto.',
-    // Pestañas REALES de CalidadPanel (KEY_TO_TAB). Entran directo vía tabExterna/tabInicial.
-    accesos: [
-      { l: 'Protocolos',       go: 'calidad.protocolos' },
-      { l: 'PETs',             go: 'calidad.pets' },
-      { l: 'No Conformidades', go: 'calidad.ncs' },
-      { l: 'Ensayos',          go: 'calidad.ensayos' },
-      { l: 'Planos',           go: 'calidad.planos' },
-      { l: 'BIM',              go: 'calidad.bim' },
-    ],
-  },
-  // SSOMA (Seguridad, Salud y Medio Ambiente) movido a la plataforma independiente SIGMA (2026-06-15).
+  // Gestión de Calidad (protocolos, PETs, NCs, ensayos, planos) → app independiente
+  // CALIDAD_PLATAFORMA (2026-06-24). SSOMA → plataforma SIGMA (2026-06-15).
   {
     rol: 'admin',
     titulo: 'Administración del Sistema',
@@ -122,19 +105,17 @@ const PERFILES = [
 // Mapeo de rolPermitido (almacenado en /Usuarios) → cards visibles en el selector.
 // admin / ingeniero ven TODAS las áreas (perfiles senior multi-área).
 // Roles específicos solo ven su propia área (más una de soporte cuando aplica).
-const TODAS = ['ingeniero','oficina_tecnica','calidad','almacenero','admin'];
+const TODAS = ['ingeniero','oficina_tecnica','almacenero','admin'];
 const ROL_CARDS_PERMITIDAS = {
   admin:              TODAS,
   ingeniero:          TODAS,
-  oficina_tecnica:    ['oficina_tecnica','ingeniero','calidad'],
-  planeamiento:       ['ingeniero','oficina_tecnica'],
-  calidad:            ['calidad'],
-  // SSOMA (rol 'seguridad') movido a la plataforma independiente SIGMA (2026-06-15).
+  oficina_tecnica:    ['oficina_tecnica','ingeniero'],
+  // Planeamiento → app PLANEAMIENTO_PLATAFORMA; Calidad / supervisor_cliente →
+  // app CALIDAD_PLATAFORMA; SSOMA → SIGMA. Ya no son áreas de GRAPCO (2026-06-24).
   almacenero:         ['almacenero'],
   logistica:          ['almacenero'],
   capataz:            ['capataz'],
   carta_balance:      ['carta_balance'],
-  supervisor_cliente: ['supervisor_cliente'],
   subcontratista:     ['subcontratista'],
 };
 

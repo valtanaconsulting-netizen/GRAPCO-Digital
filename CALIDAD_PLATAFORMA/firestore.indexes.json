@@ -1,0 +1,77 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "Usuarios",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "activo", "order": "ASCENDING" },
+        { "fieldPath": "creadoEn", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "Registros_Campo",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "uidCapataz", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "Registros_Campo",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "partida", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "Borradores_Capataz",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "uidCapataz", "order": "ASCENDING" },
+        { "fieldPath": "actualizadoEn", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "PPC_Compromisos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "responsable", "order": "ASCENDING" },
+        { "fieldPath": "fechaCompromiso", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "PPC_Compromisos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "semana", "order": "ASCENDING" },
+        { "fieldPath": "cumplido", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "BIM_Modelos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "subidoPor", "order": "ASCENDING" },
+        { "fieldPath": "subidoEn", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "Auditoria_Seguridad",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "uid", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "Auditoria_Seguridad",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "accion", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

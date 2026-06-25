@@ -20,16 +20,15 @@ import Tooltip from '../components/Tooltip';
 import Icon from '../components/Icon';
 import GateProyectoLegacy from '../components/GateProyectoLegacy';
 import Auditoria from './Auditoria';
-import CpiEac from './CpiEac';
 import Graficos from './Graficos';
 import Tendencias from './Tendencias';
 import AnalisisHHCross from './AnalisisHHCross';
 import PagoObreros from './PagoObreros';
 import Tareo from './Tareo';
-import PlanDiario from './PlanDiario';
 import Personal from './Personal';
 import ImpactoTesis from './ImpactoTesis';
-import VDC from './VDC';
+// CPI/EAC (CpiEac), VDC/LAP, Programación Diaria (PlanDiario), Curva S y Tablero LPS
+// se movieron a la app independiente PLANEAMIENTO_PLATAFORMA (2026-06-24).
 import ControlGerencial from './ControlGerencial';
 import CockpitEjecutivo from './CockpitEjecutivo';
 // BIM (visor 3D + vendor-charts) cargado SOLO al abrir la pestaña, no dentro del chunk de Ingeniero.
@@ -71,9 +70,8 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
   // Mapeo vista → grupo (para auto-seleccionar grupo si llega por deep-link)
   const VIEW_TO_GRUPO = {
     cockpit: 'ejecutivo',
-    auditoria: 'produccion', analisis: 'produccion', control: 'produccion',
+    auditoria: 'produccion', control: 'produccion',
     graficos: 'produccion', tendencias: 'produccion',
-    vdc: 'planificacion',
     hhcross: 'analisis', bim: 'analisis',
     tareo: 'gestion', gestion: 'gestion',
     'pago-obreros': 'gestion',
@@ -588,24 +586,15 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
       label: 'CONTROL CPI',
       iconName: 'barChart3',
       color: BASE.navy,
-      tagline: 'Todo el control de productividad/costo en un solo lugar: Auditoría, CPI/EAC, Control Gerencial, Gráficos y Tendencias',
+      tagline: 'Control de productividad/costo: Auditoría, Control Gerencial, Gráficos y Tendencias',
       items: [
         { id: 'auditoria',  l: 'Auditoría',         iconName: 'registro' },
-        { id: 'analisis',   l: 'CPI + EAC',         iconName: 'chartBars' },
         { id: 'control',    l: 'Control Gerencial', iconName: 'fileText' },
         { id: 'graficos',   l: 'Gráficos',          iconName: 'barChart3' },
         { id: 'tendencias', l: 'Tendencias',        iconName: 'pulse' },
       ],
     },
-    planificacion: {
-      label: 'PLANEAMIENTO',
-      iconName: 'compass',
-      color: BASE.gold,
-      tagline: 'Last Planner System: LAP, programación, plan diario, restricciones',
-      items: [
-        { id: 'vdc', l: 'Last Planner System', iconName: 'target' },
-      ],
-    },
+    // Grupo PLANEAMIENTO (Last Planner System / VDC) → app PLANEAMIENTO_PLATAFORMA (2026-06-24).
     analisis: {
       label: 'BIM Y CUADRILLAS',
       iconName: 'users',
@@ -657,7 +646,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
 
   // Solo las vistas de TABLA usan el contenedor de scroll acotado (encabezado fijo + barra
   // horizontal abajo). Las demás vistas se comportan normal (scroll de página) para no alterarlas.
-  const vistaTabla = view === 'analisis' || view === 'auditoria' || view === 'control';
+  const vistaTabla = view === 'auditoria' || view === 'control';
 
   // Cluster de comando (CPI/EF + botones Filtros/Resumen). Se reutiliza: va a la
   // derecha de la fila de sub-tabs (espacio vacío) y, si el grupo tiene un único
@@ -1071,16 +1060,9 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
       {/* === VISTAS === */}
       {view==='cockpit'    && <CockpitEjecutivo historial={historialEnriquecido} wbs={wbs} filtrados={filtrados} costosCustomMap={costosCustomMap} isMobile={isMobile}/>}
       {view==='auditoria'  && <Auditoria filtrados={filtrados} eliminar={eliminar} guardarMetrado={guardarMetrado} hhPorSemana={hhPorSemana} hhTotales={hhTotales} totalBaseDatos={(historial||[]).length}/>}
-      {view==='analisis'   && <CpiEac wbs={wbs} historial={historialEnriquecido} filtrados={filtrados} infoMap={infoWbs} onModificarWBS={() => handleSetView('wbs-editor')} onActualizarFlags={actualizarFlagsActividad}/>}
       {view==='wbs-editor' && <EditorWbsIsp showToast={showToast}/>}
       {view==='control'    && <ControlGerencial historialEnriquecido={historialEnriquecido} wbs={wbs} personalDB={personalDB} configuracion={configuracion} asistencia={asistencia} isMobile={isMobile}/>}
-      {view==='vdc'        && <GateProyectoLegacy modulo="El VDC / LAP (lookahead del Excel)" icono="target"><VDC
-                                cuadrillasActivas={cuadrillasActivas}
-                                cuadrillasDB={cuadrillasDB}
-                                planesDiarios={planesDiarios}
-                                historial={historialEnriquecido}
-                                isMobile={isMobile}
-                                showToast={showToast}/></GateProyectoLegacy>}
+      {/* CPI/EAC ('analisis') y VDC/LAP ('vdc') → app PLANEAMIENTO_PLATAFORMA (2026-06-24). */}
       {view==='graficos'   && <Graficos grafData={grafData} filtrados={filtrados} wbs={wbs}/>}
       {view==='hhcross'    && <AnalisisHHCross filtrados={filtrados} personalDB={personalDB}/>}
       {view==='tendencias' && <Tendencias filtrados={filtrados} historial={historialEnriquecido} wbs={wbs}/>}
