@@ -22,16 +22,6 @@ const BIM = lazy(() => import('./BIM'));
 // `icon` = nombre del SVG (Icon) — presentación formal GRAPCO; el campo `icono`
 // (emoji) y `color` se conservan por compatibilidad pero la UI usa navy/gold.
 const GRUPOS = {
-  resumen: {
-    label: 'RESUMEN',
-    icono: '📊',
-    icon: 'dashboard',
-    color: '#6366f1',
-    tagline: 'Vista ejecutiva del proyecto',
-    items: [
-      { id: 'dashboard', l: 'Dashboard', icono: '📊', icon: 'dashboard', desc: 'KPIs ejecutivos' },
-    ],
-  },
   contrato: {
     label: 'PRESUPUESTO',
     icono: '📋',
@@ -91,7 +81,6 @@ const GRUPOS = {
 
 // Mapa inverso: tab → grupo (para auto-seleccionar el grupo al venir por deep-link)
 const TAB_TO_GRUPO = {
-  dashboard:  'resumen',
   partidas:   'contrato',
   prefijos:   'codigos',
   ro:         'ro',
@@ -145,16 +134,16 @@ const KEY_TO_RO_SECCION = {
 
 export default function OficinaTecnicaPanel({ showToast, tabExterna, onChangeTab, tabInicial }) {
   // tabInicial: deep-link móvil desde el SelectorPerfil (key 'ot.valoriz' o id 'valoriz'). Siembra inicial.
-  const [tabInterno, setTabInterno]   = useState(() => KEY_TO_TAB_OT[tabInicial] || tabInicial || 'dashboard');
-  const tab = tabExterna ? (KEY_TO_TAB_OT[tabExterna] || 'dashboard') : tabInterno;
+  const [tabInterno, setTabInterno]   = useState(() => KEY_TO_TAB_OT[tabInicial] || tabInicial || 'valoriz');
+  const tab = tabExterna ? (KEY_TO_TAB_OT[tabExterna] || 'valoriz') : tabInterno;
   // Sección del RO a abrir cuando la entrada del sidebar es ot.ro.<x> (null = ROPanel con sus chips).
   const roSeccion = tabExterna ? (KEY_TO_RO_SECCION[tabExterna] || null) : null;
 
   // El grupo activo se deriva del tab. Si el usuario hace click manual, se respeta.
-  const grupoDelTab = TAB_TO_GRUPO[tab] || 'resumen';
+  const grupoDelTab = TAB_TO_GRUPO[tab] || 'facturacion';
   const [grupoManual, setGrupoManual] = useState(null);
   const grupoActivo = grupoManual || grupoDelTab;
-  const grupoCfg = GRUPOS[grupoActivo] || GRUPOS.resumen;
+  const grupoCfg = GRUPOS[grupoActivo] || GRUPOS.facturacion;
 
   const setTab = (t) => {
     setGrupoManual(null); // al elegir un tab, el grupo se ajusta automáticamente
