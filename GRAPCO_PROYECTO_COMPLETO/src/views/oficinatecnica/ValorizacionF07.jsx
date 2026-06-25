@@ -10,14 +10,14 @@
 //     el metrado del ISP ya cruzado al ítem y agrupado por quincena. El "Actual" es
 //     (acumulado de la val − acumulado de la val anterior); "Saldo" = Cant − Acumulado.
 import React, { useEffect, useMemo, useState } from 'react';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { collection, doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { BASE, LOGO } from '../../utils/styles';
 import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import useAvanceF07Vivo from '../../hooks/useAvanceF07Vivo';
 import { generarPDFValorizacionF07 } from '../../utils/valorizacionF07Pdf';
 import EmptyState from '../../components/EmptyState';
-import { colorPrefijo } from '../../utils/prefijos';
+import { sugerirPrefijo, familiaDe, colorPrefijo } from '../../utils/prefijos';
 
 const soles = (n) => 'S/ ' + (Number(n) || 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const cant = (n) => (Number(n) || 0).toLocaleString('es-PE', { maximumFractionDigits: 2 });
@@ -28,12 +28,15 @@ export default function ValorizacionF07({ showToast }) {
   const proyId = proyectoActivoId || proyectoActivo?.id;
   const [presu, setPresu] = useState([]);
   const [avancesOficial, setAvancesOficial] = useState([]); // F07 histórico sembrado
+  const [f07Map, setF07Map] = useState({});                 // Prefijos_Catalogo: mkey → prefijo (familia)
+  const [verFamilias, setVerFamilias] = useState(true);     // resumen por familia plegable
   const [loading, setLoading] = useState(true);
   const [valSel, setValSel] = useState(null);
   const [fuente, setFuente] = useState('oficial'); // 'oficial' (F07) | 'vivo' (producción)
   const [genPdf, setGenPdf] = useState(false);
-  // Avance EN VIVO desde el metrado de la plataforma (capataz/sustentos), por quincena.
-  const { avancesVivo, cobertura } = useAvanceF07Vivo({ proyId, presu, enabled: fuente === 'vivo' });
+  // Avance + Costo Real EN VIVO desde la producción (capataz/sustentos). Siempre activo:
+  // el avance se usa en modo "vivo"; el CR (HH×S/25.5) por familia se muestra en ambos modos.
+  const { avancesVivo, cobertura } = useAvanceF07Vivo({ proyId, presu });
   const avances = fuente === 'vivo' ? avancesVivo : avancesOficial;
 
   useEffect(() => {
@@ -46,8 +49,13 @@ export default function ValorizacionF07({ showToast }) {
     const u2 = onSnapshot(collection(db, 'ValorizacionF07_Avance'), (snap) => {
       setAvancesOficial(snap.docs.map(d => d.data()).filter(a => a.proyectoId === proyId).sort((a, b) => (a.valN || 0) - (b.valN || 0)));
     });
-    return () => { u1(); u2(); };
+    // Prefijos designados en OT → Prefijos/Códigos (la LLAVE familia). Si no hay doc, queda {}.
+    const u3 = onSnapshot(doc(db, 'Prefijos_Catalogo', proyId), (d) => setF07Map(d.data()?.f07Map || {}));
+    return () => { u1(); u2(); u3(); };
   }, [proyId]);
+
+  // Prefijo (familia) de una partida F07: el designado en OT, o el auto-sugerido por código/descripción.
+  const prefDeItem = (p) => f07Map[p.mkey] || sugerirPrefijo({ codigo: p.item, descripcion: p.descripcion }).prefijo || '';
 
   // Valorizaciones disponibles (V-01..V-09 + LIQUIDACIÓN).
   const periodos = useMemo(() => avances.map(a => ({ valN: a.valN, label: a.label || ('V-' + String(a.valN).padStart(2, '0')) })), [avances]);
@@ -89,6 +97,35 @@ export default function ValorizacionF07({ showToast }) {
     });
     return { parcial, ant, act, acum, saldo: parcial - acum };
   }, [presu, ejecPorItem]);
+
+  // RESUMEN POR FAMILIA (PREFIJO) — agrupa la valorización REAL por familia: cada
+  // partida suma su parcial y su acumulado (S/) a su prefijo. Sin sobre-atribución:
+  // cada ítem cuenta UNA vez contra su propio presupuesto (el % es real, ≤ 100%).
+  const resumenFamilia = useMemo(() => {
+    const fam = {};
+    presu.forEach(p => {
+      if (!p.esPartida || p.pu == null) return;
+      const pref = prefDeItem(p) || '(sin)';
+      const e = ejecPorItem[p.mkey] || {};
+      const f = (fam[pref] = fam[pref] || { pref, parcial: 0, acum: 0, act: 0, items: 0 });
+      f.parcial += (p.cant || 0) * p.pu;
+      f.acum += (e.acum || 0) * p.pu;
+      f.act += (e.act || 0) * p.pu;
+      f.items += 1;
+    });
+    // CR (Costo Real MO = HH × S/25.5) por familia, desde los tareos (mismo motor de prefijos).
+    const cr = cobertura?.crPorPrefijo || {};
+    // Incluye familias que solo tienen CR (HH) aunque no tengan partida valorizable (p.ej. indirectos).
+    Object.keys(cr).forEach(pref => { if (!fam[pref]) fam[pref] = { pref, parcial: 0, acum: 0, act: 0, items: 0 }; });
+    const filas = Object.values(fam)
+      .map(f => {
+        const crVal = cr[f.pref]?.cr || 0;
+        return { ...f, pct: f.parcial > 0 ? f.acum / f.parcial : 0, hh: cr[f.pref]?.hh || 0, cr: crVal, margen: f.acum > 0 ? (f.acum - crVal) / f.acum : 0 };
+      })
+      .sort((a, b) => b.parcial - a.parcial);
+    const sinPrefijo = !Object.keys(f07Map).length;
+    return { filas, sinPrefijo };
+  }, [presu, ejecPorItem, f07Map, cobertura]);
 
   if (!proyId) return <p style={{ padding: 30, textAlign: 'center', color: BASE.muted }}>Selecciona un proyecto activo.</p>;
   if (loading) return <p style={{ padding: 30, textAlign: 'center', color: BASE.muted }}>⏳ Cargando presupuesto…</p>;
@@ -171,8 +208,8 @@ export default function ValorizacionF07({ showToast }) {
         <Kpi label="Saldo referencial" v={soles(tot.saldo)} c="#0ea5e9" />
       </div>
 
-      {/* COBERTURA POR PREFIJO — solo en modo en vivo: cuánto del avance cruza por familia */}
-      {fuente === 'vivo' && cobertura && <CoberturaPrefijos cobertura={cobertura} />}
+      {/* RESUMEN POR FAMILIA (PREFIJO) — la valorización leída por familia (S/ reales) */}
+      <ResumenFamilia data={resumenFamilia} abierto={verFamilias} onToggle={() => setVerFamilias(v => !v)} />
 
       {/* Grilla F07 — panel congelado (estilo Excel): contenedor con scroll propio;
           encabezado fijo arriba (top) + columnas ITEM y DESCRIPCIÓN fijas a la
@@ -216,10 +253,13 @@ export default function ValorizacionF07({ showToast }) {
               const saldoCant = cantP - e.acum;
               const cerrada = p.cerrada || (cantP > 0 && e.acum >= cantP - 0.001);
               const rb = idx % 2 ? BASE.bgSoft : BASE.white;
+              const pref = prefDeItem(p);
               return (
                 <tr key={idx} style={{ background: rb }}>
                   <td style={td({ ...COL_ITEM, fontFamily: 'monospace', color: BASE.navy, fontWeight: 700, position: 'sticky', left: 0, zIndex: 3, background: rb })}>{p.item}</td>
-                  <td style={td({ ...COL_DESC, textAlign: 'left', whiteSpace: 'normal', position: 'sticky', left: W_ITEM, zIndex: 3, background: rb, borderRight: FRZ })}>{p.descripcion}{cerrada && <span style={{ marginLeft: 6, fontSize: 9, color: BASE.green, fontWeight: 800 }}>● cerrada</span>}</td>
+                  <td style={td({ ...COL_DESC, textAlign: 'left', whiteSpace: 'normal', position: 'sticky', left: W_ITEM, zIndex: 3, background: rb, borderRight: FRZ })}>{p.descripcion}
+                    {pref && <span title={`Familia ${familiaDe(pref)}`} style={{ marginLeft: 6, fontSize: 8.5, fontWeight: 800, fontFamily: 'monospace', color: '#fff', background: colorPrefijo(pref), padding: '1px 5px', borderRadius: 4, verticalAlign: 'middle', whiteSpace: 'nowrap' }}>{pref}</span>}
+                    {cerrada && <span style={{ marginLeft: 6, fontSize: 9, color: BASE.green, fontWeight: 800 }}>● cerrada</span>}</td>
                   {/* Presupuesto */}
                   <td style={td({ textAlign: 'center', borderLeft: bdL })}>{p.und}</td>
                   <td style={td({ textAlign: 'right' })}>{cant(cantP)}</td>
@@ -273,46 +313,56 @@ function bloque(cantBloque, cantPpto, pu, borde, color, fuerte) {
   );
 }
 
-// Cobertura del avance en vivo agrupada por PREFIJO (familia). Hace visible qué
-// parte del metrado del capataz/sustentos cruza al F07 por familia y qué queda sin cruzar.
-function CoberturaPrefijos({ cobertura }) {
-  const { porPrefijo = [], pctCD = 0, cdVivo = 0, unmapped = 0, conPrefijos, sinCruce = [] } = cobertura;
-  const conData = porPrefijo.filter(p => p.cd > 0 || p.unmapped > 0);
-  return (
-    <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 12, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 11, fontWeight: 900, color: BASE.navy, letterSpacing: 0.4 }}>🔑 COBERTURA POR FAMILIA (PREFIJO)</span>
-        <span style={{ fontSize: 11, fontWeight: 800, color: BASE.green }}>CD vivo {soles(cdVivo)} · {pct(pctCD / 100)} del presupuesto</span>
-        {unmapped > 0 && <span style={{ fontSize: 11, fontWeight: 800, color: BASE.gold }}>· {cant(unmapped)} sin cruzar</span>}
-        {!conPrefijos && <span style={{ marginLeft: 'auto', fontSize: 10.5, color: BASE.gold, fontWeight: 700 }}>⚠ Asigna prefijos en OT → Códigos para afinar el cruce.</span>}
-      </div>
-      {conData.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-          {conData.map(p => (
-            <span key={p.prefijo} title={`${p.familia} · ${p.items} ítem(s) F07`}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 9px', borderRadius: 999, border: `1px solid ${BASE.border}`, background: BASE.bgSoft }}>
-              <span style={{ width: 9, height: 9, borderRadius: 3, background: p.prefijo === '(sin)' ? BASE.muted : colorPrefijo(p.prefijo) }} />
-              <b style={{ fontSize: 11, fontFamily: 'monospace', color: BASE.navy }}>{p.prefijo}</b>
-              <span style={{ fontSize: 10.5, color: BASE.green, fontWeight: 700 }}>{soles(p.cd)}</span>
-              {p.unmapped > 0 && <span style={{ fontSize: 10, color: BASE.gold, fontWeight: 700 }}>· {cant(p.unmapped)}↛</span>}
-            </span>
-          ))}
-        </div>
-      )}
-      {sinCruce.length > 0 && (
-        <p style={{ fontSize: 10, color: BASE.muted }}>
-          <b>Sin cruzar (top):</b> {sinCruce.slice(0, 6).map(s => `${s.nombre} (${cant(s.metrado)})`).join(' · ')}
-        </p>
-      )}
-    </div>
-  );
-}
-
 function Kpi({ label, v, c }) {
   return (
     <div style={{ background: c + '12', border: `1px solid ${c}33`, borderLeft: `4px solid ${c}`, borderRadius: 10, padding: '9px 12px' }}>
       <p style={{ fontSize: 9, fontWeight: 900, color: BASE.muted, letterSpacing: 0.4 }}>{label.toUpperCase()}</p>
       <p style={{ fontSize: 14, fontWeight: 900, color: c, marginTop: 2, fontFamily: 'monospace' }}>{v}</p>
+    </div>
+  );
+}
+
+// Resumen de la valorización agrupado por FAMILIA (prefijo). Números REALES del F07:
+// cada familia muestra su acumulado (S/) y el % ejecutado de su propio presupuesto (≤100%).
+// Reemplaza la antigua tira de "cobertura" (que sobre-atribuía el metrado en vivo).
+function ResumenFamilia({ data, abierto, onToggle }) {
+  const { filas, sinPrefijo } = data;
+  const conData = filas.filter(f => f.parcial > 0 || f.cr > 0);
+  if (!conData.length) return null;
+  return (
+    <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 12, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: abierto ? 8 : 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <button onClick={onToggle} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 11, fontWeight: 900, color: BASE.navy, letterSpacing: 0.4, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          {abierto ? '▾' : '▸'} 🔑 RESUMEN POR FAMILIA (PREFIJO)
+        </button>
+        <span style={{ fontSize: 10.5, color: BASE.muted }}>· {conData.length} familia(s) · Vendido vs Costo Real (MO) por familia</span>
+        {sinPrefijo && <span style={{ marginLeft: 'auto', fontSize: 10, color: BASE.gold, fontWeight: 700 }}>⚠ Prefijos auto-sugeridos — afínalos en OT → Prefijos / Códigos.</span>}
+      </div>
+      {abierto && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {conData.map(f => {
+            const c = f.pref === '(sin)' ? BASE.muted : colorPrefijo(f.pref);
+            return (
+              <div key={f.pref} title={`${f.pref === '(sin)' ? 'Sin familia' : familiaDe(f.pref)} · ${f.items} ítem(s) · ${soles(f.acum)} de ${soles(f.parcial)}`}
+                style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 130, padding: '7px 10px', borderRadius: 9, border: `1px solid ${BASE.border}`, borderLeft: `4px solid ${c}`, background: BASE.bgSoft }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <b style={{ fontSize: 11, fontFamily: 'monospace', color: c }}>{f.pref}</b>
+                  <span style={{ marginLeft: 'auto', fontSize: 9.5, color: BASE.muted, fontWeight: 800 }}>{Math.round(f.pct * 100)}%</span>
+                </div>
+                <span style={{ fontSize: 11.5, fontWeight: 800, color: BASE.green, fontFamily: 'monospace' }}>{soles(f.acum)}</span>
+                <div style={{ height: 4, borderRadius: 3, background: BASE.border, overflow: 'hidden' }}>
+                  <div style={{ width: `${Math.min(100, Math.round(f.pct * 100))}%`, height: '100%', background: c }} />
+                </div>
+                {/* Costo Real (MO) = HH × S/25.5 de los tareos + margen MO sobre lo valorizado */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 4, marginTop: 1 }}>
+                  <span style={{ fontSize: 9, color: BASE.muted }}>CR MO <b style={{ color: BASE.navy, fontFamily: 'monospace' }}>{soles(f.cr)}</b></span>
+                  {f.acum > 0 && <span style={{ fontSize: 9, fontWeight: 800, color: f.margen >= 0 ? BASE.green : BASE.red }}>Mg {Math.round(f.margen * 100)}%</span>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

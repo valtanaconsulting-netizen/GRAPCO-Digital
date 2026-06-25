@@ -20,6 +20,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { collection, doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { sugerirPrefijo, normTxt, familiaDe } from '../utils/prefijos';
+import { COSTO_HORA_PROMEDIO } from '../utils/helpers';
 
 const norm = (s) => String(s || '').toUpperCase()
   .replace(/[ÁÀÄÂ]/g, 'A').replace(/[ÉÈËÊ]/g, 'E').replace(/[ÍÌÏÎ]/g, 'I')
@@ -38,8 +39,10 @@ export default function useAvanceF07Vivo({ proyId, presu, enabled = true }) {
 
   useEffect(() => {
     if (!proyId || !enabled) { setRegistros([]); setSustentos([]); setPrefMap({ ispMap: {}, f07Map: {} }); return; }
+    // Todos los tareos del proyecto (no solo metrado>0): el metrado alimenta el avance,
+    // y las HH (totalHH) alimentan el Costo Real (CR = HH × S/25.5) por familia.
     const u1 = onSnapshot(collection(db, 'Registros_Campo'), (s) =>
-      setRegistros(s.docs.map(d => d.data()).filter(r => (!r.proyectoId || r.proyectoId === proyId) && Number(r.metrado) > 0)));
+      setRegistros(s.docs.map(d => d.data()).filter(r => (!r.proyectoId || r.proyectoId === proyId))));
     const u2 = onSnapshot(collection(db, 'SustentoMetrados'), (s) =>
       setSustentos(s.docs.map(d => d.data()).filter(r => (!r.proyectoId || r.proyectoId === proyId) && Number(r.metrado) > 0)));
     const u3 = onSnapshot(doc(db, 'Prefijos_Catalogo', proyId), (d) => {
@@ -90,6 +93,7 @@ export default function useAvanceF07Vivo({ proyId, presu, enabled = true }) {
     // 1) Registros_Campo → ítem por descripción; si no cruza, intento por prefijo (familia con ítem único).
     registros.forEach(r => {
       const q = Number(r.metrado) || 0;
+      if (q <= 0) return; // sin metrado no aporta avance (sus HH sí cuentan abajo en el CR)
       const valN = r.semana ? Math.ceil(r.semana / 2) : null;
       const p = porDesc[norm(r.actividad)];
       if (p) { if (add(valN, p.mkey, q)) contarCD(p.mkey, q, p.pu); return; }
@@ -110,6 +114,19 @@ export default function useAvanceF07Vivo({ proyId, presu, enabled = true }) {
       contarUnmapped(q, s.descripcion || s.codigoPartida || '(sustento)', pref);
     });
 
+    // HH reales por familia → Costo Real MO (CR = HH × S/25.5). Mismas HH (totalHH) de
+    // los tareos que usa el RO, agrupadas por el mismo prefijo del avance (no duplica al RO).
+    const hhPorPref = {}; let hhTotal = 0;
+    registros.forEach(r => {
+      const hh = Number(r.totalHH ?? r.horasHombre ?? r.hh ?? 0) || 0;
+      if (hh <= 0) return;
+      const pref = prefDeReg(r.actividad, r.partida) || '(sin)';
+      hhPorPref[pref] = (hhPorPref[pref] || 0) + hh;
+      hhTotal += hh;
+    });
+    const crPorPrefijo = {};
+    Object.entries(hhPorPref).forEach(([p, hh]) => { crPorPrefijo[p] = { hh: r2(hh), cr: r2(hh * COSTO_HORA_PROMEDIO) }; });
+
     // Construye avances acumulados por quincena.
     const valNs = Object.keys(perVal).map(Number).sort((a, b) => a - b);
     const acumPrev = {}; const docs = [];
@@ -124,12 +141,14 @@ export default function useAvanceF07Vivo({ proyId, presu, enabled = true }) {
       docs.push({ valN: n, label: `Q-${String(n).padStart(2, '0')}`, avances });
     });
 
-    // Cobertura por prefijo (familia): CD cruzado vs metrado sin cruzar.
-    const prefs = new Set([...Object.keys(cdPorPref), ...Object.keys(unmappedPorPref)]);
+    // Cobertura por prefijo (familia): CD valorizado, CR (HH×25.5) y metrado sin cruzar.
+    const prefs = new Set([...Object.keys(cdPorPref), ...Object.keys(unmappedPorPref), ...Object.keys(hhPorPref)]);
     const porPrefijo = [...prefs].map(pref => ({
       prefijo: pref,
       familia: pref === '(sin)' ? 'Sin prefijo' : familiaDe(pref),
       cd: r2(cdPorPref[pref] || 0),
+      hh: r2(hhPorPref[pref] || 0),
+      cr: r2((hhPorPref[pref] || 0) * COSTO_HORA_PROMEDIO),
       unmapped: r2(unmappedPorPref[pref] || 0),
       items: (itemsPorPref[pref] || []).length,
     })).sort((a, b) => b.cd - a.cd);
@@ -143,7 +162,7 @@ export default function useAvanceF07Vivo({ proyId, presu, enabled = true }) {
       unmapped: r2(unmappedQ),
       registros: registros.length, sustentos: sustentos.length,
       conPrefijos: Object.keys(ispMap).length > 0 || Object.keys(f07Map).length > 0,
-      porPrefijo,
+      porPrefijo, crPorPrefijo, crVivo: r2(hhTotal * COSTO_HORA_PROMEDIO), hhVivo: r2(hhTotal),
       sinCruce: Object.entries(sinCruce).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([n, q]) => ({ nombre: n, metrado: r2(q) })),
     };
     return { avancesVivo: docs, cobertura };
