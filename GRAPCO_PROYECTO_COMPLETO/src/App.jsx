@@ -21,9 +21,6 @@ import Icon from './components/Icon';
 // lado izquierdo como en "Producción y Planeamiento". Las keys mapean a KEY_TO_TAB_OT
 // dentro de OficinaTecnicaPanel (tabExterna).
 const OT_SIDEBAR = {
-  'RESUMEN': [
-    { key: 'ot.dashboard', label: 'Dashboard',          iconName: 'dashboard',  color: BASE.gold },
-  ],
   'PRESUPUESTO': [
     { key: 'ot.partidas',  label: 'Presupuesto',         iconName: 'fileText',   color: '#a78bfa' },
   ],
@@ -38,21 +35,13 @@ const OT_SIDEBAR = {
     { key: 'ot.sustento',    label: 'Sustento',               iconName: 'layers',   color: '#fbbf24' },
     { key: 'ot.informe',     label: 'Informe PDF',            iconName: 'fileText', color: '#c4b5fd' },
   ],
-  // RESULTADO OPERATIVO desglosado en sub-grupos (antes era 1 ítem con 11 chips arriba).
-  'RESULTADO OPERATIVO': [
-    { key: 'ot.ro.dashboard',  label: 'Dashboard RO',       iconName: 'dashboard',  color: '#fbbf24' },
-  ],
+  // RESULTADO OPERATIVO en sub-grupos. Dashboard RO / Por Partida / Por Frente /
+  // Proyección / Curva S se retiraron del menú por pedido del usuario (2026-06-25).
   'RO · COSTO REAL': [
     { key: 'ot.ro.costoReal',  label: 'Costo Real (CR)',    iconName: 'coins',      color: '#38bdf8' },
   ],
   'RO · ANÁLISIS': [
     { key: 'ot.ro.oficial',    label: 'RO Oficial (F06)',   iconName: 'fileText',   color: '#fbbf24' },
-    { key: 'ot.ro.partidas',   label: 'Por Partida',        iconName: 'layers',     color: '#c4b5fd' },
-    { key: 'ot.ro.frentes',    label: 'Por Frente (F1/F2)', iconName: 'target',     color: '#5eead4' },
-  ],
-  'RO · PROYECCIÓN': [
-    { key: 'ot.ro.proyeccion', label: 'Proyección',         iconName: 'trendingUp', color: '#f87171' },
-    { key: 'ot.ro.curvaS',     label: 'Curva S',            iconName: 'lineChart',  color: '#5eead4' },
   ],
   'RO · CONTRACTUAL': [
     { key: 'ot.ro.adicionales', label: 'Adicionales',       iconName: 'calculator', color: '#4ade80' },
@@ -258,7 +247,7 @@ function AppInner() {
   // Deep-link: el módulo inicial puede venir en la URL (#/area/modulo) —
   // así una pestaña nueva abre DIRECTO donde se le pidió (multi-pestaña).
   const [moduloIngeniero, setModuloIngeniero] = useState(() => leerRutaHash()?.modulo || 'dashboard');
-  const [moduloOT, setModuloOT] = useState('ot.dashboard'); // sub-módulo activo del área Oficina Técnica (menú lateral)
+  const [moduloOT, setModuloOT] = useState('ot.valoriz'); // sub-módulo activo del área Oficina Técnica (menú lateral)
   const [moduloAlmacen, setModuloAlmacen] = useState('materiales.dashboard'); // sub-módulo activo del área Almacén (menú lateral)
   // Pestaña inicial de paneles con tabs internos, para que el SelectorPerfil pueda
   // hacer deep-link a una sección concreta (ej. Admin→Usuarios, Calidad→PETs).

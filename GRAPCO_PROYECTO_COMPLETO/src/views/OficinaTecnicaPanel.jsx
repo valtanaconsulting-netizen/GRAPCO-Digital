@@ -3,7 +3,6 @@
 
 import React, { useState, useMemo, lazy, Suspense } from 'react';
 import { BASE } from '../utils/styles';
-import VistaHeader from '../components/VistaHeader';
 import Icon from '../components/Icon';
 import RoleGuard from '../components/RoleGuard';
 import DashboardOT from './oficinatecnica/DashboardOT';
@@ -178,14 +177,7 @@ export default function OficinaTecnicaPanel({ showToast, tabExterna, onChangeTab
   return (
     <RoleGuard rolesPermitidos={['admin', 'ingeniero', 'oficina_tecnica']}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        {/* HEADER — cabecera unificada GRAPCO */}
-        <VistaHeader
-          icono="ruler"
-          eyebrow="Oficina Técnica"
-          titulo="Contrato · Ejecución · Facturación"
-          subtitulo="RDO automático desde tareos+LPS. Valorización auto-calculada desde producción."
-        />
-
+        {/* Cabecera retirada por pedido del usuario (2026-06-25): el shell ya rotula el área. */}
         {!tabExterna && (
           <>
             {/* NIVEL 1 — GRUPOS (segmented / pills navy-gold) */}

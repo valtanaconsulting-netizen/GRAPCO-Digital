@@ -74,7 +74,7 @@ const PERFILES = [
     descripcion: 'Gestión centralizada de RO, valorizaciones, adicionales, deductivos, garantizando control económico, trazabilidad y soporte para la toma de decisiones.',
     // Secciones REALES del área (moduloOT / ot.*). Entran directo vía tabExterna.
     accesos: [
-      { l: 'Resultado Operativo', go: 'ot.ro.dashboard' },
+      { l: 'Resultado Operativo', go: 'ot.ro.oficial' },
       { l: 'Valorización',        go: 'ot.valoriz' },
       { l: 'Presupuesto',         go: 'ot.partidas' },
       { l: 'Sustento',            go: 'ot.sustento' },
@@ -807,9 +807,10 @@ export default function SelectorPerfil({ onIrASeccion }) {
             {/* Accesos directos: cada etiqueta ENTRA a esa sección del módulo (deep-link). */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
               <span style={eyebrowAccesos(acento)}>Ir directo a</span>
-              {/* Grilla de 3 columnas: las etiquetas comparten columna y quedan
-                  alineadas (A B C / A B C), en vez de empacarse a la izquierda. */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '6px', alignItems: 'stretch', alignContent: 'flex-start' }}>
+              {/* Una sola columna: cada etiqueta va en su propia fila (uno debajo del
+                  otro) y todas con el MISMO ancho (full-width vía fill). Esto alarga la
+                  tarjeta hacia abajo y deja los accesos como una lista pareja. */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '6px', alignContent: 'flex-start' }}>
                 {p.accesos.map(a => (
                   <ChipAcceso key={a.go} label={a.l} acento={acento} fill onClick={() => irA(p.rol, a.go)} />
                 ))}
