@@ -726,6 +726,8 @@ export default function SelectorPerfil({ onIrASeccion }) {
         gap: '14px',
         width: '100%',
         maxWidth: '1180px',
+        marginTop: '18px',   // ~½ cm más abajo (pedido del usuario); el contenedor es
+                             // flex-start con minHeight:100dvh, así que sigue encajando.
       }}>
         {perfilesFiltrados.map((p) => {
           const acento = p.destacado ? BASE.gold : p.color;
