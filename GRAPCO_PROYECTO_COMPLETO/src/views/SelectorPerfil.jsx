@@ -518,7 +518,7 @@ export default function SelectorPerfil({ onIrASeccion }) {
       {!modoPin && (
         <div style={{
           position: 'relative', zIndex: 1,
-          width: '100%', maxWidth: '1100px',
+          width: '100%', maxWidth: '1180px',
           background: 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))',
           backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
           border: `1px solid ${BASE.gold}44`,
@@ -640,113 +640,93 @@ export default function SelectorPerfil({ onIrASeccion }) {
         </div>
       )}
 
-      {/* Saludo personalizado — bienvenida estilo dashboard (solo vista de grid) */}
+      {/* Saludo personalizado + acceso a Registro de Personal · Facial a la derecha
+          (movido aquí desde el grid: queda al extremo derecho, bajo el selector de proyecto) */}
       {!modoPin && (
         <div style={{
           position: 'relative', zIndex: 1,
-          width: '100%', maxWidth: '1180px',
-          textAlign: 'left', marginBottom: '18px',
+          width: '100%', maxWidth: '1180px', marginBottom: '18px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: '16px', flexWrap: 'wrap',
           animation: 'anim-fade-in 0.4s ease-out',
         }}>
-          <p style={{
-            margin: 0, color: '#fff',
-            fontSize: '24px', fontWeight: 900,
-            letterSpacing: '0.5px', textTransform: 'uppercase', lineHeight: 1.2,
-          }}>
-            {saludo}{nombreUsuario ? <>, <span style={{ color: '#E5A82F' }}>{nombreUsuario}</span></> : null}
-          </p>
-          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginTop: '7px' }}>
-            <span style={{ fontSize: '12.5px', color: 'rgba(255,255,255,0.65)', fontWeight: 600 }}>
-              {fechaLarga}
-            </span>
-            <span style={{ fontSize: '12.5px', color: 'rgba(255,255,255,0.65)', fontWeight: 600 }}>·</span>
-            <span style={{
-              border: '1px solid rgba(229,168,47,0.4)', color: '#E5A82F',
-              borderRadius: '999px', padding: '3px 12px',
-              fontSize: '11.5px', fontWeight: 800, letterSpacing: '0.3px',
+          {/* Izquierda — saludo + fecha + semana */}
+          <div style={{ textAlign: 'left', minWidth: 0 }}>
+            <p style={{
+              margin: 0, color: '#fff',
+              fontSize: '24px', fontWeight: 900,
+              letterSpacing: '0.5px', textTransform: 'uppercase', lineHeight: 1.2,
             }}>
-              Semana {semanaProyecto} del proyecto
-            </span>
+              {saludo}{nombreUsuario ? <>, <span style={{ color: '#E5A82F' }}>{nombreUsuario}</span></> : null}
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginTop: '7px' }}>
+              <span style={{ fontSize: '12.5px', color: 'rgba(255,255,255,0.65)', fontWeight: 600 }}>
+                {fechaLarga}
+              </span>
+              <span style={{ fontSize: '12.5px', color: 'rgba(255,255,255,0.65)', fontWeight: 600 }}>·</span>
+              <span style={{
+                border: '1px solid rgba(229,168,47,0.4)', color: '#E5A82F',
+                borderRadius: '999px', padding: '3px 12px',
+                fontSize: '11.5px', fontWeight: 800, letterSpacing: '0.3px',
+              }}>
+                Semana {semanaProyecto} del proyecto
+              </span>
+            </div>
+            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>
+              ¿En qué área vas a trabajar hoy?
+            </p>
           </div>
-          <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>
-            ¿En qué área vas a trabajar hoy?
-          </p>
+
+          {/* Derecha — Registro de Personal · Facial (abre el kiosko de marcación) */}
+          <button
+            onClick={() => setModoMarcador(true)}
+            style={{
+              cursor: 'pointer', flexShrink: 0,
+              display: 'flex', alignItems: 'center', gap: '12px',
+              background: 'linear-gradient(135deg, rgba(229,168,47,0.18), rgba(229,168,47,0.05))',
+              border: `1px solid ${BASE.gold}77`, borderRadius: '14px', padding: '11px 14px',
+              backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+              boxShadow: `inset 0 1px 0 rgba(255,255,255,0.12), 0 12px 30px -18px ${BASE.gold}`,
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = BASE.gold; e.currentTarget.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.16), 0 16px 36px -16px ${BASE.gold}`; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = `${BASE.gold}77`; e.currentTarget.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.12), 0 12px 30px -18px ${BASE.gold}`; }}
+          >
+            <span style={{
+              width: '40px', height: '40px', borderRadius: '12px',
+              background: `linear-gradient(145deg, ${BASE.gold}33, ${BASE.gold}11)`, border: `1px solid ${BASE.gold}55`,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+              <Icon name="user" size={20} color={BASE.gold} strokeWidth={2} />
+            </span>
+            <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
+              <span style={{ fontSize: '8.5px', fontWeight: 900, letterSpacing: '1.1px', textTransform: 'uppercase', color: BASE.gold, opacity: 0.9 }}>
+                Registro de Personal · Facial
+              </span>
+              <span style={{ fontSize: '14px', fontWeight: 800, color: '#fff', lineHeight: 1.2, marginTop: '2px' }}>
+                Marcar Entrada / Salida
+              </span>
+            </span>
+            <span style={{
+              width: '28px', height: '28px', borderRadius: '999px',
+              background: `linear-gradient(145deg, ${BASE.gold}, ${BASE.goldDark})`, color: '#fff',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '14px', fontWeight: 900, boxShadow: `0 4px 10px -3px ${BASE.gold}88`, marginLeft: '2px',
+            }}>→</span>
+          </button>
         </div>
       )}
 
-      {/* Grid de perfiles (solo cuando NO está en modo PIN) — 3 arriba / 3 abajo.
-          Las columnas las fija la clase grapco-perfil-grid (responsive por media
-          query); aquí solo el posicionamiento y el ancho del contenedor. */}
+      {/* Grid de las 4 áreas (solo cuando NO está en modo PIN) — una fila, en orden:
+          Administración · Producción · Oficina Técnica · Administración del Sistema.
+          Las columnas las fija la clase grapco-perfil-grid (responsive por media query). */}
       {!modoPin && (
       <div className="grapco-perfil-grid" style={{
         position: 'relative', zIndex: 1,
         gap: '14px',
         width: '100%',
-        maxWidth: '1100px',
+        maxWidth: '1180px',
       }}>
-        {/* Registro facial — ahora es una tarjeta más (no el banner ancho) */}
-        <button
-          onClick={() => setModoMarcador(true)}
-          style={{
-            cursor: 'pointer', position: 'relative', overflow: 'hidden',
-            background: 'linear-gradient(180deg, #ffffff 0%, #f5f8fc 100%)',
-            border: `1px solid ${BASE.gold}88`,
-            borderRadius: '16px', padding: '14px 15px 12px',
-            textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '8px',
-            transition: 'transform 0.24s cubic-bezier(0.34,1.4,0.64,1), box-shadow 0.24s ease, border-color 0.24s ease',
-            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.9), 0 20px 46px -22px rgba(229,168,47,0.45), 0 6px 16px -10px rgba(7,16,30,0.5)`,
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-6px)';
-            e.currentTarget.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.9), 0 30px 60px -20px ${BASE.gold}5C, 0 0 0 1.5px ${BASE.gold}`;
-            e.currentTarget.style.borderColor = BASE.gold;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.9), 0 20px 46px -22px rgba(229,168,47,0.45), 0 6px 16px -10px rgba(7,16,30,0.5)`;
-            e.currentTarget.style.borderColor = `${BASE.gold}88`;
-          }}
-        >
-          <span style={{
-            position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
-            background: `linear-gradient(90deg, transparent, ${BASE.gold}, transparent)`,
-            boxShadow: `0 0 12px ${BASE.gold}99`,
-          }} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{
-              width: '40px', height: '40px', borderRadius: '12px',
-              background: `linear-gradient(145deg, ${BASE.gold}1F, ${BASE.gold}0A)`,
-              border: `1px solid ${BASE.gold}33`,
-              boxShadow: `inset 0 1px 0 rgba(255,255,255,0.6), 0 4px 10px -4px ${BASE.gold}55`,
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}><Icon name="user" size={20} color={BASE.goldDark} strokeWidth={2} /></span>
-            <span style={{ fontSize: '13.5px', fontWeight: '800', color: BASE.navy, lineHeight: 1.22, letterSpacing: '-0.015em' }}>
-              Registro de Personal · Facial
-            </span>
-          </div>
-          {/* Un solo acceso real: abre el kiosko de registro facial (entrada/salida). */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
-            <span style={eyebrowAccesos(BASE.gold)}>Registro facial</span>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignContent: 'flex-start' }}>
-              <ChipAcceso label="Entrada/Salida" acento={BASE.gold} onClick={() => setModoMarcador(true)} />
-            </div>
-          </div>
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            borderTop: `1px solid ${BASE.borderSoft}`, paddingTop: '9px', marginTop: '1px',
-          }}>
-            <span style={{ fontSize: '10.5px', fontWeight: 900, color: BASE.gold, letterSpacing: '1px', textTransform: 'uppercase' }}>
-              Abrir
-            </span>
-            <span style={{
-              width: '26px', height: '26px', borderRadius: '999px',
-              background: `linear-gradient(145deg, ${BASE.gold}, ${BASE.goldDark})`,
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff', fontSize: '13px', fontWeight: 900, boxShadow: `0 4px 10px -3px ${BASE.gold}88`,
-            }}>→</span>
-          </div>
-        </button>
-
         {perfilesFiltrados.map((p) => {
           const acento = p.destacado ? BASE.gold : p.color;
           // Sombra por capas + brillo interior superior (look "vidrio premium").
