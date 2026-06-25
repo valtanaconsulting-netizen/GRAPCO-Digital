@@ -58,12 +58,11 @@ const PERFILES = [
     // Módulos REALES del área (moduloIngeniero). Planeamiento (Cronograma/Last Planner/
     // Pull Planning) → app PLANEAMIENTO_PLATAFORMA; 'Materiales' → Administración (2026-06-24).
     accesos: [
-      { l: 'Producción',          go: 'dashboard' },
-      { l: 'Registro',            go: 'registro' },
+      { l: 'Plan Diario',         go: 'planDiario' },
+      { l: 'Auditoría · CPI/ISP', go: 'dashboard' },
       { l: 'Carta Balance',       go: 'carta' },
-      { l: 'Sala de Operaciones', go: 'warroom' },
-      { l: 'Estado de Obra',      go: 'estadoObra' },
       { l: 'BIM',                 go: 'bim' },
+      { l: 'Registro',            go: 'registro' },
     ],
   },
   {

@@ -169,6 +169,7 @@ const RadarProduccion     = lazy(() => import('./views/modulos/radarProduccion/R
 const BIM                 = lazy(() => import('./views/BIM'));
 const CapatazPanel        = lazy(() => import('./views/capataz/CapatazPanel'));
 const EstadoObra          = lazy(() => import('./views/modulos/estadoObra/EstadoObra'));
+const PlanDiario          = lazy(() => import('./views/PlanDiario')); // Programación Diaria F06 — restaurada a Producción (2026-06-25)
 
 // ── Alcance de módulos por ÁREA (sidebar del shell ingeniero/admin/planeamiento) ──
 // Cada área ve SOLO sus módulos. Únicamente Administración (admin) ve todos.
@@ -180,7 +181,10 @@ const EstadoObra          = lazy(() => import('./views/modulos/estadoObra/Estado
 // 'materiales' y 'compras' se movieron al área de Administración (almacenero) — 2026-06-24.
 // Planeamiento (flujo/cronogramaobra/normaltec/pullplanning/lps/planvaciado) se
 // extrajo a la app PLANEAMIENTO_PLATAFORMA → ya no son keys de Producción (2026-06-24).
-const KEYS_PRODUCCION  = ['estadoObra', 'dashboard', 'radarProd', 'registro', 'carta', 'warroom', 'bim'];
+// Orden de Producción definido por el usuario (2026-06-25): Plan Diario · Auditoría/CPI-ISP · Carta · BIM · Registro.
+// 'dashboard' = el shell Ingeniero (abre en Auditoría, con CPI+EAC/ISP en pestaña contigua).
+// 'estadoObra', 'warroom', 'radarProd' retirados del menú de Producción (se conservan para admin/otras áreas).
+const KEYS_PRODUCCION  = ['planDiario', 'dashboard', 'carta', 'bim', 'registro'];
 // Devuelve la lista de keys permitidas para el rol, o null si ve todo (admin).
 const keysPermitidasPorRol = (rol) => {
   if (rol === 'admin') return null;            // acceso total
@@ -245,7 +249,7 @@ function AppInner() {
 
   // Deep-link: el módulo inicial puede venir en la URL (#/area/modulo) —
   // así una pestaña nueva abre DIRECTO donde se le pidió (multi-pestaña).
-  const [moduloIngeniero, setModuloIngeniero] = useState(() => leerRutaHash()?.modulo || 'dashboard');
+  const [moduloIngeniero, setModuloIngeniero] = useState(() => leerRutaHash()?.modulo || 'planDiario');
   const [moduloOT, setModuloOT] = useState('ot.valoriz'); // sub-módulo activo del área Oficina Técnica (menú lateral)
   const [moduloAlmacen, setModuloAlmacen] = useState('materiales.dashboard'); // sub-módulo activo del área Almacén (menú lateral)
   // Pestaña inicial de paneles con tabs internos, para que el SelectorPerfil pueda
@@ -684,19 +688,17 @@ function AppInner() {
             // PLANEAMIENTO (Flujo, Cronograma, Normal Tecnológica, Pull Planning, Last Planner,
             // Plan de Vaciado) → app independiente PLANEAMIENTO_PLATAFORMA (2026-06-24).
             // El APU (Análisis de Precios) → plataforma de Costos aparte.
-            // RESUMEN — el tablero "estado de obra" que reúne todo
-            { key: 'estadoObra',  label: 'Estado de Obra',          iconName: 'dashboard',   color: BASE.gold,    group: 'RESUMEN' },
-            // PRODUCCIÓN — control de avance, productividad y carta balance
-            { key: 'dashboard',   label: 'Producción',              iconName: 'barChart3',   color: BASE.gold,    group: 'PRODUCCIÓN' },
-            { key: 'radarProd',   label: 'Radar de Producción',     iconName: 'target',      color: '#f87171',    group: 'PRODUCCIÓN' },
-            { key: 'registro',    label: 'Registro de Producción',  iconName: 'registro',    color: BASE.green,   group: 'PRODUCCIÓN' },
+            // PRODUCCIÓN — orden definido por el usuario (2026-06-25): Plan Diario · Auditoría/CPI-ISP · Carta · BIM · Registro.
+            { key: 'planDiario',  label: 'Plan Diario',             iconName: 'registro',    color: BASE.gold,    group: 'PRODUCCIÓN' },
+            { key: 'dashboard',   label: 'Auditoría · CPI / ISP',   iconName: 'chartBars',   color: BASE.gold,    group: 'PRODUCCIÓN' },
             { key: 'carta',       label: 'Carta Balance',           iconName: 'balance',     color: BASE.orange,  group: 'PRODUCCIÓN' },
+            { key: 'bim',         label: 'Modelo BIM',              iconName: 'layers',      color: '#38bdf8',    group: 'PRODUCCIÓN' },
+            { key: 'registro',    label: 'Registro',                iconName: 'registro',    color: BASE.green,   group: 'PRODUCCIÓN' },
+            // Retirados del menú de Producción (2026-06-25) — se conservan para admin / otras áreas:
+            { key: 'estadoObra',  label: 'Estado de Obra',          iconName: 'dashboard',   color: BASE.gold,    group: 'RESUMEN' },
+            { key: 'radarProd',   label: 'Radar de Producción',     iconName: 'target',      color: '#f87171',    group: 'PRODUCCIÓN' },
             { key: 'warroom',     label: 'Sala de Operaciones',     iconName: 'target',      color: '#f87171',    group: 'PRODUCCIÓN' },
             // ALMACÉN (Materiales + Compras) MOVIDO al área de Administración (almacenero) — 2026-06-24.
-            // Ya no aparece en Producción para ingeniero ni admin; se accede cambiando de área a
-            // "Administración" (ALMACEN_SIDEBAR + ComprasPanel). Render fallback aún vive abajo.
-            // BIM
-            { key: 'bim',         label: 'Coordinación BIM',        iconName: 'layers',      color: '#38bdf8',    group: 'BIM' },
             // Gestión de Calidad → app independiente CALIDAD_PLATAFORMA (2026-06-24).
             { key: 'ot',          label: 'Oficina Técnica',         iconName: 'ruler',       color: '#a5b4fc',    group: 'OFICINA TÉCNICA' },
             // SSOMA (Seguridad y Medio Ambiente) movido a la plataforma independiente SIGMA (2026-06-15).
@@ -957,7 +959,19 @@ function AppInner() {
               <EstadoObra irA={setModuloIngeniero} />
             )}
 
-            {/* Dashboard */}
+            {/* Plan Diario (Programación Diaria F06) — restaurado a Producción (2026-06-25) */}
+            {moduloIngeniero === 'planDiario' && (
+              <PlanDiario
+                planesDiarios={planesDiarios}
+                cuadrillasActivas={cuadrillasActivas}
+                cuadrillasDB={cuadrillasDB}
+                historial={historial}
+                isMobile={isMobile}
+                showToast={showToast}
+              />
+            )}
+
+            {/* Auditoría · CPI / ISP — el shell Ingeniero abre en Auditoría, con CPI+EAC/ISP en pestaña */}
             {moduloIngeniero === 'dashboard' && (
               <Ingeniero
                 historial={historial}
