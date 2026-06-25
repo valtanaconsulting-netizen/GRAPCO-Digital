@@ -140,12 +140,18 @@ function Header() {
 }
 
 function Shell() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { showToast, Toasts } = useToasts();
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 760);
   useEffect(() => { const f = () => setIsMobile(window.innerWidth < 760); window.addEventListener('resize', f); return () => window.removeEventListener('resize', f); }, []);
-  const [, force] = useState(0);
-  if (!user) return <IdentidadGate onListo={() => force(x => x + 1)} />;
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0e0b09', color: '#e0c9b0', fontFamily: BASE.font, fontSize: 14, fontWeight: 700 }}>
+        Cargando SIGMA…
+      </div>
+    );
+  }
+  if (!user) return <LoginGate />;
   return (
     <div style={{ minHeight: '100dvh', background: '#f4f7fb', fontFamily: BASE.font }}>
       <Header />
