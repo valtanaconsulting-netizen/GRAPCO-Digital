@@ -9,6 +9,7 @@
 // Fuente del diccionario: src/data/prefijosActividades.json (volcado FIEL del presupuesto
 // CREDITEX-PTAR). Aquí se completa con las familias del ISP que el Excel no traía.
 import data from '../data/prefijosActividades.json';
+import { BASE } from './styles';
 
 // ── Familias del ISP que no estaban en el Excel de prefijos (se añaden como base) ──
 const EXTRA = {
@@ -72,10 +73,27 @@ export function sugerirPrefijo({ codigo, descripcion, familia } = {}) {
 export const familiaDe = (cod) => PREFIJOS_DICT[cod]?.familia || PREFIJOS_DICT[cod]?.nombre || cod || '';
 export const nombrePrefijo = (cod) => PREFIJOS_DICT[cod]?.nombre || cod || '';
 
-// Color estable por prefijo (hash del código → tono HSL) para badges/chips.
+// Color por FAMILIA — paleta FORMAL y RESTRINGIDA (5 tonos de marca, no arcoíris).
+// El color agrupa por familia (no por hash del código): varios prefijos de la misma
+// familia comparten tono → menos ruido visual, más significado. El diferenciador fino
+// sigue siendo el CÓDIGO en monoespaciado, no el color.
+export const PALETA_FAMILIA = [
+  BASE.navy,      // #0F2A47
+  BASE.goldDark,  // #B07D1B  (bronce; el gold puro se reserva para "selección")
+  '#0E7490',      // teal sobrio (info/proyección)
+  '#475569',      // slate sobrio
+  BASE.navyLight, // #1E4674
+];
+// Mapa familia → tono fijo, asignado de forma determinista (orden estable del diccionario).
+const FAMILIA_TOKEN = {};
+let _famIdx = 0;
+Object.values(PREFIJOS_DICT).forEach((p) => {
+  const k = normTxt(p?.familia || p?.nombre || '');
+  if (k && !(k in FAMILIA_TOKEN)) FAMILIA_TOKEN[k] = PALETA_FAMILIA[_famIdx++ % PALETA_FAMILIA.length];
+});
+
 export function colorPrefijo(cod) {
-  const s = String(cod || '');
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
-  return `hsl(${h}, 62%, 38%)`;
+  const p = PREFIJOS_DICT[String(cod || '')];
+  const fam = normTxt(p?.familia || p?.nombre || '');
+  return FAMILIA_TOKEN[fam] || BASE.muted;
 }

@@ -19,6 +19,7 @@ import { FECHA_INICIO_PROYECTO, CATALOGO_MASTER, INFO_MAP } from '../utils/const
 import { BASE, inp } from '../utils/styles';
 import { hoy, fmtFecha, obtenerSemana as obtSem, mismaActividad } from '../utils/helpers';
 import DateInput from '../components/DateInput';
+import SelectPremium from '../components/SelectPremium';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 
 // Catálogo base del proyecto (estático) → { ACTIVIDAD: { ip, und, partida } }
@@ -112,7 +113,7 @@ function normalizarGrupos(plan) {
   return [];
 }
 
-export default function PlanDiario({ planesDiarios, cuadrillasActivas, cuadrillasDB, historial, isMobile, showToast }) {
+export default function PlanDiario({ planesDiarios, cuadrillasActivas, historial, isMobile, showToast }) {
   const { filtrarPorContexto } = useProyectoActivo();
   const [pdFecha, setPdFecha] = useState(hoy());
   const [pdObra, setPdObra] = useState('PRECOTEX LAS MORERAS');
@@ -227,6 +228,15 @@ export default function PlanDiario({ planesDiarios, cuadrillasActivas, cuadrilla
       .filter(c => c.nombre)
       .sort((a, b) => (a.partida || 'ZZZ').localeCompare(b.partida || 'ZZZ') || a.nombre.localeCompare(b.nombre)),
     [catActividades]
+  );
+  // Opciones para el SelectPremium de actividad: nombre + metadato (IP · UND · partida) en gris sobrio.
+  const opcionesActividad = useMemo(
+    () => listaActividades.map(c => ({
+      value: c.nombre,
+      label: c.nombre,
+      sub: `IP ${c.ip || 0} · ${c.und || 'UND'}${c.partida ? ' · ' + c.partida : ''}`,
+    })),
+    [listaActividades]
   );
   const listaFases = useMemo(() => {
     const s = new Set();
@@ -469,16 +479,17 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${Mat
       case 'fases': return <td style={celdaP}><input list="pd-fases" value={it.fases || ''} onChange={e => setItem(gi, ii, 'fases', e.target.value)} style={miniInp(90)} /></td>;
       case 'actividad': return (
         <td style={celdaP}>
-          <input list="pd-actividades" value={it.actividad || ''}
-            placeholder="▾ Elige actividad…"
-            onChange={e => onActividad(gi, ii, e.target.value)}
-            style={{
-              ...miniInp(210),
-              fontWeight: it.actividad ? '700' : '400',
-              color: it.actividad ? BASE.navy : BASE.muted,
-              background: it.actividad ? BASE.navySoft : '#fff',
-              borderColor: it.actividad ? BASE.navyLight : BASE.border,
-            }} />
+          <div style={{ minWidth: 210 }}>
+            <SelectPremium
+              value={it.actividad || ''}
+              onChange={(v) => onActividad(gi, ii, v)}
+              options={opcionesActividad}
+              placeholder="▾ Elige actividad…"
+              isMobile={isMobile}
+              fontSize="11px"
+              title="Actividad ISP"
+            />
+          </div>
         </td>
       );
       case 'categoria': return <td style={celdaP}><select value={it.categoria} onChange={e => setItem(gi, ii, 'categoria', e.target.value)} style={miniInp(86)}>{CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}</select></td>;
@@ -552,14 +563,7 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${Mat
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      {/* Listas del proyecto para autocompletar (actividades + fases) */}
-      <datalist id="pd-actividades">
-        {listaActividades.map(c => (
-          <option key={c.nombre} value={c.nombre}>
-            {`IP ${c.ip || 0} · ${c.und || 'UND'}${c.partida ? ' · ' + c.partida : ''}`}
-          </option>
-        ))}
-      </datalist>
+      {/* Listas del proyecto para autocompletar (fases + obreros). Actividad → SelectPremium. */}
       <datalist id="pd-fases">
         {listaFases.map(f => <option key={f} value={f} />)}
       </datalist>
