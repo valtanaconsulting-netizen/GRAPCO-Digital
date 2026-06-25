@@ -1075,7 +1075,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
       {view==='wbs-editor' && <EditorWbsIsp showToast={showToast}/>}
       {view==='control'    && <ControlGerencial historialEnriquecido={historialEnriquecido} wbs={wbs} personalDB={personalDB} configuracion={configuracion} asistencia={asistencia} isMobile={isMobile}/>}
       {/* CPI/EAC (el ISP) vive en Producción/GRAPCO. VDC/LAP ('vdc') → app PLANEAMIENTO_PLATAFORMA (2026-06-24). */}
-      {view==='analisis'   && <CpiEac wbs={wbs} historial={historialEnriquecido} filtrados={filtrados} infoMap={infoWbs} onModificarWBS={() => handleSetView('wbs-editor')} onActualizarFlags={actualizarFlagsActividad}/>}
+      {view==='analisis'   && <CpiEac wbs={wbs} historial={historialEnriquecido} filtrados={filtrados} infoMap={infoWbs} onModificarWBS={() => handleSetView('wbs-editor')} onActualizarFlags={actualizarFlagsActividad} showToast={showToast}/>}
       {view==='graficos'   && <Graficos grafData={grafData} filtrados={filtrados} wbs={wbs}/>}
       {view==='hhcross'    && <AnalisisHHCross filtrados={filtrados} personalDB={personalDB}/>}
       {view==='tendencias' && <Tendencias filtrados={filtrados} historial={historialEnriquecido} wbs={wbs}/>}

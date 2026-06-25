@@ -19,6 +19,7 @@ import EmptyState from '../../components/EmptyState';
 import FotoUploader from '../../components/FotoUploader';
 import PlanillaMetrado, { TIPOS_METRADO, parcialFila } from './PlanillaMetrado';
 import PlantillaCalzadura from './PlantillaCalzadura';
+import { sugerirPrefijo, familiaDe, colorPrefijo } from '../../utils/prefijos';
 
 const PARTIDAS_DEFAULT = [
   '1. Concreto',
@@ -41,7 +42,8 @@ const labelVal = (ref) => {
 
 const FORM_INICIAL = {
   partida: PARTIDAS_DEFAULT[0],
-  codigoPartida: '',          // código WBS (1001-1018) para alimentar la valorización
+  codigoPartida: '',          // código de la partida F07 EXACTA (alimenta la valorización 1:1)
+  prefijo: '',                // familia (ENC, CON, ACE…) — agrupa la valorización para el RO
   valorizacionRef: '',
   periodoMes: new Date().toISOString().slice(0, 7),
   tipoMetrado: 'concreto',    // concreto | acero | encofrado | eliminacion | …
@@ -59,6 +61,8 @@ export default function SustentoMetrados({ showToast }) {
   const { proyectoActivoId } = useProyectoActivo();
   const [items, setItems] = useState([]);
   const [valorizaciones, setValorizaciones] = useState([]);
+  const [presuF07, setPresuF07] = useState([]);   // PresupuestoF07 del proyecto (partidas valorizables)
+  const [f07Map, setF07Map] = useState({});       // Prefijos_Catalogo: mkey → prefijo (familia)
   const [loading, setLoading] = useState(true);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [editando, setEditando] = useState(null);
@@ -80,6 +84,50 @@ export default function SustentoMetrados({ showToast }) {
     ];
     return () => unsubs.forEach(u => u());
   }, []);
+
+  // Presupuesto F07 + prefijos del proyecto activo → para que el metrado caiga en la
+  // partida EXACTA de la valorización y quede etiquetado con su familia.
+  useEffect(() => {
+    if (!proyectoActivoId) { setPresuF07([]); setF07Map({}); return; }
+    const u1 = onSnapshot(collection(db, 'PresupuestoF07'), (snap) =>
+      setPresuF07(snap.docs.map(d => d.data()).filter(p => p.proyectoId === proyectoActivoId).sort((a, b) => (a.orden || 0) - (b.orden || 0))));
+    const u2 = onSnapshot(doc(db, 'Prefijos_Catalogo', proyectoActivoId), (d) => setF07Map(d.data()?.f07Map || {}));
+    return () => { u1(); u2(); };
+  }, [proyectoActivoId]);
+
+  // Partidas F07 valorizables, con su familia (prefijo designado en OT o auto-sugerido).
+  const partidasF07 = useMemo(() => presuF07
+    .filter(p => p.esPartida && p.mkey)
+    .map(p => ({
+      mkey: p.mkey, item: p.item, descripcion: p.descripcion, und: p.und || '',
+      prefijo: f07Map[p.mkey] || sugerirPrefijo({ codigo: p.item, descripcion: p.descripcion }).prefijo || '',
+    })), [presuF07, f07Map]);
+
+  // Familias presentes en la valorización (para el filtro del selector de partida).
+  const familiasF07 = useMemo(() => {
+    const m = {};
+    partidasF07.forEach(p => { if (p.prefijo) m[p.prefijo] = (m[p.prefijo] || 0) + 1; });
+    return Object.keys(m).sort();
+  }, [partidasF07]);
+
+  // Partidas filtradas por la familia elegida (si hay), para acotar el selector.
+  const partidasFiltradas = useMemo(
+    () => (form.prefijo ? partidasF07.filter(p => p.prefijo === form.prefijo) : partidasF07),
+    [partidasF07, form.prefijo],
+  );
+
+  // Al elegir la partida F07: cae exacta (codigoPartida=item), hereda familia y unidad.
+  const elegirPartidaF07 = (mkey) => {
+    const p = partidasF07.find(x => x.mkey === mkey);
+    if (!p) { setForm(f => ({ ...f, codigoPartida: '' })); return; }
+    setForm(f => ({
+      ...f,
+      codigoPartida: p.item || '',
+      prefijo: p.prefijo || f.prefijo || '',
+      unidad: p.und || f.unidad,
+      descripcion: f.descripcion || p.descripcion || '',
+    }));
+  };
 
   const filtrados = useMemo(() => {
     if (filtroPartida === 'todas') return items;
@@ -109,6 +157,7 @@ export default function SustentoMetrados({ showToast }) {
     setForm({
       partida: it.partida || PARTIDAS_DEFAULT[0],
       codigoPartida: it.codigoPartida || '',
+      prefijo: it.prefijo || '',
       valorizacionRef: it.valorizacionRef || '',
       periodoMes: it.periodoMes || new Date().toISOString().slice(0, 7),
       tipoMetrado: it.tipoMetrado || 'concreto',
@@ -290,9 +339,10 @@ export default function SustentoMetrados({ showToast }) {
                         </div>
                         <div style={{ padding: '9px 10px', display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
                           <p style={{ fontSize: '12px', fontWeight: 900, color: BASE.navy, lineHeight: 1.25, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{it.partida}</p>
-                          <p style={{ fontSize: '11.5px', fontWeight: 800, color: BASE.green, fontFamily: 'var(--grapco-font-mono, monospace)' }}>
-                            {Number(it.metrado).toLocaleString('es-PE')} {it.unidad}
-                            {it.codigoPartida && <span style={{ color: BASE.muted, fontWeight: 600, marginLeft: 6 }}>· {it.codigoPartida}</span>}
+                          <p style={{ fontSize: '11.5px', fontWeight: 800, color: BASE.green, fontFamily: 'var(--grapco-font-mono, monospace)', display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                            <span>{Number(it.metrado).toLocaleString('es-PE')} {it.unidad}</span>
+                            {it.prefijo && <span title={`Familia ${familiaDe(it.prefijo)}`} style={{ fontSize: '9px', fontWeight: 800, color: '#fff', background: colorPrefijo(it.prefijo), padding: '1px 5px', borderRadius: 4 }}>{it.prefijo}</span>}
+                            {it.codigoPartida && <span style={{ color: BASE.muted, fontWeight: 600 }}>· {it.codigoPartida}</span>}
                           </p>
                           <div style={{ display: 'flex', gap: '5px', marginTop: '2px' }}>
                             <button onClick={() => setVerDetalle(it)} style={btnSm(BASE.navyLight)}>Ver</button>
@@ -362,9 +412,34 @@ export default function SustentoMetrados({ showToast }) {
             <Campo label="Ubicación / Frente">
               <input type="text" value={form.ubicacion} onChange={(e) => setForm({ ...form, ubicacion: e.target.value })} style={inp()} placeholder="F1+F2 - PTARI" />
             </Campo>
-            <Campo label="Código partida (valorización)">
-              <input type="text" value={form.codigoPartida} onChange={(e) => setForm({ ...form, codigoPartida: e.target.value })} style={inp()} placeholder="Ej. 1005 (alimenta la valorización)" />
+            <Campo label="Familia (prefijo)">
+              <select value={form.prefijo} onChange={(e) => setForm({ ...form, prefijo: e.target.value, codigoPartida: '' })} style={inp()}>
+                <option value="">— familia —</option>
+                {familiasF07.map(pf => <option key={pf} value={pf}>{pf} · {familiaDe(pf)}</option>)}
+              </select>
             </Campo>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={{ display: 'block', fontSize: '10px', fontWeight: 800, color: BASE.muted, marginBottom: '4px', letterSpacing: '0.4px' }}>
+                PARTIDA DE LA VALORIZACIÓN (el metrado cae exacto aquí)
+              </label>
+              {partidasFiltradas.length > 0 ? (
+                <select value={partidasFiltradas.find(p => p.item === form.codigoPartida)?.mkey || ''} onChange={(e) => elegirPartidaF07(e.target.value)} style={inp()}>
+                  <option value="">— elige la partida F07 —</option>
+                  {partidasFiltradas.map(p => (
+                    <option key={p.mkey} value={p.mkey}>{p.item} · {p.descripcion} ({p.und})</option>
+                  ))}
+                </select>
+              ) : (
+                <input type="text" value={form.codigoPartida} onChange={(e) => setForm({ ...form, codigoPartida: e.target.value })} style={inp()}
+                  placeholder={presuF07.length ? 'No hay partidas en esta familia — escribe el código' : 'Ej. 1005 (carga el Presupuesto F07 para elegir de la lista)'} />
+              )}
+              {form.codigoPartida && (
+                <p style={{ fontSize: '11px', color: BASE.muted, marginTop: '5px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                  {form.prefijo && <span style={{ fontSize: '9.5px', fontWeight: 800, fontFamily: 'monospace', color: '#fff', background: colorPrefijo(form.prefijo), padding: '1px 6px', borderRadius: 4 }}>{form.prefijo}</span>}
+                  <span>Cae en la partida <b style={{ color: BASE.navy, fontFamily: 'monospace' }}>{form.codigoPartida}</b> de la valorización · suma a la familia {form.prefijo ? familiaDe(form.prefijo) : '—'} para el RO.</span>
+                </p>
+              )}
+            </div>
           </div>
 
           {/* PLANILLA DE CÓMPUTO DE METRADOS — calcula el total por elemento */}

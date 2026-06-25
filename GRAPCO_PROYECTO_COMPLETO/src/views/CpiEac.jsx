@@ -6,6 +6,7 @@ import { calcCPI, fmtCPIPct, fmt1, fmt2, getEstado } from '../utils/helpers';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 import { num, COLUMNAS_PLANTILLA } from '../utils/catalogoWbs';
 import { normActividad as normAct } from '../utils/normalizacion';
+import MetradoSustentoModal from './oficinatecnica/MetradoSustentoModal';
 
 // Badge para etiquetas de tipo de dato
 const Badge = ({ tipo }) => {
@@ -144,10 +145,12 @@ function ModalAjustarSaldo({ datos, onCerrar, onGuardar }) {
   );
 }
 
-export default function CpiEac({ wbs, historial = [], filtrados = null, infoMap, onModificarWBS, onActualizarFlags }) {
+export default function CpiEac({ wbs, historial = [], filtrados = null, infoMap, onModificarWBS, onActualizarFlags, showToast }) {
   // Catálogo de datos: el editable del proyecto, o el fijo del código como respaldo.
   const INFO = infoMap || INFO_MAP;
   const { proyectoActivo, frenteActivo, modoTodosFrentes } = useProyectoActivo();
+  // "Metrar con formato" desde el ISP → guarda en Sustento OT → alimenta la valorización.
+  const [metrando, setMetrando] = useState(null); // { actividad, familia, unidad }
 
   // Exportar Excel de rendimientos (WBS · presupuesto · real) para cierre de obra.
   const exportarRendimientos = async () => {
@@ -982,6 +985,19 @@ export default function CpiEac({ wbs, historial = [], filtrados = null, infoMap,
                                           {act.met.toFixed(2)} {ad.un||'UND'}
                                         </span>
                                       )}
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); setMetrando({ actividad: aN, familia: pN, unidad: ad.un || 'UND' }); }}
+                                        title="Metrar con formato → guarda en el Sustento (OT) y alimenta la valorización"
+                                        style={{
+                                          flexShrink:0, width:'24px', height:'24px',
+                                          display:'inline-flex', alignItems:'center', justifyContent:'center',
+                                          background:'transparent', border:`1px solid ${BASE.border}`,
+                                          borderRadius:'6px', color:BASE.muted, cursor:'pointer',
+                                          fontSize:'12px', padding:0,
+                                        }}
+                                        onMouseEnter={e => { e.currentTarget.style.background = '#fff7ed'; e.currentTarget.style.color = BASE.gold; }}
+                                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = BASE.muted; }}
+                                      >📐</button>
                                       {onActualizarFlags && (
                                         <button
                                           onClick={(e) => { e.stopPropagation(); setEdicion({ partida: pN, subpartida: sN, actividad: aN, act, ad, aMetRef }); }}
@@ -1070,6 +1086,16 @@ export default function CpiEac({ wbs, historial = [], filtrados = null, infoMap,
           datos={edicion}
           onCerrar={() => setEdicion(null)}
           onGuardar={(flags) => onActualizarFlags(edicion.partida, edicion.subpartida, edicion.actividad, flags)}
+        />
+      )}
+
+      {metrando && (
+        <MetradoSustentoModal
+          actividad={metrando.actividad}
+          familia={metrando.familia}
+          unidad={metrando.unidad}
+          showToast={showToast}
+          onClose={() => setMetrando(null)}
         />
       )}
     </div>
