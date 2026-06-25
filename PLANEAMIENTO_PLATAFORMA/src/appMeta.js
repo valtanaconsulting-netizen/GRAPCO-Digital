@@ -12,7 +12,7 @@ export const APP_META = {
     'Flujo integrado: línea base contractual → programación maestra → Last Planner semanal.',
     'Lookahead (LAP) de 6 semanas editable + análisis de restricciones y plan semanal.',
     'Control de cumplimiento: PPC, Pareto de no cumplimiento (CNC) y diagnóstico VDC.',
-    'Curva S (EVM) y CPI/EAC para el control de costo y avance presupuestario.',
+    'Curva S (EVM) para el control de avance presupuestario (el CPI/EAC vive en Producción/GRAPCO).',
     'Sectorización, Pull Planning y Plan de Vaciado para optimizar la secuencia constructiva.',
   ],
 };

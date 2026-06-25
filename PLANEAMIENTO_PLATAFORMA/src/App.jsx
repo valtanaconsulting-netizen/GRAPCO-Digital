@@ -44,12 +44,13 @@ const GRUPOS = {
   'CONTROL · LPS / EVM': [
     { key: 'vdc',        label: 'VDC · Lookahead (LAP)', iconName: 'target',    color: '#22d3ee' },
     { key: 'plandiario', label: 'Programación Diaria',   iconName: 'registro',  color: '#34d399' },
-    { key: 'cpieac',     label: 'CPI / EAC',             iconName: 'lineChart', color: '#fbbf24' },
     { key: 'curvas',     label: 'Curva S (EVM)',         iconName: 'lineChart', color: '#5eead4' },
   ],
 };
+// CPI / EAC (el ISP) vive COMPLETAMENTE en Producción/GRAPCO (2026-06-25, decisión del usuario);
+// se retiró de Planeamiento para no duplicarlo.
 const KEYS_VALIDAS = Object.values(GRUPOS).flat().map(i => i.key);
-const KEYS_CONTROL = ['vdc', 'plandiario', 'cpieac', 'curvas'];
+const KEYS_CONTROL = ['vdc', 'plandiario', 'curvas'];
 const PRELOAD = {
   flujo:          () => import('./views/planeamiento/FlujoPlaneamiento'),
   cronogramaobra: () => import('./views/planeamiento/CronogramaPro'),

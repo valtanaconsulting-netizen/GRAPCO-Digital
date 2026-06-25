@@ -9,7 +9,6 @@ import React from 'react';
 import { useDatosObra } from '../../hooks/useDatosObra';
 import { useNotifications } from '../../contexts/NotificationContext';
 import VDC from '../VDC';
-import CpiEac from '../CpiEac';
 import CurvaS from '../CurvaS';
 import PlanDiario from '../PlanDiario';
 
@@ -43,18 +42,7 @@ export default function ControlObra({ vista, isMobile }) {
       />
     );
   }
-  if (vista === 'cpieac') {
-    return (
-      <CpiEac
-        wbs={datos.wbs}
-        historial={datos.historial}
-        filtrados={datos.filtrados}
-        infoMap={datos.infoMap}
-        onModificarWBS={() => showToast('El catálogo WBS se edita en la plataforma GRAPCO.', 'info')}
-        onActualizarFlags={async () => showToast('Marcar actividades terminadas se hace en GRAPCO (catálogo WBS).', 'info')}
-      />
-    );
-  }
+  // CPI / EAC (el ISP) se movió COMPLETAMENTE a Producción/GRAPCO (2026-06-25).
   if (vista === 'curvas') {
     return <CurvaS historialEnriquecido={datos.historial} />;
   }
