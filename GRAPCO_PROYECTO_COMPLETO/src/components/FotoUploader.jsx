@@ -6,6 +6,7 @@ import React, { useState, useRef } from 'react';
 import { storage } from '../firebaseConfig';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { BASE } from '../utils/styles';
+import { useConfirm } from '../contexts/NotificationContext';
 
 /**
  * Comprime una imagen reduciendo su tamaño máximo y calidad antes de subir.
@@ -53,6 +54,7 @@ export default function FotoUploader({ fotos = [], onChange, ruta = 'Fotos_Gener
   const [editandoIdx, setEditandoIdx] = useState(null);  // índice de foto en edición de metadata
   const inputRef = useRef(null);     // cámara
   const galeriaRef = useRef(null);   // galería / archivos del teléfono
+  const confirmar = useConfirm();
 
   // Intenta obtener geolocalización (no bloquea si el usuario rechaza)
   const obtenerGeo = () => new Promise((resolve) => {
@@ -130,7 +132,14 @@ export default function FotoUploader({ fotos = [], onChange, ruta = 'Fotos_Gener
   };
 
   const handleEliminar = async (foto, idx) => {
-    if (!window.confirm('¿Eliminar esta foto?')) return;
+    const ok = await confirmar({
+      tono: 'peligro',
+      icono: '🗑️',
+      titulo: '¿Eliminar esta foto?',
+      detalle: 'Esta acción no se puede deshacer.',
+      textoConfirmar: 'Sí, eliminar',
+    });
+    if (!ok) return;
     try {
       // Borrar de Storage si tiene path
       if (foto.path) {

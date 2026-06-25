@@ -13,6 +13,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { useTheme } from './ThemeContext';
+import ConfirmModal from '../components/ConfirmModal';
 
 const NotificationContext = createContext(null);
 
@@ -30,6 +31,17 @@ const TIPOS = {
 export function NotificationProvider({ children }) {
   const [activas, setActivas] = useState([]);
   const [historial, setHistorial] = useState([]);
+  // Confirmación CENTRADA global (reemplaza window.confirm nativo en TODA la app).
+  // `confirmar(opts)` devuelve Promise<boolean> para usarlo igual que confirm():
+  //   if (!(await confirmar({ titulo, mensaje, tono:'peligro' }))) return;
+  const [confirmState, setConfirmState] = useState(null);
+  const confirmar = useCallback(
+    (opts = {}) => new Promise((resolve) => setConfirmState({ ...opts, resolve })),
+    [],
+  );
+  const cerrarConfirm = useCallback((val) => {
+    setConfirmState((prev) => { prev?.resolve?.(val); return null; });
+  }, []);
 
   const remove = useCallback((id) => {
     setActivas((prev) => prev.filter((n) => n.id !== id));
@@ -58,13 +70,26 @@ export function NotificationProvider({ children }) {
   const limpiarHistorial = useCallback(() => setHistorial([]), []);
 
   const valor = useMemo(() => ({
-    notify, remove, activas, historial, limpiarHistorial,
-  }), [notify, remove, activas, historial, limpiarHistorial]);
+    notify, remove, activas, historial, limpiarHistorial, confirmar,
+  }), [notify, remove, activas, historial, limpiarHistorial, confirmar]);
 
   return (
     <NotificationContext.Provider value={valor}>
       {children}
       <NotificationStack activas={activas} onClose={remove} />
+      {/* Confirmación premium centrada global (nunca window.confirm nativo). */}
+      <ConfirmModal
+        abierto={!!confirmState}
+        titulo={confirmState?.titulo}
+        mensaje={confirmState?.mensaje}
+        detalle={confirmState?.detalle}
+        tono={confirmState?.tono}
+        icono={confirmState?.icono}
+        textoConfirmar={confirmState?.textoConfirmar}
+        textoCancelar={confirmState?.textoCancelar}
+        onConfirmar={() => cerrarConfirm(true)}
+        onCancelar={() => cerrarConfirm(false)}
+      />
     </NotificationContext.Provider>
   );
 }
@@ -73,6 +98,14 @@ export function useNotifications() {
   const ctx = useContext(NotificationContext);
   if (!ctx) throw new Error('useNotifications dentro de <NotificationProvider>');
   return ctx;
+}
+
+// Hook de conveniencia: devuelve `confirmar(opts) => Promise<boolean>`, el
+// reemplazo centrado y profesional de window.confirm. Uso:
+//   const confirmar = useConfirm();
+//   if (!(await confirmar({ titulo: '¿Eliminar?', tono: 'peligro' }))) return;
+export function useConfirm() {
+  return useNotifications().confirmar;
 }
 
 // ── Stack de notificaciones ──

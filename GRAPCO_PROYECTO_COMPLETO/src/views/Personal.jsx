@@ -7,11 +7,13 @@ import {
 } from '../utils/styles';
 import { COSTO_HORA_DEFAULT } from '../utils/helpers';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
+import { useConfirm } from '../contexts/NotificationContext';
 import Modal from '../components/Modal';
 import PersonalBaseDatos from './PersonalBaseDatos';
 
 export default function Personal({ cuadrillasDB: cuadrillasTodas, personalDB: personalTodos, configuracion, showToast }) {
   const { proyectoActivoId, filtrarPorContexto, proyectos } = useProyectoActivo();
+  const confirmar = useConfirm();
   // `personalDB` = SOLO el personal de ESTE proyecto (un proyecto nuevo arranca vacío).
   // `personalTodos` = roster GLOBAL de GRAPCO (todos los que han trabajado), para el
   // buscador "base de datos" que permite traer gente de otras obras a este proyecto.
@@ -115,7 +117,13 @@ export default function Personal({ cuadrillasDB: cuadrillasTodas, personalDB: pe
   };
 
   const eliminarCuadrilla = async id => {
-    if (!window.confirm('¿Eliminar esta cuadrilla?')) return;
+    const ok = await confirmar({
+      tono: 'peligro',
+      icono: '🗑️',
+      titulo: '¿Eliminar esta cuadrilla?',
+      textoConfirmar: 'Sí, eliminar',
+    });
+    if (!ok) return;
     try {
       await deleteDoc(doc(db, 'Cuadrillas', id));
       showToast('Cuadrilla eliminada', 'info');
@@ -195,7 +203,13 @@ export default function Personal({ cuadrillasDB: cuadrillasTodas, personalDB: pe
 
   const eliminarTrabajador = async id => {
     const trab = personalDB.find(p => p.id === id);
-    if (!window.confirm(`¿Eliminar a ${trab?.nombre || 'este trabajador'}?`)) return;
+    const ok = await confirmar({
+      tono: 'peligro',
+      icono: '🗑️',
+      titulo: `¿Eliminar a ${trab?.nombre || 'este trabajador'}?`,
+      textoConfirmar: 'Sí, eliminar',
+    });
+    if (!ok) return;
     try {
       // Quitar de su cuadrilla si está
       if (trab) {

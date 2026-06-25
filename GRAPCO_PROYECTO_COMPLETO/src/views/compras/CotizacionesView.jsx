@@ -10,6 +10,7 @@ import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, serverTimest
 import { db } from '../../firebaseConfig';
 import { BASE } from '../../utils/styles';
 import { useAuth } from '../../contexts/AuthContext';
+import { useConfirm } from '../../contexts/NotificationContext';
 import Modal from '../../components/Modal';
 import EmptyState from '../../components/EmptyState';
 
@@ -38,6 +39,7 @@ const fmt = (n, moneda) => {
 
 export default function CotizacionesView({ showToast }) {
   const { user } = useAuth();
+  const confirmar = useConfirm();
   const [precios, setPrecios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
@@ -118,7 +120,14 @@ export default function CotizacionesView({ showToast }) {
   };
 
   const eliminar = async (id) => {
-    if (!window.confirm('¿Eliminar este registro de precio?')) return;
+    const ok = await confirmar({
+      tono: 'peligro',
+      icono: '🗑️',
+      titulo: '¿Eliminar este registro de precio?',
+      detalle: 'Esta acción no se puede deshacer.',
+      textoConfirmar: 'Sí, eliminar',
+    });
+    if (!ok) return;
     try {
       await deleteDoc(doc(db, 'PreciosMercado', id));
       showToast?.('Registro eliminado', 'success');

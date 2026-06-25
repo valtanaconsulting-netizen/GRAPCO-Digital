@@ -13,6 +13,7 @@ import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, serverTimest
 import { db } from '../../../firebaseConfig';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
+import { useConfirm } from '../../../contexts/NotificationContext';
 import { LEGACY_CREDITEX_IDS } from '../../../hooks/useCatalogoWBS';
 import { BASE } from '../../../utils/styles';
 import Modal from '../../../components/Modal';
@@ -41,6 +42,7 @@ const colAbono = (s) => s === 'ABONADO' ? '#16a34a' : s === 'ANULADO' ? BASE.red
 export default function PartidasExtras({ tipo, coleccion, titulo, subtitulo, color, icono, showToast }) {
   const { user } = useAuth();
   const { proyectoActivo } = useProyectoActivo();
+  const confirmar = useConfirm();
   const proyId = proyectoActivo?.id;
   const isLegacy = LEGACY_CREDITEX_IDS.includes(proyId);
 
@@ -135,7 +137,13 @@ export default function PartidasExtras({ tipo, coleccion, titulo, subtitulo, col
   };
 
   const eliminar = async (it) => {
-    if (!confirm(`¿Eliminar ${it.nro || it.descripcion}?`)) return;
+    const ok = await confirmar({
+      tono: 'peligro',
+      icono: '🗑️',
+      titulo: `¿Eliminar ${it.nro || it.descripcion}?`,
+      textoConfirmar: 'Sí, eliminar',
+    });
+    if (!ok) return;
     try { await deleteDoc(doc(db, coleccion, it.id)); showToast?.('Eliminado', 'success'); }
     catch (e) { showToast?.('Error: ' + e.message, 'error'); }
   };

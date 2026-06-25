@@ -14,6 +14,7 @@ import {
 } from '../utils/helpers';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useConfirm } from '../contexts/NotificationContext';
 import { diagnosticarMigracionProyectoId, migrarProyectoId } from '../utils/migracionProyectoId';
 import AlertasPanel from '../components/AlertasPanel';
 import Tooltip from '../components/Tooltip';
@@ -100,8 +101,16 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
     return () => window.removeEventListener('grapco:nav-tesis', onGoTesis);
   }, []);
 
+  const confirmar = useConfirm();
   const eliminar = async r => {
-    if (!window.confirm(`🗑️ Eliminar registro?\n📅 ${r.fecha} | ${r.actividad}\nEsta acción no se puede deshacer.`)) return;
+    const ok = await confirmar({
+      tono: 'peligro', icono: '🗑️',
+      titulo: '¿Eliminar registro?',
+      mensaje: `${r.fecha} · ${r.actividad}`,
+      detalle: 'Esta acción no se puede deshacer.',
+      textoConfirmar: 'Sí, eliminar',
+    });
+    if (!ok) return;
     try {
       await deleteDoc(doc(db, 'Registros_Campo', r.id));
       showToast('Registro eliminado', 'info');

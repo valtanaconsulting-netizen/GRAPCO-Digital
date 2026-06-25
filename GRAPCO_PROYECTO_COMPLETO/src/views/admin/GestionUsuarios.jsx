@@ -4,6 +4,7 @@ import { collection, query, orderBy, onSnapshot, doc, deleteDoc, setDoc, serverT
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { db, auth } from '../../firebaseConfig';
 import { useAuth } from '../../contexts/AuthContext';
+import { useConfirm } from '../../contexts/NotificationContext';
 import { BASE, CHART_PALETTE } from '../../utils/styles';
 import {
   crearUsuarioAdmin, cambiarRolUsuario, actualizarUsuarioAdmin,
@@ -32,6 +33,7 @@ const ROLES_QUE_VEN_TODO = new Set(['admin']);
 
 export default function GestionUsuarios({ showToast }) {
   const { user: adminActual } = useAuth();
+  const confirmar = useConfirm();
   const [usuarios, setUsuarios] = useState([]);
   const [proyectos, setProyectos] = useState([]);
   const [cuadrillas, setCuadrillas] = useState([]);
@@ -114,7 +116,14 @@ export default function GestionUsuarios({ showToast }) {
           ))}
         </select>
         <button onClick={async () => {
-          if (!window.confirm('Esto creará el perfil en /Usuarios para CADA correo creado en Firebase Auth que aún no lo tenga (rol inicial: ingeniero, activo).\n\n¿Continuar?')) return;
+          const ok = await confirmar({
+            tono: 'navy',
+            icono: 'ℹ️',
+            titulo: '¿Sincronizar perfiles desde Auth?',
+            mensaje: 'Esto creará el perfil en /Usuarios para CADA correo creado en Firebase Auth que aún no lo tenga (rol inicial: ingeniero, activo).',
+            textoConfirmar: 'Sí, sincronizar',
+          });
+          if (!ok) return;
           try {
             const r = await sincronizarUsuariosAuth();
             showToast?.(`✅ ${r.mensaje}`, 'success');
@@ -243,7 +252,15 @@ export default function GestionUsuarios({ showToast }) {
                             }} title="Editar rol">✏️</button>
                             <button onClick={async () => {
                               if (!u.email) { showToast?.('❌ Usuario sin correo', 'error'); return; }
-                              if (!window.confirm(`Enviar enlace de restablecimiento de contraseña a:\n\n${u.email}\n\nEl usuario recibirá un correo para crear una nueva contraseña. ¿Continuar?`)) return;
+                              const ok = await confirmar({
+                                tono: 'navy',
+                                icono: '📧',
+                                titulo: '¿Enviar enlace para restablecer la contraseña?',
+                                mensaje: `Se enviará a: ${u.email}`,
+                                detalle: 'El usuario recibirá un correo para crear una nueva contraseña.',
+                                textoConfirmar: 'Sí, enviar',
+                              });
+                              if (!ok) return;
                               try {
                                 await sendPasswordResetEmail(auth, u.email);
                                 showToast?.(`📧 Enlace de restablecimiento enviado a ${u.email}`, 'success');
@@ -256,7 +273,13 @@ export default function GestionUsuarios({ showToast }) {
                               fontSize: '10px', fontWeight: '800', cursor: 'pointer',
                             }} title="Enviar correo para restablecer contraseña">🔑</button>
                             <button onClick={async () => {
-                              if (!window.confirm(`¿${u.activo === false ? 'Reactivar' : 'Desactivar'} a ${u.email}?`)) return;
+                              const ok = await confirmar({
+                                tono: 'navy',
+                                icono: '⚠️',
+                                titulo: `¿${u.activo === false ? 'Reactivar' : 'Desactivar'} a ${u.email}?`,
+                                textoConfirmar: u.activo === false ? 'Sí, reactivar' : 'Sí, desactivar',
+                              });
+                              if (!ok) return;
                               try {
                                 await desactivarUsuario(u.id, u.activo === false);
                                 showToast?.(u.activo === false ? '✅ Usuario reactivado' : '🚫 Usuario desactivado', 'success');
@@ -271,7 +294,15 @@ export default function GestionUsuarios({ showToast }) {
                               {u.activo === false ? '✓' : '🚫'}
                             </button>
                             <button onClick={async () => {
-                              if (!window.confirm(`⚠️ ELIMINAR PERMANENTEMENTE a ${u.email}?\n\nEsto borra:\n- Cuenta de autenticación\n- Perfil en Firestore\n\nNO se puede deshacer.`)) return;
+                              const ok = await confirmar({
+                                tono: 'peligro',
+                                icono: '🗑️',
+                                titulo: `¿Eliminar permanentemente a ${u.email}?`,
+                                mensaje: 'Esto borra la cuenta de autenticación y el perfil en Firestore.',
+                                detalle: 'NO se puede deshacer.',
+                                textoConfirmar: 'Sí, eliminar',
+                              });
+                              if (!ok) return;
                               try {
                                 // 1) Intento completo vía Cloud Function (Auth + Firestore).
                                 await eliminarUsuarioAdmin(u.id);
@@ -279,11 +310,14 @@ export default function GestionUsuarios({ showToast }) {
                               } catch (err) {
                                 // 2) Fallback: si las Cloud Functions no están disponibles,
                                 //    al menos borramos el PERFIL en Firestore (sale de la lista).
-                                const quiereParche = window.confirm(
-                                  `No se pudo eliminar la cuenta de autenticación:\n"${err.message}"\n\n` +
-                                  `¿Quieres al menos quitar el PERFIL de la lista? ` +
-                                  `(La cuenta de login seguirá existiendo hasta arreglar las Cloud Functions.)`
-                                );
+                                const quiereParche = await confirmar({
+                                  tono: 'peligro',
+                                  icono: '🗑️',
+                                  titulo: '¿Quitar al menos el perfil de la lista?',
+                                  mensaje: `No se pudo eliminar la cuenta de autenticación:\n"${err.message}"`,
+                                  detalle: 'La cuenta de login seguirá existiendo hasta arreglar las Cloud Functions.',
+                                  textoConfirmar: 'Sí, quitar perfil',
+                                });
                                 if (!quiereParche) return;
                                 try {
                                   await deleteDoc(doc(db, 'Usuarios', u.id));

@@ -12,6 +12,7 @@ import { BASE } from '../../../utils/styles';
 import { CATALOGO_MASTER, INFO_MAP } from '../../../utils/constants';
 import { normActividad } from '../../../utils/normalizacion';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
+import { useConfirm } from '../../../contexts/NotificationContext';
 import { useCatalogoWBS } from '../../../hooks/useCatalogoWBS';
 import {
   num, calcActividad, hhDe, actividadVacia, hardcodedAArbol, totalesArbol,
@@ -32,6 +33,7 @@ const inputModal = { width: '100%', border: `1px solid ${BASE.border}`, borderRa
 
 export default function EditorWbsIsp({ showToast }) {
   const { proyectoActivoId, proyectos, frentes, fechaInicioProyecto, PROYECTO_DEFAULT_ID } = useProyectoActivo();
+  const confirmar = useConfirm();
   const { loading, arbol: arbolRemoto, existe } = useCatalogoWBS(proyectoActivoId);
 
   const [arbol, setArbol]   = useState([]);
@@ -117,10 +119,10 @@ export default function EditorWbsIsp({ showToast }) {
   const mut = (fn) => { setArbol(prev => { const n = clonar(prev); fn(n); return n; }); setDirty(true); };
   const addPartida    = () => mut(a => a.push({ nombre: 'NUEVA PARTIDA', subpartidas: [] }));
   const renamePartida = (pi, v) => mut(a => { a[pi].nombre = v; });
-  const delPartida    = (pi) => { if (confirm('¿Eliminar la partida y todo su contenido?')) mut(a => a.splice(pi, 1)); };
+  const delPartida    = async (pi) => { if (await confirmar({ tono: 'peligro', icono: '🗑️', titulo: '¿Eliminar la partida?', mensaje: 'Se elimina la partida y todo su contenido.', detalle: 'Esta acción no se puede deshacer.' })) mut(a => a.splice(pi, 1)); };
   const addSub    = (pi) => mut(a => { (a[pi].subpartidas ||= []).push({ nombre: 'NUEVA SUB-PARTIDA', actividades: [] }); });
   const renameSub = (pi, si, v) => mut(a => { a[pi].subpartidas[si].nombre = v; });
-  const delSub    = (pi, si) => { if (confirm('¿Eliminar la sub-partida?')) mut(a => a[pi].subpartidas.splice(si, 1)); };
+  const delSub    = async (pi, si) => { if (await confirmar({ tono: 'peligro', icono: '🗑️', titulo: '¿Eliminar la sub-partida?', detalle: 'Esta acción no se puede deshacer.' })) mut(a => a[pi].subpartidas.splice(si, 1)); };
   const addAct    = (pi, si) => mut(a => { (a[pi].subpartidas[si].actividades ||= []).push({ ...actividadVacia(), nombre: 'NUEVA ACTIVIDAD' }); });
   const delAct    = (pi, si, ai) => mut(a => a[pi].subpartidas[si].actividades.splice(ai, 1));
   const setActCampo = (pi, si, ai, campo, val) => mut(a => { a[pi].subpartidas[si].actividades[ai][campo] = val; });
@@ -136,8 +138,13 @@ export default function EditorWbsIsp({ showToast }) {
   });
 
   // ── Acciones globales ───────────────────────────────────────────
-  const cargarBase = () => {
-    if (arbol.length && !confirm('Esto reemplaza el catálogo actual con el catálogo base. ¿Continuar?')) return;
+  const cargarBase = async () => {
+    if (arbol.length && !(await confirmar({
+      tono: 'navy',
+      icono: '🔄',
+      titulo: '¿Reemplazar el catálogo con el base?',
+      mensaje: 'Esto reemplaza el catálogo actual con el catálogo base.',
+    }))) return;
     setArbol(hardcodedAArbol(CATALOGO_MASTER, INFO_MAP, columnas[0]?.id || FRENTE_BASE));
     setDirty(true);
     toast('Catálogo base cargado — repártelo entre frentes y guarda', 'success');
@@ -145,10 +152,16 @@ export default function EditorWbsIsp({ showToast }) {
   // Carga el presupuesto:
   //  · Si el proyecto YA tiene uno guardado → recarga ESE (tu última versión guardada).
   //  · Si no hay nada guardado → usa el preset base de CREDITEX.
-  const cargarCreditex = () => {
+  const cargarCreditex = async () => {
     const guardado = Array.isArray(arbolRemoto) && arbolRemoto.length > 0;
     if (dirty && arbol.length &&
-        !confirm('Tienes cambios sin guardar. Esto los descarta y recarga el presupuesto guardado. ¿Continuar?')) return;
+        !(await confirmar({
+          tono: 'navy',
+          icono: '⚠️',
+          titulo: '¿Descartar los cambios sin guardar?',
+          mensaje: 'Esto recarga el presupuesto guardado.',
+          detalle: 'Tienes cambios sin guardar que se perderán.',
+        }))) return;
     if (guardado) {
       setArbol(clonar(arbolRemoto));
       setDirty(false);
@@ -321,7 +334,13 @@ export default function EditorWbsIsp({ showToast }) {
       const filas = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
       const nuevo = filasAArbol(filas, frentesProyecto);
       if (!nuevo.length) return toast('No se encontraron filas válidas. El Excel debe tener columnas Partida, Actividad, Metrado e IP (descarga "Plantilla Excel" para ver el formato). Para copiar de otro proyecto SIN Excel, usa el botón "Importar de proyecto…".', 'warning');
-      if (arbol.length && !confirm(`El Excel trae ${nuevo.length} partida(s). Esto reemplaza el catálogo actual. ¿Continuar?`)) return;
+      if (arbol.length && !(await confirmar({
+        tono: 'navy',
+        icono: '📥',
+        titulo: '¿Reemplazar el catálogo con el Excel?',
+        mensaje: `El Excel trae ${nuevo.length} partida(s).`,
+        detalle: 'Esto reemplaza el catálogo actual.',
+      }))) return;
       setArbol(nuevo); setDirty(true);
       const t = totalesArbol(nuevo);
       toast(`Importado: ${t.partidas} partidas · ${t.actividades} actividades`, 'success');

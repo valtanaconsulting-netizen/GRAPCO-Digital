@@ -5,6 +5,7 @@ import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, onSnaps
 import { db } from '../../../firebaseConfig';
 import { BASE, CHART_PALETTE } from '../../../utils/styles';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useConfirm } from '../../../contexts/NotificationContext';
 import { ESTADOS_ACTIVIDAD, fmtSoles } from '../../../utils/planMaestroAnalytics';
 
 const FORM_INICIAL = {
@@ -19,6 +20,7 @@ const FORM_INICIAL = {
 
 export default function ActividadEditor({ actividad, onClose, showToast }) {
   const { user } = useAuth();
+  const confirmar = useConfirm();
   const [form, setForm] = useState(FORM_INICIAL);
   const [guardando, setGuardando] = useState(false);
   const [apus, setApus] = useState([]);
@@ -108,7 +110,14 @@ export default function ActividadEditor({ actividad, onClose, showToast }) {
 
   const borrar = async () => {
     if (esNuevo) return;
-    if (!confirm(`¿Eliminar actividad ${actividad.codigo}? Esta acción no se puede deshacer.`)) return;
+    const ok = await confirmar({
+      tono: 'peligro',
+      icono: '🗑️',
+      titulo: `¿Eliminar actividad ${actividad.codigo}?`,
+      detalle: 'Esta acción no se puede deshacer.',
+      textoConfirmar: 'Sí, eliminar',
+    });
+    if (!ok) return;
     setGuardando(true);
     try {
       await deleteDoc(doc(db, 'PlanMaestro', actividad.id));

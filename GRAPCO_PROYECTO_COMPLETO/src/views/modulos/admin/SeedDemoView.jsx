@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { BASE, CHART_PALETTE } from '../../../utils/styles';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
+import { useConfirm } from '../../../contexts/NotificationContext';
 import { cargarSeedPTARI, limpiarSeed } from '../../../data/seed/seedPTARI';
 import { diagnosticarMigracionProyectoId, migrarProyectoId } from '../../../utils/migracionProyectoId';
 import RoleGuard from '../../../components/RoleGuard';
@@ -11,6 +12,7 @@ import RoleGuard from '../../../components/RoleGuard';
 export default function SeedDemoView({ showToast }) {
   const { user } = useAuth();
   const { proyectoActivoId, proyectoActivo, frenteActivoId, frenteActivo, modoTodosFrentes, FRENTE_DEFAULT_ID } = useProyectoActivo();
+  const confirmar = useConfirm();
   const [cargando, setCargando] = useState(false);
   const [limpiando, setLimpiando] = useState(false);
   const [diagnostico, setDiagnostico] = useState(null);
@@ -25,7 +27,14 @@ export default function SeedDemoView({ showToast }) {
     if (!proyectoActivoId) return showToast?.('Selecciona un proyecto activo primero', 'error');
     const frenteIdDestino = modoTodosFrentes ? FRENTE_DEFAULT_ID : (frenteActivoId || FRENTE_DEFAULT_ID);
     const frenteLabel = modoTodosFrentes ? '(default)' : (frenteActivo?.nombre || frenteIdDestino);
-    if (!confirm(`¿Migrar TODOS los docs sin proyectoId al proyecto "${proyectoActivo?.nombre || proyectoActivoId}"?\n\nIncluye: Almacenes, Kardex_Movimientos y Registros_Campo.\nLos Registros_Campo además se asignan al frente: ${frenteLabel}.\n\nEsto es idempotente: solo toca documentos sin proyectoId.`)) return;
+    const ok = await confirmar({
+      tono: 'navy',
+      icono: '🔄',
+      titulo: `¿Migrar todos los docs sin proyectoId al proyecto "${proyectoActivo?.nombre || proyectoActivoId}"?`,
+      mensaje: `Incluye: Almacenes, Kardex_Movimientos y Registros_Campo.\nLos Registros_Campo además se asignan al frente: ${frenteLabel}.`,
+      detalle: 'Esto es idempotente: solo toca documentos sin proyectoId.',
+    });
+    if (!ok) return;
     setMigrando(true);
     setProgresoMig('Iniciando...');
     try {
@@ -45,13 +54,25 @@ export default function SeedDemoView({ showToast }) {
   };
 
   const cargar = async () => {
-    if (!confirm('¿Cargar datos demo de PTARI?\n\nEsto creará:\n• 1 proyecto · 3 frentes\n• ~30 actividades del Plan Maestro\n• 5 APUs empresariales\n• 3 hitos de Pull Planning con tareas\n\nSi ya existían datos seed, se reemplazarán.')) return;
+    const ok = await confirmar({
+      tono: 'navy',
+      icono: '📥',
+      titulo: '¿Cargar datos demo de PTARI?',
+      mensaje: 'Esto creará:\n• 1 proyecto · 3 frentes\n• ~30 actividades del Plan Maestro\n• 5 APUs empresariales\n• 3 hitos de Pull Planning con tareas',
+      detalle: 'Si ya existían datos seed, se reemplazarán.',
+    });
+    if (!ok) return;
     setCargando(true);
     const r = await cargarSeedPTARI({ user, showToast });
     setCargando(false);
     if (r.ok) {
-      setTimeout(() => {
-        if (confirm('Demo PTARI cargado exitosamente. ¿Recargar la página para ver los cambios?')) {
+      setTimeout(async () => {
+        if (await confirmar({
+          tono: 'navy',
+          icono: '🔄',
+          titulo: '¿Recargar la página para ver los cambios?',
+          mensaje: 'Demo PTARI cargado exitosamente.',
+        })) {
           window.location.reload();
         }
       }, 800);
@@ -59,7 +80,14 @@ export default function SeedDemoView({ showToast }) {
   };
 
   const limpiar = async () => {
-    if (!confirm('⚠️ ATENCIÓN: ¿Eliminar TODOS los datos seed PTARI?\n\nEsta acción es IRREVERSIBLE. Solo afecta documentos marcados como demo.')) return;
+    const ok = await confirmar({
+      tono: 'peligro',
+      icono: '🗑️',
+      titulo: '¿Eliminar TODOS los datos seed PTARI?',
+      mensaje: 'Solo afecta documentos marcados como demo.',
+      detalle: 'Esta acción es IRREVERSIBLE.',
+    });
+    if (!ok) return;
     setLimpiando(true);
     try {
       await limpiarSeed();

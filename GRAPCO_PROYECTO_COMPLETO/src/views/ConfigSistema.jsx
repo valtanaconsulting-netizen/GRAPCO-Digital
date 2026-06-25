@@ -4,6 +4,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { BASE } from '../utils/styles';
 import { useAuth } from '../contexts/AuthContext';
+import { useConfirm } from '../contexts/NotificationContext';
 import { COSTO_HORA_DEFAULT } from '../utils/helpers';
 
 // Cargos del sistema (orden de la pirámide laboral típica de construcción Perú)
@@ -11,6 +12,7 @@ const CARGOS_ORDEN = ['Capataz', 'Operario', 'Oficial', 'Ayudante'];
 
 export default function ConfigSistema({ showToast }) {
   const { user } = useAuth();
+  const confirmar = useConfirm();
   const [config, setConfig] = useState({
     monedaSimbolo: 'S/',
     monedaCodigo: 'PEN',
@@ -78,8 +80,12 @@ export default function ConfigSistema({ showToast }) {
     } finally { setGuardando(false); }
   };
 
-  const resetear = () => {
-    if (window.confirm('¿Descartar todos los cambios?')) setConfig(original);
+  const resetear = async () => {
+    if (await confirmar({
+      tono: 'navy',
+      icono: '⚠️',
+      titulo: '¿Descartar todos los cambios?',
+    })) setConfig(original);
   };
 
   if (loading) return <div style={{ padding: '40px', textAlign: 'center', fontSize: '12px', color: BASE.muted }}>⏳ Cargando configuración...</div>;

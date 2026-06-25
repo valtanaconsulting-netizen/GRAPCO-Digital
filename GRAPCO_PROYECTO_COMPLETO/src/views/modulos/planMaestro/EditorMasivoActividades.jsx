@@ -6,6 +6,7 @@ import { db } from '../../../firebaseConfig';
 import { BASE } from '../../../utils/styles';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
+import { useConfirm } from '../../../contexts/NotificationContext';
 import { fmtSoles, fmtNumero } from '../../../utils/planMaestroAnalytics';
 import EmptyState from '../../../components/EmptyState';
 import ExportMenu from '../../../components/ExportMenu';
@@ -15,6 +16,7 @@ const UNIDADES = ['', 'm3', 'm2', 'ml', 'kg', 'tn', 'und', 'glb', 'pza', 'par', 
 export default function EditorMasivoActividades({ showToast }) {
   const { user } = useAuth();
   const { proyectoActivo, frentesDelProyecto, frenteActivoId, modoTodosFrentes } = useProyectoActivo();
+  const confirmar = useConfirm();
   const [actividadesDB, setActividadesDB] = useState([]);
   const [edits, setEdits] = useState(new Map());      // id → cambios pendientes
   const [nuevas, setNuevas] = useState([]);            // filas recién agregadas
@@ -167,9 +169,15 @@ export default function EditorMasivoActividades({ showToast }) {
     }
   };
 
-  const descartar = () => {
+  const descartar = async () => {
     if (cambiosPendientes === 0) return;
-    if (!confirm(`¿Descartar ${cambiosPendientes} cambios pendientes?`)) return;
+    const ok = await confirmar({
+      tono: 'navy',
+      icono: '⚠️',
+      titulo: `¿Descartar ${cambiosPendientes} cambios pendientes?`,
+      textoConfirmar: 'Sí, descartar',
+    });
+    if (!ok) return;
     setEdits(new Map());
     setNuevas([]);
     setEliminadas(new Set());

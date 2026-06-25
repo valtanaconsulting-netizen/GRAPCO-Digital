@@ -14,6 +14,7 @@ import { doc, setDoc, deleteDoc, writeBatch, serverTimestamp } from 'firebase/fi
 import { db } from '../../firebaseConfig';
 import { BASE } from '../../utils/styles';
 import { useAuth } from '../../contexts/AuthContext';
+import { useConfirm } from '../../contexts/NotificationContext';
 import { fmtSoles, fmtNumero } from '../../utils/calidadOTAnalytics';
 import { parsePresupuestoExcel, PCT_DEFAULT, aNumero } from '../../utils/presupuestoParser';
 import usePresupuestoContractual from '../../hooks/usePresupuestoContractual';
@@ -29,6 +30,7 @@ const mF2 = (p) => Number(p.montoF2) || 0;
 
 export default function PresupuestoView({ showToast }) {
   const { user } = useAuth();
+  const confirmar = useConfirm();
   // Fuente única del presupuesto (compartida con el RO): base contractual + overrides.
   const {
     loading, proyId,
@@ -74,7 +76,14 @@ export default function PresupuestoView({ showToast }) {
   };
 
   const borrar = async (p) => {
-    if (!window.confirm(`¿Eliminar la partida ${p.codigo}?`)) return;
+    const ok = await confirmar({
+      tono: 'peligro',
+      icono: '🗑️',
+      titulo: `¿Eliminar la partida ${p.codigo}?`,
+      detalle: 'Esta acción no se puede deshacer.',
+      textoConfirmar: 'Sí, eliminar',
+    });
+    if (!ok) return;
     try { await deleteDoc(doc(db, 'PartidasContractuales', p.id)); showToast?.('Partida eliminada', 'success'); }
     catch (e) { showToast?.('Error: ' + e.message, 'error'); }
   };

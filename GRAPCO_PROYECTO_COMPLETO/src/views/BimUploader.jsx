@@ -8,6 +8,7 @@ import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { BASE, CHART, CHART_PALETTE } from '../utils/styles';
 import { subirModeloAPS, esperarTraduccion, eliminarModeloAPS } from '../utils/apsClient';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
+import { useConfirm } from '../contexts/NotificationContext';
 
 const FORMATOS_ACEPTADOS = '.rvt,.rfa,.ifc,.dwg,.dwfx,.nwd,.nwc,.3dm,.skp';
 
@@ -25,6 +26,7 @@ export const ESPECIALIDADES = [
 export default function BimUploader({ onModeloListo, showToast }) {
   // Aislamiento por proyecto: solo se listan/suben modelos del proyecto activo.
   const { filtrarPorContexto, proyectoActivoId } = useProyectoActivo();
+  const confirmar = useConfirm();
   const inputRef = useRef(null);
   const [arrastrando, setArrastrando] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
@@ -123,7 +125,13 @@ export default function BimUploader({ onModeloListo, showToast }) {
 
   // ── ELIMINAR MODELO ──
   const eliminar = async (m) => {
-    if (!window.confirm(`¿Eliminar definitivamente "${m.nombreOriginal}"?\n\nSe borra de APS y de la lista.`)) return;
+    const ok = await confirmar({
+      tono: 'peligro',
+      icono: '🗑️',
+      titulo: `¿Eliminar definitivamente "${m.nombreOriginal}"?`,
+      mensaje: 'Se borra de APS y de la lista.',
+    });
+    if (!ok) return;
     try {
       await eliminarModeloAPS(m.id, m.objectKey);
       showToast?.('🗑️ Modelo eliminado', 'info');

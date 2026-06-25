@@ -15,6 +15,7 @@ import PETEditor from './PETEditor';
 import PETPdfPreview from './PETPdfPreview';
 import { PETS_BASE_GRAPCO } from '../../../data/seed/petsBaseGRAPCO';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
+import { useConfirm } from '../../../contexts/NotificationContext';
 
 const FORM_INICIAL = {
   codigo: '', titulo: '', version: 1,
@@ -26,6 +27,7 @@ const FORM_INICIAL = {
 
 export default function PETsView({ showToast }) {
   const { user, rol } = useAuth();
+  const confirmar = useConfirm();
   const [pets, setPets] = useState([]);
   const [actividades, setActividades] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -105,7 +107,13 @@ export default function PETsView({ showToast }) {
   };
 
   const eliminar = async (id, codigo) => {
-    if (!confirm(`¿Eliminar PET ${codigo}?`)) return;
+    const ok = await confirmar({
+      tono: 'peligro',
+      icono: '🗑️',
+      titulo: `¿Eliminar PET ${codigo}?`,
+      detalle: 'Esta acción no se puede deshacer.',
+    });
+    if (!ok) return;
     try {
       await deleteDoc(doc(db, 'PETs', id));
       showToast?.('🗑️ PET eliminado', 'success');
@@ -127,7 +135,13 @@ export default function PETsView({ showToast }) {
       showToast?.('Todos los PETs base ya están cargados', 'info');
       return;
     }
-    if (!confirm(`Se importarán ${pendientes.length} PETs base GRAPCO. ¿Continuar?`)) return;
+    const ok2 = await confirmar({
+      tono: 'navy',
+      icono: '📥',
+      titulo: '¿Importar PETs base GRAPCO?',
+      mensaje: `Se importarán ${pendientes.length} PETs base GRAPCO.`,
+    });
+    if (!ok2) return;
     setImportando(true);
     let ok = 0, errores = 0;
     for (const pet of pendientes) {

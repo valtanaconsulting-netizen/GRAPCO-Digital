@@ -22,8 +22,10 @@ import BimUploader, { ESPECIALIDADES } from './BimUploader';
 import BimViewerAPS from './BimViewerAPS';
 import { CostoNexus, SectorizacionNexus, PlazosNexus } from './BimNexusModulos';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
+import { useConfirm } from '../contexts/NotificationContext';
 
 export default function BIM({ historialEnriquecido = [], showToast }) {
+  const confirmar = useConfirm();
   // Aislamiento por proyecto: cada proyecto tiene SUS propios modelos y vínculos BIM.
   // filtrarPorContexto oculta los de otros proyectos (y los legacy sin proyectoId
   // solo se ven en el proyecto default). proyectoActivoId sella cada doc nuevo.
@@ -133,7 +135,13 @@ export default function BIM({ historialEnriquecido = [], showToast }) {
 
   // ── ELIMINAR VÍNCULO ──
   const eliminarVinculo = async (v) => {
-    if (!window.confirm(`Eliminar vínculo:\n${v.actividad}\nGUIDs: ${(v.bimGuids || []).length}`)) return;
+    const ok = await confirmar({
+      tono: 'peligro',
+      icono: '🗑️',
+      titulo: '¿Eliminar este vínculo BIM?',
+      mensaje: `${v.actividad}\nGUIDs: ${(v.bimGuids || []).length}`,
+    });
+    if (!ok) return;
     try {
       await deleteDoc(doc(db, 'BIM_Vinculos', v.id));
       showToast?.('🗑️ Vínculo eliminado', 'info');

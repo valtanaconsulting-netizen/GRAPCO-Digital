@@ -6,6 +6,7 @@ import { db } from '../../../firebaseConfig';
 import { BASE } from '../../../utils/styles';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useConfirm } from '../../../contexts/NotificationContext';
 import EmptyState from '../../../components/EmptyState';
 import Modal from '../../../components/Modal';
 
@@ -31,6 +32,7 @@ const fmtSoles = (n, mon = 'PEN') => {
 export default function ProyectosListView({ onEdit, onNuevo, showToast }) {
   const { proyectos, frentes, setProyectoActivoId, loadingProyectos } = useProyectoActivo();
   const { rol } = useAuth();
+  const confirmar = useConfirm();
   const [filtroEstado, setFiltroEstado] = useState('');
   const [busqueda, setBusqueda] = useState('');
   const [frenteEditando, setFrenteEditando] = useState(null);
@@ -68,7 +70,15 @@ export default function ProyectosListView({ onEdit, onNuevo, showToast }) {
       showToast?.('No puedes eliminar el proyecto default', 'error');
       return;
     }
-    if (!confirm(`¿Eliminar proyecto "${proy.nombre}"?\n\nEsto también eliminará sus frentes. Los datos asociados (Plan Maestro, Tareos, etc.) NO se borran pero quedarán huérfanos.`)) return;
+    const ok = await confirmar({
+      tono: 'peligro',
+      icono: '🗑️',
+      titulo: `¿Eliminar proyecto "${proy.nombre}"?`,
+      mensaje: 'Esto también eliminará sus frentes.',
+      detalle: 'Los datos asociados (Plan Maestro, Tareos, etc.) NO se borran pero quedarán huérfanos.',
+      textoConfirmar: 'Sí, eliminar',
+    });
+    if (!ok) return;
     try {
       // Borrar todos los frentes del proyecto
       const fSnap = await getDocs(query(collection(db, 'Frentes'), where('proyectoId', '==', proy.id)));
@@ -269,6 +279,7 @@ const btnAct = (color) => ({
 // MODAL: Editar frente (cambiar nombre/codigo/color, MOVER a otro proyecto, eliminar)
 // ════════════════════════════════════════════════════════════════
 function ModalEditarFrente({ frente, proyectos, onClose, showToast }) {
+  const confirmar = useConfirm();
   const [codigo, setCodigo]   = useState(frente.codigo || '');
   const [nombre, setNombre]   = useState(frente.nombre || '');
   const [color, setColor]     = useState(frente.color || '#1e3a5f');
@@ -304,7 +315,14 @@ function ModalEditarFrente({ frente, proyectos, onClose, showToast }) {
   };
 
   const eliminar = async () => {
-    if (!confirm(`¿Eliminar frente "${frente.codigo} · ${frente.nombre}"?\n\nLos registros asociados quedarán huérfanos.`)) return;
+    const ok = await confirmar({
+      tono: 'peligro',
+      icono: '🗑️',
+      titulo: `¿Eliminar frente "${frente.codigo} · ${frente.nombre}"?`,
+      detalle: 'Los registros asociados quedarán huérfanos.',
+      textoConfirmar: 'Sí, eliminar',
+    });
+    if (!ok) return;
     setGuardando(true);
     try {
       await deleteDoc(doc(db, 'Frentes', frente.id));

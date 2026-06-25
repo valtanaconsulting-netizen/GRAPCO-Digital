@@ -5,6 +5,7 @@ import { collection, onSnapshot, query, orderBy, doc, updateDoc, serverTimestamp
 import { db } from '../../firebaseConfig';
 import { BASE } from '../../utils/styles';
 import { useAuth } from '../../contexts/AuthContext';
+import { useConfirm } from '../../contexts/NotificationContext';
 import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import { fmtMoneda } from '../../utils/tipoCambioClient';
 import OrdenEditor from './OrdenEditor';
@@ -14,6 +15,7 @@ const COLECCION = (tipo) => tipo === 'OS' ? 'OrdenesServicio' : 'OrdenesCompra';
 
 export default function OrdenesListView({ tipoOrden = 'OC', showToast }) {
   const { user } = useAuth();
+  const confirmar = useConfirm();
   const { proyectoActivoId, proyectoActivo } = useProyectoActivo();
   const [ordenes, setOrdenes] = useState([]);
   const [almacenes, setAlmacenes] = useState([]);
@@ -56,7 +58,14 @@ export default function OrdenesListView({ tipoOrden = 'OC', showToast }) {
   }, [filtradas]);
 
   const anular = async (orden) => {
-    if (!confirm(`¿Anular ${tipoOrden} ${orden.numero}? Esta accion es reversible cambiando el estado.`)) return;
+    const ok = await confirmar({
+      tono: 'navy',
+      icono: '⚠️',
+      titulo: `¿Anular ${tipoOrden} ${orden.numero}?`,
+      detalle: 'Esta acción es reversible cambiando el estado.',
+      textoConfirmar: 'Sí, anular',
+    });
+    if (!ok) return;
     try {
       await updateDoc(doc(db, COLECCION(tipoOrden), orden.id), {
         estado: 'anulada',

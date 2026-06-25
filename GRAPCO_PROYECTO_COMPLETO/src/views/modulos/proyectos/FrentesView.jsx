@@ -6,6 +6,7 @@ import { db } from '../../../firebaseConfig';
 import { BASE } from '../../../utils/styles';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
+import { useConfirm } from '../../../contexts/NotificationContext';
 import Modal from '../../../components/Modal';
 import EmptyState from '../../../components/EmptyState';
 
@@ -19,6 +20,7 @@ const FORM_INI = {
 export default function FrentesView({ showToast }) {
   const { user, rol } = useAuth();
   const { proyectoActivo, frentesDelProyecto, setFrenteActivoId, FRENTE_TODOS } = useProyectoActivo();
+  const confirmar = useConfirm();
   const [editando, setEditando] = useState(null);
   const [form, setForm] = useState(FORM_INI);
   const [guardando, setGuardando] = useState(false);
@@ -88,7 +90,14 @@ export default function FrentesView({ showToast }) {
       showToast?.('No puedes eliminar el frente default', 'error');
       return;
     }
-    if (!confirm(`¿Eliminar frente "${f.nombre}"?\n\nLos datos asociados (actividades, tareos, etc) NO se borran pero quedarán huérfanos.`)) return;
+    const ok = await confirmar({
+      tono: 'peligro',
+      icono: '🗑️',
+      titulo: `¿Eliminar frente "${f.nombre}"?`,
+      detalle: 'Los datos asociados (actividades, tareos, etc) NO se borran pero quedarán huérfanos.',
+      textoConfirmar: 'Sí, eliminar',
+    });
+    if (!ok) return;
     try {
       await deleteDoc(doc(db, 'Frentes', f.id));
       showToast?.('🗑️ Frente eliminado', 'success');
