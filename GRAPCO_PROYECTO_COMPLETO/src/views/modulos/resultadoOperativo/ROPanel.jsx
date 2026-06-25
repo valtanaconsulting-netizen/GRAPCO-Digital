@@ -21,13 +21,15 @@ import Deductivos from './Deductivos';
 import ResultadoOperativoOficial from './ResultadoOperativoOficial';
 import CostoRealOficial from './CostoRealOficial';
 import CostoRealCR from './CostoRealCR';
+import CRValorizacion from './CRValorizacion';
 import ROFrentes from './ROFrentes';
 import useTareosProyecto from './useTareosProyecto';
 
 // Secciones de primer nivel (las claves coinciden con el menú lateral: ot.ro.<id>).
 const SECCIONES = [
   { id: 'dashboard',   l: 'Dashboard RO',      icono: '📊', desc: 'KPIs ejecutivos',             color: '#f59e0b' },
-  { id: 'costoReal',   l: 'Costo Real (CR)',   icono: '🧾', desc: 'En vivo · EVM · Controles',   color: '#0ea5e9' },
+  { id: 'costoReal',   l: 'Costo Real (CR · HH)', icono: '🧾', desc: 'HH × S/25.5 · EVM · Controles', color: '#0ea5e9' },
+  { id: 'crVal',       l: 'CR Valorización',   icono: '💰', desc: 'Vendido vs CR · margen por familia', color: '#16a34a' },
   { id: 'oficial',     l: 'RO Oficial (F06)',  icono: '📑', desc: 'Formato Excel · EVM completo', color: '#0f1f3a' },
   { id: 'partidas',    l: 'Por Partida',       icono: '📋', desc: 'Detalle CPI / Margen',        color: '#7c3aed' },
   { id: 'frentes',     l: 'Por Frente (F1/F2)', icono: '🎯', desc: 'PTARI vs NAVE · comparativo', color: '#0d9488' },
@@ -87,6 +89,7 @@ export default function ROPanel({ showToast, seccionExterna = null }) {
     switch (seccion) {
       case 'dashboard':   return <RODashboard showToast={showToast} />;
       case 'costoReal':   return renderCostoReal();
+      case 'crVal':       return <CRValorizacion />;
       case 'oficial':     return <ResultadoOperativoOficial showToast={showToast} />;
       case 'partidas':    return <ROporPartida showToast={showToast} />;
       case 'frentes':     return <ROFrentes />;

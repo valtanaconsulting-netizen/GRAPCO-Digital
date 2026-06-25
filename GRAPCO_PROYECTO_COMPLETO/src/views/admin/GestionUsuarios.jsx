@@ -17,7 +17,7 @@ import EmptyState from '../../components/EmptyState';
 const ROLES_INFO = {
   admin:              { label: 'Admin / Gerente General',  color: BASE.red,    icon: '🛡️', desc: 'Acceso TOTAL, todos los proyectos, crea proyectos' },
   ingeniero:          { label: 'Ingeniero',                color: BASE.gold,   icon: '📊', desc: 'Producción (Auditoría + CPI/EAC + Control Gerencial), residente, admin de obra' },
-  oficina_tecnica:    { label: 'Oficina Técnica',          color: CHART_PALETTE[5],  icon: '📐', desc: 'RDO, valorizaciones, partidas contractuales' },
+  oficina_tecnica:    { label: 'Oficina Técnica',          color: CHART_PALETTE[5],  icon: '📐', desc: 'Valorizaciones, RO (Costo Real), partidas contractuales' },
   calidad:            { label: 'Gestión de Calidad',      color: '#ec4899',   icon: '🦺', desc: 'Protocolos, PETs, NCs, ensayos' },
   // SSOMA / Seguridad movido a la plataforma independiente SIGMA (2026-06-15).
   almacenero:         { label: 'Almacenero',               color: CHART_PALETTE[3],  icon: '📦', desc: 'Almacén, kardex, vales, recepciones' },

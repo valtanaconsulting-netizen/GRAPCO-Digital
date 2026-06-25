@@ -24,8 +24,8 @@ const OT_SIDEBAR = {
   'PRESUPUESTO': [
     { key: 'ot.partidas',  label: 'Presupuesto',         iconName: 'fileText',   color: '#a78bfa' },
   ],
+  // EJECUCIÓN sin RDO (retirado por pedido del usuario 2026-06-25): solo captura visual + BIM.
   'EJECUCIÓN': [
-    { key: 'ot.rdo',         label: 'RDO',                iconName: 'registro',  color: '#34d399' },
     { key: 'ot.fotografico', label: 'Registro Fotográfico', iconName: 'layers',  color: '#38bdf8' },
     { key: 'ot.bim',         label: 'Modelo BIM',         iconName: 'cube',      color: '#5eead4' },
   ],
@@ -35,17 +35,16 @@ const OT_SIDEBAR = {
     { key: 'ot.sustento',    label: 'Sustento',               iconName: 'layers',   color: '#fbbf24' },
     { key: 'ot.informe',     label: 'Informe PDF',            iconName: 'fileText', color: '#c4b5fd' },
   ],
-  // RESULTADO OPERATIVO en sub-grupos. Dashboard RO / Por Partida / Por Frente /
-  // Proyección / Curva S se retiraron del menú por pedido del usuario (2026-06-25).
-  'RO · COSTO REAL': [
-    { key: 'ot.ro.costoReal',  label: 'Costo Real (CR)',    iconName: 'coins',      color: '#38bdf8' },
-  ],
-  'RO · ANÁLISIS': [
-    { key: 'ot.ro.oficial',    label: 'RO Oficial (F06)',   iconName: 'fileText',   color: '#fbbf24' },
-  ],
-  'RO · CONTRACTUAL': [
-    { key: 'ot.ro.adicionales', label: 'Adicionales',       iconName: 'calculator', color: '#4ade80' },
-    { key: 'ot.ro.deductivos',  label: 'Deductivos',        iconName: 'balance',    color: '#f87171' },
+  // RESULTADO OPERATIVO consolidado en UN solo bloque (2026-06-25). Aquí convergen el
+  // CR de HH (Costo Real = HH×S/25.5 desde tareos/ISP) y el CR de Valorización (Vendido
+  // vs CR + margen por familia). Dashboard RO / Por Partida / Por Frente / Proyección /
+  // Curva S quedan fuera del menú por pedido del usuario.
+  'RESULTADO OPERATIVO': [
+    { key: 'ot.ro.costoReal',   label: 'Costo Real (CR · HH)', iconName: 'coins',      color: '#38bdf8' },
+    { key: 'ot.ro.crVal',       label: 'CR Valorización',      iconName: 'coins',      color: '#22c55e' },
+    { key: 'ot.ro.oficial',     label: 'RO Oficial (F06)',     iconName: 'fileText',   color: '#fbbf24' },
+    { key: 'ot.ro.adicionales', label: 'Adicionales',          iconName: 'calculator', color: '#4ade80' },
+    { key: 'ot.ro.deductivos',  label: 'Deductivos',           iconName: 'balance',    color: '#f87171' },
   ],
 };
 

@@ -73,13 +73,16 @@ const PERFILES = [
     color: '#1D4ED8',
     descripcion: 'Gestión centralizada de RO, valorizaciones, adicionales, deductivos, garantizando control económico, trazabilidad y soporte para la toma de decisiones.',
     // Secciones REALES del área (moduloOT / ot.*). Entran directo vía tabExterna.
+    // Orden por flujo (2026-06-25): Presupuesto → Ejecución (Registro/BIM) →
+    // Valorización (+ Sustento + Informe) → RO. RDO retirado.
     accesos: [
-      { l: 'Resultado Operativo', go: 'ot.ro.oficial' },
-      { l: 'Valorización',        go: 'ot.valoriz' },
-      { l: 'Presupuesto',         go: 'ot.partidas' },
-      { l: 'Sustento',            go: 'ot.sustento' },
-      { l: 'RDO',                 go: 'ot.rdo' },
-      { l: 'BIM',                 go: 'ot.bim' },
+      { l: 'Presupuesto',          go: 'ot.partidas' },
+      { l: 'Registro Fotográfico', go: 'ot.fotografico' },
+      { l: 'BIM',                  go: 'ot.bim' },
+      { l: 'Valorización',         go: 'ot.valoriz' },
+      { l: 'Sustento',             go: 'ot.sustento' },
+      { l: 'Informe',              go: 'ot.informe' },
+      { l: 'Resultado Operativo',  go: 'ot.ro.costoReal' },
     ],
   },
   // Gestión de Calidad (protocolos, PETs, NCs, ensayos, planos) → app independiente

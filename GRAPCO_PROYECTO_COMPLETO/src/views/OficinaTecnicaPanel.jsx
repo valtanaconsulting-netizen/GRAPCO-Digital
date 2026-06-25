@@ -6,7 +6,7 @@ import { BASE } from '../utils/styles';
 import Icon from '../components/Icon';
 import RoleGuard from '../components/RoleGuard';
 import DashboardOT from './oficinatecnica/DashboardOT';
-import RDOView from './oficinatecnica/RDOView';
+// RDOView retirado del módulo OT (2026-06-25) → archivado en _ARCHIVO_RETIRADO/.
 import ValorizacionesView from './oficinatecnica/ValorizacionesView';
 import ValorizacionF07 from './oficinatecnica/ValorizacionF07';
 import PresupuestoView from './oficinatecnica/PresupuestoView';
@@ -49,7 +49,6 @@ const GRUPOS = {
     color: '#0d9488',
     tagline: 'Captura de campo: día a día en obra',
     items: [
-      { id: 'rdo',         l: 'RDO',                  icono: '📅', icon: 'registro', desc: 'Reporte Diario de Obra' },
       { id: 'fotografico', l: 'Registro Fotográfico', icono: '🖼️', icon: 'layers',   desc: 'Fotos automáticas del capataz' },
       { id: 'bim',         l: 'Modelo BIM',           icono: '🏗️', icon: 'cube',     desc: 'Vínculos + visor 3D' },
     ],
@@ -84,7 +83,6 @@ const TAB_TO_GRUPO = {
   partidas:   'contrato',
   prefijos:   'codigos',
   ro:         'ro',
-  rdo:        'ejecucion',
   fotografico:'ejecucion',
   bim:        'ejecucion',
   valoriz:    'facturacion',
@@ -100,6 +98,7 @@ const KEY_TO_TAB_OT = {
   // todas renderizan el ROPanel, que abre la sección indicada por KEY_TO_RO_SECCION.
   'ot.ro.dashboard':   'ro',
   'ot.ro.costoReal':   'ro',
+  'ot.ro.crVal':       'ro',
   'ot.ro.oficial':     'ro',
   'ot.ro.partidas':    'ro',
   'ot.ro.frentes':     'ro',
@@ -114,7 +113,6 @@ const KEY_TO_TAB_OT = {
   'ot.informe':     'informe',
   'ot.partidas':    'partidas',
   'ot.prefijos':    'prefijos',
-  'ot.rdo':         'rdo',
   'ot.bim':         'bim',
 };
 
@@ -123,6 +121,7 @@ const KEY_TO_RO_SECCION = {
   'ot.ro':             'dashboard',  // compat: clave antigua → arranca en el dashboard del RO
   'ot.ro.dashboard':   'dashboard',
   'ot.ro.costoReal':   'costoReal',
+  'ot.ro.crVal':       'crVal',
   'ot.ro.oficial':     'oficial',
   'ot.ro.partidas':    'partidas',
   'ot.ro.frentes':     'frentes',
@@ -262,7 +261,6 @@ export default function OficinaTecnicaPanel({ showToast, tabExterna, onChangeTab
           {tab === 'informe'     && <InformeSustento />}
           {tab === 'partidas'    && <PresupuestoView showToast={showToast} />}
           {tab === 'prefijos'    && <PrefijosCodigos showToast={showToast} />}
-          {tab === 'rdo'         && <RDOView showToast={showToast} />}
           {tab === 'bim'         && <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: BASE.muted }}>Cargando visor BIM…</div>}><BIM showToast={showToast} /></Suspense>}
         </div>
       </div>
