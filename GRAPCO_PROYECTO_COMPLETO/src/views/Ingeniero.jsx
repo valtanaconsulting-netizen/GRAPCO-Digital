@@ -129,7 +129,8 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
     if (!r?.id) return;
     try {
       const data = {
-        metrado: Number(payload.metrado) || 0,
+        // El ingeniero VALIDA el metrado sin pisar el del capataz (metrado/metradoReportado intactos).
+        metradoValidado: Number(payload.metrado) || 0,
         // Sustento de la planilla (o limpio si fue valor directo)
         tipoMetrado: payload.tipoMetrado || null,
         detalleMetrado: Array.isArray(payload.detalleMetrado) ? payload.detalleMetrado : [],
@@ -412,7 +413,8 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
         if (g) { jp = j[g.pk]; js = jp.subs[g.sk]; act = js.acts[g.aTrim]; }
       }
       if (act && jp && js) {
-        const met = parseFloat(r.metrado) || 0, hR = parseFloat(r.totalHH) || 0;
+        // CPI/ISP gobierna con el metrado VALIDADO (OT); fallback a reportado/legacy.
+        const met = Number(r.metradoValidado ?? r.metradoReportado ?? r.metrado) || 0, hR = parseFloat(r.totalHH) || 0;
         // El IP de META y de PRESUPUESTO se toman del catálogo WBS editable
         // (lo que se definió en "Modificar WBS" → ipMeta / IP contractual).
         // El _ipMeta/_ipPpto del registro es solo respaldo cuando la actividad
@@ -439,7 +441,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
     if (!filtrados.length) return { ipAvg:'-', met:0, ef:0, un:'', varHH:0, cpi:null };
     let tM = 0, tH = 0, tHM = 0, tHP = 0, sumUn = '';
     filtrados.forEach(r => {
-      const met = parseFloat(r.metrado) || 0;
+      const met = Number(r.metradoValidado ?? r.metradoReportado ?? r.metrado) || 0;
       const hh = parseFloat(r.totalHH) || 0;
       tM += met; tH += hh;
       if (r._ipMeta && met > 0) tHM += met * r._ipMeta;
@@ -461,7 +463,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
     filtrados.forEach(r => {
       const s = r.semana;
       if (!bySem[s]) bySem[s] = { semana:s, hhR:0, hhM:0, hhP:0, met:0 };
-      const met = parseFloat(r.metrado) || 0;
+      const met = Number(r.metradoValidado ?? r.metradoReportado ?? r.metrado) || 0;
       bySem[s].hhR += parseFloat(r.totalHH) || 0;
       bySem[s].met += met;
       if (r._ipMeta && met > 0) bySem[s].hhM += met * r._ipMeta;
@@ -560,7 +562,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
     let costoMeta = 0;
     (filtrados || []).forEach(r => {
       if (!r) return;
-      costoMeta += (parseFloat(r.metrado) || 0) * (r._ipMeta || 0) * tarifaPromedio;
+      costoMeta += (Number(r.metradoValidado ?? r.metradoReportado ?? r.metrado) || 0) * (r._ipMeta || 0) * tarifaPromedio;
     });
     return {
       real: costoReal,

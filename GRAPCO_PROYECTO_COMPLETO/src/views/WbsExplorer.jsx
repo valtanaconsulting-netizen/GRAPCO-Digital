@@ -32,8 +32,21 @@ const CATALOGO_ENRIQUECIDO = Object.keys(CATALOGO_MASTER).map((partida) => ({
   })),
 }));
 
-export default function WbsExplorer({ onClose, onSelect, isMobile }) {
+export default function WbsExplorer({ onClose, onSelect, isMobile, actividadesPermitidas = null }) {
   const [query,      setQuery]      = useState('');
+  // Si llega un set de actividades permitidas (plan diario asignado), el catálogo
+  // se limita a esas; si no, el catálogo completo (comportamiento por defecto).
+  const catalogoBase = useMemo(() => {
+    if (!actividadesPermitidas || !actividadesPermitidas.size) return CATALOGO_ENRIQUECIDO;
+    const filtrado = CATALOGO_ENRIQUECIDO.map(p => ({
+      ...p,
+      subpartidas: p.subpartidas
+        .map(sp => ({ ...sp, actividades: sp.actividades.filter(a => actividadesPermitidas.has(normalizeText(a.actividad))) }))
+        .filter(sp => sp.actividades.length > 0),
+    })).filter(p => p.subpartidas.length > 0);
+    return filtrado.length ? filtrado : CATALOGO_ENRIQUECIDO;
+  }, [actividadesPermitidas]);
+  const gated = !!(actividadesPermitidas && actividadesPermitidas.size);
   const [expandidos, setExpandidos] = useState(() => {
     const map = {};
     CATALOGO_ENRIQUECIDO.forEach(p => {
@@ -74,8 +87,8 @@ export default function WbsExplorer({ onClose, onSelect, isMobile }) {
   const colapsarTodo = () => setExpandidos({});
 
   const catalogoFiltrado = useMemo(() => {
-    if (!query.trim()) return CATALOGO_ENRIQUECIDO;
-    return CATALOGO_ENRIQUECIDO.map(p => {
+    if (!query.trim()) return catalogoBase;
+    return catalogoBase.map(p => {
       const matchP = busquedaCoincide(p.partida, query);
       const subsFiltradas = p.subpartidas.map(sp => {
         const matchSP = busquedaCoincide(sp.subpartida, query);
@@ -90,7 +103,7 @@ export default function WbsExplorer({ onClose, onSelect, isMobile }) {
         return { ...p, subpartidas: matchP ? p.subpartidas : subsFiltradas };
       return null;
     }).filter(Boolean);
-  }, [query]);
+  }, [query, catalogoBase]);
 
   const estaExpandido = (key) => query.trim() ? true : !!expandidos[key];
 
@@ -133,7 +146,7 @@ export default function WbsExplorer({ onClose, onSelect, isMobile }) {
               CATÁLOGO DE PARTIDAS WBS
             </p>
             <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)', margin: '2px 0 0' }}>
-              {totalActividades} actividades · click para seleccionar
+              {totalActividades} actividades · {gated ? 'asignadas a tu plan de hoy' : 'click para seleccionar'}
             </p>
           </div>
           <button type="button" onClick={onClose} style={{
@@ -181,7 +194,7 @@ export default function WbsExplorer({ onClose, onSelect, isMobile }) {
               cursor: 'pointer', background: '#fff', color: BASE.muted,
             }}>▶ Colapsar todo</button>
             <span style={{ marginLeft: 'auto', fontSize: '11px', color: BASE.muted }}>
-              {CATALOGO_ENRIQUECIDO.length} partidas
+              {catalogoBase.length} partidas
             </span>
           </div>
         )}

@@ -13,8 +13,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { loadXLSX } from '../utils/xlsxLazy';
 import { db } from '../firebaseConfig';
-import { doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { onSnapshot, collection, query } from 'firebase/firestore';
+import ConfirmModal from '../components/ConfirmModal';
 import { FECHA_INICIO_PROYECTO, CATALOGO_MASTER, INFO_MAP } from '../utils/constants';
 import { BASE, inp } from '../utils/styles';
 import { hoy, fmtFecha, obtenerSemana as obtSem, mismaActividad } from '../utils/helpers';
@@ -114,7 +115,7 @@ function normalizarGrupos(plan) {
 }
 
 export default function PlanDiario({ planesDiarios, cuadrillasActivas, historial, isMobile, showToast }) {
-  const { filtrarPorContexto } = useProyectoActivo();
+  const { filtrarPorContexto, proyectoActivoId, frenteActivoId, modoTodosFrentes } = useProyectoActivo();
   const [pdFecha, setPdFecha] = useState(hoy());
   const [pdObra, setPdObra] = useState('PRECOTEX LAS MORERAS');
   const [pdResidente, setPdResidente] = useState('');
@@ -123,6 +124,9 @@ export default function PlanDiario({ planesDiarios, cuadrillasActivas, historial
   const [grupos, setGrupos] = useState([]);
   const [nuevoTitulo, setNuevoTitulo] = useState('');
   const [pdGuardando, setPdGuardando] = useState(false);
+  const [pdAsignando, setPdAsignando] = useState(false);
+  const [confirmCfg, setConfirmCfg] = useState(null);   // modal centrado (reemplaza window.confirm)
+  const pedirConfirm = (cfg) => setConfirmCfg(cfg);
   // Visibilidad de columnas (los cálculos siguen corriendo aunque se oculten)
   const [cols, setCols] = useState({ cat: true, obr: true, trab: true, hor: true, ej: true, rend: true, av: true });
   const toggleCol = (k) => setCols(c => ({ ...c, [k]: !c[k] }));
@@ -145,27 +149,35 @@ export default function PlanDiario({ planesDiarios, cuadrillasActivas, historial
     }
   }, [pdFecha, planesDiarios]);
 
-  const addGrupo = (titulo) => {
+  const addGrupo = (titulo, capataz = '') => {
     const t = (titulo || '').trim().toUpperCase();
     if (!t) return showToast('Escribe un nombre de grupo (RUBRO - RESPONSABLE)', 'warning');
     if (grupos.find(g => g.titulo === t)) return showToast('Ese grupo ya existe', 'warning');
-    setGrupos(prev => [...prev, { titulo: t, items: [newItem()] }]);
+    setGrupos(prev => [...prev, { titulo: t, capataz: (capataz || '').trim(), items: [newItem()] }]);
     setNuevoTitulo('');
+  };
+
+  // Capataz (llave del tareo) de un grupo: explícito o derivado del "RUBRO - RESPONSABLE".
+  const capatazDeGrupo = (g) => {
+    if (g?.capataz && g.capataz.trim()) return g.capataz.trim();
+    const t = (g?.titulo || '').trim();
+    const partes = t.split(/\s[-–]\s/);
+    return (partes.length > 1 ? partes[partes.length - 1] : t).trim();
   };
 
   const addItem = (gi) => setGrupos(prev => {
     const n = [...prev]; n[gi] = { ...n[gi], items: [...n[gi].items, newItem()] }; return n;
   });
-  const removeItem = (gi, ii) => {
-    if (!window.confirm('¿Deseas eliminar esta actividad del plan?')) return;
-    setGrupos(prev => {
+  const removeItem = (gi, ii) => pedirConfirm({
+    titulo: 'Eliminar actividad', mensaje: '¿Deseas eliminar esta actividad del plan?', tono: 'peligro', icono: '🗑️',
+    onOk: () => setGrupos(prev => {
       const n = [...prev]; n[gi] = { ...n[gi], items: n[gi].items.filter((_, i) => i !== ii) }; return n;
-    });
-  };
-  const removeGrupo = (gi) => {
-    if (!window.confirm('¿Eliminar este grupo del plan?')) return;
-    setGrupos(prev => prev.filter((_, i) => i !== gi));
-  };
+    }),
+  });
+  const removeGrupo = (gi) => pedirConfirm({
+    titulo: 'Eliminar grupo', mensaje: '¿Eliminar este grupo del plan?', tono: 'peligro', icono: '🗑️',
+    onOk: () => setGrupos(prev => prev.filter((_, i) => i !== gi)),
+  });
   const setItem = (gi, ii, field, value) => setGrupos(prev => {
     const n = [...prev];
     const it = { ...n[gi].items[ii], [field]: value };
@@ -305,7 +317,8 @@ export default function PlanDiario({ planesDiarios, cuadrillasActivas, historial
         });
         if (!reg) return it;
         llenados++;
-        return { ...it, ejMetrado: num(reg.metrado), ejHH: num(reg.totalHH) };
+        // El "ejecutado" del plan = avance REPORTADO por el capataz en el tareo (fallback legacy).
+        return { ...it, ejMetrado: num(reg.metradoReportado ?? reg.metrado), ejHH: num(reg.totalHH) };
       }),
     })));
     showToast(llenados ? `✅ ${llenados} actividad(es) autocompletadas desde registros` : 'No se encontraron registros del día que coincidan', llenados ? 'success' : 'warning');
@@ -330,10 +343,18 @@ export default function PlanDiario({ planesDiarios, cuadrillasActivas, historial
     setPdGuardando(true);
     try {
       const id = pdEditingId || `plan_${pdFecha}_${Date.now()}`;
+      // Cada grupo lleva su capataz (llave para enrutar el tareo) y el plan se aísla por proyecto.
+      const gruposConCapataz = grupos.map(g => ({ ...g, capataz: capatazDeGrupo(g) }));
+      const planPrevio = planesDiarios.find(p => p.id === id);
       await setDoc(doc(db, 'Planes_Diarios', id), {
         fecha: pdFecha, semana: obtenerSemana(pdFecha), obra: pdObra,
         residente: pdResidente, produccion: pdProduccion,
-        grupos, totales: stats, timestamp: new Date(),
+        proyectoId: proyectoActivoId || null,
+        frenteId: (!modoTodosFrentes && frenteActivoId) ? frenteActivoId : null,
+        grupos: gruposConCapataz, totales: stats,
+        asignadoAlTareo: planPrevio?.asignadoAlTareo || false,
+        asignadoEn: planPrevio?.asignadoEn || null,
+        timestamp: new Date(),
       });
       showToast(pdEditingId ? 'Plan actualizado' : 'Plan guardado', 'success');
       setPdEditingId(id);
@@ -344,12 +365,43 @@ export default function PlanDiario({ planesDiarios, cuadrillasActivas, historial
 
   const eliminarPlan = async () => {
     if (!pdEditingId) return;
-    if (!window.confirm(`¿Eliminar el plan del ${fmtFecha(pdFecha)}?`)) return;
     try {
       await deleteDoc(doc(db, 'Planes_Diarios', pdEditingId));
       setPdEditingId(null); setGrupos([]);
       showToast('Plan eliminado', 'info');
     } catch (err) { showToast(`Error: ${err.message}`, 'error'); }
+  };
+
+  // Envía las actividades de cada capataz a su TAREO del día (doc Asignacion_Tareo/{proy}_{fecha}).
+  // El tareo del capataz lee ese doc y muestra SOLO sus actividades; sin asignación ve todas.
+  const asignarAlTareo = async () => {
+    if (!pdEditingId) { showToast('Guarda el plan primero', 'warning'); return; }
+    if (!proyectoActivoId) { showToast('Selecciona un proyecto activo', 'warning'); return; }
+    setPdAsignando(true);
+    try {
+      const porCapataz = {};
+      grupos.forEach(g => {
+        const cap = capatazDeGrupo(g);
+        if (!cap) return;
+        const acts = (g.items || []).map(it => (it.actividad || '').trim()).filter(Boolean);
+        if (!acts.length) return;
+        porCapataz[cap] = [...new Set([...(porCapataz[cap] || []), ...acts])];
+      });
+      if (!Object.keys(porCapataz).length) { showToast('No hay actividades por capataz para asignar', 'warning'); return; }
+      const asigId = `${proyectoActivoId}_${pdFecha}`;
+      await setDoc(doc(db, 'Asignacion_Tareo', asigId), {
+        proyectoId: proyectoActivoId,
+        frenteId: (!modoTodosFrentes && frenteActivoId) ? frenteActivoId : null,
+        fecha: pdFecha, semana: obtenerSemana(pdFecha),
+        porCapataz, planRef: pdEditingId, asignadoEn: serverTimestamp(),
+      });
+      await updateDoc(doc(db, 'Planes_Diarios', pdEditingId), { asignadoAlTareo: true, asignadoEn: serverTimestamp() });
+      showToast(`Plan asignado al tareo ✓ · ${Object.keys(porCapataz).length} capataz(es)`, 'success');
+    } catch (err) {
+      showToast(`Error al asignar: ${err.message}`, 'error');
+    } finally {
+      setPdAsignando(false);
+    }
   };
 
   const exportarPlan = async () => {
@@ -627,7 +679,7 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${Mat
             + Agregar grupo
           </button>
           {Object.keys(cuadrillasActivas || {}).filter(c => c).slice(0, 8).map(cap => (
-            <button key={cap} onClick={() => addGrupo(cap)}
+            <button key={cap} onClick={() => addGrupo(cap, cap)}
               style={{ padding: '7px 12px', background: BASE.navySoft, color: BASE.navy, border: `1.5px solid ${BASE.navy}33`, borderRadius: '8px', fontWeight: '700', cursor: 'pointer', fontSize: '11.5px' }}>
               + {cap}
             </button>
@@ -734,6 +786,20 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${Mat
             style={{ flex: '2 1 200px', padding: '13px', background: pdGuardando ? BASE.mutedSoft : pdEditingId ? BASE.navyLight : BASE.green, color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '800', cursor: pdGuardando ? 'not-allowed' : 'pointer', fontSize: '13.5px' }}>
             {pdGuardando ? '⏳ Guardando...' : pdEditingId ? '✏️ ACTUALIZAR PLAN' : '💾 GUARDAR PLAN'}
           </button>
+          <button
+            onClick={() => {
+              if (!pdEditingId) return showToast('Guarda el plan primero', 'warning');
+              pedirConfirm({
+                titulo: 'Asignar plan al tareo', icono: '📨', tono: 'navy',
+                mensaje: 'Cada capataz verá en su tareo SOLO las actividades que le asignaste hoy. Un capataz sin plan asignado sigue viendo todas las actividades.',
+                onOk: asignarAlTareo,
+              });
+            }}
+            disabled={pdAsignando}
+            title="Envía las actividades de cada capataz a su tareo del día"
+            style={{ flex: '1 1 180px', padding: '13px', background: pdAsignando ? BASE.mutedSoft : BASE.navy, color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '800', cursor: pdAsignando ? 'not-allowed' : 'pointer', fontSize: '12.5px' }}>
+            {pdAsignando ? '⏳ Asignando...' : '📨 ASIGNAR AL TAREO'}
+          </button>
           <button onClick={autocompletarEjecutado}
             style={{ flex: '1 1 160px', padding: '13px', background: BASE.navy, color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '800', cursor: 'pointer', fontSize: '12.5px' }}>
             ↻ AUTOCOMPLETAR
@@ -752,13 +818,28 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${Mat
             ⬇️ EXPORTAR EXCEL
           </button>
           {pdEditingId && (
-            <button onClick={eliminarPlan}
+            <button onClick={() => pedirConfirm({
+                titulo: 'Eliminar plan', icono: '🗑️', tono: 'peligro',
+                mensaje: `¿Eliminar el plan del ${fmtFecha(pdFecha)}?`,
+                onOk: eliminarPlan,
+              })}
               style={{ flex: '1 1 120px', padding: '13px', background: '#fef2f2', color: '#dc2626', border: '1.5px solid #fca5a5', borderRadius: '10px', fontWeight: '700', cursor: 'pointer', fontSize: '12.5px' }}>
               🗑️ ELIMINAR
             </button>
           )}
         </div>
       )}
+
+      <ConfirmModal
+        abierto={!!confirmCfg}
+        titulo={confirmCfg?.titulo}
+        mensaje={confirmCfg?.mensaje}
+        tono={confirmCfg?.tono || 'navy'}
+        icono={confirmCfg?.icono || '❓'}
+        textoConfirmar="Confirmar"
+        onConfirmar={async () => { await confirmCfg?.onOk?.(); setConfirmCfg(null); }}
+        onCancelar={() => setConfirmCfg(null)}
+      />
     </div>
   );
 }

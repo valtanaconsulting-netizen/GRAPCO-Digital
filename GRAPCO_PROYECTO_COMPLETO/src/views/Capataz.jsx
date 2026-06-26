@@ -2,16 +2,16 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { db } from '../firebaseConfig';
 import {
-  collection, query, where, getDocs,
+  collection, query, where, getDocs, onSnapshot,
   doc, setDoc, getDoc, deleteDoc, writeBatch,
 } from 'firebase/firestore';
 import {
-  INFO_MAP, FECHA_INICIO_PROYECTO, JORNADA_LEGAL, JORNADA_SABADO,
+  INFO_MAP, CATALOGO_MASTER, FECHA_INICIO_PROYECTO, JORNADA_LEGAL, JORNADA_SABADO,
 } from '../utils/constants';
 import { BASE } from '../utils/styles';
 import {
   hoy, obtenerSemana as obtSem,
-  borradorId,
+  borradorId, normalizeText,
 } from '../utils/helpers';
 import { registrarBack } from '../utils/backButton';
 
@@ -169,6 +169,42 @@ export default function Capataz({
   const limiteHN = limiteHNPorFecha(fecha);
 
   const obtenerSemana = f => obtSem(f, FECHA_INICIO_PROYECTO);
+
+  // ── PLAN DIARIO → TAREO ────────────────────────────────────────────────
+  // Si el ingeniero asignó el plan del día (doc Asignacion_Tareo/{proy}_{fecha}),
+  // el catálogo de actividades del tareo se limita a las designadas a ESTE capataz.
+  // Sin asignación (o sin calce de nombre con el catálogo) → ve TODO (default).
+  const [asignacionTareo, setAsignacionTareo] = useState(null);
+  useEffect(() => {
+    if (!proyectoIdParaRegistro || !fecha) { setAsignacionTareo(null); return; }
+    const ref = doc(db, 'Asignacion_Tareo', `${proyectoIdParaRegistro}_${fecha}`);
+    const unsub = onSnapshot(ref,
+      (snap) => setAsignacionTareo(snap.exists() ? snap.data() : null),
+      () => setAsignacionTareo(null));
+    return () => unsub();
+  }, [proyectoIdParaRegistro, fecha]);
+
+  // Set (normalizado, validado contra el catálogo real) de actividades que este
+  // capataz puede tarear hoy; null = sin gating (picker completo).
+  const actividadesPermitidas = useMemo(() => {
+    const porCapataz = asignacionTareo?.porCapataz;
+    if (!porCapataz || !capataz) return null;
+    let lista = porCapataz[capataz] || (capatazVinculado ? porCapataz[capatazVinculado] : null);
+    if (!lista) {
+      const objetivo = normalizeText(capataz);
+      const k = Object.keys(porCapataz).find(key => normalizeText(key) === objetivo);
+      lista = k ? porCapataz[k] : null;
+    }
+    if (!Array.isArray(lista) || !lista.length) return null;
+    const asignadas = new Set(lista.map(normalizeText).filter(Boolean));
+    // Intersecta con el catálogo real: si los nombres del plan no calzan con el
+    // catálogo, NO gateamos (evita dejar al capataz sin actividades por un nombre).
+    const set = new Set();
+    Object.values(CATALOGO_MASTER).forEach(subs =>
+      Object.values(subs || {}).forEach(acts =>
+        (acts || []).forEach(a => { const n = normalizeText(a); if (asignadas.has(n)) set.add(n); })));
+    return set.size ? set : null;
+  }, [asignacionTareo, capataz, capatazVinculado]);
 
   // ── Cuadrillas disponibles para el selector ──────────────────────────
   // Consulta DIRECTA a Firestore como respaldo: garantiza que el panel
@@ -840,7 +876,8 @@ export default function Capataz({
           actividad:  a.actividad.trim(),
           capataz,
           unidad:        a.unidad || actData.un,
-          metrado:       metVal,
+          metrado:       metVal,           // legacy: espejo del metrado del capataz
+          metradoReportado: metVal,        // metrado REPORTADO por el capataz (avance real de campo)
           totalHH,
           ipReal:        metVal > 0 ? parseFloat((totalHH / metVal).toFixed(3)) : null,
           ipPresupuesto: actData.ipP || null,
@@ -855,8 +892,10 @@ export default function Capataz({
 
         try {
           const regId = a._registroExistenteId || existentesPorAct[payload.actividad.toUpperCase()];
+          // UPDATE: NO se incluye metradoValidado → preserva el metrado que validó el ingeniero.
           if (regId) batch.update(doc(db, 'Registros_Campo', regId), payload);
-          else       batch.set(doc(collection(db, 'Registros_Campo')), payload);
+          // SET (alta): se siembra metradoValidado = metradoReportado (default editable luego por OT).
+          else       batch.set(doc(collection(db, 'Registros_Campo')), { ...payload, metradoValidado: metVal });
           exitos++;
         } catch (e) {
           console.error('[preparar act]', a.actividad, e);
@@ -1191,6 +1230,7 @@ export default function Capataz({
           onClose={() => setShowWbs(false)}
           onSelect={aplicarSeleccionWbs}
           isMobile={isMobile}
+          actividadesPermitidas={actividadesPermitidas}
         />
       )}
 
@@ -1308,6 +1348,7 @@ export default function Capataz({
                   onUpdActividad={updActividad}
                   onImportarFacial={importarDesdeAsistenciaFacial}
                   onUpdTareo={updTareo}
+                  actividadesPermitidas={actividadesPermitidas}
                 />
               )}
             </>

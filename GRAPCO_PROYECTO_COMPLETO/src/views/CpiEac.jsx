@@ -219,7 +219,7 @@ export default function CpiEac({ wbs, historial = [], filtrados = null, infoMap,
         const s = parseInt(r.semana);
         if (!Number.isFinite(s) || s <= 0) return;
         if (!bySem[s]) bySem[s] = { semana: s, hhR: 0, hhM: 0, hhP: 0, met: 0 };
-        const met = parseFloat(r.metrado) || 0;
+        const met = Number(r.metradoValidado ?? r.metradoReportado ?? r.metrado) || 0;
         bySem[s].hhR += parseFloat(r.totalHH) || 0;
         bySem[s].met += met;
         if (r._ipMeta && met > 0) bySem[s].hhM += met * r._ipMeta;
@@ -312,7 +312,7 @@ export default function CpiEac({ wbs, historial = [], filtrados = null, infoMap,
       if (!canon) return;
       if (r._ipMeta && r._ipPpto) {
         if (!map[canon]) map[canon] = { ipM: r._ipMeta, ipP: r._ipPpto, metP: 0 };
-        map[canon].metP += parseFloat(r.metrado) || 0;
+        map[canon].metP += Number(r.metradoValidado ?? r.metradoReportado ?? r.metrado) || 0;
       }
     });
     return map;

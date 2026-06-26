@@ -83,13 +83,13 @@ export default function Auditoria({ filtrados, eliminar, guardarMetrado, hhPorSe
           <table style={{width:'100%',borderCollapse:'collapse',fontSize:'12px',minWidth:'960px'}}>
             <thead>
               {/* sticky top:0 = se queda fijo arriba del contenedor de scroll de Ingeniero al bajar */}
-              <tr>{['Sem.','Fecha','Partida','Actividad','Unidad','Metrado','HN','HE','HH Tot','IP Real','IP Meta','CPI','Fuente','📷',''].map((h,i)=>(
+              <tr>{['Sem.','Fecha','Partida','Actividad','Unidad','M. Reportado','M. Validado','HN','HE','HH Tot','IP Real','IP Meta','CPI','Fuente','📷',''].map((h,i)=>(
                 <th key={i} style={{position:'sticky',top:0,zIndex:5,padding:'11px 10px',fontSize:'11px',fontWeight:'700',color:'#fff',background:BASE.navy,textAlign:i>4?'center':'left',whiteSpace:'nowrap'}}>{h}</th>
               ))}</tr>
             </thead>
             <tbody>
               {!filtrados.length
-                ? <tr><td colSpan={15} style={{padding:'48px',textAlign:'center',color:BASE.muted}}>
+                ? <tr><td colSpan={16} style={{padding:'48px',textAlign:'center',color:BASE.muted}}>
                     <p style={{fontSize:'40px',marginBottom:'8px'}}>📋</p>
                     <p style={{fontSize:'13px',fontWeight:'600'}}>Sin registros para los filtros aplicados</p>
                   </td></tr>
@@ -101,7 +101,11 @@ export default function Auditoria({ filtrados, eliminar, guardarMetrado, hhPorSe
                   const { hn, he, total } = calcularHHRegistro(r);
                   const fuzzyMatch = r._matched && r._matchScore !== undefined && r._matchScore < 1;
                   const fnt = fuenteIcon(r._ipFuente);
-                  const metZero = (parseFloat(r.metrado) || 0) <= 0;
+                  // Dos metrados lado a lado: REPORTADO (capataz) vs VALIDADO (OT).
+                  const metReportado = Number(r.metradoReportado ?? r.metrado) || 0;
+                  const metValidado  = Number(r.metradoValidado ?? r.metradoReportado ?? r.metrado) || 0;
+                  const metZero = metValidado <= 0;
+                  const metDifiere = Math.abs(metValidado - metReportado) > 0.001;
                   return (
                     <tr key={r.id} style={{background:idx%2===0?BASE.white:BASE.bgSoft,borderBottom:`1px solid ${BASE.border}`}}>
                       <td style={{padding:'10px 13px',fontWeight:'700',color:BASE.navy}}>S{r.semana}</td>
@@ -116,11 +120,16 @@ export default function Auditoria({ filtrados, eliminar, guardarMetrado, hhPorSe
                       <td style={{padding:'10px 13px',textAlign:'center',color:BASE.navy,fontWeight:'700',fontSize:'11px'}}>
                         <span style={{background:BASE.navySoft,padding:'2px 8px',borderRadius:'10px',border:`1px solid ${BASE.border}`}}>{r.unidad || '—'}</span>
                       </td>
+                      {/* M. REPORTADO (capataz) — solo lectura */}
+                      <td style={{padding:'10px 13px',textAlign:'center',color:BASE.muted,fontWeight:'600',fontFamily:'var(--grapco-font-mono, monospace)'}}>
+                        {metReportado > 0 ? Number(metReportado).toLocaleString('es-PE',{maximumFractionDigits:2}) : '—'}
+                      </td>
+                      {/* M. VALIDADO (OT) — editable con el modal Metrar; borde dorado si OT corrigió al capataz */}
                       <td style={{padding:'6px 8px',textAlign:'center'}}>
                         {guardarMetrado ? (
                           <button
                             onClick={()=>setMetrarReg(r)}
-                            title={metZero ? 'Metrar: ingresar valor directo o usar formato (concreto, acero, encofrado…)' : 'Editar metrado'}
+                            title={metZero ? 'Validar metrado: valor directo o formato (concreto, acero, encofrado…)' : (metDifiere ? `Validado por OT · capataz reportó ${metReportado}` : 'Editar metrado validado')}
                             style={{
                               display:'inline-flex',alignItems:'center',gap:'4px',
                               padding:'4px 9px',borderRadius:'7px',cursor:'pointer',
@@ -128,15 +137,15 @@ export default function Auditoria({ filtrados, eliminar, guardarMetrado, hhPorSe
                               fontFamily:'var(--grapco-font-mono, monospace)',
                               color:metZero?BASE.gold:BASE.navy,
                               background:metZero?'#fffaf2':BASE.bgSoft,
-                              border:`1px solid ${metZero?BASE.gold:BASE.border}`,
+                              border:`1px solid ${metDifiere?BASE.gold:(metZero?BASE.gold:BASE.border)}`,
                               transition:'all 0.12s',
                             }}
                             onMouseEnter={e=>{e.currentTarget.style.borderColor=BASE.gold;e.currentTarget.style.background='#fffaf2';}}
-                            onMouseLeave={e=>{e.currentTarget.style.borderColor=metZero?BASE.gold:BASE.border;e.currentTarget.style.background=metZero?'#fffaf2':BASE.bgSoft;}}>
-                            {metZero ? <>✎ metrar</> : <>{r.metrado} <span style={{fontSize:'9px',opacity:0.55}}>✎</span></>}
+                            onMouseLeave={e=>{e.currentTarget.style.borderColor=metDifiere?BASE.gold:(metZero?BASE.gold:BASE.border);e.currentTarget.style.background=metZero?'#fffaf2':BASE.bgSoft;}}>
+                            {metZero ? <>✎ validar</> : <>{Number(metValidado).toLocaleString('es-PE',{maximumFractionDigits:2})} <span style={{fontSize:'9px',opacity:0.55}}>✎</span></>}
                           </button>
                         ) : (
-                          <span style={{color:metZero?BASE.red:BASE.text,fontWeight:metZero?'700':'400'}}>{r.metrado}</span>
+                          <span style={{color:metZero?BASE.red:BASE.text,fontWeight:metZero?'700':'400'}}>{metValidado}</span>
                         )}
                       </td>
                       <td style={{padding:'10px 13px',textAlign:'center',color:BASE.text}}>{fmt1(hn)}</td>

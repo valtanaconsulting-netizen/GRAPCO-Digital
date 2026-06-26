@@ -8,6 +8,7 @@
 import React, { useState, useDeferredValue } from 'react';
 import { BASE, inp } from '../../../utils/styles';
 import { CATALOGO_MASTER } from '../../../utils/constants';
+import { normalizeText } from '../../../utils/helpers';
 import FotoUploader from '../../../components/FotoUploader';
 import SelectPremium from '../../../components/SelectPremium';
 import TrabajadorCard from './TrabajadorCard';
@@ -25,6 +26,7 @@ export default function EditorActividad({
   onImportarFacial,
   onUpdTareo,
   modo = 'tareo',
+  actividadesPermitidas = null,
 }) {
   const esTareo = modo === 'tareo';
   const esMetrado = modo === 'metrado';
@@ -42,12 +44,19 @@ export default function EditorActividad({
   // Solo subpartidas/actividades CON opciones reales: el catálogo tiene
   // subpartidas vacías (p. ej. "DISEÑO": []) que, si se ofrecieran, dejarían la
   // actividad sin poder completarse y bloquearían la subida del tareo.
+  // Gating por plan diario: si el capataz tiene actividades asignadas hoy, los
+  // selectores se limitan a esas; sin asignación, el catálogo completo.
+  const gated = !!(actividadesPermitidas && actividadesPermitidas.size);
+  const permite = (act) => !gated || actividadesPermitidas.has(normalizeText(act));
+  const partidaOptions = gated
+    ? Object.keys(CATALOGO_MASTER).filter(pt => Object.values(CATALOGO_MASTER[pt] || {}).some(acts => (acts || []).some(permite)))
+    : Object.keys(CATALOGO_MASTER);
   const subpartidasDisponibles = actividadActiva.partida
     ? Object.keys(CATALOGO_MASTER[actividadActiva.partida] || {})
-        .filter(sp => (CATALOGO_MASTER[actividadActiva.partida][sp] || []).length > 0)
+        .filter(sp => (CATALOGO_MASTER[actividadActiva.partida][sp] || []).some(permite))
     : [];
   const actividadesDisponibles = (actividadActiva.partida && actividadActiva.subpartida)
-    ? (CATALOGO_MASTER[actividadActiva.partida]?.[actividadActiva.subpartida] || [])
+    ? (CATALOGO_MASTER[actividadActiva.partida]?.[actividadActiva.subpartida] || []).filter(permite)
     : [];
   return (
     <div style={{
@@ -132,7 +141,7 @@ export default function EditorActividad({
                           setOpenSubToken(n => n + 1);
                         }
                       }}
-                      options={Object.keys(CATALOGO_MASTER)}
+                      options={partidaOptions}
                       isMobile={isMobile}
                       title="Partida"
                       fontSize="12px"

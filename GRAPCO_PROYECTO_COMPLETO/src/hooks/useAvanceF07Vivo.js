@@ -92,7 +92,9 @@ export default function useAvanceF07Vivo({ proyId, presu, enabled = true }) {
 
     // 1) Registros_Campo → ítem por descripción; si no cruza, intento por prefijo (familia con ítem único).
     registros.forEach(r => {
-      const q = Number(r.metrado) || 0;
+      // El avance→valorización usa el metrado VALIDADO por el ingeniero (OT). Fallback a
+      // metradoReportado (capataz) y al legacy `metrado` para registros antiguos.
+      const q = Number(r.metradoValidado ?? r.metradoReportado ?? r.metrado) || 0;
       if (q <= 0) return; // sin metrado no aporta avance (sus HH sí cuentan abajo en el CR)
       const valN = r.semana ? Math.ceil(r.semana / 2) : null;
       const p = porDesc[norm(r.actividad)];
