@@ -48,15 +48,18 @@ export default function EditorActividad({
   // selectores se limitan a esas; sin asignación, el catálogo completo.
   const gated = !!(actividadesPermitidas && actividadesPermitidas.size);
   const permite = (act) => !gated || actividadesPermitidas.has(normalizeText(act));
+  // Conserva SIEMPRE la selección actual del capataz aunque el gating llegue a media
+  // sesión (borrador previo), para no dejar el selector con un valor huérfano.
+  const conActual = (lista, actual) => (actual && !lista.includes(actual)) ? [actual, ...lista] : lista;
   const partidaOptions = gated
-    ? Object.keys(CATALOGO_MASTER).filter(pt => Object.values(CATALOGO_MASTER[pt] || {}).some(acts => (acts || []).some(permite)))
+    ? conActual(Object.keys(CATALOGO_MASTER).filter(pt => Object.values(CATALOGO_MASTER[pt] || {}).some(acts => (acts || []).some(permite))), actividadActiva.partida)
     : Object.keys(CATALOGO_MASTER);
   const subpartidasDisponibles = actividadActiva.partida
-    ? Object.keys(CATALOGO_MASTER[actividadActiva.partida] || {})
-        .filter(sp => (CATALOGO_MASTER[actividadActiva.partida][sp] || []).some(permite))
+    ? conActual(Object.keys(CATALOGO_MASTER[actividadActiva.partida] || {})
+        .filter(sp => (CATALOGO_MASTER[actividadActiva.partida][sp] || []).some(permite)), actividadActiva.subpartida)
     : [];
   const actividadesDisponibles = (actividadActiva.partida && actividadActiva.subpartida)
-    ? (CATALOGO_MASTER[actividadActiva.partida]?.[actividadActiva.subpartida] || []).filter(permite)
+    ? conActual((CATALOGO_MASTER[actividadActiva.partida]?.[actividadActiva.subpartida] || []).filter(permite), actividadActiva.actividad)
     : [];
   return (
     <div style={{

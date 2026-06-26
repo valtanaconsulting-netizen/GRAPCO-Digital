@@ -168,6 +168,10 @@ export default function PlanDiario({ planesDiarios, cuadrillasActivas, historial
   const addItem = (gi) => setGrupos(prev => {
     const n = [...prev]; n[gi] = { ...n[gi], items: [...n[gi].items, newItem()] }; return n;
   });
+  // Fija explícitamente el capataz del grupo (llave robusta para enrutar el tareo).
+  const setGrupoCapataz = (gi, capataz) => setGrupos(prev => {
+    const n = [...prev]; n[gi] = { ...n[gi], capataz }; return n;
+  });
   const removeItem = (gi, ii) => pedirConfirm({
     titulo: 'Eliminar actividad', mensaje: '¿Deseas eliminar esta actividad del plan?', tono: 'peligro', icono: '🗑️',
     onOk: () => setGrupos(prev => {
@@ -732,7 +736,25 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${Mat
                       · {g.items.length} act · HH prog {gHHp.toFixed(1)} · ejec {gHHe.toFixed(1)}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', gap: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                      <span style={{ fontSize: '9px', fontWeight: 800, color: '#fff', opacity: 0.9, letterSpacing: '0.4px' }}>CAPATAZ</span>
+                      <select
+                        value={g.capataz || capatazDeGrupo(g)}
+                        onChange={e => setGrupoCapataz(gi, e.target.value)}
+                        title="Capataz que recibirá estas actividades en su tareo (debe coincidir con su cuadrilla)"
+                        style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.6)', background: 'rgba(255,255,255,0.95)', color: BASE.navy, fontSize: '11px', fontWeight: 700, maxWidth: '190px', cursor: 'pointer' }}>
+                        {(() => {
+                          const actual = g.capataz || capatazDeGrupo(g);
+                          const lista = Object.keys(cuadrillasActivas || {}).filter(Boolean).sort((a, b) => a.localeCompare(b));
+                          const opts = (!actual || lista.includes(actual)) ? lista : [actual, ...lista];
+                          return [
+                            (!actual ? <option key="__none" value="">— elige capataz —</option> : null),
+                            ...opts.map(c => <option key={c} value={c}>{c}</option>),
+                          ].filter(Boolean);
+                        })()}
+                      </select>
+                    </div>
                     <button onClick={() => addItem(gi)} style={{ padding: '4px 11px', background: 'rgba(255,255,255,0.25)', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', borderRadius: '6px', cursor: 'pointer', fontWeight: '700', fontSize: '11px' }}>+ Actividad</button>
                     <button onClick={() => removeGrupo(gi)} style={{ padding: '4px 9px', background: 'rgba(220,38,38,0.85)', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '700', fontSize: '11px' }}>🗑️</button>
                   </div>

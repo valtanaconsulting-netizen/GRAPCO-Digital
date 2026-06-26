@@ -237,8 +237,10 @@ function ModalMetrado({ registro: r, onCerrar, onGuardar }) {
   const tieneFormato = Array.isArray(r.detalleMetrado) && r.detalleMetrado.length > 0;
   const [modo, setModo] = useState(tieneFormato ? 'formato' : 'directo'); // 'directo' | 'formato'
 
-  // Modo directo
-  const [valor, setValor] = useState(r.metrado != null ? String(r.metrado) : '');
+  // Modo directo — parte del ÚLTIMO metrado VALIDADO por OT (no del reportado del
+  // capataz), para no revertir la validación previa al reabrir y guardar.
+  const metBase = r.metradoValidado ?? r.metradoReportado ?? r.metrado;
+  const [valor, setValor] = useState(metBase != null ? String(metBase) : '');
   const [unidadDir, setUnidadDir] = useState(r.unidad || '');
 
   // Modo formato (planilla)
