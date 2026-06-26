@@ -115,9 +115,9 @@ function normalizarGrupos(plan) {
 }
 
 export default function PlanDiario({ planesDiarios, cuadrillasActivas, historial, isMobile, showToast }) {
-  const { filtrarPorContexto, proyectoActivoId, frenteActivoId, modoTodosFrentes } = useProyectoActivo();
+  const { filtrarPorContexto, proyectoActivoId, proyectoActivo, frenteActivoId, modoTodosFrentes } = useProyectoActivo();
   const [pdFecha, setPdFecha] = useState(hoy());
-  const [pdObra, setPdObra] = useState('PRECOTEX LAS MORERAS');
+  const [pdObra, setPdObra] = useState('');
   const [pdResidente, setPdResidente] = useState('');
   const [pdProduccion, setPdProduccion] = useState('');
   const [pdEditingId, setPdEditingId] = useState(null);
@@ -133,21 +133,29 @@ export default function PlanDiario({ planesDiarios, cuadrillasActivas, historial
 
   const obtenerSemana = f => obtSem(f, FECHA_INICIO_PROYECTO);
 
-  // Cargar plan existente del día
+  // Cargar plan existente del día (o sembrar defaults)
   useEffect(() => {
     if (!pdFecha) return;
     const existing = planesDiarios.find(p => p.fecha === pdFecha);
+    // Defaults: OBRA = proyecto activo; RESIDENTE/ING. PRODUCCIÓN = recordados del último plan.
+    const ultimo = [...planesDiarios].sort((a, b) => (a.fecha < b.fecha ? 1 : -1))[0];
+    const obraDef = proyectoActivo?.nombre || ultimo?.obra || '';
+    const residenteDef = ultimo?.residente || '';
+    const produccionDef = ultimo?.produccion || '';
     if (existing) {
       setPdEditingId(existing.id);
-      setPdObra(existing.obra || 'PRECOTEX LAS MORERAS');
-      setPdResidente(existing.residente || '');
-      setPdProduccion(existing.produccion || '');
+      setPdObra(existing.obra || obraDef);
+      setPdResidente(existing.residente || residenteDef);
+      setPdProduccion(existing.produccion || produccionDef);
       setGrupos(normalizarGrupos(existing));
     } else {
       setPdEditingId(null);
+      setPdObra(obraDef);
+      setPdResidente(residenteDef);
+      setPdProduccion(produccionDef);
       setGrupos([]);
     }
-  }, [pdFecha, planesDiarios]);
+  }, [pdFecha, planesDiarios, proyectoActivo]);
 
   const addGrupo = (titulo, capataz = '') => {
     const t = (titulo || '').trim().toUpperCase();
@@ -739,21 +747,21 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${Mat
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
                       <span style={{ fontSize: '9px', fontWeight: 800, color: '#fff', opacity: 0.9, letterSpacing: '0.4px' }}>CAPATAZ</span>
-                      <select
-                        value={g.capataz || capatazDeGrupo(g)}
-                        onChange={e => setGrupoCapataz(gi, e.target.value)}
-                        title="Capataz que recibirá estas actividades en su tareo (debe coincidir con su cuadrilla)"
-                        style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.6)', background: 'rgba(255,255,255,0.95)', color: BASE.navy, fontSize: '11px', fontWeight: 700, maxWidth: '190px', cursor: 'pointer' }}>
-                        {(() => {
-                          const actual = g.capataz || capatazDeGrupo(g);
-                          const lista = Object.keys(cuadrillasActivas || {}).filter(Boolean).sort((a, b) => a.localeCompare(b));
-                          const opts = (!actual || lista.includes(actual)) ? lista : [actual, ...lista];
-                          return [
-                            (!actual ? <option key="__none" value="">— elige capataz —</option> : null),
-                            ...opts.map(c => <option key={c} value={c}>{c}</option>),
-                          ].filter(Boolean);
-                        })()}
-                      </select>
+                      <div style={{ width: 200 }}>
+                        <SelectPremium
+                          value={g.capataz || capatazDeGrupo(g)}
+                          onChange={(v) => setGrupoCapataz(gi, v)}
+                          options={(() => {
+                            const actual = g.capataz || capatazDeGrupo(g);
+                            const lista = Object.keys(cuadrillasActivas || {}).filter(Boolean).sort((a, b) => a.localeCompare(b));
+                            return (!actual || lista.includes(actual)) ? lista : [actual, ...lista];
+                          })()}
+                          placeholder="— elige capataz —"
+                          isMobile={isMobile}
+                          fontSize="11px"
+                          title="Capataz del grupo"
+                        />
+                      </div>
                     </div>
                     <button onClick={() => addItem(gi)} style={{ padding: '4px 11px', background: 'rgba(255,255,255,0.25)', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', borderRadius: '6px', cursor: 'pointer', fontWeight: '700', fontSize: '11px' }}>+ Actividad</button>
                     <button onClick={() => removeGrupo(gi)} style={{ padding: '4px 9px', background: 'rgba(220,38,38,0.85)', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '700', fontSize: '11px' }}>🗑️</button>

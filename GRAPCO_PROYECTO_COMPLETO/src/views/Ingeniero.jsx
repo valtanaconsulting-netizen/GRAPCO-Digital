@@ -21,6 +21,7 @@ import Tooltip from '../components/Tooltip';
 import Icon from '../components/Icon';
 import GateProyectoLegacy from '../components/GateProyectoLegacy';
 import Auditoria from './Auditoria';
+import SelectPremium from '../components/SelectPremium';
 import CpiEac from './CpiEac';
 import Graficos from './Graficos';
 import Tendencias from './Tendencias';
@@ -69,6 +70,19 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
   const [fCapataz,    setFCapataz]    = useState('');
   const [fPersona,    setFPersona]    = useState('');
   const [modoAcum,    setModoAcum]    = useState(false);
+
+  // Defaults por vista: AUDITORÍA arranca en la SEMANA ACTUAL; el resto del ISP
+  // (CPI+EAC, Gráficos, Tendencias, Control, Cockpit) arranca en ACUMULADO (todas las semanas).
+  useEffect(() => {
+    if (view === 'auditoria') {
+      const n = semanaActualProyecto();
+      setFSemana(n ? String(n) : '');
+      setModoAcum(false);
+    } else if (['analisis', 'graficos', 'tendencias', 'control', 'cockpit'].includes(view)) {
+      setFSemana('');
+      setModoAcum(true);
+    }
+  }, [view]);
 
   // Mapeo vista → grupo (para auto-seleccionar grupo si llega por deep-link)
   const VIEW_TO_GRUPO = {
@@ -881,18 +895,6 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
 
       {/* === FILTROS (colapsable) — panel formal GRAPCO: tipografía sobria, acento dorado === */}
       {filtrosAbiertos && (() => {
-        // Resumen de filtros activos (cada uno se retira con su ×)
-        const chips = [
-          fPartida    && { lbl: `Partida: ${fPartida}`,      clear: () => { setFPartida(''); setFSubpartida(''); setFActividad(''); } },
-          fSubpartida && { lbl: `Subpartida: ${fSubpartida}`, clear: () => { setFSubpartida(''); setFActividad(''); } },
-          fActividad  && { lbl: `Actividad: ${fActividad}`,  clear: () => setFActividad('') },
-          fSemana     && { lbl: `Semana ${fSemana}`,         clear: () => setFSemana('') },
-          fCapataz    && { lbl: `Capataz: ${fCapataz.split(' ').slice(0, 2).join(' ')}`, clear: () => setFCapataz('') },
-          fPersona    && { lbl: `Persona: ${fPersona.split(' ').slice(0, 2).join(' ')}`, clear: () => setFPersona('') },
-          fDesde      && { lbl: `Desde ${fDesde}`,           clear: () => setFDesde('') },
-          fHasta      && { lbl: `Hasta ${fHasta}`,           clear: () => setFHasta('') },
-        ].filter(Boolean);
-
         // Campo activo: borde dorado fino + texto navy en negrita (sobrio)
         const selEstilo = (activo) => ({
           width: '100%', padding: '10px 12px', borderRadius: '8px', boxSizing: 'border-box',
@@ -934,53 +936,26 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
                 registro{filtrados.length !== 1 ? 's' : ''} en vista
               </span>
             </div>
-            <div style={{ display: 'inline-flex', background: BASE.bgSoft, border: `1px solid ${BASE.border}`, borderRadius: '9px', padding: '3px', gap: '2px' }}>
-              {[['SEMANAL', false], ['ACUMULADO', true]].map(([lbl, val]) => (
-                <button key={lbl} onClick={() => setModoAcum(val)} style={{
-                  padding: '6px 16px', borderRadius: '7px', border: 'none', cursor: 'pointer',
-                  fontSize: '10.5px', fontWeight: '800', letterSpacing: '0.8px', transition: 'all 0.15s ease',
-                  background: modoAcum === val ? BASE.navy : 'transparent',
-                  color: modoAcum === val ? '#fff' : BASE.muted,
-                }}>{lbl}</button>
-              ))}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
+              {tieneFiltrosActivos && (
+                <button onClick={() => { setFPartida(''); setFSubpartida(''); setFActividad(''); setFSemana(''); setFDesde(''); setFHasta(''); setFCapataz(''); setFPersona(''); }}
+                  title="Quitar todos los filtros"
+                  style={{ padding: '6px 12px', background: 'transparent', color: BASE.red, border: `1px solid ${BASE.red}40`, borderRadius: '7px', fontSize: '10.5px', fontWeight: '800', letterSpacing: '0.4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                  ✕ Limpiar
+                </button>
+              )}
+              <div style={{ display: 'inline-flex', background: BASE.bgSoft, border: `1px solid ${BASE.border}`, borderRadius: '9px', padding: '3px', gap: '2px' }}>
+                {[['SEMANAL', false], ['ACUMULADO', true]].map(([lbl, val]) => (
+                  <button key={lbl} onClick={() => setModoAcum(val)} style={{
+                    padding: '6px 16px', borderRadius: '7px', border: 'none', cursor: 'pointer',
+                    fontSize: '10.5px', fontWeight: '800', letterSpacing: '0.8px', transition: 'all 0.15s ease',
+                    background: modoAcum === val ? BASE.navy : 'transparent',
+                    color: modoAcum === val ? '#fff' : BASE.muted,
+                  }}>{lbl}</button>
+                ))}
+              </div>
             </div>
           </div>
-
-          {/* Resumen de filtros activos */}
-          {chips.length > 0 && (
-            <div style={{
-              display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center',
-              padding: '10px 12px', marginBottom: '14px',
-              background: BASE.bgSoft, border: `1px solid ${BASE.borderSoft}`, borderRadius: '8px',
-            }}>
-              <span style={{ fontSize: '10px', fontWeight: '800', color: BASE.mutedSoft, letterSpacing: '1px', marginRight: '4px' }}>ACTIVOS</span>
-              {chips.map((ch, i) => (
-                <span key={i} style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '8px',
-                  background: BASE.white, color: BASE.navy, borderRadius: '6px',
-                  border: `1px solid ${BASE.navy}2e`, borderLeft: `3px solid ${BASE.gold}`,
-                  padding: '4px 8px 4px 10px', fontSize: '11.5px', fontWeight: '600',
-                  maxWidth: '280px',
-                }}>
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ch.lbl}</span>
-                  <button onClick={ch.clear} aria-label="Quitar filtro" style={{
-                    border: 'none', background: 'transparent', cursor: 'pointer', padding: 0,
-                    color: BASE.mutedSoft, fontSize: '14px', fontWeight: '700', lineHeight: 1, flexShrink: 0,
-                  }}
-                    onMouseEnter={e => { e.currentTarget.style.color = BASE.red; }}
-                    onMouseLeave={e => { e.currentTarget.style.color = BASE.mutedSoft; }}>×</button>
-                </span>
-              ))}
-              <button onClick={() => { setFPartida(''); setFSubpartida(''); setFActividad(''); setFSemana(''); setFDesde(''); setFHasta(''); setFCapataz(''); setFPersona(''); }}
-                style={{
-                  marginLeft: 'auto', padding: '5px 12px', background: 'transparent', color: BASE.red,
-                  border: `1px solid ${BASE.red}40`, borderRadius: '6px',
-                  fontSize: '11px', fontWeight: '700', cursor: 'pointer', letterSpacing: '0.3px', whiteSpace: 'nowrap',
-                }}>
-                Limpiar todo
-              </button>
-            </div>
-          )}
 
           {/* Filtros en una sola fila: 6 selects (incl. Persona) + Desde/Hasta */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%, 150px),1fr))', gap: '12px', alignItems: 'end' }}>
@@ -994,10 +969,15 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
             ].map((f, i) => (
               <div key={i} style={{ minWidth: 0 }}>
                 <label style={labelEstilo(!!f.val)}>{f.label}{f.val && puntoActivo}</label>
-                <select value={f.val} onChange={e => f.set(e.target.value)} style={selEstilo(!!f.val)}>
-                  <option value="">Todos</option>
-                  {f.opts.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
-                </select>
+                <SelectPremium
+                  value={f.val}
+                  onChange={f.set}
+                  options={[{ value: '', label: 'Todos' }, ...f.opts.map(o => ({ value: o.v, label: o.l }))]}
+                  placeholder="Todos"
+                  isMobile={isMobile}
+                  fontSize="12.5px"
+                  title={f.label}
+                />
               </div>
             ))}
             {[['Desde', fDesde, setFDesde], ['Hasta', fHasta, setFHasta]].map(([lab, val, set], i) => (

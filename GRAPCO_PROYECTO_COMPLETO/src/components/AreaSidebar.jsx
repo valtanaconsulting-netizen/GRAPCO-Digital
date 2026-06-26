@@ -62,14 +62,14 @@ export default function AreaSidebar({
       <div style={{ flex: 1, minHeight: 0, padding: collapsed ? '12px 6px' : '12px 8px', overflowY: 'auto', overflowX: 'hidden' }}>
         {topSlot}
         {Object.entries(grupos).map(([grupo, lista]) => (
-          <div key={grupo} style={{ marginBottom: '8px' }}>
+          <div key={grupo} style={{ marginBottom: '18px' }}>
             {collapsed ? (
               <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '6px 8px' }} />
             ) : (
               <div style={{
-                fontSize: '9px', fontWeight: '900', color: BASE.gold,
-                letterSpacing: '1.2px', padding: '2px 8px 4px',
-                textTransform: 'uppercase', opacity: 0.85,
+                fontSize: '9.5px', fontWeight: '900', color: BASE.gold,
+                letterSpacing: '1.4px', padding: '4px 10px 10px',
+                textTransform: 'uppercase', opacity: 0.9,
               }}>{grupo}</div>
             )}
             {lista.map((it, i) => {
@@ -82,17 +82,17 @@ export default function AreaSidebar({
                   title={collapsed ? it.label : ''}
                   style={{
                     width: '100%', display: 'flex', alignItems: 'center',
-                    gap: collapsed ? 0 : '9px',
+                    gap: collapsed ? 0 : '11px',
                     justifyContent: collapsed ? 'center' : 'flex-start',
-                    padding: collapsed ? '8px 0' : '6px 9px',
-                    marginBottom: '1px', borderRadius: '7px',
+                    padding: collapsed ? '11px 0' : '10px 11px',
+                    marginBottom: '4px', borderRadius: '9px',
                     background: activo ? `${it.color}22` : 'transparent',
                     border: 'none',
                     borderLeft: `3px solid ${activo ? it.color : 'transparent'}`,
-                    paddingLeft: collapsed ? 0 : '6px',
+                    paddingLeft: collapsed ? 0 : '9px',
                     color: activo ? '#fff' : 'rgba(255,255,255,0.82)',
                     fontWeight: activo ? '700' : '600',
-                    fontSize: '11.5px', lineHeight: 1.25, cursor: 'pointer',
+                    fontSize: '12.5px', lineHeight: 1.3, cursor: 'pointer',
                     textAlign: 'left', transition: '0.15s',
                     overflow: 'hidden', whiteSpace: 'nowrap',
                   }}
@@ -101,11 +101,11 @@ export default function AreaSidebar({
                 >
                   {!collapsed && (
                     <span style={{
-                      minWidth: '14px', fontSize: '9.5px', fontWeight: '900',
+                      minWidth: '16px', fontSize: '10.5px', fontWeight: '900',
                       color: activo ? it.color : 'rgba(255,255,255,0.45)',
                     }}>{i + 1}</span>
                   )}
-                  <Icon name={it.iconName} size={collapsed ? 18 : 15} color={it.color} strokeWidth={1.85} />
+                  <Icon name={it.iconName} size={collapsed ? 18 : 16} color={it.color} strokeWidth={1.85} />
                   {!collapsed && <span style={{ flex: 1 }}>{it.label}</span>}
                 </button>
               );

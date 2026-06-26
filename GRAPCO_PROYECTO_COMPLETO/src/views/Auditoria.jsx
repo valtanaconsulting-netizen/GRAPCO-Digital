@@ -10,6 +10,7 @@ import PlanillaMetrado, { TIPOS_METRADO, parcialFila } from './oficinatecnica/Pl
 export default function Auditoria({ filtrados, eliminar, guardarMetrado, hhPorSemana = [], hhTotales = { hn:0, he:0, total:0 }, totalBaseDatos = 0 }) {
   const [hhOpen, setHhOpen] = useState(false);
   const [metrarReg, setMetrarReg] = useState(null);   // registro al que se le está editando el metrado
+  const [diaSel, setDiaSel] = useState('');           // filtro por día (chip de HH); '' = todos
 
   const calcularHHRegistro = (r) => {
     let hn = 0, he = 0;
@@ -48,6 +49,14 @@ export default function Auditoria({ filtrados, eliminar, guardarMetrado, hhPorSe
   const diasMostrar = diasOrdenados.slice(0, DIAS_VISIBLES);
   const diasOcultos = diasOrdenados.length - diasMostrar.length;
   const fmtDia = (d) => (d && d.length >= 10 ? `${d.slice(8, 10)}/${d.slice(5, 7)}` : d);
+  const DOW = ['DOM', 'LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB'];
+  const diaSemana = (d) => {
+    if (!d || d.length < 10) return d;
+    const [y, m, dd] = d.slice(0, 10).split('-').map(Number);
+    return DOW[new Date(Date.UTC(y, m - 1, dd)).getUTCDay()];
+  };
+  // Registros mostrados en la tabla: si hay un día seleccionado (chip), solo ese día.
+  const filtradosVista = diaSel ? (filtrados || []).filter(r => r.fecha === diaSel) : (filtrados || []);
 
   return (
     <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
@@ -58,21 +67,33 @@ export default function Auditoria({ filtrados, eliminar, guardarMetrado, hhPorSe
         <div style={{padding:'10px 14px',display:'flex',justifyContent:'space-between',alignItems:'center',gap:'12px',flexWrap:'wrap',borderBottom:`1px solid ${BASE.border}`,background:BASE.bgSoft}}>
           <span style={{fontSize:'12px',fontWeight:'700',color:BASE.navy,whiteSpace:'nowrap'}}>REGISTROS — Más reciente arriba</span>
           <div style={{display:'flex',alignItems:'center',gap:'7px',flexWrap:'wrap',justifyContent:'flex-end'}}>
-            <span style={{fontSize:'10px',color:BASE.muted,whiteSpace:'nowrap'}}>{filtrados.length} registros</span>
+            <span style={{fontSize:'10px',color:BASE.muted,whiteSpace:'nowrap'}}>{filtradosVista.length} registros</span>
             {/* HH totales del set filtrado */}
             <span style={{display:'inline-flex',alignItems:'baseline',gap:'5px',background:BASE.white,border:`1px solid ${BASE.border}`,borderRadius:'7px',padding:'3px 9px',whiteSpace:'nowrap'}}>
               <span style={{fontSize:'9px',fontWeight:'800',color:BASE.muted,letterSpacing:'0.5px'}}>HH TOTALES</span>
               <span style={{fontSize:'12px',fontWeight:'900',color:BASE.navy,fontFamily:'var(--grapco-font-mono, monospace)'}}>{fmt1(hhTotalFiltrado)}</span>
             </span>
-            {/* HH por día (más reciente primero) */}
-            {diasMostrar.map(d => (
-              <span key={d} style={{display:'inline-flex',alignItems:'baseline',gap:'5px',background:BASE.white,border:`1px solid ${BASE.border}`,borderLeft:`3px solid ${BASE.gold}`,borderRadius:'7px',padding:'3px 8px',whiteSpace:'nowrap'}}>
-                <span style={{fontSize:'9.5px',fontWeight:'700',color:BASE.muted}}>{fmtDia(d)}</span>
-                <span style={{fontSize:'11px',fontWeight:'800',color:BASE.navy,fontFamily:'var(--grapco-font-mono, monospace)'}}>{fmt1(hhPorDia[d])} HH</span>
-              </span>
-            ))}
+            {/* HH por DÍA de la semana (LUN/MAR/…); click filtra la tabla a ese día */}
+            {diasMostrar.map(d => {
+              const activo = diaSel === d;
+              return (
+                <button key={d} onClick={() => setDiaSel(activo ? '' : d)} title={fmtDia(d)}
+                  style={{display:'inline-flex',alignItems:'baseline',gap:'5px',cursor:'pointer',
+                    background:activo?BASE.navy:BASE.white,border:`1px solid ${activo?BASE.navy:BASE.border}`,
+                    borderLeft:`3px solid ${BASE.gold}`,borderRadius:'7px',padding:'3px 9px',whiteSpace:'nowrap'}}>
+                  <span style={{fontSize:'9.5px',fontWeight:'800',color:activo?'#fff':BASE.muted,letterSpacing:'0.3px'}}>{diaSemana(d)}</span>
+                  <span style={{fontSize:'11px',fontWeight:'800',color:activo?'#fff':BASE.navy,fontFamily:'var(--grapco-font-mono, monospace)'}}>{fmt1(hhPorDia[d])} HH</span>
+                </button>
+              );
+            })}
             {diasOcultos > 0 && (
               <span style={{fontSize:'10px',color:BASE.mutedSoft,fontWeight:'700',whiteSpace:'nowrap'}}>+{diasOcultos} días</span>
+            )}
+            {diaSel && (
+              <button onClick={() => setDiaSel('')} title="Ver todos los días"
+                style={{cursor:'pointer',background:'transparent',border:`1px solid ${BASE.border}`,borderRadius:'7px',padding:'3px 9px',fontSize:'10px',fontWeight:'700',color:BASE.muted,whiteSpace:'nowrap'}}>
+                ✕ todos
+              </button>
             )}
           </div>
         </div>
@@ -88,12 +109,12 @@ export default function Auditoria({ filtrados, eliminar, guardarMetrado, hhPorSe
               ))}</tr>
             </thead>
             <tbody>
-              {!filtrados.length
+              {!filtradosVista.length
                 ? <tr><td colSpan={16} style={{padding:'48px',textAlign:'center',color:BASE.muted}}>
                     <p style={{fontSize:'40px',marginBottom:'8px'}}>📋</p>
                     <p style={{fontSize:'13px',fontWeight:'600'}}>Sin registros para los filtros aplicados</p>
                   </td></tr>
-                : filtrados.map((r,idx)=>{
+                : filtradosVista.map((r,idx)=>{
                   const ipReal = r._ipReal || r.ipReal;
                   const ipMeta = r._ipMeta || r.ipMeta;
                   const cpi = calcCPI(ipMeta, ipReal);
@@ -104,7 +125,6 @@ export default function Auditoria({ filtrados, eliminar, guardarMetrado, hhPorSe
                   // Dos metrados lado a lado: REPORTADO (capataz) vs VALIDADO (OT).
                   const metReportado = Number(r.metradoReportado ?? r.metrado) || 0;
                   const metValidado  = Number(r.metradoValidado ?? r.metradoReportado ?? r.metrado) || 0;
-                  const metZero = metValidado <= 0;
                   const metDifiere = Math.abs(metValidado - metReportado) > 0.001;
                   return (
                     <tr key={r.id} style={{background:idx%2===0?BASE.white:BASE.bgSoft,borderBottom:`1px solid ${BASE.border}`}}>
@@ -120,32 +140,32 @@ export default function Auditoria({ filtrados, eliminar, guardarMetrado, hhPorSe
                       <td style={{padding:'10px 13px',textAlign:'center',color:BASE.navy,fontWeight:'700',fontSize:'11px'}}>
                         <span style={{background:BASE.navySoft,padding:'2px 8px',borderRadius:'10px',border:`1px solid ${BASE.border}`}}>{r.unidad || '—'}</span>
                       </td>
-                      {/* M. REPORTADO (capataz) — solo lectura */}
+                      {/* M. REPORTADO (capataz) — solo lectura; toda actividad muestra su metrado (0 incl.) */}
                       <td style={{padding:'10px 13px',textAlign:'center',color:BASE.muted,fontWeight:'600',fontFamily:'var(--grapco-font-mono, monospace)'}}>
-                        {metReportado > 0 ? Number(metReportado).toLocaleString('es-PE',{maximumFractionDigits:2}) : '—'}
+                        {Number(metReportado).toLocaleString('es-PE',{maximumFractionDigits:2})}
                       </td>
-                      {/* M. VALIDADO (OT) — editable con el modal Metrar; borde dorado si OT corrigió al capataz */}
+                      {/* M. VALIDADO (OT) — siempre visible (default = reportado), editable con el modal; borde dorado si OT corrigió */}
                       <td style={{padding:'6px 8px',textAlign:'center'}}>
                         {guardarMetrado ? (
                           <button
                             onClick={()=>setMetrarReg(r)}
-                            title={metZero ? 'Validar metrado: valor directo o formato (concreto, acero, encofrado…)' : (metDifiere ? `Validado por OT · capataz reportó ${metReportado}` : 'Editar metrado validado')}
+                            title={metDifiere ? `Validado por OT · capataz reportó ${metReportado}` : 'Editar metrado validado'}
                             style={{
                               display:'inline-flex',alignItems:'center',gap:'4px',
                               padding:'4px 9px',borderRadius:'7px',cursor:'pointer',
-                              fontSize:'12px',fontWeight:metZero?'800':'700',
+                              fontSize:'12px',fontWeight:'700',
                               fontFamily:'var(--grapco-font-mono, monospace)',
-                              color:metZero?BASE.gold:BASE.navy,
-                              background:metZero?'#fffaf2':BASE.bgSoft,
-                              border:`1px solid ${metDifiere?BASE.gold:(metZero?BASE.gold:BASE.border)}`,
+                              color:BASE.navy,
+                              background:BASE.bgSoft,
+                              border:`1px solid ${metDifiere?BASE.gold:BASE.border}`,
                               transition:'all 0.12s',
                             }}
                             onMouseEnter={e=>{e.currentTarget.style.borderColor=BASE.gold;e.currentTarget.style.background='#fffaf2';}}
-                            onMouseLeave={e=>{e.currentTarget.style.borderColor=metDifiere?BASE.gold:(metZero?BASE.gold:BASE.border);e.currentTarget.style.background=metZero?'#fffaf2':BASE.bgSoft;}}>
-                            {metZero ? <>✎ validar</> : <>{Number(metValidado).toLocaleString('es-PE',{maximumFractionDigits:2})} <span style={{fontSize:'9px',opacity:0.55}}>✎</span></>}
+                            onMouseLeave={e=>{e.currentTarget.style.borderColor=metDifiere?BASE.gold:BASE.border;e.currentTarget.style.background=BASE.bgSoft;}}>
+                            {Number(metValidado).toLocaleString('es-PE',{maximumFractionDigits:2})} <span style={{fontSize:'9px',opacity:0.55}}>✎</span>
                           </button>
                         ) : (
-                          <span style={{color:metZero?BASE.red:BASE.text,fontWeight:metZero?'700':'400'}}>{metValidado}</span>
+                          <span style={{color:BASE.text,fontWeight:'400'}}>{Number(metValidado).toLocaleString('es-PE',{maximumFractionDigits:2})}</span>
                         )}
                       </td>
                       <td style={{padding:'10px 13px',textAlign:'center',color:BASE.text}}>{fmt1(hn)}</td>
