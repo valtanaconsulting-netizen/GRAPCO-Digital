@@ -4,16 +4,15 @@
 
 export const APP_META = {
   tagline: 'PRODUCCIÓN · OFICINA TÉCNICA · ALMACÉN',
-  eyebrow: 'PLATAFORMA OPERATIVA DE OBRA',
+  eyebrow: 'PLATAFORMA VDC · LEAN CONSTRUCTION',
   titulo: 'La obra bajo control,',
   tituloAccent: 'en tiempo real.',
-  descripcion: 'Plataforma operativa central que centraliza el avance, los resultados técnicos, el almacén y la administración de tus obras de construcción.',
+  descripcion: 'Centraliza la gestión integral del proyecto VDC a tu medida, conectando personas, procesos e información para maximizar la eficiencia operativa y el control del negocio.',
   cardDesc: 'Producción, Oficina Técnica, Almacén, BIM y Administración de obra.',
   bullets: [
-    'Control de producción: avance, productividad (CPI), carta balance y alertas tempranas.',
-    'Gestión técnico-financiera: resultado operativo, valorización F07, presupuesto y sustento.',
-    'Almacén: stock valorizado (S10), vales, kardex y compras con trazabilidad.',
-    'Inteligencia ejecutiva: dashboards multi-proyecto y proyecciones de cierre.',
-    'Coordinación BIM: visor 3D y conflictos integrados con el avance real.',
+    'Registro de ingreso por reconocimiento facial.',
+    'Tareo digital e ISP en tiempo real.',
+    'Control de Costos, RO y valorizaciones.',
+    'Administración y Almacén conectados a la operación.',
   ],
 };
