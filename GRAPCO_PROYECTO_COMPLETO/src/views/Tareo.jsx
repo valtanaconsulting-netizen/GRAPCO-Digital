@@ -237,10 +237,16 @@ export default function Tareo({ historial, filtrados, personalDB, cuadrillasActi
         </div>
       </div>
 
-      {/* Vista previa stats */}
-      <div style={{background:BASE.navy,borderRadius:'12px',padding:'18px',color:'#fff'}}>
-        <p style={{fontSize:'11px',opacity:0.7,fontWeight:'700',letterSpacing:'1px',marginBottom:'10px'}}>📊 VISTA PREVIA DEL RANGO SELECCIONADO</p>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%, 110px),1fr))',gap:'10px'}}>
+      {/* Vista previa stats — COMPACTO y sobrio (no tarjetón llamativo): tira de
+          indicadores sobre fondo claro, números medianos. */}
+      <div style={{background:BASE.white,borderRadius:'12px',border:`1px solid ${BASE.border}`,padding:'12px 16px'}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'8px',marginBottom:'10px'}}>
+          <p style={{fontSize:'11px',fontWeight:'800',color:BASE.navy,letterSpacing:'0.6px',margin:0}}>VISTA PREVIA DEL RANGO</p>
+          <p style={{fontSize:'11px',color:BASE.muted,margin:0}}>
+            Período <strong style={{color:BASE.navy}}>{fmtFecha(tareoFechaIni)}</strong> al <strong style={{color:BASE.navy}}>{fmtFecha(tareoFechaFin)}</strong>
+          </p>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%, 92px),1fr))',gap:'8px'}}>
           {[
             ['REGISTROS',tareoStats.registros],
             ['DÍAS',tareoStats.dias],
@@ -249,15 +255,12 @@ export default function Tareo({ historial, filtrados, personalDB, cuadrillasActi
             ['ACTIVIDADES',tareoStats.actividades],
             ['HH TOTAL',tareoStats.totHH],
           ].map(([l,v])=>(
-            <div key={l} style={{background:'rgba(255,255,255,0.12)',borderRadius:'10px',padding:'12px 8px',textAlign:'center'}}>
-              <p style={{fontSize:'9px',fontWeight:'700',opacity:0.75,letterSpacing:'0.6px'}}>{l}</p>
-              <p style={{fontSize:'22px',fontWeight:'900',marginTop:'4px'}}>{v}</p>
+            <div key={l} style={{background:BASE.bgSoft,borderRadius:'8px',padding:'8px 10px',textAlign:'center',border:`1px solid ${BASE.border}`}}>
+              <p style={{fontSize:'8.5px',fontWeight:'700',color:BASE.muted,letterSpacing:'0.5px',margin:0}}>{l}</p>
+              <p style={{fontSize:'15px',fontWeight:'800',color:BASE.navy,marginTop:'2px',fontFamily:'var(--grapco-font-mono, monospace)'}}>{v}</p>
             </div>
           ))}
         </div>
-        <p style={{fontSize:'12px',opacity:0.85,marginTop:'12px',textAlign:'center'}}>
-          Período: <strong>{fmtFecha(tareoFechaIni)}</strong> al <strong>{fmtFecha(tareoFechaFin)}</strong>
-        </p>
       </div>
 
       {/* Botones de exportación */}

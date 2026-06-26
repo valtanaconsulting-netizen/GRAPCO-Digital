@@ -21,7 +21,7 @@ import {
 import CostoRealCR from './modulos/resultadoOperativo/CostoRealCR';
 
 export default function ControlGerencial({ historialEnriquecido, wbs, personalDB, configuracion, isMobile, asistencia }) {
-  const [tab, setTab] = useState('tareos');
+  const [tab, setTab] = useState('tareosCR');
   const [partidaExpandida, setPartidaExpandida] = useState(null);
 
   // Tarifa MO única de la plataforma (S/25.50/h) — fijada por el usuario para todo el costeo.
@@ -59,8 +59,7 @@ export default function ControlGerencial({ historialEnriquecido, wbs, personalDB
         boxShadow: '0 2px 6px rgba(15,23,42,0.04)',
       }}>
         {[
-          { id: 'tareos',       l: 'Reporte de Tareos',     desc: 'Costos jerarquicos por partida' },
-          { id: 'crOficial',    l: 'CR · Costo Real',        desc: 'Costo Real por partida (HH × S/25.5) · filtro por semana' },
+          { id: 'tareosCR',     l: 'Reporte de Tareos y Costo Real', desc: 'Tareos + CR por partida (HH × S/25.5), lado a lado · misma data' },
           { id: 'variaciones',  l: 'Control HH Variaciones', desc: 'Real vs meta + heatmap' },
           { id: 'ip',           l: 'Control de IP',          desc: 'IP por actividad y semana' },
         ].map(t => {
@@ -98,16 +97,26 @@ export default function ControlGerencial({ historialEnriquecido, wbs, personalDB
       </div>
 
       {/* CONTENIDO */}
-      {tab === 'tareos' && (
-        <ReporteTareos
-          historial={historialEnriquecido}
-          tarifaPromedio={tarifaPromedio}
-          partidaExpandida={partidaExpandida}
-          setPartidaExpandida={setPartidaExpandida}
-          isMobile={isMobile}
-        />
+      {/* Tareos + CR lado a lado (50/50). Ambos cuelgan de los MISMOS tareos y se agrupan
+          por la misma partida canónica → la información «conversa»: la columna izquierda son
+          las HH/costos jerárquicos y la derecha el CR por partida (HH × S/25.5). En pantalla
+          angosta se apilan automáticamente. */}
+      {tab === 'tareosCR' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 440px), 1fr))', gap: '12px', alignItems: 'start' }}>
+          <div style={{ minWidth: 0 }}>
+            <ReporteTareos
+              historial={historialEnriquecido}
+              tarifaPromedio={tarifaPromedio}
+              partidaExpandida={partidaExpandida}
+              setPartidaExpandida={setPartidaExpandida}
+              isMobile={isMobile}
+            />
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <CostoRealCR historial={historialEnriquecido} wbs={wbs} />
+          </div>
+        </div>
       )}
-      {tab === 'crOficial' && <CostoRealCR historial={historialEnriquecido} wbs={wbs} />}
       {tab === 'variaciones' && (
         <ControlVariaciones
           historial={historialEnriquecido}

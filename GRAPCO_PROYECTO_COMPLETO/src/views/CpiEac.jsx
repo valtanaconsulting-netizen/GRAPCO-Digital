@@ -389,8 +389,11 @@ export default function CpiEac({ wbs, historial = [], filtrados = null, infoMap,
   // Separadores entre secciones: sobrios (sin "rejas"). En el head, hairline blanco casi
   // invisible sobre el navy; en el cuerpo, acero claro de 1px. La separación real la dan el
   // acento del grupo + el tinte de celda, no una regla gruesa.
-  const SEP_HEAD = '1px solid rgba(255,255,255,0.16)';
-  const SEP_BODY = '1px solid #D7DEE8';
+  // Jerarquía de líneas (pedido del usuario): los separadores de SECCIÓN pesan más que las
+  // líneas de fila. SECCIÓN = 2px; fila = 1px (BASE.border). En el head el separador es un
+  // tono frío/navy translúcido (NUNCA blanco → no se ven «huecos» en la zona fijada).
+  const SEP_HEAD = '2px solid rgba(150,182,216,0.32)';
+  const SEP_BODY = '2px solid #C2CDDC';
   const SEP = SEP_BODY;                       // compat: usos existentes en celdas del cuerpo
   const sepRight = { borderRight: SEP_BODY };
 
@@ -652,7 +655,10 @@ export default function CpiEac({ wbs, historial = [], filtrados = null, infoMap,
             ventana. Sin contenedor de scroll, el encabezado + la fila TOTAL se pegan de verdad bajo
             el navbar al hacer scroll de página. La tabla entra completa en pantalla. */}
         <div ref={scrollWrapRef} style={{overflow:'visible'}}>
-          <table style={{width:'100%',borderCollapse:'collapse',fontSize:'11px',minWidth:'900px'}}>
+          {/* borderCollapse:'separate' + borderSpacing:0 → cada celda fija (sticky) pinta su
+              propio fondo opaco; elimina los «huecos» blancos por donde se asomaba el cuerpo
+              en la zona fijada (bug clásico de sticky + border-collapse:collapse en Chrome). */}
+          <table style={{width:'100%',borderCollapse:'separate',borderSpacing:0,fontSize:'11px',minWidth:'900px'}}>
             <thead>
               <tr style={{height:GROUP_H}}>
                 <th rowSpan="2" style={{position:'sticky',left:0,top:NAV_H,zIndex:7,height:theadH,boxSizing:'border-box',padding:'0 12px',verticalAlign:'middle',background:HEAD_BG,color:'#fff',textAlign:'left',fontWeight:'800',fontSize:'11px',letterSpacing:'0.6px',minWidth:'240px',borderRight:SEP_HEAD,borderBottom:`3px solid ${BASE.gold}`,boxShadow:'4px 0 8px -4px rgba(8,26,46,0.28)'}}>WBS</th>

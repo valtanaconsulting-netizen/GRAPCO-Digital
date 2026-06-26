@@ -2,7 +2,7 @@
 // Tabla de costo a pagar por trabajador en un rango de fechas.
 // Aplica la fórmula HN + HE60(×1.60) + HE100(×2.00) usando tarifa por trabajador/cargo.
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { BASE, CHART_PALETTE } from '../utils/styles';
 import { FECHA_INICIO_PROYECTO } from '../utils/constants';
 import {
@@ -20,7 +20,10 @@ const card = {
   boxShadow: BASE.shadowMd,
 };
 
-export default function PagoObreros({ historial = [], cuadrillasActivas = {}, configuracion = {}, personalDB = [], showToast }) {
+export default function PagoObreros({ historial = [], cuadrillasActivas = {}, configuracion = {}, personalDB = [], showToast,
+  // «Conversa» con el dashboard: si llegan filtros globales (rango/capataz activos),
+  // el pago los hereda. Sin ellos, conserva sus propios defaults (últimos 14 días).
+  fDesde = '', fHasta = '', fCapataz = '' }) {
   // Resolver de nombres compartido — el MISMO obrero / capataz escrito distinto
   // se agrupa como UNA persona en el pago (no se duplica al cobrar HH).
   const resolverNombre = useMemo(
@@ -28,12 +31,19 @@ export default function PagoObreros({ historial = [], cuadrillasActivas = {}, co
     [historial, personalDB],
   );
   const [desde,   setDesde]   = useState(() => {
+    if (fDesde) return fDesde;
     const d = new Date(); d.setDate(d.getDate() - 14);
     return d.toISOString().slice(0, 10);
   });
-  const [hasta,   setHasta]   = useState(hoy());
-  const [capataz, setCapataz] = useState('');
+  const [hasta,   setHasta]   = useState(fHasta || hoy());
+  const [capataz, setCapataz] = useState(fCapataz || '');
   const [semana,  setSemana]  = useState(''); // '' = todas; o número de semana
+
+  // Cuando el dashboard cambia sus filtros (rango/capataz activos), el pago los sigue.
+  // Solo empuja valores NO vacíos → no pisa los defaults del módulo si el filtro está limpio.
+  useEffect(() => { if (fDesde) setDesde(fDesde); }, [fDesde]);
+  useEffect(() => { if (fHasta) setHasta(fHasta); }, [fHasta]);
+  useEffect(() => { if (fCapataz) { setCapataz(fCapataz); setSemana(''); } }, [fCapataz]);
   const [busqueda, setBusqueda] = useState('');
   const [expandirCapataces, setExpandirCapataces] = useState(true);
 

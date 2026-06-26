@@ -22,6 +22,7 @@ import Icon from '../components/Icon';
 import GateProyectoLegacy from '../components/GateProyectoLegacy';
 import Auditoria from './Auditoria';
 import SelectPremium from '../components/SelectPremium';
+import DatePickerPremium from '../components/DatePickerPremium';
 import CpiEac from './CpiEac';
 import Graficos from './Graficos';
 import Tendencias from './Tendencias';
@@ -89,7 +90,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
     cockpit: 'ejecutivo',
     auditoria: 'produccion', analisis: 'produccion', control: 'produccion',
     graficos: 'produccion', tendencias: 'produccion',
-    hhcross: 'analisis', bim: 'analisis',
+    hhcross: 'gestion', // Cuadrillas vive ahora en GESTIÓN (2026-06-26)
     tareo: 'gestion', gestion: 'gestion',
     'pago-obreros': 'gestion',
     'wbs-editor': 'gestion',
@@ -623,27 +624,22 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
       ],
     },
     // Grupo PLANEAMIENTO (Last Planner System / VDC) → app PLANEAMIENTO_PLATAFORMA (2026-06-24).
-    analisis: {
-      label: 'BIM Y CUADRILLAS',
-      iconName: 'users',
-      color: '#16a34a',
-      tagline: 'Modelo BIM y análisis de cuadrillas (HH cruzadas)',
-      items: [
-        { id: 'hhcross',    l: 'Cuadrillas',   iconName: 'users' },
-        { id: 'bim',        l: 'Modelo BIM',   iconName: 'cube' },
-      ],
-    },
+    // Grupo «BIM Y CUADRILLAS» eliminado (2026-06-26): «Modelo BIM» ya es módulo propio del
+    // menú lateral (Producción → Modelo BIM, no se duplica) y «Cuadrillas» se movió a GESTIÓN.
     gestion: {
       label: 'GESTIÓN',
       iconName: 'users',
       color: '#7c3aed',
-      tagline: 'Personal, tareo, pagos, edición del WBS y exportaciones',
+      tagline: 'Tareo, cuadrillas, pagos, personal, WBS y exportaciones — todo bajo los mismos filtros del dashboard',
+      // Orden con lógica de análisis: capturar HH (Tareo) → analizarlas (Cuadrillas) →
+      // pagarlas (Pago) → maestro de personas (Personal) → estructura (WBS) → salida (Export).
       items: [
-        { id: 'tareo',          l: 'Tareo',                  iconName: 'clock' },
-        { id: 'gestion',        l: 'Personal',               iconName: 'users' },
-        { id: 'pago-obreros',   l: 'Pago a Obreros',         iconName: 'coins' },
-        { id: 'wbs-editor',     l: 'Editar WBS',             iconName: 'ruler' },
-        { id: 'export',         l: 'Exportar Excel',         iconName: 'coins' },
+        { id: 'tareo',        l: 'Tareo',          iconName: 'clock', desc: 'Planilla F13 · HH por trabajador y exportación' },
+        { id: 'hhcross',      l: 'Cuadrillas',     iconName: 'users', desc: 'HH cruzadas: cuadrilla · persona · actividad · día' },
+        { id: 'pago-obreros', l: 'Pago a Obreros', iconName: 'coins', desc: 'Costo a pagar: HN + HE 60% / 100%' },
+        { id: 'gestion',      l: 'Personal',       iconName: 'users', desc: 'Maestro de obreros y cuadrillas' },
+        { id: 'wbs-editor',   l: 'Editar WBS',     iconName: 'ruler', desc: 'Estructura WBS · IP meta y presupuesto' },
+        { id: 'export',       l: 'Exportar Excel', iconName: 'coins', desc: 'Excel: Costos HE 60/100 y HH semanal' },
       ],
     },
   };
@@ -824,8 +820,10 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
       )}
 
       {/* === SUBTABS DEL GRUPO ACTIVO (Nivel 2) — solo si el grupo tiene >1 módulo
-          (en Planeamiento hay un único módulo → la barra sobra y se oculta) === */}
-      {grupoCfg.items.length > 1 && (
+          (en Planeamiento hay un único módulo → la barra sobra y se oculta).
+          GESTIÓN NO usa sub-tabs horizontales: sus módulos viven en el menú vertical
+          de la DERECHA (ver más abajo) y el contenido se carga al centro. === */}
+      {grupoCfg.items.length > 1 && grupoActivo !== 'gestion' && (
       <div style={{
         background: BASE.white,
         borderRadius: !soloPlaneamiento ? '0 0 12px 12px' : '12px',
@@ -862,6 +860,32 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
           })}
         </div>
         {/* Controles de comando (CPI/EF + Filtros/Resumen) en el espacio libre a la derecha */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          {comandoControles}
+        </div>
+      </div>
+      )}
+
+      {/* === BARRA SLIM DE GESTIÓN === Sustituye a los sub-tabs horizontales: GESTIÓN
+          navega por el menú vertical de la derecha. Aquí solo viven el título y los
+          controles de comando (CPI/EF + Filtros/Resumen), que mantienen a todos los
+          módulos de Gestión «conversando» bajo los mismos filtros del dashboard. */}
+      {grupoActivo === 'gestion' && (
+      <div style={{
+        background: BASE.white,
+        borderRadius: !soloPlaneamiento ? '0 0 12px 12px' : '12px',
+        border: `1px solid ${BASE.border}`,
+        borderTop: !soloPlaneamiento ? 'none' : `1px solid ${BASE.border}`,
+        padding: '12px 16px',
+        marginBottom: '14px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        gap: '12px', flexWrap: 'wrap',
+      }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '9px', minWidth: 0 }}>
+          <Icon name={grupoCfg.iconName} size={16} color={grupoCfg.color} strokeWidth={2} />
+          <span style={{ fontSize: '13px', fontWeight: '800', color: grupoCfg.color, letterSpacing: '0.4px' }}>{grupoCfg.label}</span>
+          <span style={{ fontSize: '11px', fontWeight: '600', color: BASE.muted }}>· elige un módulo en el menú de la derecha →</span>
+        </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           {comandoControles}
         </div>
@@ -983,7 +1007,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
             {[['Desde', fDesde, setFDesde], ['Hasta', fHasta, setFHasta]].map(([lab, val, set], i) => (
               <div key={`fecha-${i}`} style={{ minWidth: 0 }}>
                 <label style={labelEstilo(!!val)}>{lab}{val && puntoActivo}</label>
-                <input type="date" value={val} onChange={e => set(e.target.value)} style={selEstilo(!!val)} />
+                <DatePickerPremium value={val} onChange={set} activo={!!val} isMobile={isMobile} />
               </div>
             ))}
           </div>
@@ -1051,7 +1075,12 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
         );
       })()}
 
-      {/* === VISTAS === */}
+      {/* === VISTAS ===
+          En GESTIÓN: layout de 2 columnas → contenido al centro (flex:1) + menú
+          vertical de módulos a la DERECHA (sticky, con nombre + micro-descripción).
+          En el resto de grupos: el contenido ocupa todo el ancho como siempre. */}
+      <div style={grupoActivo === 'gestion' ? { display: 'flex', gap: '14px', alignItems: 'flex-start' } : undefined}>
+      <div style={grupoActivo === 'gestion' ? { flex: 1, minWidth: 0 } : undefined}>
       {view==='cockpit'    && <CockpitEjecutivo historial={historialEnriquecido} wbs={wbs} filtrados={filtrados} costosCustomMap={costosCustomMap} isMobile={isMobile}/>}
       {view==='auditoria'  && <Auditoria filtrados={filtrados} eliminar={eliminar} guardarMetrado={guardarMetrado} hhPorSemana={hhPorSemana} hhTotales={hhTotales} totalBaseDatos={(historial||[]).length}/>}
       {view==='wbs-editor' && <EditorWbsIsp showToast={showToast}/>}
@@ -1064,7 +1093,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
       {view==='bim'        && <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: BASE.muted }}>Cargando visor BIM…</div>}><BIM historialEnriquecido={historialEnriquecido} showToast={showToast}/></Suspense>}
       {view==='tareo'      && <Tareo historial={historialEnriquecido} filtrados={filtrados} personalDB={personalDB} cuadrillasActivas={cuadrillasActivas} cuadrillasDB={cuadrillasDB} costosCustomMap={costosCustomMap} isMobile={isMobile} showToast={showToast} fDesde={fDesde} fHasta={fHasta} fCapataz={fCapataz} setFDesde={setFDesde} setFHasta={setFHasta} setFCapataz={setFCapataz}/>}
       {view==='gestion'    && <Personal cuadrillasDB={cuadrillasDB} personalDB={personalDB} configuracion={configuracion} showToast={showToast}/>}
-      {view==='pago-obreros' && <PagoObreros historial={historialEnriquecido} cuadrillasActivas={cuadrillasActivas} configuracion={configuracion} personalDB={personalDB} showToast={showToast}/>}
+      {view==='pago-obreros' && <PagoObreros historial={historialEnriquecido} cuadrillasActivas={cuadrillasActivas} configuracion={configuracion} personalDB={personalDB} showToast={showToast} fDesde={fDesde} fHasta={fHasta} fCapataz={fCapataz}/>}
       {view==='export' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 380px), 1fr))', gap: '14px' }}>
           <ExportarSimple
@@ -1094,6 +1123,48 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
         </div>
       )}
       {view==='impacto'    && <ImpactoTesis historialEnriquecido={historialEnriquecido} configuracion={configuracion}/>}
+      </div>
+
+      {/* === MENÚ VERTICAL DE GESTIÓN (a la derecha) ===
+          Tarjetas «a la vista»: nombre + micro-descripción (poco texto, se entiende de un
+          vistazo). Click → carga el módulo al centro. Sticky para no perderlo al hacer scroll. */}
+      {grupoActivo === 'gestion' && (
+      <aside style={{
+        width: '236px', flexShrink: 0, alignSelf: 'flex-start',
+        position: 'sticky', top: '8px',
+        display: 'flex', flexDirection: 'column', gap: '8px',
+      }}>
+        <div style={{ fontSize: '9.5px', fontWeight: '800', color: BASE.muted, letterSpacing: '1px', padding: '2px 4px 2px', textTransform: 'uppercase' }}>
+          Módulos de Gestión
+        </div>
+        {grupoCfg.items.map(item => {
+          const activa = view === item.id;
+          return (
+            <button key={item.id} onClick={() => handleSetView(item.id)} style={{
+              textAlign: 'left', cursor: 'pointer', width: '100%',
+              background: activa ? `${grupoCfg.color}10` : BASE.white,
+              border: `1px solid ${activa ? grupoCfg.color : BASE.border}`,
+              borderLeft: `3px solid ${activa ? grupoCfg.color : 'transparent'}`,
+              borderRadius: '10px', padding: '10px 12px',
+              display: 'flex', flexDirection: 'column', gap: '3px',
+              transition: 'all 0.15s ease',
+              boxShadow: activa ? `0 2px 10px ${grupoCfg.color}22` : '0 1px 2px rgba(15,23,42,0.03)',
+            }}
+            onMouseEnter={e => { if (!activa) { e.currentTarget.style.background = BASE.bgSoft; e.currentTarget.style.borderColor = `${grupoCfg.color}55`; } }}
+            onMouseLeave={e => { if (!activa) { e.currentTarget.style.background = BASE.white; e.currentTarget.style.borderColor = BASE.border; } }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', fontWeight: activa ? '800' : '700', color: activa ? grupoCfg.color : BASE.navy }}>
+                <Icon name={item.iconName} size={14} color={activa ? grupoCfg.color : BASE.muted} strokeWidth={2} />
+                {item.l}
+              </span>
+              <span style={{ fontSize: '10px', fontWeight: '600', color: BASE.muted, lineHeight: 1.3, paddingLeft: '22px' }}>
+                {item.desc}
+              </span>
+            </button>
+          );
+        })}
+      </aside>
+      )}
+      </div>
     </div>
   );
 }
