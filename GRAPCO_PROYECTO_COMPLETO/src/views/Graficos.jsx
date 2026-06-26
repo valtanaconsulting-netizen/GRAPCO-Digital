@@ -35,7 +35,8 @@ const buildGrafData = (records) => {
     'HH Real': parseFloat(s.hhR.toFixed(1)),
     'HH Meta': parseFloat(s.hhM.toFixed(1)),
     'HH Ppto': parseFloat(s.hhP.toFixed(1)),
-    CPI: s.hhR > 0 ? parseFloat((s.hhM / s.hhR).toFixed(2)) : 1,
+    CPI: s.hhR > 0 ? parseFloat((s.hhM / s.hhR).toFixed(2)) : 1,          // CPI vs META
+    'CPI Ppto': s.hhR > 0 ? parseFloat((s.hhP / s.hhR).toFixed(2)) : 1,   // CPI vs PRESUPUESTO
   }));
   let aR = 0, aM = 0, aP = 0;
   const acumulado = semanas.map(s => {
@@ -468,7 +469,7 @@ export default function Graficos({ grafData: grafDataOriginal, filtrados = [], w
         title={fActividad ? `IP Real por Semana — ${fActividad}` : 'CPI Semanal'}
         subtitle={fActividad
           ? 'HH/Metrado de la actividad seleccionada · bajar es mejor'
-          : 'Eficiencia semanal HH Meta vs HH Real · ≥100% bajo presupuesto. (El IP agregado no es válido con unidades mixtas — filtra una actividad para verlo.)'}
+          : 'Eficiencia semanal vs META y vs PRESUPUESTO · ≥100% por debajo del objetivo · clic en la leyenda para mostrar/ocultar cada serie.'}
         color={fActividad ? PAL.real.stroke : PAL.cpi.stroke}
         kpi={
           fActividad
@@ -490,7 +491,8 @@ export default function Graficos({ grafData: grafDataOriginal, filtrados = [], w
             { key: 'HH Real', label: 'HH Real', fmt: fmtHH },
             { key: 'HH Meta', label: 'HH Meta', fmt: fmtHH, color: PAL.meta.stroke },
             { key: 'HH Ppto', label: 'HH Ppto', fmt: fmtHH, color: PAL.ppt.stroke },
-            { key: 'CPI', label: 'CPI %', fmt: fmtPct, bold: true, color: BASE.navy },
+            { key: 'CPI', label: 'CPI vs META', fmt: fmtPct, bold: true, color: PAL.cpi.stroke },
+            { key: 'CPI Ppto', label: 'CPI vs PPTO', fmt: fmtPct, color: PAL.ppt.stroke },
           ]}/>
         ) : null}
       >
@@ -517,21 +519,42 @@ export default function Graficos({ grafData: grafDataOriginal, filtrados = [], w
               </>}
               <Line {...SIN_ANIM} type="monotone"
                 dataKey={fActividad ? 'IP Real' : 'CPI'}
+                name={fActividad ? 'IP Real' : 'CPI vs META'}
                 stroke={fActividad ? PAL.real.stroke : PAL.cpi.stroke}
                 strokeWidth={2.5}
                 hide={hidSem.has(fActividad ? 'IP Real' : 'CPI')}
                 dot={{r:4,fill:fActividad ? PAL.real.stroke : PAL.cpi.stroke,strokeWidth:2,stroke:'#fff'}}
                 activeDot={{r:7,strokeWidth:2,stroke:'#fff'}}
                 animationDuration={500}/>
+              {/* CPI vs PRESUPUESTO semanal — gold dashed, toggle via leyenda */}
+              {!fActividad && (
+                <Line {...SIN_ANIM} type="monotone"
+                  dataKey="CPI Ppto" name="CPI vs PRESUPUESTO"
+                  stroke={PAL.ppt.stroke} strokeWidth={2}
+                  hide={hidSem.has('CPI Ppto')}
+                  dot={{r:3,fill:PAL.ppt.stroke,strokeWidth:2,stroke:'#fff'}}
+                  activeDot={{r:6,strokeWidth:2,stroke:'#fff'}}
+                  strokeDasharray="5 3" animationDuration={500}/>
+              )}
             </LineChart>
           </ResponsiveContainer>
         )}
       </ChartCard>
 
+      {/* === Par CPI Acumulado + Curva S: ocupan TODO el ancho (50/50 en pantalla
+            ancha, apilados en angosta). Antes quedaban en una sola columna del grid
+            auto-fit dejando el lado derecho vacío. === */}
+      <div style={{
+        gridColumn:'1/-1',
+        display:'grid',
+        gridTemplateColumns:'repeat(auto-fit, minmax(min(100%, 460px), 1fr))',
+        gap:'14px',
+      }}>
+
       {/* === CPI % ACUMULADO con bandas semafóricas === */}
       <ChartCard
         title="CPI % Acumulado"
-        subtitle="Eficiencia acumulada · zona verde = óptimo, ámbar = alerta, roja = crítico"
+        subtitle="Eficiencia acumulada vs META y vs PRESUPUESTO · zona verde = óptimo, ámbar = alerta, roja = crítico · clic en la leyenda para mostrar/ocultar."
         color={PAL.cpi.stroke}
         kpi={ultCPI != null ? {
           value: `${Math.round(ultCPI*100)}%`,
@@ -543,8 +566,8 @@ export default function Graficos({ grafData: grafDataOriginal, filtrados = [], w
             { key: 'semana', label: 'Semana', align: 'left', bold: true, mono: false },
             { key: 'HH Real Acum', label: 'Real Acum', fmt: fmtHH },
             { key: 'HH Meta Acum', label: 'Meta Acum', fmt: fmtHH, color: PAL.meta.stroke },
-            { key: 'CPI Acum', label: 'CPI Acum', fmt: fmtPct, bold: true, color: BASE.navy },
-            { key: 'CPI Ppto', label: 'CPI Ppto', fmt: fmtPct, color: PAL.ppt.stroke },
+            { key: 'CPI Acum', label: 'CPI vs META', fmt: fmtPct, bold: true, color: BASE.navy },
+            { key: 'CPI Ppto', label: 'CPI vs PPTO', fmt: fmtPct, color: PAL.ppt.stroke },
           ]}/>
         ) : null}
       >
@@ -563,12 +586,12 @@ export default function Graficos({ grafData: grafDataOriginal, filtrados = [], w
               <ReferenceArea y1={0} y2={0.85} fill={PAL.critico.fill} fillOpacity={PAL.critico.alpha} ifOverflow="hidden"/>
               <ReferenceLine y={1} stroke="#16a34a" strokeDasharray="4 2" strokeWidth={1.5}/>
               <ReferenceLine y={0.85} stroke="#d97706" strokeDasharray="4 2" strokeWidth={1.5}/>
-              <Line {...SIN_ANIM} type="monotone" dataKey="CPI Acum" stroke={PAL.real.stroke} strokeWidth={3}
+              <Line {...SIN_ANIM} type="monotone" dataKey="CPI Acum" name="CPI vs META" stroke={PAL.real.stroke} strokeWidth={3}
                 hide={hidCpi.has('CPI Acum')}
                 dot={{r:4,fill:PAL.real.stroke,strokeWidth:2,stroke:'#fff'}}
                 activeDot={{r:7,strokeWidth:2,stroke:'#fff'}}
                 animationDuration={500}/>
-              <Line {...SIN_ANIM} type="monotone" dataKey="CPI Ppto" stroke={PAL.ppt.stroke} strokeWidth={2}
+              <Line {...SIN_ANIM} type="monotone" dataKey="CPI Ppto" name="CPI vs PRESUPUESTO" stroke={PAL.ppt.stroke} strokeWidth={2}
                 hide={hidCpi.has('CPI Ppto')}
                 dot={{r:3,fill:PAL.ppt.stroke,strokeWidth:2,stroke:'#fff'}}
                 strokeDasharray="5 3" animationDuration={500}/>
@@ -611,6 +634,8 @@ export default function Graficos({ grafData: grafDataOriginal, filtrados = [], w
           </ResponsiveContainer>
         )}
       </ChartCard>
+
+      </div>{/* /par CPI Acumulado + Curva S */}
 
       {/* === HH POR PARTIDA — REAL vs META vs PPT ===
           Cada partida necesita ~110px para que el label horizontal de 2-3 líneas no
@@ -660,14 +685,15 @@ export default function Graficos({ grafData: grafDataOriginal, filtrados = [], w
       <ChartCard
         full
         title="HH Semanal & CPI"
-        subtitle="Volumen de trabajo (barras) y eficiencia (línea) por semana"
+        subtitle="Volumen de trabajo (barras) y eficiencia vs META y vs PRESUPUESTO (líneas) por semana"
         color={PAL.cpi.stroke}
         tabla={mostrarTabla ? (
           <TablaDatos data={grafData.semanas} cols={[
             { key: 'semana', label: 'Semana', align: 'left', bold: true, mono: false },
             { key: 'HH Real', label: 'HH Real', fmt: fmtHH, bold: true },
             { key: 'HH Meta', label: 'HH Meta', fmt: fmtHH, color: PAL.meta.stroke },
-            { key: 'CPI', label: 'CPI %', fmt: fmtPct, bold: true, color: BASE.navy },
+            { key: 'CPI', label: 'CPI vs META', fmt: fmtPct, bold: true, color: PAL.cpi.stroke },
+            { key: 'CPI Ppto', label: 'CPI vs PPTO', fmt: fmtPct, color: PAL.ppt.stroke },
           ]}/>
         ) : null}
       >
@@ -688,11 +714,16 @@ export default function Graficos({ grafData: grafDataOriginal, filtrados = [], w
                 hide={hidComp.has('HH Real')} animationDuration={500}/>
               <Bar {...SIN_ANIM} {...BARRA} yAxisId="left" dataKey="HH Meta" fill={PAL.meta.fill} opacity={0.65}
                 hide={hidComp.has('HH Meta')} animationDuration={500}/>
-              <Line {...SIN_ANIM} yAxisId="right" type="monotone" dataKey="CPI" stroke={PAL.cpi.stroke} strokeWidth={3}
+              <Line {...SIN_ANIM} yAxisId="right" type="monotone" dataKey="CPI" name="CPI vs META" stroke={PAL.cpi.stroke} strokeWidth={3}
                 hide={hidComp.has('CPI')}
                 dot={{r:4,fill:PAL.cpi.stroke,strokeWidth:2,stroke:'#fff'}}
                 activeDot={{r:7,strokeWidth:2,stroke:'#fff'}}
                 animationDuration={500}/>
+              <Line {...SIN_ANIM} yAxisId="right" type="monotone" dataKey="CPI Ppto" name="CPI vs PRESUPUESTO" stroke={PAL.ppt.stroke} strokeWidth={2}
+                hide={hidComp.has('CPI Ppto')}
+                dot={{r:3,fill:PAL.ppt.stroke,strokeWidth:2,stroke:'#fff'}}
+                activeDot={{r:6,strokeWidth:2,stroke:'#fff'}}
+                strokeDasharray="5 3" animationDuration={500}/>
             </ComposedChart>
           </ResponsiveContainer>
         )}
