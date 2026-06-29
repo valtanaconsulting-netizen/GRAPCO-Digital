@@ -32,10 +32,15 @@ export default function ProyectoEditor({ proyecto, onClose, showToast }) {
   const { user } = useAuth();
   const { proyectos } = useProyectoActivo();
   const esNuevo = proyecto === 'NUEVO' || !proyecto;
+  // Proyecto TERMINADO (estado completado) → edición bloqueada por defecto para
+  // proteger los reportes históricos; el admin puede reabrir explícitamente.
+  const esTerminado = !esNuevo && proyecto && typeof proyecto === 'object' && proyecto.estado === 'completado';
   const [paso, setPaso] = useState(1);
   const [guardando, setGuardando] = useState(false);
   // Pide confirmación (modal centrado) antes de marcar el proyecto como TERMINADO.
   const [confirmarTerminado, setConfirmarTerminado] = useState(false);
+  // Desbloqueo explícito de edición para un proyecto ya TERMINADO.
+  const [desbloqueado, setDesbloqueado] = useState(false);
 
   const [form, setForm] = useState({
     codigo: '',
@@ -183,6 +188,7 @@ export default function ProyectoEditor({ proyecto, onClose, showToast }) {
   };
 
   const guardar = async () => {
+    if (esTerminado && !desbloqueado) { showToast?.('Proyecto TERMINADO: usa «Reabrir para editar» antes de guardar.', 'error'); return; }
     const err = validarPaso();
     if (err) { showToast?.(err, 'error'); return; }
 
@@ -300,6 +306,34 @@ export default function ProyectoEditor({ proyecto, onClose, showToast }) {
         </div>
         <button onClick={onClose} style={btnGhost}>✕ Cerrar</button>
       </div>
+
+      {/* Banner de proyecto TERMINADO (solo lectura, con reapertura explícita) */}
+      {esTerminado && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap',
+          background: desbloqueado ? '#fffbeb' : BASE.goldSoft,
+          border: `1px solid ${BASE.gold}`, borderRadius: '12px',
+          padding: '11px 14px', marginBottom: '18px',
+        }}>
+          <span style={{ fontSize: '18px' }}>{desbloqueado ? '🔓' : '🏁'}</span>
+          <div style={{ flex: 1, minWidth: '180px' }}>
+            <p style={{ margin: 0, fontSize: '12.5px', fontWeight: 900, color: BASE.navy }}>
+              {desbloqueado ? 'Edición habilitada' : 'Proyecto TERMINADO · solo lectura'}
+            </p>
+            <p style={{ margin: '2px 0 0', fontSize: '11px', color: BASE.muted }}>
+              {desbloqueado
+                ? 'Cambiar datos de un proyecto cerrado afecta reportes históricos. Procede con cuidado.'
+                : 'Este proyecto está cerrado. Para proteger los reportes, la edición está bloqueada.'}
+            </p>
+          </div>
+          {!desbloqueado && (
+            <button type="button" onClick={() => setDesbloqueado(true)}
+              style={{ ...btnGhost, borderColor: BASE.gold, color: BASE.navy, whiteSpace: 'nowrap' }}>
+              🔓 Reabrir para editar
+            </button>
+          )}
+        </div>
+      )}
 
       {/* STEP INDICATOR */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap' }}>
