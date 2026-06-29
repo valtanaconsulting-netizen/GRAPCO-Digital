@@ -274,9 +274,19 @@ export function AuthProvider({ children }) {
         setEsDemo(false);
 
         // Ahora suscribirse a /Usuarios/{uid} para reflejar cambios de rol/activo en vivo
+        let lastClaimsRev;   // aislamiento multi-tenant: detectar re-emisión de Custom Claims
         unsubPerfil = onSnapshot(doc(db, 'Usuarios', firebaseUser.uid), (snap) => {
           if (!snap.exists()) return;
           const data = snap.data();
+          // Si una Cloud Function re-emitió los Custom Claims {rol,proy,sa} (claimsRev
+          // cambió en vivo), refresca el ID token para traerlos sin re-login. Inocuo
+          // hoy: ningún doc tiene claimsRev hasta que corra adminSincronizarClaims.
+          if (typeof data.claimsRev === 'number') {
+            if (lastClaimsRev !== undefined && data.claimsRev !== lastClaimsRev) {
+              auth.currentUser?.getIdToken(true).catch(() => {});
+            }
+            lastClaimsRev = data.claimsRev;
+          }
           // Si el admin desactivó la cuenta en otra ventana, cerrar sesión
           if (data.activo === false) {
             console.warn('[Auth] Cuenta desactivada (live update), cerrando sesión');

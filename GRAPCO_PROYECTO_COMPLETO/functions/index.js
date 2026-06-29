@@ -324,6 +324,7 @@ exports.adminCambiarRol              = adminFns.adminCambiarRol;
 exports.adminDesactivarUsuario       = adminFns.adminDesactivarUsuario;
 exports.adminEliminarUsuario         = adminFns.adminEliminarUsuario;
 exports.adminSincronizarUsuariosAuth = adminFns.adminSincronizarUsuariosAuth;
+exports.adminSincronizarClaims       = adminFns.adminSincronizarClaims;
 
 // ════════════════════════════════════════════════════════════════
 // 5) apsEliminarModelo

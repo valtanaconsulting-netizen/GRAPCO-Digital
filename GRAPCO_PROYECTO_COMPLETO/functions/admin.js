@@ -53,6 +53,34 @@ const SUPER_ADMINS = new Set([
   'abasurco@grapcosac.com',
 ]);
 
+// ── Custom Claims de proyecto (rec #1 — aislamiento multi-tenant) ──
+// Deriva el claim desde el perfil /Usuarios. proy = lista de proyectos autorizados;
+// sa = superadmin. Pequeño (<1KB) para no inflar el JWT. Las rules endurecidas lo
+// leen sin get() (0 reads, offline-ok). HOY las rules vivas NO lo usan → inocuo.
+const construirClaim = (perfil, email) => {
+  const proy = [];
+  if (perfil && perfil.proyectoIdAsignado) proy.push(perfil.proyectoIdAsignado);
+  if (perfil && Array.isArray(perfil.proyectosAutorizados)) {
+    for (const p of perfil.proyectosAutorizados) if (p && !proy.includes(p)) proy.push(p);
+  }
+  const claim = { rol: (perfil && perfil.rol) || '', proy };
+  if (SUPER_ADMINS.has(String(email || '').toLowerCase())) claim.sa = true;
+  return claim;
+};
+
+// Emite los Custom Claims y bumpea claimsRev en /Usuarios (best-effort, NO-FATAL).
+// El cliente observa claimsRev (AuthContext) y refresca su token sin re-login.
+const emitirClaims = async (uid, perfil, email) => {
+  try {
+    await admin.auth().setCustomUserClaims(uid, construirClaim(perfil, email));
+    await admin.firestore().doc(`Usuarios/${uid}`).update({
+      claimsRev: admin.firestore.FieldValue.increment(1),
+    });
+  } catch (e) {
+    console.error('[emitirClaims]', uid, e.message);  // no-fatal: el flujo principal sigue
+  }
+};
+
 const requireAdmin = async (req) => {
   const authHeader = req.get('Authorization') || '';
   const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
@@ -136,6 +164,9 @@ exports.adminCrearUsuario = functions.https.onRequest(async (req, res) => {
     if (proyectoIdAsignado) perfil.proyectoIdAsignado = proyectoIdAsignado;
     await admin.firestore().doc(`Usuarios/${userRecord.uid}`).set(perfil);
 
+    // Custom Claims de proyecto (no-fatal): el usuario ya existe aunque esto falle.
+    await emitirClaims(userRecord.uid, perfil, email);
+
     await auditar(adminInfo.uid, 'admin_crear_usuario', {
       nuevoUid: userRecord.uid, email, rol,
     });
@@ -184,6 +215,11 @@ exports.adminCambiarRol = functions.https.onRequest(async (req, res) => {
     if (nuevoRol) update.rol = nuevoRol;
     if (tieneProy) update.proyectoIdAsignado = proyectoIdAsignado || null;
     await ref.update(update);
+
+    // Re-emitir Custom Claims con el rol/proyecto final (no-fatal).
+    const finalSnap = await ref.get();
+    const finalData = finalSnap.data() || {};
+    await emitirClaims(uid, finalData, finalData.email);
 
     await auditar(adminInfo.uid, 'admin_actualizar_usuario', {
       uidAfectado: uid, rolAnterior, rolNuevo: nuevoRol || rolAnterior,
@@ -319,6 +355,47 @@ exports.adminSincronizarUsuariosAuth = functions.https.onRequest(async (req, res
     });
   } catch (err) {
     console.error('[adminSincronizarUsuariosAuth]', err);
+    res.status(err.message.includes('denegado') ? 403 : 500)
+       .json({ error: err.message });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+// 6) adminSincronizarClaims  (rec #1 — Fase F1)
+// Recorre /Usuarios y (re)emite los Custom Claims {rol,proy,sa} a TODOS los
+// usuarios activos. Motor del backfill de claims y botón de "reparar". Reporta
+// cuántos usuarios activos quedan SIN proyecto (gate a revisar antes del cutover).
+// ════════════════════════════════════════════════════════════════
+exports.adminSincronizarClaims = functions.https.onRequest(async (req, res) => {
+  if (enableCors(req, res)) return;
+  try {
+    const adminInfo = await requireAdmin(req);
+    const usuariosSnap = await admin.firestore().collection('Usuarios').get();
+    let ok = 0, fail = 0, sinProy = 0;
+    const fallos = [];
+    const usuariosSinProyecto = [];
+    for (const d of usuariosSnap.docs) {
+      const data = d.data() || {};
+      if (data.activo === false) continue;  // inactivos no necesitan claim
+      const claim = construirClaim(data, data.email);
+      const esGlobal = claim.sa || claim.rol === 'admin' || claim.rol === 'ingeniero';
+      if (!claim.proy.length && !esGlobal) { sinProy++; usuariosSinProyecto.push(data.email || d.id); }
+      try {
+        await admin.auth().setCustomUserClaims(d.id, claim);
+        await d.ref.update({ claimsRev: admin.firestore.FieldValue.increment(1) });
+        ok++;
+      } catch (e) {
+        fail++; fallos.push({ uid: d.id, email: data.email, error: e.message });
+      }
+    }
+    await auditar(adminInfo.uid, 'admin_sincronizar_claims', { ok, fail, sinProy });
+    res.json({
+      ok: true, sincronizados: ok, fallos: fail, sinProyecto: sinProy,
+      usuariosSinProyecto, detalleFallos: fallos,
+      mensaje: `Claims emitidos: ${ok} ok, ${fail} fallos. ${sinProy} usuarios activos SIN proyecto/rol-global (revisar antes del cutover de reglas).`,
+    });
+  } catch (err) {
+    console.error('[adminSincronizarClaims]', err);
     res.status(err.message.includes('denegado') ? 403 : 500)
        .json({ error: err.message });
   }
