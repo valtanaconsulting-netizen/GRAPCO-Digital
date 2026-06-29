@@ -20,6 +20,18 @@ import {
 } from '../utils/helpers';
 import CostoRealCR from './modulos/resultadoOperativo/CostoRealCR';
 
+// Tono "frío / ahorro" institucional: BASE no define un azul (la marca es navy),
+// así que reutilizamos navyLight como acento frío y su rgba para tintes. De este modo
+// el heatmap, las celdas de ahorro y las columnas CAMPO hablan el MISMO idioma de color
+// que el resto de la plataforma (nada de azules tailwind sueltos).
+const COOL = BASE.navyLight;        // #1E4674 — delta negativo / ahorro / campo
+const hexToRgba = (hex, a) => {
+  const h = (hex || '').replace('#', '');
+  const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+  const n = parseInt(full, 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+};
+
 // `historial` = registros YA FILTRADOS por el dashboard (semana/acumulado, partida,
 // subpartida, actividad, capataz, persona, fechas). Ingeniero le pasa `filtrados`, no
 // el historial completo, para que las 3 vistas (Reporte de Tareos, Control HH
@@ -81,11 +93,9 @@ export default function ControlGerencial({ historial, wbs, personalDB, configura
               borderRadius: '10px',
               fontSize: '13px', fontWeight: '800', cursor: 'pointer',
               letterSpacing: '0.3px',
-              boxShadow: activo
-                ? `0 6px 16px ${BASE.gold}66, inset 0 -3px 0 rgba(0,0,0,0.15)`
-                : 'none',
+              boxShadow: activo ? BASE.shadowMd : 'none',
               transform: activo ? 'translateY(-1px)' : 'translateY(0)',
-              transition: 'all 0.18s ease',
+              transition: 'background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease',
               textAlign: 'left',
               display: 'flex', flexDirection: 'column', gap: '3px',
               position: 'relative',
@@ -206,192 +216,175 @@ function ReporteTareos({ historial, tarifaPromedio, partidaExpandida, setPartida
     return <SinDatos icon="💵" titulo="Sin datos para el reporte de tareos" />;
   }
 
+  // ── Tokens del look CLARO (idénticos a CostoRealCR) para que ambas tablas se vean
+  //    como un solo reporte: banda navy SOLO en el Σ TOTAL, filas claras con filo de
+  //    acento por peso, números mono tabular, oro como único acento fuerte.
+  const MONO = 'var(--grapco-font-mono, monospace)';
+  const NAVY2 = '#15314F';                                 // banda Σ TOTAL (igual que el CR)
+  const TRACK = '#dde5ef';                                 // pista de la barra de %
+  const zebra = (i) => (i % 2 ? '#f3f6fa' : '#eef2f7');    // striping sutil
+  const accPeso = (pct) => (pct >= 15 ? BASE.navy : pct >= 6 ? BASE.gold : BASE.mutedSoft);
+  const thRT = (extra = {}) => ({
+    padding: '6px 10px', background: BASE.navy, color: '#fff',
+    fontSize: '9.5px', fontWeight: 800, letterSpacing: '0.5px',
+    textTransform: 'uppercase', whiteSpace: 'nowrap',
+    borderBottom: `2px solid ${BASE.gold}`, ...extra,
+  });
+  const tdRT = (extra = {}) => ({
+    padding: '5px 10px', borderBottom: `1px solid ${BASE.border}`,
+    fontSize: '11px', color: BASE.text, ...extra,
+  });
+  const numRT = { fontFamily: MONO, fontFeatureSettings: '"tnum" 1', textAlign: 'right', whiteSpace: 'nowrap' };
+
   return (
     <div style={{
       background: BASE.white,
-      borderRadius: '16px',
+      borderRadius: '12px',
       border: `1px solid ${BASE.border}`,
       overflow: 'hidden',
-      boxShadow: '0 2px 8px rgba(15,23,42,0.05)',
+      boxShadow: BASE.shadowSm,
     }}>
-      {/* Cabecera total proyecto — compacta */}
+      {/* Barra de control — blanca con filo dorado (gemela de la del CR). El gran total
+          ya no va aquí: vive en la fila Σ TOTAL de la tabla, igual que en el CR. */}
       <div style={{
-        background: `linear-gradient(90deg, ${BASE.gold}, ${BASE.goldDark})`,
-        padding: '8px 16px', color: '#fff',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        gap: '14px', flexWrap: 'wrap',
+        display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center',
+        background: BASE.white, borderBottom: `1px solid ${BASE.border}`,
+        borderLeft: `4px solid ${BASE.gold}`, padding: '8px 14px',
       }}>
-        <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: '8px' }}>
-          <span style={{ fontSize: '9.5px', fontWeight: '800', opacity: 0.85, letterSpacing: '0.6px' }}>TOTAL COSTO DE OBRA</span>
-          <span style={{ fontSize: '17px', fontWeight: '900', letterSpacing: '-0.2px', fontFamily: 'var(--grapco-font-mono, monospace)' }}>{fmtMoney(reporte.totalCosto)}</span>
-        </div>
-        <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: '8px' }}>
-          <span style={{ fontSize: '9.5px', opacity: 0.85, fontWeight: '700' }}>HH TOTAL</span>
-          <span style={{ fontSize: '14px', fontWeight: '900', fontFamily: 'var(--grapco-font-mono, monospace)' }}>{fmt1(reporte.totalHH)}</span>
-        </div>
-        <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: '8px' }}>
-          <span style={{ fontSize: '9.5px', opacity: 0.85, fontWeight: '700' }}>COSTO MO PROMEDIO</span>
-          <span style={{ fontSize: '13px', fontWeight: '900', fontFamily: 'var(--grapco-font-mono, monospace)' }}>{fmtMoney(tarifaPromedio)}/h</span>
+        <span style={{ fontSize: '12.5px', fontWeight: 900, color: BASE.navy, letterSpacing: '0.3px' }}>Reporte de Tareos</span>
+        <span style={{ fontSize: '11px', color: BASE.muted, fontWeight: 600 }}>
+          Costo MO <strong style={{ color: BASE.navy, fontFamily: MONO }}>{fmtMoney(tarifaPromedio)}/h</strong>
+        </span>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <input
+            type="text" value={buscar} onChange={e => setBuscar(e.target.value)}
+            placeholder="Buscar partida…" aria-label="Buscar partida"
+            style={{
+              flex: '1 1 150px', minWidth: '140px',
+              padding: '7px 11px', borderRadius: '7px',
+              border: `1.5px solid ${buscar ? BASE.gold : BASE.border}`,
+              background: buscar ? BASE.goldSoft : BASE.white,
+              fontSize: '11.5px', fontWeight: 600, color: BASE.text, outline: 'none',
+            }}
+          />
+          {buscar && (
+            <span style={{
+              fontSize: '10.5px', fontWeight: 700, color: BASE.navy,
+              background: BASE.navySoft, padding: '4px 9px', borderRadius: '999px',
+            }}>{partidasMostradas.length} de {reporte.partidas.length}</span>
+          )}
+          <select value={orden} onChange={e => setOrden(e.target.value)} style={{
+            padding: '7px 9px', borderRadius: '7px',
+            border: `1.5px solid ${BASE.border}`, background: BASE.white,
+            fontSize: '11.5px', fontWeight: 700, color: BASE.navy, cursor: 'pointer', outline: 'none',
+          }}>
+            <option value="costo-desc">Orden: Costo (mayor → menor)</option>
+            <option value="hh-desc">Orden: HH (mayor → menor)</option>
+            <option value="codigo">Orden: Código (catálogo)</option>
+          </select>
+          <button onClick={exportarExcel} style={{
+            padding: '7px 12px', borderRadius: '7px',
+            background: BASE.navy, color: '#fff', border: 'none',
+            fontSize: '10.5px', fontWeight: 800, cursor: 'pointer',
+            letterSpacing: '0.3px', whiteSpace: 'nowrap',
+          }}>Exportar Excel</button>
         </div>
       </div>
 
-      {/* Toolbar: buscar + ordenar + exportar */}
-      <div style={{
-        background: BASE.bgSoft,
-        borderBottom: `1px solid ${BASE.border}`,
-        padding: '10px 14px',
-        display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap',
-      }}>
-        <input
-          type="text" value={buscar} onChange={e => setBuscar(e.target.value)}
-          placeholder="🔍 Buscar partida…" aria-label="Buscar partida"
-          style={{
-            flex: '1 1 200px', minWidth: '180px',
-            padding: '8px 12px', borderRadius: '8px',
-            border: `1.5px solid ${buscar ? '#93c5fd' : BASE.border}`,
-            background: buscar ? '#eff6ff' : '#fff',
-            fontSize: '12px', fontWeight: '600', outline: 'none',
-          }}
-        />
-        <select value={orden} onChange={e => setOrden(e.target.value)} style={{
-          padding: '8px 12px', borderRadius: '8px',
-          border: `1.5px solid ${BASE.border}`, background: '#fff',
-          fontSize: '12px', fontWeight: '700', color: BASE.navy, cursor: 'pointer', outline: 'none',
-        }}>
-          <option value="costo-desc">Orden: Costo (mayor → menor)</option>
-          <option value="hh-desc">Orden: HH (mayor → menor)</option>
-          <option value="codigo">Orden: Código (catálogo)</option>
-        </select>
-        <button onClick={exportarExcel} style={{
-          padding: '8px 14px', borderRadius: '8px',
-          background: BASE.navy, color: '#fff', border: 'none',
-          fontSize: '11.5px', fontWeight: '800', cursor: 'pointer',
-          display: 'inline-flex', alignItems: 'center', gap: '6px',
-          letterSpacing: '0.3px',
-        }}>Exportar Excel</button>
-        {buscar && (
-          <span style={{
-            fontSize: '11px', fontWeight: '700', color: BASE.navy,
-            background: BASE.navySoft, padding: '4px 10px', borderRadius: '999px',
-            border: `1px solid ${BASE.border}`,
-          }}>{partidasMostradas.length} de {reporte.partidas.length}</span>
-        )}
-      </div>
-
-      {/* Tabla jerarquica con padding generoso */}
+      {/* Tabla jerárquica — look claro gemelo del CR */}
       <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', minWidth: '820px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: '620px' }}>
           <thead>
             <tr>
-              <th style={thStyle({ width: '60px', textAlign: 'center' })}>FRENTE</th>
-              <th style={thStyle({ width: '80px', textAlign: 'center' })}>PARTIDA</th>
-              <th style={thStyle({ width: '34%', textAlign: 'left', paddingLeft: '20px' })}>DESCRIPCION</th>
-              <th style={thStyle({ width: '110px', textAlign: 'right', paddingRight: '20px' })}>HH</th>
-              <th style={thStyle({ width: '150px', textAlign: 'right', background: BASE.gold, color: '#fff', paddingRight: '22px' })}>COSTO</th>
-              <th style={thStyle({ textAlign: 'left', paddingLeft: '16px', paddingRight: '20px' })}>% DEL TOTAL</th>
+              <th style={thRT({ width: '54px', textAlign: 'center' })}>FRENTE</th>
+              <th style={thRT({ width: '52px', textAlign: 'center' })}>PART.</th>
+              <th style={thRT({ textAlign: 'left', paddingLeft: '14px' })}>DESCRIPCION</th>
+              <th style={thRT({ width: '92px', textAlign: 'right' })}>HH</th>
+              <th style={thRT({ width: '120px', textAlign: 'right' })}>COSTO (S/)</th>
+              <th style={thRT({ width: '140px', textAlign: 'left' })}>% DEL TOTAL</th>
             </tr>
           </thead>
           <tbody>
+            {/* Σ TOTAL — única banda navy, cifra en oro (firma GRAPCO, igual que el CR) */}
+            <tr style={{ background: NAVY2, borderTop: `2px solid ${BASE.gold}`, borderBottom: `2px solid ${BASE.gold}` }}>
+              <td colSpan={3} style={{ padding: '7px 14px', color: '#fff', fontWeight: 900, fontSize: '11.5px', letterSpacing: '0.4px', textTransform: 'uppercase' }}>Σ TOTAL COSTO DE OBRA</td>
+              <td style={{ ...tdRT({ ...numRT, color: '#fff', fontWeight: 800, borderBottom: 'none' }) }}>{fmt1(reporte.totalHH)}</td>
+              <td style={{ ...tdRT({ ...numRT, color: BASE.gold, fontWeight: 900, fontSize: '12px', borderBottom: 'none' }) }}>{fmtMoney(reporte.totalCosto)}</td>
+              <td style={{ ...tdRT({ ...numRT, color: '#fff', fontWeight: 800, borderBottom: 'none' }) }}>100%</td>
+            </tr>
             {partidasMostradas.map((p, i) => {
               const expandida = partidaExpandida === p.nombre;
               const pctTotal = reporte.totalCosto > 0 ? (p.costo / reporte.totalCosto) * 100 : 0;
+              const acc = accPeso(pctTotal);
               const rank = rankingPorCosto[p.nombre];
               const esTop3 = rank <= 3;
+              const hayInfo = (p.subpartidas || []).length > 0;
               return (
                 <React.Fragment key={p.nombre}>
                   <tr
-                    onClick={() => setPartidaExpandida(expandida ? null : p.nombre)}
+                    onClick={() => hayInfo && setPartidaExpandida(expandida ? null : p.nombre)}
                     style={{
-                      background: BASE.navy + 'dd',
-                      cursor: 'pointer', borderTop: `2px solid ${BASE.gold}`,
-                      transition: 'background 0.15s',
+                      background: zebra(i),
+                      cursor: hayInfo ? 'pointer' : 'default',
+                      borderTop: `1px solid ${BASE.border}`,
                     }}>
-                    <td style={tdStyle({ textAlign: 'center', fontFamily: 'monospace', fontSize: '10.5px', fontWeight: '800', color: BASE.gold })}>
-                      {p.codigo}
+                    <td style={tdRT({ textAlign: 'center', borderLeft: `4px solid ${acc}` })}>
+                      <span style={{
+                        fontSize: '8.5px', fontWeight: 800, color: '#fff', background: acc,
+                        borderRadius: '4px', padding: '1px 5px', fontFamily: MONO,
+                      }}>{p.codigo}</span>
                     </td>
-                    <td style={tdStyle({ textAlign: 'center', fontFamily: 'monospace', fontWeight: '800', color: '#fff' })}>
+                    <td style={tdRT({ textAlign: 'center', fontFamily: MONO, fontWeight: 800, color: BASE.navy })}>
                       {String(p.indice).padStart(2, '0')}
                     </td>
-                    <td style={tdStyle({ fontWeight: '800', paddingLeft: '20px', color: '#fff' })}>
-                      <span style={{
-                        marginRight: '8px', display: 'inline-block', width: '14px',
-                        transition: 'transform 0.2s',
-                        transform: expandida ? 'rotate(0deg)' : 'rotate(-90deg)',
-                      }}>▼</span>
+                    <td style={tdRT({ fontWeight: 800, color: BASE.navy })}>
+                      <span style={{ marginRight: '7px', display: 'inline-block', width: '11px', color: BASE.muted, fontSize: '9px' }}>
+                        {hayInfo ? (expandida ? '▾' : '▸') : ''}
+                      </span>
                       {esTop3 && (
                         <span title={`#${rank} partida más cara`} style={{
                           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                          width: '20px', height: '20px',
-                          background: rank === 1 ? BASE.gold : rank === 2 ? '#cbd5e1' : '#d97706',
-                          color: rank === 1 ? BASE.navy : '#0f172a',
-                          borderRadius: '50%', fontSize: '10px', fontWeight: '900',
-                          marginRight: '8px', verticalAlign: 'middle',
-                          boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                          width: '18px', height: '18px',
+                          background: rank === 1 ? BASE.gold : rank === 2 ? BASE.muted : BASE.goldDark,
+                          color: rank === 1 ? BASE.navy : '#fff',
+                          borderRadius: '50%', fontSize: '9.5px', fontWeight: 900,
+                          marginRight: '7px', verticalAlign: 'middle',
+                          boxShadow: BASE.shadowSm,
                         }}>{rank}</span>
                       )}
                       {p.nombre}
                     </td>
-                    <td style={tdStyle({ textAlign: 'right', fontWeight: '800', paddingRight: '20px', color: '#fff' })}>{fmt1(p.hh)}</td>
-                    <td style={tdStyle({ textAlign: 'right', fontWeight: '900', color: BASE.gold, paddingRight: '22px', fontSize: '13px' })}>
-                      {fmtMoney(p.costo)}
-                    </td>
-                    <td style={tdStyle({ paddingLeft: '12px', paddingRight: '12px' })}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{
-                          flex: 1, height: '14px', borderRadius: '7px',
-                          background: 'rgba(255,255,255,0.10)',
-                          overflow: 'hidden', position: 'relative',
-                        }}>
-                          <div style={{
-                            width: `${Math.min(100, pctTotal)}%`, height: '100%',
-                            background: `linear-gradient(90deg, ${BASE.gold}, #fcd34d)`,
-                            borderRadius: '7px', transition: 'width 0.3s',
-                          }}/>
+                    <td style={tdRT({ ...numRT, fontWeight: 800, color: BASE.text })}>{fmt1(p.hh)}</td>
+                    <td style={tdRT({ ...numRT, fontWeight: 900, color: BASE.navy })}>{fmtMoney(p.costo)}</td>
+                    <td style={tdRT({ padding: '4px 10px' })}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ flex: 1, height: '6px', borderRadius: '999px', background: TRACK, overflow: 'hidden' }}>
+                          <div style={{ width: `${Math.min(100, pctTotal)}%`, height: '100%', background: acc }} />
                         </div>
-                        <span style={{
-                          color: '#fff', fontWeight: '900', fontSize: '11.5px',
-                          fontFamily: 'var(--grapco-font-mono, monospace)',
-                          minWidth: '42px', textAlign: 'right',
-                        }}>{Math.round(pctTotal)}%</span>
+                        <span style={{ fontSize: '9.5px', fontWeight: 800, color: BASE.navy, minWidth: '30px', textAlign: 'right', fontFamily: MONO }}>
+                          {Math.round(pctTotal)}%
+                        </span>
                       </div>
                     </td>
                   </tr>
 
-                  {/* Subpartidas (con indentacion clara + % dentro de la partida) */}
+                  {/* Subpartidas — filas claras indentadas (sin barra, igual que el CR) */}
                   {expandida && p.subpartidas.map((sp, j) => {
                     const spPctDePartida = p.costo > 0 ? (sp.costo / p.costo) * 100 : 0;
                     return (
-                      <tr key={p.nombre + sp.nombre} style={{ background: j % 2 === 0 ? BASE.bgSoft : BASE.white }}>
-                        <td style={tdStyle({ textAlign: 'center', color: BASE.muted, fontSize: '10px' })}>{p.codigo}</td>
-                        <td style={tdStyle({ textAlign: 'center', fontFamily: 'monospace', fontSize: '11px', color: BASE.muted })}>
+                      <tr key={p.nombre + sp.nombre} style={{ background: BASE.white, borderTop: `1px solid ${BASE.borderSoft}` }}>
+                        <td style={tdRT({ textAlign: 'center', color: BASE.mutedSoft, fontSize: '9.5px' })}>{p.codigo}</td>
+                        <td style={tdRT({ textAlign: 'center', fontFamily: MONO, fontSize: '10.5px', color: BASE.mutedSoft })}>
                           {String(p.indice).padStart(2, '0')}.{String(j + 1).padStart(2, '0')}
                         </td>
-                        <td style={tdStyle({ paddingLeft: '40px', color: BASE.text })}>
-                          <span style={{ color: BASE.gold, marginRight: '8px', fontWeight: '900' }}>›</span>
+                        <td style={tdRT({ paddingLeft: '30px', color: BASE.text, fontSize: '10.5px' })}>
+                          <span style={{ color: acc, marginRight: '7px', fontWeight: 900 }}>›</span>
                           {sp.nombre}
                         </td>
-                        <td style={tdStyle({ textAlign: 'right', paddingRight: '20px' })}>{fmt1(sp.hh)}</td>
-                        <td style={tdStyle({ textAlign: 'right', color: BASE.green, fontWeight: '700', paddingRight: '22px' })}>
-                          {fmtMoney(sp.costo)}
-                        </td>
-                        <td style={tdStyle({ paddingLeft: '12px', paddingRight: '12px' })}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div style={{
-                              flex: 1, height: '6px', borderRadius: '3px',
-                              background: BASE.bgSoft, overflow: 'hidden',
-                            }}>
-                              <div style={{
-                                width: `${Math.min(100, spPctDePartida)}%`, height: '100%',
-                                background: BASE.green, opacity: 0.55,
-                                borderRadius: '3px',
-                              }}/>
-                            </div>
-                            <span title="% del costo de la partida" style={{
-                              color: BASE.muted, fontWeight: '700', fontSize: '10.5px',
-                              fontFamily: 'var(--grapco-font-mono, monospace)',
-                              minWidth: '42px', textAlign: 'right',
-                            }}>{Math.round(spPctDePartida)}%</span>
-                          </div>
+                        <td style={tdRT({ ...numRT, fontSize: '10.5px', color: BASE.text })}>{fmt1(sp.hh)}</td>
+                        <td style={tdRT({ ...numRT, fontSize: '10.5px', color: BASE.muted })}>{fmtMoney(sp.costo)}</td>
+                        <td style={tdRT({ ...numRT, fontSize: '9.5px', color: BASE.mutedSoft })} title="% del costo de la partida">
+                          {Math.round(spPctDePartida)}%
                         </td>
                       </tr>
                     );
@@ -401,7 +394,7 @@ function ReporteTareos({ historial, tarifaPromedio, partidaExpandida, setPartida
             })}
             {partidasMostradas.length === 0 && (
               <tr>
-                <td colSpan={6} style={tdStyle({ textAlign: 'center', padding: '30px', color: BASE.muted, fontStyle: 'italic' })}>
+                <td colSpan={6} style={tdRT({ textAlign: 'center', padding: '30px', color: BASE.muted, fontStyle: 'italic' })}>
                   Sin coincidencias para "{buscar}"
                 </td>
               </tr>
@@ -431,19 +424,12 @@ function ControlVariaciones({ historial, numTrabajadores, isMobile, asistencia }
   // Esto reduce la fatiga visual al ver muchos rojos seguidos
   const colorCelda = (delta) => {
     if (delta === 0 || delta == null) return { bg: BASE.bgSoft, color: BASE.muted };
+    const intensidad = Math.min(1, Math.abs(delta) / 150);
+    // Sobrecosto = rojo de la casa (BASE.red); ahorro = frío institucional (COOL).
     if (delta > 0) {
-      const intensidad = Math.min(1, Math.abs(delta) / 150);
-      return {
-        bg: `rgba(220, 38, 38, ${0.06 + intensidad * 0.22})`,
-        color: intensidad > 0.7 ? '#fff' : '#991b1b',
-      };
-    } else {
-      const intensidad = Math.min(1, Math.abs(delta) / 150);
-      return {
-        bg: `rgba(37, 99, 235, ${0.06 + intensidad * 0.22})`,
-        color: intensidad > 0.7 ? '#fff' : '#1e3a8a',
-      };
+      return { bg: hexToRgba(BASE.red, 0.06 + intensidad * 0.22), color: intensidad > 0.7 ? '#fff' : BASE.redDark };
     }
+    return { bg: hexToRgba(COOL, 0.06 + intensidad * 0.22), color: intensidad > 0.7 ? '#fff' : BASE.navy };
   };
 
   return (
@@ -453,7 +439,7 @@ function ControlVariaciones({ historial, numTrabajadores, isMobile, asistencia }
         {[
           { l: 'HH CAMPO TOTAL', v: fmt1(data.totales.hhCampo), c: BASE.navy, sub: 'Acumulado proyecto' },
           { l: 'HH META TOTAL', v: fmt1(data.totales.hhMeta), c: BASE.green, sub: 'Esperado ideal' },
-          { l: 'DELTA HH', v: `${data.totales.deltaTotal >= 0 ? '+' : ''}${data.totales.deltaTotal}`, c: data.totales.deltaTotal >= 0 ? BASE.red : '#2563eb', sub: data.totales.deltaTotal >= 0 ? 'Sobrecosto' : 'Ahorro' },
+          { l: 'DELTA HH', v: `${data.totales.deltaTotal >= 0 ? '+' : ''}${data.totales.deltaTotal}`, c: data.totales.deltaTotal >= 0 ? BASE.red : COOL, sub: data.totales.deltaTotal >= 0 ? 'Sobrecosto' : 'Ahorro' },
           { l: 'CPI GLOBAL', v: fmtCPIPct(data.totales.cpiGlobal), c: data.totales.cpiGlobal >= 1 ? BASE.green : data.totales.cpiGlobal >= 0.85 ? BASE.gold : BASE.red, sub: 'Eficiencia HH' },
         ].map(k => (
           <div key={k.l} style={{
@@ -493,9 +479,9 @@ function ControlVariaciones({ historial, numTrabajadores, isMobile, asistencia }
             <thead>
               <tr>
                 <th rowSpan="2" style={thStyle({ width: '60px', padding: '4px 8px', fontSize: '10px', position: 'sticky', left: 0, top: 30, zIndex: 14, background: '#e2e8f0', color: BASE.navy, height: '50px', boxSizing: 'border-box' })}>SEM</th>
-                <th colSpan="2" style={thStyle({ background: '#fcd34d', color: '#713f12', textAlign: 'center', borderBottom: `2px solid #b45309`, padding: '4px 8px', fontSize: '10px', position: 'sticky', top: 30, zIndex: 12, height: '26px', boxSizing: 'border-box' })}>ADMIN</th>
-                <th colSpan="2" style={thStyle({ background: '#93c5fd', color: '#1e3a8a', textAlign: 'center', borderBottom: '2px solid #1d4ed8', padding: '4px 8px', fontSize: '10px', position: 'sticky', top: 30, zIndex: 12, height: '26px', boxSizing: 'border-box' })}>CAMPO</th>
-                <th colSpan="3" style={thStyle({ background: '#86efac', color: '#14532d', textAlign: 'center', borderBottom: `2px solid #15803d`, padding: '4px 8px', fontSize: '10px', position: 'sticky', top: 30, zIndex: 12, height: '26px', boxSizing: 'border-box' })}>ACTUAL</th>
+                <th colSpan="2" style={thStyle({ background: BASE.goldLight, color: BASE.goldDark, textAlign: 'center', borderBottom: `2px solid ${BASE.gold}`, padding: '4px 8px', fontSize: '10px', position: 'sticky', top: 30, zIndex: 12, height: '26px', boxSizing: 'border-box' })}>ADMIN</th>
+                <th colSpan="2" style={thStyle({ background: BASE.navySoft, color: BASE.navy, textAlign: 'center', borderBottom: `2px solid ${BASE.navyLight}`, padding: '4px 8px', fontSize: '10px', position: 'sticky', top: 30, zIndex: 12, height: '26px', boxSizing: 'border-box' })}>CAMPO</th>
+                <th colSpan="3" style={thStyle({ background: BASE.greenLight, color: BASE.greenDark, textAlign: 'center', borderBottom: `2px solid ${BASE.green}`, padding: '4px 8px', fontSize: '10px', position: 'sticky', top: 30, zIndex: 12, height: '26px', boxSizing: 'border-box' })}>ACTUAL</th>
                 <th colSpan={data.codigosPartida.length} style={thStyle({
                   background: BASE.navy, color: BASE.gold, textAlign: 'center', borderBottom: `2px solid ${BASE.gold}`, padding: '4px 8px', fontSize: '10px', position: 'sticky', top: 30, zIndex: 12, height: '26px', boxSizing: 'border-box',
                 })}>
@@ -535,19 +521,19 @@ function ControlVariaciones({ historial, numTrabajadores, isMobile, asistencia }
                     <td style={tdStyle({ textAlign: 'right', fontWeight: '700', paddingRight: '18px', color: BASE.muted })}>—</td>
                     <td style={tdStyle({ textAlign: 'right', color: BASE.muted, paddingRight: '18px' })}>—</td>
                     <td style={tdStyle({ textAlign: 'right', fontWeight: '700', paddingRight: '18px' })}>{fmt1(s.hhCampo)}</td>
-                    <td style={tdStyle({ textAlign: 'right', color: '#1e40af', fontWeight: '700', paddingRight: '18px' })}>{fmt1(s.hhCampoAcum)}</td>
+                    <td style={tdStyle({ textAlign: 'right', color: COOL, fontWeight: '700', paddingRight: '18px' })}>{fmt1(s.hhCampoAcum)}</td>
                     <td style={tdStyle({ textAlign: 'right', color: BASE.greenDark, fontWeight: '700', paddingRight: '18px' })}>{fmt1(s.hhMetaAcum)}</td>
                     <td style={tdStyle({
                       textAlign: 'right', fontWeight: '900', paddingRight: '18px',
-                      color: variacion >= 0 ? BASE.red : '#2563eb',
-                      background: variacion >= 0 ? '#fee2e220' : '#dbeafe40',
+                      color: variacion >= 0 ? BASE.red : COOL,
+                      background: variacion >= 0 ? hexToRgba(BASE.red, 0.10) : hexToRgba(COOL, 0.10),
                     })}>
                       {variacion >= 0 ? '+' : ''}{variacion}
                     </td>
                     <td style={tdStyle({
                       textAlign: 'center', fontWeight: '900',
-                      color: s.cpi >= 1 ? BASE.greenDark : s.cpi >= 0.85 ? BASE.gold : BASE.red,
-                      background: s.cpi >= 1 ? '#dcfce780' : s.cpi >= 0.85 ? '#fef3c780' : '#fee2e280',
+                      color: s.cpi >= 1 ? BASE.greenDark : s.cpi >= 0.85 ? BASE.goldDark : BASE.red,
+                      background: s.cpi >= 1 ? hexToRgba(BASE.green, 0.12) : s.cpi >= 0.85 ? hexToRgba(BASE.gold, 0.14) : hexToRgba(BASE.red, 0.12),
                     })}>
                       {fmtCPIPct(s.cpi)}
                     </td>
@@ -584,7 +570,7 @@ function ControlVariaciones({ historial, numTrabajadores, isMobile, asistencia }
                   return (
                     <td key={cod} style={{
                       padding: '4px 4px', textAlign: 'center', fontSize: '10px', fontWeight: '900',
-                      background: delta >= 0 ? 'rgba(220, 38, 38, 0.78)' : 'rgba(37, 99, 235, 0.78)',
+                      background: delta >= 0 ? hexToRgba(BASE.red, 0.78) : hexToRgba(COOL, 0.78),
                       color: '#fff',
                     }}>
                       {delta === 0 ? '0' : (delta > 0 ? '+' : '') + delta}
@@ -605,12 +591,12 @@ function ControlVariaciones({ historial, numTrabajadores, isMobile, asistencia }
           alignItems: 'center',
         }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ display: 'inline-block', width: '14px', height: '14px', background: 'rgba(220, 38, 38, 0.28)', borderRadius: '3px' }} />
+            <span style={{ display: 'inline-block', width: '14px', height: '14px', background: hexToRgba(BASE.red, 0.28), borderRadius: '3px' }} />
             <strong style={{ color: BASE.red }}>Rojo:</strong> sobrecosto (real &gt; meta)
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ display: 'inline-block', width: '14px', height: '14px', background: 'rgba(37, 99, 235, 0.28)', borderRadius: '3px' }} />
-            <strong style={{ color: '#2563eb' }}>Azul:</strong> ahorro (real &lt; meta)
+            <span style={{ display: 'inline-block', width: '14px', height: '14px', background: hexToRgba(COOL, 0.28), borderRadius: '3px' }} />
+            <strong style={{ color: COOL }}>Azul:</strong> ahorro (real &lt; meta)
           </span>
           <span style={{ opacity: 0.7 }}>· La intensidad refleja la magnitud del delta</span>
         </div>
@@ -690,10 +676,10 @@ function MatrizIP({ historial, isMobile }) {
                 <th style={thStyle({ position: 'sticky', left: 0, zIndex: 2, background: BASE.bgSoft, color: BASE.navy, textAlign: 'left', minWidth: '300px', paddingLeft: '20px' })}>
                   ACTIVIDAD
                 </th>
-                <th style={thStyle({ background: '#fef3c7', color: '#92400e', textAlign: 'right', width: '100px', paddingRight: '14px' })}>IP Contract.</th>
-                <th style={thStyle({ background: '#dcfce7', color: '#15803d', textAlign: 'right', width: '100px', paddingRight: '14px' })}>IP Meta</th>
+                <th style={thStyle({ background: BASE.goldLight, color: BASE.goldDark, textAlign: 'right', width: '100px', paddingRight: '14px' })}>IP Contract.</th>
+                <th style={thStyle({ background: BASE.greenLight, color: BASE.greenDark, textAlign: 'right', width: '100px', paddingRight: '14px' })}>IP Meta</th>
                 {semanasMostrar.map(s => (
-                  <th key={s} style={thStyle({ background: '#dbeafe', color: '#1e40af', textAlign: 'right', width: '90px', paddingRight: '14px' })}>
+                  <th key={s} style={thStyle({ background: BASE.navySoft, color: BASE.navy, textAlign: 'right', width: '90px', paddingRight: '14px' })}>
                     SEM{s}
                   </th>
                 ))}
@@ -718,7 +704,7 @@ function MatrizIP({ historial, isMobile }) {
                     return (
                       <React.Fragment key={f.actividad + idx}>
                         {newPartida && (
-                          <tr style={{ background: BASE.navy + 'ee', color: '#fff' }}>
+                          <tr style={{ background: BASE.navy, color: '#fff' }}>
                             <td colSpan={4 + semanasMostrar.length + 1} style={{
                               padding: '10px 20px', fontSize: '10.5px', fontWeight: '900',
                               letterSpacing: '0.8px', color: BASE.gold,
@@ -743,7 +729,7 @@ function MatrizIP({ historial, isMobile }) {
                           }}>
                             {f.actividad}
                           </td>
-                          <td style={tdStyle({ textAlign: 'right', fontFamily: 'monospace', color: '#92400e', paddingRight: '14px' })}>
+                          <td style={tdStyle({ textAlign: 'right', fontFamily: 'monospace', color: BASE.goldDark, paddingRight: '14px' })}>
                             {f.ipContractual != null ? f.ipContractual.toFixed(4) : '—'}
                           </td>
                           <td style={tdStyle({ textAlign: 'right', fontFamily: 'monospace', color: BASE.greenDark, fontWeight: '700', paddingRight: '14px' })}>
@@ -754,7 +740,7 @@ function MatrizIP({ historial, isMobile }) {
                             return (
                               <td key={s} style={tdStyle({
                                 textAlign: 'right', fontFamily: 'monospace',
-                                color: ip ? '#1e40af' : '#cbd5e1',
+                                color: ip ? COOL : BASE.mutedSoft,
                                 fontWeight: ip ? '600' : '400',
                                 paddingRight: '14px',
                               })}>
@@ -769,7 +755,7 @@ function MatrizIP({ historial, isMobile }) {
                               <td style={tdStyle({
                                 textAlign: 'right', fontFamily: 'monospace', fontWeight: '800',
                                 color: pct == null ? BASE.muted : esBueno ? BASE.greenDark : BASE.red,
-                                background: pct == null ? 'transparent' : esBueno ? '#dcfce740' : '#fee2e240',
+                                background: pct == null ? 'transparent' : esBueno ? hexToRgba(BASE.green, 0.12) : hexToRgba(BASE.red, 0.12),
                                 paddingRight: '14px',
                               })}>
                                 {pct == null ? '—' : `${pct >= 0 ? '+' : ''}${Math.round(pct)}%`}

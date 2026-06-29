@@ -37,7 +37,6 @@ const num = { padding: '4px 10px', textAlign: 'right', fontFamily: MONO, fontSiz
 
 export default function CostoRealCR({ historial = [], wbs = null }) {
   const { proyectoActivo } = useProyectoActivo();
-  const [semanaTope, setSemanaTope] = useState(null);   // null = total
   const [ocultarCeros, setOcultarCeros] = useState(true);
   const [abiertas, setAbiertas] = useState(() => new Set());
 
@@ -45,17 +44,19 @@ export default function CostoRealCR({ historial = [], wbs = null }) {
     () => [...new Set((historial || []).map((r) => parseInt(r?.semana, 10)).filter((n) => Number.isFinite(n) && n > 0))].sort((a, b) => a - b),
     [historial],
   );
-  const maxSem = semanas.length ? semanas[semanas.length - 1] : null;
-  const semana = (semanaTope != null && semanas.includes(semanaTope)) ? semanaTope : maxSem;
+  // La semana tope sale SOLO del dashboard: los registros YA vienen filtrados por el
+  // filtro principal (Ingeniero.jsx → `filtrados`). Aquí únicamente sirve para rotular
+  // el encabezado «ACUM. HASTA SEM N». Sin selector propio → un único filtro gobierna todo.
+  const semana = semanas.length ? semanas[semanas.length - 1] : null;
 
-  // Registros acumulados hasta la semana N, con partida/subpartida CANÓNICAS
+  // Registros del subconjunto que mandó el dashboard, con partida/subpartida CANÓNICAS
   // (mismo cruce al catálogo que el ISP/Producción → los números cuadran).
   const registros = useMemo(
     () => (historial || []).filter((r) => {
       const s = parseInt(r?.semana, 10);
-      return Number.isFinite(s) && s > 0 && (semana == null || s <= semana);
+      return Number.isFinite(s) && s > 0;
     }).map((r) => ({ ...r, partida: r._partidaCanonica || r.partida, subpartida: r._subpartidaCanonica || r.subpartida })),
-    [historial, semana],
+    [historial],
   );
 
   const reporte = useMemo(() => calcularReporteTareos(registros, COSTO_HORA_PROMEDIO), [registros]);
@@ -106,13 +107,9 @@ export default function CostoRealCR({ historial = [], wbs = null }) {
           {proyectoActivo?.nombre || 'Proyecto'} · Costo MO <strong style={{ color: BASE.navy, fontFamily: MONO }}>S/ {COSTO_HORA_PROMEDIO.toFixed(2)}/h</strong>
         </span>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: BASE.navy }}>
-            Hasta SEM
-            <select value={semana ?? ''} onChange={(e) => setSemanaTope(parseInt(e.target.value, 10))}
-              style={{ padding: '5px 8px', borderRadius: 7, border: `1.5px solid ${BASE.border}`, fontSize: 11.5, fontWeight: 800, color: BASE.navy, background: BASE.white, cursor: 'pointer' }}>
-              {semanas.map((n) => <option key={n} value={n}>{n}{n === maxSem ? ' (total)' : ''}</option>)}
-            </select>
-          </label>
+          <span style={{ fontSize: 11, fontWeight: 700, color: BASE.muted }}>
+            Acum. hasta <strong style={{ color: BASE.navy, fontFamily: MONO }}>SEM {semana ?? '—'}</strong>
+          </span>
           <button onClick={expandirTodo} style={{ padding: '5px 10px', background: BASE.white, color: BASE.navy, border: `1.5px solid ${BASE.border}`, borderRadius: 7, fontSize: 10.5, fontWeight: 700, cursor: 'pointer' }}>
             {todasAbiertas ? '▴ Colapsar' : '▾ Expandir'}
           </button>
@@ -149,7 +146,7 @@ export default function CostoRealCR({ historial = [], wbs = null }) {
 
               {partidas.map((p, idx) => {
                 const pct = (p.hh || 0) / totAbs;
-                const acc = pct >= 0.15 ? BASE.navy : pct >= 0.06 ? GOLD : '#94a3b8';
+                const acc = pct >= 0.15 ? BASE.navy : pct >= 0.06 ? GOLD : BASE.mutedSoft;
                 const subs = (p.subpartidas || []).filter((s) => !ocultarCeros || !esZero(s.hh));
                 const open = abiertas.has(p.nombre);
                 const hayInfo = subs.length > 0;
@@ -190,7 +187,7 @@ export default function CostoRealCR({ historial = [], wbs = null }) {
       </div>
 
       <p style={{ fontSize: 10, color: BASE.mutedSoft, lineHeight: 1.45 }}>
-        Fuente: tareos del proyecto (misma data del ISP/Producción y el Control de HH) · partida canónica del catálogo · COSTO = HH × S/{COSTO_HORA_PROMEDIO} · «Hasta SEM N» acumula r.semana ≤ N.
+        Fuente: tareos del proyecto (misma data del ISP/Producción y el Control de HH) · partida canónica del catálogo · COSTO = HH × S/{COSTO_HORA_PROMEDIO} · acumulado según el filtro del dashboard (semana / acumulado).
       </p>
     </div>
   );
