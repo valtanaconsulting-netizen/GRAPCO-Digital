@@ -88,12 +88,11 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
   // Mapeo vista → grupo (para auto-seleccionar grupo si llega por deep-link)
   const VIEW_TO_GRUPO = {
     cockpit: 'ejecutivo',
-    auditoria: 'produccion', analisis: 'produccion', control: 'produccion',
+    auditoria: 'produccion', analisis: 'produccion', 'wbs-editor': 'produccion', control: 'produccion',
     graficos: 'produccion', tendencias: 'produccion',
     hhcross: 'gestion', // Cuadrillas vive ahora en GESTIÓN (2026-06-26)
     tareo: 'gestion', gestion: 'gestion',
     'pago-obreros': 'gestion',
-    'wbs-editor': 'gestion',
     'export': 'gestion',
     impacto: null, // Vista TESIS: accesible via botón global en el topbar (no en tabs).
   };
@@ -618,10 +617,11 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
       label: 'CONTROL CPI',
       iconName: 'barChart3',
       color: BASE.navy,
-      tagline: 'Control de productividad/costo: Auditoría, CPI + EAC (ISP), Control Gerencial, Gráficos y Tendencias',
+      tagline: 'Control de productividad/costo: Auditoría, CPI + EAC (ISP), Editar WBS, Control Gerencial, Gráficos y Tendencias',
       items: [
         { id: 'auditoria',  l: 'Auditoría',         iconName: 'registro' },
         { id: 'analisis',   l: 'CPI + EAC',         iconName: 'chartBars' },
+        { id: 'wbs-editor', l: 'Editar WBS',        iconName: 'ruler' },
         { id: 'control',    l: 'Control Gerencial', iconName: 'fileText' },
         { id: 'graficos',   l: 'Gráficos',          iconName: 'barChart3' },
         { id: 'tendencias', l: 'Tendencias',        iconName: 'pulse' },
@@ -634,15 +634,15 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
       label: 'GESTIÓN',
       iconName: 'users',
       color: '#7c3aed',
-      tagline: 'Tareo, cuadrillas, pagos, personal, WBS y exportaciones — todo bajo los mismos filtros del dashboard',
+      tagline: 'Tareo, cuadrillas, pagos, personal y exportaciones — todo bajo los mismos filtros del dashboard',
       // Orden con lógica de análisis: capturar HH (Tareo) → analizarlas (Cuadrillas) →
-      // pagarlas (Pago) → maestro de personas (Personal) → estructura (WBS) → salida (Export).
+      // pagarlas (Pago) → maestro de personas (Personal) → salida (Export).
+      // «Editar WBS» se movió a CONTROL CPI (junto a CPI + EAC) el 2026-06-29.
       items: [
         { id: 'tareo',        l: 'Tareo',          iconName: 'clock', desc: 'Planilla F13 · HH por trabajador y exportación' },
         { id: 'hhcross',      l: 'Cuadrillas',     iconName: 'users', desc: 'HH cruzadas: cuadrilla · persona · actividad · día' },
         { id: 'pago-obreros', l: 'Pago a Obreros', iconName: 'coins', desc: 'Costo a pagar: HN + HE 60% / 100%' },
         { id: 'gestion',      l: 'Personal',       iconName: 'users', desc: 'Maestro de obreros y cuadrillas' },
-        { id: 'wbs-editor',   l: 'Editar WBS',     iconName: 'ruler', desc: 'Estructura WBS · IP meta y presupuesto' },
         { id: 'export',       l: 'Exportar Excel', iconName: 'coins', desc: 'Excel: Costos HE 60/100 y HH semanal' },
       ],
     },
