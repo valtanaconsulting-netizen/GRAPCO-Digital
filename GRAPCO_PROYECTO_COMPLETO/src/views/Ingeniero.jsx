@@ -63,21 +63,22 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
   const [fPartida,    setFPartida]    = useState('');
   const [fSubpartida, setFSubpartida] = useState('');
   const [fActividad,  setFActividad]  = useState('');
-  // Por defecto el dashboard muestra la SEMANA ACTUAL del proyecto (no "todas"):
-  // el ingeniero entra y ve directamente la semana en curso. Cambiable con el filtro.
-  const [fSemana,     setFSemana]     = useState(() => { const n = semanaActualProyecto(); return n ? String(n) : ''; });
+  // Por defecto el dashboard muestra TODOS los registros (sin filtro de semana):
+  // este filtro se propaga al resto del ISP, así que arranca "en blanco" = todo
+  // visible. El ingeniero elige una semana solo si quiere acotar.
+  const [fSemana,     setFSemana]     = useState('');
   const [fDesde,      setFDesde]      = useState('');
   const [fHasta,      setFHasta]      = useState('');
   const [fCapataz,    setFCapataz]    = useState('');
   const [fPersona,    setFPersona]    = useState('');
   const [modoAcum,    setModoAcum]    = useState(false);
 
-  // Defaults por vista: AUDITORÍA arranca en la SEMANA ACTUAL; el resto del ISP
-  // (CPI+EAC, Gráficos, Tendencias, Control, Cockpit) arranca en ACUMULADO (todas las semanas).
+  // Defaults por vista: TODAS arrancan mostrando TODOS los registros (sin filtro de
+  // semana). Auditoría en modo SEMANAL (al elegir una semana muestra solo esa); el
+  // resto del ISP en ACUMULADO. En ambos casos, sin semana elegida ⇒ todo visible.
   useEffect(() => {
     if (view === 'auditoria') {
-      const n = semanaActualProyecto();
-      setFSemana(n ? String(n) : '');
+      setFSemana('');
       setModoAcum(false);
     } else if (['analisis', 'graficos', 'tendencias', 'control', 'cockpit'].includes(view)) {
       setFSemana('');
@@ -296,16 +297,56 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
     [historial, personalDB],
   );
 
+  // Resuelve la subpartida REAL de un registro DENTRO del catálogo WBS del proyecto
+  // (catWbs), que es la fuente del dropdown de SUBPARTIDA. Es necesario porque el
+  // _subpartidaCanonica viene del catálogo fijo (CATALOGO_MASTER, p.ej. "GENERAL"
+  // para ACERO) y NO coincide con el nombre de subpartida del WBS editable (p.ej.
+  // "ACERO" = nombre de la partida). Misma cascada que la agregación WBS: exacta →
+  // normalizada → la actividad en cualquier subpartida de la partida → partida.
+  const resolverSubpartidaWbs = useMemo(() => {
+    const normTxt = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .toUpperCase().trim().replace(/\.+$/, '').replace(/\s+/g, ' ').trim();
+    const idxP = {};       // normTxt(partida)            -> pk
+    const subs = {};       // pk -> Set(sk)
+    const idxS = {};       // pk -> { normTxt(sub)        -> sk }
+    const idxAP = {};      // pk -> { normActividad(act)  -> sk }
+    Object.keys(catWbs || {}).forEach(p => {
+      const pk = p.toUpperCase().trim();
+      idxP[normTxt(p)] = pk; subs[pk] = subs[pk] || new Set();
+      idxS[pk] = idxS[pk] || {}; idxAP[pk] = idxAP[pk] || {};
+      Object.keys(catWbs[p] || {}).forEach(sp => {
+        const sk = sp.toUpperCase().trim();
+        subs[pk].add(sk); idxS[pk][normTxt(sp)] = sk;
+        (catWbs[p][sp] || []).forEach(a => {
+          const na = normActividad(a);
+          if (!idxAP[pk][na]) idxAP[pk][na] = sk;
+        });
+      });
+    });
+    return (r) => {
+      const p = (r._partidaCanonica || r.partida || '').toUpperCase().trim();
+      const pk = subs[p] ? p : idxP[normTxt(p)];
+      let sp = (r._subpartidaCanonica || r.subpartida || '').toUpperCase().trim();
+      if (!pk) return sp || p;                          // partida desconocida
+      if (!sp) sp = pk;                                 // sin subpartida ⇒ = partida
+      if (subs[pk].has(sp)) return sp;                  // coincide exacto en catWbs
+      const viaNorm = idxS[pk][normTxt(sp)];
+      if (viaNorm) return viaNorm;                      // coincide normalizado
+      const a = (r._actividadCanonica || r.actividad || '').trim();
+      const viaAct = idxAP[pk][normActividad(a)];
+      if (viaAct) return viaAct;                        // la actividad la ubica
+      return subs[pk].has(pk) ? pk : sp;                // fallback: subpartida = partida
+    };
+  }, [catWbs]);
+
   // Filtrados — orden DESCENDENTE
   const filtrados = useMemo(() => {
     const res = historialEnriquecido.filter(r => {
       const actCanon  = r._actividadCanonica || r.actividad;
       const partCanon = (r._partidaCanonica || r.partida || '').toUpperCase();
-      // Sin subpartida ⇒ se asume subpartida = partida (mismo criterio que la
-      // agregación WBS, l.410). Así las actividades sueltas bajo una partida
-      // (p.ej. COLOCADO/HABILITADO DE ACERO) quedan bajo la subpartida «ACERO»
-      // y se pueden filtrar; antes daban 0 registros al elegir esa subpartida.
-      const subCanon  = (r._subpartidaCanonica || r.subpartida || '').toUpperCase() || partCanon;
+      // La subpartida se resuelve contra catWbs (igual fuente que el dropdown), no
+      // contra el catálogo fijo: así "ACERO" cuadra aunque el registro traiga "GENERAL".
+      const subCanon  = resolverSubpartidaWbs(r);
       const mA  = fActividad  ? actCanon === fActividad                  : true;
       const mP  = fPartida    ? partCanon === fPartida.toUpperCase()     : true;
       const mSP = fSubpartida ? subCanon === fSubpartida.toUpperCase()   : true;
@@ -323,7 +364,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
              getActivityOrder(b._actividadCanonica || b.actividad);
     });
     return res;
-  }, [historialEnriquecido, fPartida, fSubpartida, fActividad, fSemana, fCapataz, fPersona, fDesde, fHasta, modoAcum, resolverNombre]);
+  }, [historialEnriquecido, fPartida, fSubpartida, fActividad, fSemana, fCapataz, fPersona, fDesde, fHasta, modoAcum, resolverNombre, resolverSubpartidaWbs]);
 
   const filtroAlcanceActivo = !!(fPartida || fSubpartida || fActividad);
   const metradoSumable = useMemo(() => metradoEsHomogeneo(filtrados, filtroAlcanceActivo), [filtrados, filtroAlcanceActivo]);
