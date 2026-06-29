@@ -37,6 +37,7 @@ const PERFILES = [
     titulo: 'Administración',
     iconName: 'package',
     color: '#B45309',
+    kicker: 'Almacén · Logística',
     descripcion: 'Control y gestión de recursos, documentación y procesos administrativos que respaldan la operación del proyecto con orden, trazabilidad y eficiencia.',
     // Etiquetas = secciones REALES del Almacén (MaterialesPanel). Cada una entra directo.
     accesos: [
@@ -54,6 +55,7 @@ const PERFILES = [
     titulo: 'Producción',
     iconName: 'barChart3',
     color: '#047857',
+    kicker: 'Avance · Productividad',
     descripcion: 'Control integral de avance, productividad y carta balance bajo Lean Construction, orientado a maximizar cumplimiento y desempeño operativo.',
     // Módulos REALES del área (moduloIngeniero). Planeamiento (Cronograma/Last Planner/
     // Pull Planning) → app PLANEAMIENTO_PLATAFORMA; 'Materiales' → Administración (2026-06-24).
@@ -70,6 +72,7 @@ const PERFILES = [
     titulo: 'Oficina Técnica',
     iconName: 'coins',
     color: '#1D4ED8',
+    kicker: 'Costos · Valorización',
     descripcion: 'Gestión centralizada de RO, valorizaciones, adicionales, deductivos, garantizando control económico, trazabilidad y soporte para la toma de decisiones.',
     // Secciones REALES del área (moduloOT / ot.*). Entran directo vía tabExterna.
     // Orden por flujo (2026-06-25): Presupuesto → Ejecución (Registro/BIM) →
@@ -183,11 +186,11 @@ function ChipAcceso({ label, acento, onClick, fill = false }) {
         display: fill ? 'flex' : 'inline-flex',
         width: fill ? '100%' : undefined,
         boxSizing: 'border-box',
-        alignItems: 'center', justifyContent: 'flex-start', gap: '5px',
+        alignItems: 'center', justifyContent: 'flex-start', gap: '7px',
         background: `${acento}0d`, color: '#33445c',
         border: `1px solid ${acento}33`,
-        padding: '4px 8px 4px 7px', borderRadius: '8px',
-        fontSize: '10px', fontWeight: 700, letterSpacing: '0.1px', lineHeight: 1.2,
+        padding: '6px 10px 6px 9px', borderRadius: '9px',
+        fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.1px', lineHeight: 1.2,
         cursor: 'pointer', userSelect: 'none', transition: 'all 0.16s ease',
       }}
     >
@@ -773,39 +776,60 @@ export default function SelectorPerfil({ onIrASeccion }) {
               position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
               background: `linear-gradient(90deg, transparent, ${acento}, transparent)`,
               boxShadow: `0 0 12px ${acento}99`,
+              zIndex: 2,
             }} />
 
-            {p.destacado && (
-              <span style={{
-                position: 'absolute', top: '14px', right: '14px',
-                background: `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`, color: '#fff',
-                padding: '4px 11px', borderRadius: '999px',
-                fontSize: '9px', fontWeight: 900, letterSpacing: '0.8px',
-                boxShadow: `0 3px 10px ${BASE.gold}55`,
-              }}>★ ACCESO TOTAL</span>
-            )}
+            {/* Cabecera con banda tintada del color del área: da "enfoque" de color a
+                cada tarjeta y aloja el kicker/insignia EN FLUJO (nunca encima del título). */}
+            <div style={{
+              margin: '-14px -15px 0',
+              padding: '14px 15px 12px',
+              background: `linear-gradient(135deg, ${acento}16 0%, ${acento}07 55%, transparent 100%)`,
+              borderBottom: `1px solid ${acento}1f`,
+              display: 'flex', flexDirection: 'column', gap: '9px',
+            }}>
+              {/* Fila kicker / insignia — presente en TODAS las tarjetas para que los
+                  títulos queden a la misma altura; la destacada luce ACCESO TOTAL en oro. */}
+              <div style={{ minHeight: '16px', display: 'flex', alignItems: 'center' }}>
+                {p.destacado ? (
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '4px',
+                    background: `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`, color: '#fff',
+                    padding: '3px 11px', borderRadius: '999px',
+                    fontSize: '8.5px', fontWeight: 900, letterSpacing: '0.9px',
+                    boxShadow: `0 3px 10px ${BASE.gold}55`,
+                  }}>★ ACCESO TOTAL</span>
+                ) : (
+                  <span style={{
+                    fontSize: '8.5px', fontWeight: 900, letterSpacing: '1.2px',
+                    textTransform: 'uppercase', color: acento, opacity: 0.85,
+                  }}>{p.kicker}</span>
+                )}
+              </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{
-                width: '40px', height: '40px',
-                borderRadius: '12px',
-                background: `linear-gradient(145deg, ${p.color}1F, ${p.color}0A)`,
-                border: `1px solid ${p.color}33`,
-                boxShadow: `inset 0 1px 0 rgba(255,255,255,0.6), 0 4px 10px -4px ${p.color}55`,
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}>
-                <Icon name={p.iconName} size={20} color={p.color} strokeWidth={2} />
-              </span>
-              <span style={{
-                fontSize: '13.5px', fontWeight: '800',
-                color: BASE.navy, lineHeight: 1.22,
-                letterSpacing: '-0.015em',
-              }}>
-                {p.titulo}
-              </span>
+              {/* Icono + título — tile más grande y título más presente */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
+                <span style={{
+                  width: '44px', height: '44px',
+                  borderRadius: '13px',
+                  background: `linear-gradient(145deg, ${acento}26, ${acento}0D)`,
+                  border: `1px solid ${acento}3d`,
+                  boxShadow: `inset 0 1px 0 rgba(255,255,255,0.7), 0 5px 12px -5px ${acento}66`,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  <Icon name={p.iconName} size={22} color={acento} strokeWidth={2} />
+                </span>
+                <span style={{
+                  fontSize: '14.5px', fontWeight: 800,
+                  color: BASE.navy, lineHeight: 1.18,
+                  letterSpacing: '-0.015em',
+                }}>
+                  {p.titulo}
+                </span>
+              </div>
             </div>
 
             {/* Accesos directos: cada etiqueta ENTRA a esa sección del módulo (deep-link). */}
