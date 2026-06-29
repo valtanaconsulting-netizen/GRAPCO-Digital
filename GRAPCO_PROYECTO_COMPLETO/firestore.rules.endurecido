@@ -1,0 +1,498 @@
+// ════════════════════════════════════════════════════════════════════════════
+// firestore.rules.endurecido — BORRADOR del aislamiento multi-tenant (rec #1)
+// ⚠️  NO DESPLEGAR DIRECTAMENTE. Es un ARTEFACTO de revisión/staging.
+// Requiere ANTES: (1) Custom Claims {rol,proy,sa} en el 100% de usuarios activos,
+// (2) backfill de proyectoId a 0 huérfanos, (3) suite cross-tenant en verde.
+// Despliegue real: ver docs/DISENO-MULTITENANT-2026-06.md (Etapas F3→F5) con rollback
+// a firestore.rules en <1 min. Generado 2026-06-29.
+// ════════════════════════════════════════════════════════════════════════════
+
+// ════════════════════════════════════════════════════════════════════════════
+// firestore.rules — GRAPCO v3 ENDURECIDO (aislamiento multi-tenant por proyectoId)
+// BORRADOR PARA REVISIÓN — NO AUTODESPLEGAR. Requiere ANTES: (1) claims {rol,proy,sa}
+// en todos los usuarios activos, (2) backfill 0-huérfanos. Fallback legacy: doc sin
+// proyectoId == 'creditex-ptar'. Autorización basada en CLAIMS (0 reads, offline-ok).
+// ════════════════════════════════════════════════════════════════════════════
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── HELPERS (claims, 0 get()) ──
+    function isAuth() { return request.auth != null; }
+    function uid()    { return request.auth.uid; }
+    function tk()     { return request.auth.token; }
+    function rol()    { return isAuth() && tk().rol != null ? tk().rol : ''; }
+    function isSuperAdmin() {
+      return isAuth() && (tk().sa == true ||
+        tk().email in ['fjrosash@gmail.com', 'abasurco@grapcosac.com']); // failsafe gobernanza
+    }
+    function isAdmin()       { return isSuperAdmin() || rol() == 'admin'; }
+    function isIngeniero()   { return isSuperAdmin() || rol() == 'ingeniero'; }
+    function isCapataz()     { return rol() == 'capataz'; }
+    function isPlaneamiento(){ return rol() == 'planeamiento'; }
+    function isAuthorized()  { return isSuperAdmin() || isAdmin() || isIngeniero() || isCapataz() || isPlaneamiento(); }
+    function isOwner(u)      { return isAuth() && uid() == u; }
+
+    // ── Aislamiento por proyecto (claim `proy` = lista de proyectos del usuario) ──
+    function proys() { return isAuth() && tk().proy is list ? tk().proy : []; }
+    function puedeProy(p) { return isSuperAdmin() || proys().hasAny([p]); }
+    // proyecto del doc existente / del doc entrante, con fallback legacy:
+    function proyDoc() {
+      return ('proyectoId' in resource.data) && resource.data.proyectoId != null
+        ? resource.data.proyectoId : 'creditex-ptar';
+    }
+    function proyNew() {
+      return ('proyectoId' in request.resource.data) && request.resource.data.proyectoId != null
+        ? request.resource.data.proyectoId : 'creditex-ptar';
+    }
+    function leeDoc()  { return puedeProy(proyDoc()); }
+    // crear/editar: el proyecto entrante debe estar en mi claim, y no puedo migrar un doc a otro tenant
+    function escribeNuevo() { return puedeProy(proyNew()); }
+    function escribeExist() { return puedeProy(proyDoc()) && proyNew() == proyDoc(); }
+
+    // validaciones de datos
+    function maxLen(s, n) { return s is string && s.size() <= n; }
+    function numInRange(n, a, b) { return n is number && n >= a && n <= b; }
+    function hasServerTimestamp(f) { return request.resource.data[f] == request.time; }
+
+    // ════════════════ GLOBALES (no aislados por proyectoId) ════════════════
+
+    // /Usuarios — read ENDURECIDO: solo el dueño o un admin (no filtrar emails/roles entre tenants).
+    // Cambios de rol/activo/claim SOLO vía Cloud Function (admin SDK bypassa rules).
+    match /Usuarios/{userId} {
+      allow read:   if isOwner(userId) || isAdmin();
+      allow create: if isAdmin() || (
+                       isOwner(userId) && request.resource.data.activo == true &&
+                       request.resource.data.rol == 'capataz'
+                     ) || (
+                       isOwner(userId) && request.resource.data.rol == 'admin' &&
+                       request.resource.data.activo == true &&
+                       !exists(/databases/$(database)/documents/Bootstrap/done)
+                     );
+      allow update: if isAdmin() || (
+                       isOwner(userId) &&
+                       request.resource.data.rol == resource.data.rol &&
+                       request.resource.data.activo == resource.data.activo
+                     );
+      allow delete: if isAdmin();
+    }
+
+    match /Bootstrap/{docId} {
+      allow read:   if isAuth();
+      allow create: if isAuth() && rol() == 'admin';
+      allow update, delete: if isAdmin();
+    }
+
+    // /Proyectos — un usuario solo ve los proyectos de su claim (no enumera la cartera ajena).
+    match /Proyectos/{proyId} {
+      allow read:   if isSuperAdmin() || puedeProy(proyId);
+      allow create, update, delete: if isAdmin();
+    }
+    // /Frentes — aislado por su proyectoId.
+    match /Frentes/{frenteId} {
+      allow read:   if leeDoc();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Globales legítimos (config sistema, TC, catálogos de mercado): read autenticado.
+    match /Configuracion/{docId} {
+      allow read: if isAuth();
+      allow write: if isIngeniero() || isAdmin();
+    }
+    match /TipoCambio/{fecha} {
+      allow read: if isAuth();
+      allow create: if isAuth();
+      allow update: if isIngeniero() || isAdmin();
+      allow delete: if isAdmin();
+    }
+    match /Materiales/{materialId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin() || rol() == 'logistica';
+      allow delete: if isAdmin();
+    }
+    match /PreciosMercado/{precioId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin() || rol() == 'logistica' || rol() == 'almacenero';
+      allow delete: if isIngeniero() || isAdmin() || rol() == 'logistica';
+    }
+    match /Insumos/{insId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin();
+      allow delete: if isAdmin();
+    }
+    match /APUs/{apuId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin() || isPlaneamiento();
+      allow delete: if isAdmin();
+    }
+    match /APUs_Real/{apuId} {
+      allow read: if isAuth();
+      allow create, update: if isIngeniero() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // /Auditoria_Seguridad — append-only, solo admin lee.
+    match /Auditoria_Seguridad/{docId} {
+      allow read: if isAdmin();
+      allow create: if isAuth() && request.resource.data.uid == uid() && hasServerTimestamp('timestamp');
+      allow update, delete: if false;
+    }
+
+    // ════════════════ AISLADAS POR PROYECTO ════════════════
+    // Patrón: read=leeDoc(); create=<rol> && escribeNuevo(); update=<rol> && escribeExist().
+
+    match /Registros_Campo/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isCapataz() || isIngeniero() || isAdmin()) && escribeNuevo() &&
+                       request.resource.data.keys().hasAny(['fecha','actividad']) &&
+                       (!('partida'   in request.resource.data) || maxLen(request.resource.data.partida, 200)) &&
+                       (!('actividad' in request.resource.data) || maxLen(request.resource.data.actividad, 500)) &&
+                       (!('metrado'   in request.resource.data) || numInRange(request.resource.data.metrado, 0, 100000)) &&
+                       (!('totalHH'   in request.resource.data) || numInRange(request.resource.data.totalHH, 0, 1000));
+      allow update: if (isCapataz() || isIngeniero() || isAdmin()) && escribeExist();
+      allow delete: if (isCapataz() || isIngeniero() || isAdmin()) && leeDoc();
+    }
+
+    match /Cuadrillas/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin()) && escribeExist();
+      allow delete: if (isIngeniero() || isAdmin()) && leeDoc();
+    }
+    match /Catalogo_WBS/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin()) && escribeExist();
+      allow delete: if (isIngeniero() || isAdmin()) && leeDoc();
+    }
+    match /Personal/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin()) && escribeExist();
+      allow delete: if (isIngeniero() || isAdmin()) && leeDoc();
+    }
+    // Borradores: dueño/equipo trabajan; aislado por proyecto.
+    match /Borradores_Capataz/{docId} {
+      allow read:   if leeDoc();
+      allow create: if isAuth() && escribeNuevo();
+      allow update: if isAuth() && escribeExist();
+      allow delete: if isAuth() && leeDoc();
+    }
+    match /Cartas_Balance/{docId} {
+      allow read: if leeDoc();
+      allow create: if isAuthorized() && escribeNuevo() && request.resource.data.uidAutor == uid();
+      allow update: if isAuthorized() && escribeExist() && resource.data.uidAutor == uid();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /Planes_Diarios/{docId} {
+      allow read: if leeDoc();
+      allow create, update: if (isIngeniero() || isAdmin()) && (request.method == 'create' ? escribeNuevo() : escribeExist());
+    }
+    match /PPC_Compromisos/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin()) && escribeNuevo();
+      allow update: if ((isIngeniero() || isAdmin()) && escribeExist()) ||
+                       (isCapataz() && leeDoc() && resource.data.responsable == uid() &&
+                        request.resource.data.diff(resource.data).affectedKeys()
+                          .hasOnly(['cumplido','fechaCumplido','rnc','observaciones']));
+      allow delete: if (isIngeniero() || isAdmin()) && leeDoc();
+    }
+    match /VDC_Restricciones/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin()) && escribeExist();
+      allow delete: if (isIngeniero() || isAdmin()) && leeDoc();
+    }
+    match /VDC_Lecciones/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin()) && escribeExist();
+      allow delete: if (isIngeniero() || isAdmin()) && leeDoc();
+    }
+    match /BIM_Vinculos/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin()) && escribeExist();
+      allow delete: if (isIngeniero() || isAdmin()) && leeDoc();
+    }
+    match /BIM_Modelos/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin()) && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /Almacenes/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin() || rol() == 'logistica') && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin() || rol() == 'logistica') && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /Kardex_Movimientos/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin() || rol() == 'almacenero' || rol() == 'logistica') &&
+                       escribeNuevo() &&
+                       request.resource.data.registradoPor == tk().email;
+      allow update: if false;
+      allow delete: if false;
+    }
+    match /Stock_Actual/{docId} {
+      allow read: if leeDoc();
+      allow write: if isAdmin();   // solo Cloud Functions (admin SDK)
+    }
+    match /OrdenesCompra/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin() || rol() == 'logistica') && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin() || rol() == 'logistica') && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /OrdenesServicio/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin() || rol() == 'logistica') && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin() || rol() == 'logistica') && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /Partidas/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin()) && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /Requerimientos/{docId} {
+      allow read: if leeDoc();
+      allow create: if isAuth() && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin() || rol() == 'almacenero' || rol() == 'logistica') && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /Subcontratos/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin()) && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /Valorizaciones/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin()) && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /Protocolos/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin() || rol() == 'calidad') && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin() || rol() == 'calidad' || rol() == 'supervisor_cliente') && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /PETs/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin() || rol() == 'calidad') && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin() || rol() == 'calidad' || rol() == 'capataz' || rol() == 'subcontratista') && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /NoConformidades/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin() || rol() == 'calidad') && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin() || rol() == 'calidad') && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /Ensayos/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin() || rol() == 'calidad') && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin() || rol() == 'calidad') && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /RDO/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin()) && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /ValorizacionesContractuales/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin()) && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /PartidasContractuales/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin()) && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /PresupuestoF07/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin()) && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /ValorizacionF07_Avance/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin()) && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /MetradosContractuales/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin()) && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /Adicionales/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin()) && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /Cartas/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin()) && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /IndicesPolinomicos/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin()) && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /PullPlanningHitos/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin() || isPlaneamiento()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin() || isPlaneamiento()) && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /PullPlanningTareas/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin() || isCapataz() || isPlaneamiento()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin() || isCapataz() || isPlaneamiento()) && escribeExist();
+      allow delete: if (isIngeniero() || isAdmin()) && leeDoc();
+    }
+    match /Asistencia_Diaria/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin()) && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /PlanMaestro/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin() || isPlaneamiento()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin() || isPlaneamiento()) && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /RO_Mensual/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin()) && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /Indicadores_Ejecutivos/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin()) && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /Cronogramas/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin() || isPlaneamiento()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin() || isPlaneamiento()) && escribeExist();
+      allow delete: if (isIngeniero() || isAdmin()) && leeDoc();
+    }
+    match /Historial/{docId} {
+      allow read: if leeDoc();
+      allow create: if isAuthorized() && escribeNuevo();
+      allow update: if isAuthorized() && escribeExist();
+      allow delete: if (isIngeniero() || isAdmin()) && leeDoc();
+    }
+    match /Registro_Facturas/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin() || rol() == 'logistica') && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin() || rol() == 'logistica') && escribeExist();
+      allow delete: if (isIngeniero() || isAdmin()) && leeDoc();
+    }
+    match /GG_Oficina/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin()) && escribeExist();
+      allow delete: if (isIngeniero() || isAdmin()) && leeDoc();
+    }
+    match /ValorizacionesSubcontratistas/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin()) && escribeExist();
+      allow delete: if (isIngeniero() || isAdmin()) && leeDoc();
+    }
+    match /Deductivos/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin()) && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /LPS/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin() || isPlaneamiento() || isCapataz()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin() || isPlaneamiento() || isCapataz()) && escribeExist();
+      allow delete: if (isIngeniero() || isAdmin()) && leeDoc();
+    }
+    match /LPS_Plazos/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin() || isPlaneamiento()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin() || isPlaneamiento()) && escribeExist();
+      allow delete: if (isIngeniero() || isAdmin()) && leeDoc();
+    }
+    match /ATS/{docId} {
+      allow read: if leeDoc();
+      allow create: if isAuthorized() && escribeNuevo();
+      allow update: if isAuthorized() && escribeExist();
+      allow delete: if (isIngeniero() || isAdmin()) && leeDoc();
+    }
+    match /InspeccionesSeguridad/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin() || rol() == 'seguridad') && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin() || rol() == 'seguridad') && escribeExist();
+      allow delete: if (isIngeniero() || isAdmin()) && leeDoc();
+    }
+    match /CuadrillasActivas/{docId} {
+      allow read: if leeDoc();
+      allow create: if isAuthorized() && escribeNuevo();
+      allow update: if isAuthorized() && escribeExist();
+      allow delete: if (isIngeniero() || isAdmin()) && leeDoc();
+    }
+    match /PlanDiario/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin() || isPlaneamiento() || isCapataz()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin() || isPlaneamiento() || isCapataz()) && escribeExist();
+      allow delete: if (isIngeniero() || isAdmin()) && leeDoc();
+    }
+    match /ProtocolosCALFOR/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin() || rol() == 'calidad' || rol() == 'supervisor_cliente') && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin() || rol() == 'calidad' || rol() == 'supervisor_cliente') && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
+    }
+    match /SustentoMetrados/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin() || rol() == 'oficina_tecnica') && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin() || rol() == 'oficina_tecnica') && escribeExist();
+      allow delete: if (isIngeniero() || isAdmin()) && leeDoc();
+    }
+    match /VDC_Evidencias/{docId} {
+      allow read: if leeDoc();
+      allow create: if isAuthorized() && escribeNuevo();
+      allow update: if isAuthorized() && escribeExist();
+      allow delete: if (isIngeniero() || isAdmin()) && leeDoc();
+    }
+    // Asignacion_Tareo (vínculo plan→tareo) — aislado.
+    match /Asignacion_Tareo/{docId} {
+      allow read: if leeDoc();
+      allow create: if (isIngeniero() || isAdmin() || isCapataz() || isPlaneamiento()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin() || isCapataz() || isPlaneamiento()) && escribeExist();
+      allow delete: if (isIngeniero() || isAdmin()) && leeDoc();
+    }
+
+    // ════════════════ DENEGAR TODO LO DEMÁS ════════════════
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+// NOTA: el helper `request.method` no existe en rules; en /Planes_Diarios reemplazar el
+// create,update combinado por bloques separados (allow create: ...&&escribeNuevo(); allow update: ...&&escribeExist();)
+// igual que el resto. Se dejó marcado para corregir en revisión.
