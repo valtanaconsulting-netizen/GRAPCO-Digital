@@ -275,7 +275,7 @@ export default function AnalisisHHCross({ filtrados = [], personalDB = [] }) {
                 return (
                   <button key={p.nombre + i} onClick={() => setSelPersona(activo ? null : p.nombre)}
                     style={{
-                      textAlign: 'left', padding: '8px 10px',
+                      textAlign: 'left', padding: '8px 10px', flexShrink: 0,
                       background: activo ? `${BASE.navy}` : BASE.bgSoft,
                       color: activo ? '#fff' : BASE.text,
                       border: `1px solid ${activo ? BASE.navy : BASE.border}`,
