@@ -15,6 +15,7 @@ import {
 } from '../../utils/materialesAnalytics';
 // exportarValorizadoS10 se carga LAZY (await import) al exportar → no arrastra xlsx (416KB) al chunk.
 import EmptyState from '../../components/EmptyState';
+import DatePickerPremium from '../../components/DatePickerPremium';
 
 const HOY = new Date().toISOString().split('T')[0];
 
@@ -128,10 +129,10 @@ export default function ReporteValorizadoS10({ showToast }) {
           gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))',
         }}>
           <Field label="Fecha de corte *">
-            <input type="date" value={fechaCorte} onChange={e => setFechaCorte(e.target.value)} style={inpS} />
+            <DatePickerPremium value={fechaCorte || ''} onChange={iso => setFechaCorte(iso)} />
           </Field>
           <Field label="Fecha desde (opcional)">
-            <input type="date" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} style={inpS} />
+            <DatePickerPremium value={fechaDesde || ''} onChange={iso => setFechaDesde(iso)} />
           </Field>
           <Field label="Almacen">
             <select value={almacenId} onChange={e => setAlmacenId(e.target.value)} style={selS}>

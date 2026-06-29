@@ -11,6 +11,7 @@ import { TIPOS_ENSAYO, ELEMENTOS_TIPO, fmtNumero } from '../../utils/calidadOTAn
 import Modal from '../../components/Modal';
 import EmptyState from '../../components/EmptyState';
 import FotoUploader from '../../components/FotoUploader';
+import DatePickerPremium from '../../components/DatePickerPremium';
 
 const FORM_INICIAL = {
   tipo: 'compresion', laboratorio: '', elementoTipo: 'columna', elementoId: '', partidaWBS: '',
@@ -274,10 +275,10 @@ export default function EnsayosView({ showToast }) {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
             <Field label="Fecha toma">
-              <input type="date" value={form.fechaToma} onChange={e => setForm({...form, fechaToma: e.target.value})} style={inpS} />
+              <DatePickerPremium value={form.fechaToma || ''} onChange={iso => setForm({...form, fechaToma: iso})} />
             </Field>
             <Field label="Fecha resultado">
-              <input type="date" value={form.fechaResultado} onChange={e => setForm({...form, fechaResultado: e.target.value})} style={inpS} />
+              <DatePickerPremium value={form.fechaResultado || ''} onChange={iso => setForm({...form, fechaResultado: iso})} />
             </Field>
             <Field label="Edad (dias)">
               <input type="number" value={form.edadDias} onChange={e => setForm({...form, edadDias: e.target.value})} style={inpS} />

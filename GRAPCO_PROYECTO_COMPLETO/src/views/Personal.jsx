@@ -9,6 +9,7 @@ import { COSTO_HORA_DEFAULT } from '../utils/helpers';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 import { useConfirm } from '../contexts/NotificationContext';
 import Modal from '../components/Modal';
+import DatePickerPremium from '../components/DatePickerPremium';
 import PersonalBaseDatos from './PersonalBaseDatos';
 
 export default function Personal({ cuadrillasDB: cuadrillasTodas, personalDB: personalTodos, configuracion, showToast }) {
@@ -433,26 +434,10 @@ export default function Personal({ cuadrillasDB: cuadrillasTodas, personalDB: pe
                   return <span style={{marginLeft:'8px',color:BASE.green,fontWeight:'800'}}>{edad} años</span>;
                 })()}
               </label>
-              <div style={{position:'relative',cursor:'pointer'}} onClick={()=>{
-                const el=document.getElementById('fechaNacInput');
-                if(el){el.focus();try{el.showPicker();}catch(e){}}
-              }}>
-                <div style={{background:BASE.bgSoft,border:`1.5px solid ${formTrabajador.fechaNac?BASE.navy:BASE.border}`,borderRadius:'10px',padding:'12px 16px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                  <p style={{fontSize:'15px',fontWeight:'700',color:formTrabajador.fechaNac?BASE.navy:BASE.mutedSoft}}>
-                    {formTrabajador.fechaNac ? (() => {
-                      const [y,m,d]=formTrabajador.fechaNac.split('-');
-                      const MESES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-                      return `${parseInt(d)} ${MESES[parseInt(m)-1]} ${y}`;
-                    })() : 'Seleccionar fecha de nacimiento...'}
-                  </p>
-                  <span style={{fontSize:'20px'}}>🎂</span>
-                  <input id="fechaNacInput" type="date" value={formTrabajador.fechaNac}
-                    max={new Date(new Date().setFullYear(new Date().getFullYear()-14)).toISOString().split('T')[0]}
-                    onChange={e=>setFormTrabajador(p=>({...p,fechaNac:e.target.value}))}
-                    style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',opacity:0,cursor:'pointer',fontSize:'16px'}}
-                  />
-                </div>
-              </div>
+              <DatePickerPremium value={formTrabajador.fechaNac || ''}
+                max={new Date(new Date().setFullYear(new Date().getFullYear()-14)).toISOString().split('T')[0]}
+                onChange={iso=>setFormTrabajador(p=>({...p,fechaNac:iso}))}
+              />
             </div>
             <div>
               <label style={{fontSize:'10px',fontWeight:'700',color:BASE.muted,letterSpacing:'0.6px',display:'block',marginBottom:'5px'}}>CARGO</label>
@@ -474,15 +459,15 @@ export default function Personal({ cuadrillasDB: cuadrillasTodas, personalDB: pe
             <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%, 150px),1fr))',gap:'10px'}}>
               <div>
                 <label style={{fontSize:'10px',fontWeight:'700',color:BASE.muted,letterSpacing:'0.6px',display:'block',marginBottom:'5px'}}>Fecha de ingreso</label>
-                <input type="date" value={formTrabajador.fechaIngreso} onChange={e=>setFormTrabajador(p=>({...p,fechaIngreso:e.target.value}))} style={inp()}/>
+                <DatePickerPremium value={formTrabajador.fechaIngreso || ''} onChange={iso=>setFormTrabajador(p=>({...p,fechaIngreso:iso}))}/>
               </div>
               <div>
                 <label style={{fontSize:'10px',fontWeight:'700',color:BASE.muted,letterSpacing:'0.6px',display:'block',marginBottom:'5px'}}>Fecha de salida</label>
-                <input type="date" value={formTrabajador.fechaSalida} onChange={e=>setFormTrabajador(p=>({...p,fechaSalida:e.target.value}))} style={inp()}/>
+                <DatePickerPremium value={formTrabajador.fechaSalida || ''} onChange={iso=>setFormTrabajador(p=>({...p,fechaSalida:iso}))}/>
               </div>
               <div>
                 <label style={{fontSize:'10px',fontWeight:'700',color:BASE.muted,letterSpacing:'0.6px',display:'block',marginBottom:'5px'}}>Fecha de liquidación</label>
-                <input type="date" value={formTrabajador.fechaLiquidacion} onChange={e=>setFormTrabajador(p=>({...p,fechaLiquidacion:e.target.value}))} style={inp()}/>
+                <DatePickerPremium value={formTrabajador.fechaLiquidacion || ''} onChange={iso=>setFormTrabajador(p=>({...p,fechaLiquidacion:iso}))}/>
               </div>
             </div>
 

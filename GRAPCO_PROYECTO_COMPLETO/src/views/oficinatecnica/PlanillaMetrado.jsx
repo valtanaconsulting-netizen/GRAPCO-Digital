@@ -18,6 +18,7 @@ import React, { useMemo } from 'react';
 import { BASE } from '../../utils/styles';
 import { obtenerSemana } from '../../utils/helpers';
 import { FECHA_INICIO_PROYECTO } from '../../utils/constants';
+import DatePickerPremium from '../../components/DatePickerPremium';
 
 // Semana del proyecto (LPS) de una fecha ISO. Semana 1 = lunes de FECHA_INICIO_PROYECTO.
 export const semanaDe = (fechaStr) => {
@@ -192,7 +193,7 @@ export default function PlanillaMetrado({ tipo = 'concreto', unidad, detalle = [
     const filaViaje = (r, i) => (
       <tr key={r.id} style={{ background: i % 2 ? BASE.bgSoft : BASE.white, borderBottom: `1px solid ${BASE.border}` }}>
         <td style={tdS()}><input value={r.nGuia} onChange={e => setCampo(r.id, 'nGuia', e.target.value)} placeholder="000202" style={inpCell({ textAlign: 'left' })} /></td>
-        <td style={tdS()}><input type="date" value={r.fecha || ''} onChange={e => setCampo(r.id, 'fecha', e.target.value)} style={inpCell({ textAlign: 'left' })} /></td>
+        <td style={tdS()}><DatePickerPremium value={r.fecha || ''} onChange={iso => setCampo(r.id, 'fecha', iso)} /></td>
         <td style={tdS()}><input value={r.placa} onChange={e => setCampo(r.id, 'placa', e.target.value)} placeholder="ANJ-776" style={inpCell({ textAlign: 'left' })} /></td>
         <td style={tdS()}>
           <select value={r.clase} onChange={e => setCampo(r.id, 'clase', e.target.value)} style={inpCell({ padding: '6px 4px' })}>

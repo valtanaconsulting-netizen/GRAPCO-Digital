@@ -7,6 +7,7 @@ import { suscribir } from '../../hooks/firestoreSuscribir';
 import { BASE } from '../../utils/styles';
 import { TIPOS_MOVIMIENTO, fmtCantidad, fmtSoles, kardexPorMaterial } from '../../utils/materialesAnalytics';
 import EmptyState from '../../components/EmptyState';
+import DatePickerPremium from '../../components/DatePickerPremium';
 import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 
 export default function KardexView() {
@@ -100,8 +101,8 @@ export default function KardexView() {
             <option value="">Todos los materiales</option>
             {materiales.map(m => <option key={m.id} value={m.id}>{m.codigo} - {m.nombre}</option>)}
           </select>
-          <input type="date" value={filtroDesde} onChange={e => setFiltroDesde(e.target.value)} style={inpS} placeholder="Desde" />
-          <input type="date" value={filtroHasta} onChange={e => setFiltroHasta(e.target.value)} style={inpS} placeholder="Hasta" />
+          <DatePickerPremium value={filtroDesde || ''} onChange={iso => setFiltroDesde(iso)} />
+          <DatePickerPremium value={filtroHasta || ''} onChange={iso => setFiltroHasta(iso)} />
         </div>
       </div>
 

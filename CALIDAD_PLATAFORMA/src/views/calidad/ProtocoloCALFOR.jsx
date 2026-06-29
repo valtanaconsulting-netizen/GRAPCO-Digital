@@ -15,6 +15,7 @@ import { BASE } from '../../utils/styles';
 import Modal from '../../components/Modal';
 import EmptyState from '../../components/EmptyState';
 import FotoUploader from '../../components/FotoUploader';
+import DatePickerPremium from '../../components/DatePickerPremium';
 
 const FIRMANTES = ['Calidad - Sector', 'Producción - Sector', 'Seguridad - Sector', 'Residente', 'Supervisión'];
 
@@ -218,8 +219,8 @@ export default function ProtocoloCALFOR({ showToast }) {
                 <input value={eq.marca || ''}        onChange={e => setEq(i, 'marca', e.target.value)} style={inp()} />
                 <input value={eq.modelo || ''}       onChange={e => setEq(i, 'modelo', e.target.value)} style={inp()} />
                 <input value={eq.serie || ''}        onChange={e => setEq(i, 'serie', e.target.value)} style={inp()} />
-                <input type="date" value={eq.vigenteDesde || ''} onChange={e => setEq(i, 'vigenteDesde', e.target.value)} style={inp()} />
-                <input type="date" value={eq.vigenteHasta || ''} onChange={e => setEq(i, 'vigenteHasta', e.target.value)} style={inp()} />
+                <DatePickerPremium value={eq.vigenteDesde || ''} onChange={iso => setEq(i, 'vigenteDesde', iso)} />
+                <DatePickerPremium value={eq.vigenteHasta || ''} onChange={iso => setEq(i, 'vigenteHasta', iso)} />
                 <button onClick={() => setForm({ ...form, equipos: form.equipos.filter((_, j) => j !== i) })} style={btnIcon(BASE.red)}>✕</button>
               </div>
             ))}
@@ -302,10 +303,10 @@ export default function ProtocoloCALFOR({ showToast }) {
                     const next = [...form.firmas]; next[i] = { ...f, nombre: e.target.value };
                     setForm({ ...form, firmas: next });
                   }} placeholder="Nombre" style={{ ...inp(), fontSize: '11px', padding: '6px 8px' }} />
-                  <input type="date" value={f.fecha} onChange={(e) => {
-                    const next = [...form.firmas]; next[i] = { ...f, fecha: e.target.value };
+                  <DatePickerPremium value={f.fecha || ''} onChange={(iso) => {
+                    const next = [...form.firmas]; next[i] = { ...f, fecha: iso };
                     setForm({ ...form, firmas: next });
-                  }} style={{ ...inp(), fontSize: '11px', padding: '6px 8px', marginTop: '4px' }} />
+                  }} />
                 </div>
               ))}
             </div>

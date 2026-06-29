@@ -8,6 +8,7 @@ import { BASE } from '../../../utils/styles';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
 import ConfirmModal from '../../../components/ConfirmModal';
+import DatePickerPremium from '../../../components/DatePickerPremium';
 
 const TIPOS_OBRA = [
   { id: 'edificacion', label: '🏢 Edificación',  color: '#7c3aed', desc: 'Edificios, viviendas, oficinas' },
@@ -532,12 +533,12 @@ export default function ProyectoEditor({ proyecto, onClose, showToast }) {
 
             <Grid cols="1fr 1fr 1fr">
               <Field label="Fecha de inicio *">
-                <input type="date" value={form.fechaInicioContractual}
-                  onChange={e => updField('fechaInicioContractual', e.target.value)} style={inpS} />
+                <DatePickerPremium value={form.fechaInicioContractual || ''}
+                  onChange={iso => updField('fechaInicioContractual', iso)} />
               </Field>
               <Field label="Fecha de fin contractual *">
-                <input type="date" value={form.fechaFinContractual}
-                  onChange={e => updField('fechaFinContractual', e.target.value)} style={inpS} />
+                <DatePickerPremium value={form.fechaFinContractual || ''}
+                  onChange={iso => updField('fechaFinContractual', iso)} />
               </Field>
               <Field label="Plazo (días)" hint="Calculado">
                 <input type="text" readOnly value={form.plazoDias}

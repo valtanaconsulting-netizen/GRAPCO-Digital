@@ -9,6 +9,7 @@ import { BASE } from '../../utils/styles';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import { obtenerTCDelDia, MONEDAS, fmtMoneda, convertirAPEN } from '../../utils/tipoCambioClient';
+import DatePickerPremium from '../../components/DatePickerPremium';
 
 const ESTADO_INICIAL = 'emitida';
 const FORM_INICIAL = {
@@ -246,10 +247,10 @@ export default function OrdenEditor({ tipoOrden = 'OC', ordenExistente = null, s
             <input type="text" value={form.numero} onChange={e => setForm({...form, numero: e.target.value})} style={inpS} />
           </Field>
           <Field label="Fecha emision *">
-            <input type="date" value={form.fechaEmision} onChange={e => setForm({...form, fechaEmision: e.target.value})} style={inpS} />
+            <DatePickerPremium value={form.fechaEmision || ''} onChange={iso => setForm({...form, fechaEmision: iso})} />
           </Field>
           <Field label="Entrega estimada">
-            <input type="date" value={form.fechaEntregaEstimada} onChange={e => setForm({...form, fechaEntregaEstimada: e.target.value})} style={inpS} />
+            <DatePickerPremium value={form.fechaEntregaEstimada || ''} onChange={iso => setForm({...form, fechaEntregaEstimada: iso})} />
           </Field>
           <Field label="Proveedor *">
             <input type="text" value={form.proveedor} onChange={e => setForm({...form, proveedor: e.target.value})} placeholder="UNACEM SAA" style={inpS} />

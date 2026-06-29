@@ -29,6 +29,7 @@ import {
 // descargarProtocoloPreVaciadoPDF se carga LAZY al generar el PDF → no arrastra @react-pdf (1.3MB) al abrir el editor.
 import PdfFirmadoUploader from '../../components/PdfFirmadoUploader';
 import VisorPlanos from '../../components/VisorPlanos';
+import DatePickerPremium from '../../components/DatePickerPremium';
 
 const TIPO = 'prevaciado';
 
@@ -310,7 +311,7 @@ export default function ProtocoloPreVaciadoEditor({ protocoloId, showToast, onCl
           </Field>
           <Field label="Slump de diseño"><Inp value={form.slumpDiseno} onChange={v => upd('slumpDiseno', v)} placeholder='4"' /></Field>
           <Field label="Fecha de vaciado">
-            <input type="date" value={form.fechaVaciado} onChange={e => upd('fechaVaciado', e.target.value)} style={inpStyle} />
+            <DatePickerPremium value={form.fechaVaciado || ''} onChange={iso => upd('fechaVaciado', iso)} />
           </Field>
         </Grid>
       </Card>

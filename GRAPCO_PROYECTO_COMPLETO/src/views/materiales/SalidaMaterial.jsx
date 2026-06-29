@@ -9,6 +9,7 @@ import { BASE } from '../../utils/styles';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import { calcularStockActual, fmtCantidad, fmtSoles, generarNumero } from '../../utils/materialesAnalytics';
+import DatePickerPremium from '../../components/DatePickerPremium';
 
 export default function SalidaMaterial({ showToast, onSaved }) {
   const { user } = useAuth();
@@ -245,7 +246,7 @@ export default function SalidaMaterial({ showToast, onSaved }) {
             <input type="text" value={numVale} onChange={e => setNumVale(e.target.value)} placeholder="V-2026-001" style={inpS} />
           </Field>
           <Field label="Fecha *">
-            <input type="date" value={fechaSalida} onChange={e => setFechaSalida(e.target.value)} style={inpS} />
+            <DatePickerPremium value={fechaSalida || ''} onChange={iso => setFechaSalida(iso)} />
           </Field>
           <Field label="Retirado por (capataz/personal) *">
             <input type="text" list="personal-list" value={retiradoPor} onChange={e => setRetiradoPor(e.target.value)} placeholder="Nombre completo" style={inpS} />

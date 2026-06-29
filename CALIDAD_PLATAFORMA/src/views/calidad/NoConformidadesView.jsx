@@ -9,6 +9,7 @@ import { ESTADOS_NC, SEVERIDADES_NC, ELEMENTOS_TIPO } from '../../utils/calidadO
 import Modal from '../../components/Modal';
 import EmptyState from '../../components/EmptyState';
 import FotoUploader from '../../components/FotoUploader';
+import DatePickerPremium from '../../components/DatePickerPremium';
 import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 
 const FORM_INICIAL = {
@@ -295,7 +296,7 @@ export default function NoConformidadesView({ showToast }) {
           </Field>
 
           <Field label="Fecha compromiso de cierre">
-            <input type="date" value={form.fechaCompromiso} onChange={e => setForm({...form, fechaCompromiso: e.target.value})} style={inpS} />
+            <DatePickerPremium value={form.fechaCompromiso || ''} onChange={iso => setForm({...form, fechaCompromiso: iso})} />
           </Field>
 
           <Field label={`Evidencia fotográfica (${form.fotos?.length || 0})`}>

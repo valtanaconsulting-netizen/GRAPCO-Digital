@@ -17,6 +17,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import { fmtSoles } from '../../utils/materialesAnalytics';
 import { obtenerTCDelDia, MONEDAS, fmtMoneda, convertirAPEN } from '../../utils/tipoCambioClient';
+import DatePickerPremium from '../../components/DatePickerPremium';
 
 const MODOS = [
   { id: 'MANUAL', label: '✏️ Manual', desc: 'Escribir items uno por uno', color: BASE.navy },
@@ -375,7 +376,7 @@ export default function EntradaMaterial({ showToast, onSaved }) {
             </select>
           </Field>
           <Field label="Fecha *">
-            <input type="date" value={fechaEntrada} onChange={e => setFechaEntrada(e.target.value)} style={inpS} />
+            <DatePickerPremium value={fechaEntrada || ''} onChange={iso => setFechaEntrada(iso)} />
           </Field>
           <Field label="Proveedor *">
             <input type="text" value={proveedor} onChange={e => setProveedor(e.target.value)} placeholder="UNACEM SAA" style={inpS} />

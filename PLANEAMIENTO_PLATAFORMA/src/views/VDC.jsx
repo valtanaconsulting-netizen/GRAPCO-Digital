@@ -35,6 +35,7 @@ const INICIO_PROYECTO = FECHA_INICIO_PROYECTO.toISOString().slice(0, 10);
 // arcoíris saturado. Alineada a CHART_PALETTE de la plataforma.
 const PALETA_LAP = ['#E5A82F', '#0E7490', '#047857', '#1D4ED8', '#BE123C', '#7E22CE', '#B45309', '#0F766E', '#0891B2', '#0F2A47'];
 import Modal from '../components/Modal';
+import DatePickerPremium from '../components/DatePickerPremium';
 import PlanDiario from './PlanDiario';
 import TableroLPS from './TableroLPS';
 import SectorizacionTren from './planeamiento/SectorizacionTren';
@@ -560,15 +561,13 @@ export default function VDC({
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <div>
                 <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>📌 FECHA DE IDENTIFICACIÓN</label>
-                <input type="date" value={formRestriccion.fechaIdentificacion}
-                  onChange={e => setFormRestriccion(p => ({ ...p, fechaIdentificacion: e.target.value }))}
-                  style={inp({ marginTop: '4px' })} />
+                <DatePickerPremium value={formRestriccion.fechaIdentificacion || ''}
+                  onChange={iso => setFormRestriccion(p => ({ ...p, fechaIdentificacion: iso }))} />
               </div>
               <div>
                 <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px' }}>🎯 COMPROMISO DE LIBERACIÓN</label>
-                <input type="date" value={formRestriccion.fechaCompromisoLiberacion}
-                  onChange={e => setFormRestriccion(p => ({ ...p, fechaCompromisoLiberacion: e.target.value }))}
-                  style={inp({ marginTop: '4px' })} />
+                <DatePickerPremium value={formRestriccion.fechaCompromisoLiberacion || ''}
+                  onChange={iso => setFormRestriccion(p => ({ ...p, fechaCompromisoLiberacion: iso }))} />
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
@@ -599,9 +598,8 @@ export default function VDC({
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', alignItems: 'end' }}>
                 <div>
                   <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.greenDark, letterSpacing: '0.6px' }}>✅ FECHA REAL DE LIBERACIÓN</label>
-                  <input type="date" value={formRestriccion.fechaConciliada}
-                    onChange={e => setFormRestriccion(p => ({ ...p, fechaConciliada: e.target.value }))}
-                    style={inp({ marginTop: '4px' })} />
+                  <DatePickerPremium value={formRestriccion.fechaConciliada || ''}
+                    onChange={iso => setFormRestriccion(p => ({ ...p, fechaConciliada: iso }))} />
                 </div>
                 {(() => {
                   const d0 = formRestriccion.fechaIdentificacion, d1 = formRestriccion.fechaConciliada, dc = formRestriccion.fechaCompromisoLiberacion;

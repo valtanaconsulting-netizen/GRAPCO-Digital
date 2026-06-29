@@ -8,6 +8,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
 import { PLANTILLAS, aplicarPlantilla } from '../../../utils/plantillas/plantillasPlanMaestro';
 import { fmtSoles, fmtNumero } from '../../../utils/planMaestroAnalytics';
+import DatePickerPremium from '../../../components/DatePickerPremium';
 
 export default function WizardPlanMaestro({ onClose, showToast }) {
   const { user } = useAuth();
@@ -233,7 +234,7 @@ export default function WizardPlanMaestro({ onClose, showToast }) {
             </Field>
 
             <Field label="Fecha de inicio del proyecto" hint="Las fechas de las actividades se distribuyen automáticamente">
-              <input type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} style={inpS} />
+              <DatePickerPremium value={fechaInicio || ''} onChange={iso => setFechaInicio(iso)} />
             </Field>
 
             <Field label="Escala del presupuesto" hint="Multiplica los metrados de la plantilla. 1.0 = sin cambio. 0.5 = la mitad. 2.0 = el doble.">

@@ -14,6 +14,7 @@ import { normActividad } from '../../../utils/normalizacion';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
 import { useConfirm } from '../../../contexts/NotificationContext';
 import { useCatalogoWBS } from '../../../hooks/useCatalogoWBS';
+import DatePickerPremium from '../../../components/DatePickerPremium';
 import {
   num, calcActividad, hhDe, actividadVacia, hardcodedAArbol, totalesArbol,
   normalizarActividad, FRENTE_BASE, COLUMNAS_PLANTILLA, filasAArbol, arbolAFilas,
@@ -711,7 +712,7 @@ export default function EditorWbsIsp({ showToast }) {
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             <div style={{ flex: '1 1 180px' }}>
               <label style={lblModal}>Fecha de inicio</label>
-              <input type="date" value={progFecha} onChange={e => setProgFecha(e.target.value)} style={inputModal} />
+              <DatePickerPremium value={progFecha || ''} onChange={iso => setProgFecha(iso)} />
             </div>
             <div style={{ flex: '1 1 120px' }}>
               <label style={lblModal}>Jornada (horas/día)</label>

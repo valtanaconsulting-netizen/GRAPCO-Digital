@@ -25,6 +25,7 @@ import { CRONOGRAMAOBRA } from '../../data/cronogramaObraCreditex';
 import { normActividad as normAct, normActSinParen } from '../../utils/normalizacion'; // idioma común
 import CronogramaObra from './CronogramaObra';
 import GateProyectoLegacy from '../../components/GateProyectoLegacy';
+import DatePickerPremium from '../../components/DatePickerPremium';
 import { LEGACY_CREDITEX_IDS } from '../../hooks/useCatalogoWBS';
 import {
   ResponsiveContainer, ComposedChart, Line, XAxis, YAxis,
@@ -552,8 +553,7 @@ export default function CronogramaPro() {
             ))}
             <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               <label style={{ fontSize: '10px', fontWeight: 700, color: BASE.muted, letterSpacing: '0.8px' }}>INICIO DE OBRA</label>
-              <input type="date" value={fechaInicio} onChange={e => { setFechaInicio(e.target.value); setSinGuardar(true); }}
-                style={{ padding: '6px 8px', border: `1.5px solid ${BASE.border}`, borderRadius: '7px', fontSize: '11.5px', fontFamily: MONO }} />
+              <DatePickerPremium value={fechaInicio || ''} onChange={iso => { setFechaInicio(iso); setSinGuardar(true); }} />
               <div style={{ display: 'inline-flex', border: `1px solid ${BASE.border}`, borderRadius: '7px', overflow: 'hidden' }}>
                 {[[4, 'S'], [8, 'M'], [14, 'L']].map(([px, lbl]) => (
                   <button key={px} onClick={() => setPxDia(px)} style={{

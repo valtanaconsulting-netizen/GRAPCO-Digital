@@ -12,6 +12,7 @@ import {
 // exportarCostosHE se carga LAZY (await import) al exportar → no arrastra xlsx (416KB) al chunk.
 import { crearResolverNombre } from '../utils/nombresCanonicos';
 import VistaHeader from '../components/VistaHeader';
+import DatePickerPremium from '../components/DatePickerPremium';
 
 const card = {
   background: BASE.white,
@@ -222,13 +223,11 @@ export default function PagoObreros({ historial = [], cuadrillasActivas = {}, co
           </div>
           <div style={{ minWidth: 0, opacity: semanaActiva ? 0.5 : 1 }}>
             <label style={{ fontSize: '10px', fontWeight: '700', color: BASE.muted, letterSpacing: '0.5px', display: 'block', marginBottom: '4px' }}>DESDE</label>
-            <input type="date" value={desde} onChange={e => setDesde(e.target.value)} disabled={semanaActiva}
-              style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: `1px solid ${BASE.border}`, fontSize: '12px', background: BASE.bgSoft, boxSizing: 'border-box' }} />
+            <DatePickerPremium value={desde || ''} onChange={iso => setDesde(iso)} disabled={semanaActiva} />
           </div>
           <div style={{ minWidth: 0, opacity: semanaActiva ? 0.5 : 1 }}>
             <label style={{ fontSize: '10px', fontWeight: '700', color: BASE.muted, letterSpacing: '0.5px', display: 'block', marginBottom: '4px' }}>HASTA</label>
-            <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} disabled={semanaActiva}
-              style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: `1px solid ${BASE.border}`, fontSize: '12px', background: BASE.bgSoft, boxSizing: 'border-box' }} />
+            <DatePickerPremium value={hasta || ''} onChange={iso => setHasta(iso)} disabled={semanaActiva} />
           </div>
           <div style={{ minWidth: 0 }}>
             <label style={{ fontSize: '10px', fontWeight: '700', color: BASE.muted, letterSpacing: '0.5px', display: 'block', marginBottom: '4px' }}>CAPATAZ</label>

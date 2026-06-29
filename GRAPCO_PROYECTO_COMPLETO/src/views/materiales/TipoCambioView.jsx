@@ -9,6 +9,7 @@ import { BASE } from '../../utils/styles';
 import { useAuth } from '../../contexts/AuthContext';
 import { obtenerTCDelDia, guardarTCManual } from '../../utils/tipoCambioClient';
 import EmptyState from '../../components/EmptyState';
+import DatePickerPremium from '../../components/DatePickerPremium';
 
 export default function TipoCambioView({ showToast }) {
   const { user } = useAuth();
@@ -83,7 +84,7 @@ export default function TipoCambioView({ showToast }) {
         </p>
 
         <div style={{ display: 'flex', gap: '10px', marginTop: '14px', flexWrap: 'wrap' }}>
-          <input type="date" value={fechaConsulta} onChange={e => setFechaConsulta(e.target.value)} style={inpS} />
+          <DatePickerPremium value={fechaConsulta || ''} onChange={iso => setFechaConsulta(iso)} />
           <button onClick={fetchTC} disabled={busy} style={{
             padding: '9px 18px', borderRadius: '8px',
             background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`,
@@ -111,7 +112,7 @@ export default function TipoCambioView({ showToast }) {
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '10px', alignItems: 'flex-end' }}>
               <Field label="Fecha *">
-                <input type="date" value={formManual.fecha} onChange={e => setFormManual({...formManual, fecha: e.target.value})} style={inpS} />
+                <DatePickerPremium value={formManual.fecha || ''} onChange={iso => setFormManual({...formManual, fecha: iso})} />
               </Field>
               <Field label="Compra *">
                 <input type="number" step="0.001" value={formManual.compra} onChange={e => setFormManual({...formManual, compra: e.target.value})} placeholder="3.756" style={inpS} />

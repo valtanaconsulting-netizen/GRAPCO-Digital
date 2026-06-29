@@ -9,6 +9,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import { BASE } from '../../utils/styles';
 import FotoUploader from '../../components/FotoUploader';
+import DatePickerPremium from '../../components/DatePickerPremium';
 
 const GRUPOS = [
   {
@@ -194,7 +195,7 @@ export default function InspeccionSeguridad({ showToast }) {
               placeholder="Ej: F1+F2 - PTARI, Eje A-3" />
           </Campo>
           <Campo label="Fecha">
-            <input type="date" value={meta.fecha} onChange={(e) => setMeta({ ...meta, fecha: e.target.value })} style={inp()} />
+            <DatePickerPremium value={meta.fecha || ''} onChange={iso => setMeta({ ...meta, fecha: iso })} />
           </Campo>
           <Campo label="Hora">
             <input type="time" value={meta.hora} onChange={(e) => setMeta({ ...meta, hora: e.target.value })} style={inp()} />

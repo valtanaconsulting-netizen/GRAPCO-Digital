@@ -7,6 +7,7 @@ import { BASE, CHART_PALETTE } from '../../../utils/styles';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useConfirm } from '../../../contexts/NotificationContext';
 import { ESTADOS_ACTIVIDAD, fmtSoles } from '../../../utils/planMaestroAnalytics';
+import DatePickerPremium from '../../../components/DatePickerPremium';
 
 const FORM_INICIAL = {
   codigo: '', descripcion: '', unidad: 'm3',
@@ -209,12 +210,12 @@ export default function ActividadEditor({ actividad, onClose, showToast }) {
       <Seccion titulo="PROGRAMACIÓN (MASTER SCHEDULE)" color={BASE.gold}>
         <Grid cols="1fr 1fr 1fr 1fr">
           <Field label="Inicio programada">
-            <input type="date" value={form.fechaInicioProgramada}
-              onChange={e => setForm({...form, fechaInicioProgramada: e.target.value})} style={inpS} />
+            <DatePickerPremium value={form.fechaInicioProgramada || ''}
+              onChange={iso => setForm({...form, fechaInicioProgramada: iso})} />
           </Field>
           <Field label="Fin programada">
-            <input type="date" value={form.fechaFinProgramada}
-              onChange={e => setForm({...form, fechaFinProgramada: e.target.value})} style={inpS} />
+            <DatePickerPremium value={form.fechaFinProgramada || ''}
+              onChange={iso => setForm({...form, fechaFinProgramada: iso})} />
           </Field>
           <Field label="Predecesoras (códigos)">
             <input type="text" value={form.predecesoras}

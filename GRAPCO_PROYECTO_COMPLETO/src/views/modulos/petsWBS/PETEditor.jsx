@@ -10,6 +10,7 @@ import { db } from '../../../firebaseConfig';
 import { useAuth } from '../../../contexts/AuthContext';
 import { BASE, LOGO, CHART_PALETTE } from '../../../utils/styles';
 import Modal from '../../../components/Modal';
+import DatePickerPremium from '../../../components/DatePickerPremium';
 
 const APROBACIONES_DEFAULT = [
   { rol: 'ELABORÓ',  nombre: '', cargo: 'Ing. de Calidad',     fecha: '' },
@@ -226,10 +227,10 @@ function Cabecera({ form, setForm }) {
               const a = [...form.aprobaciones]; a[i] = { ...a[i], cargo: e.target.value };
               setForm({ ...form, aprobaciones: a });
             }} placeholder="Cargo" style={inp()} />
-            <input type="date" value={ap.fecha} onChange={(e) => {
-              const a = [...form.aprobaciones]; a[i] = { ...a[i], fecha: e.target.value };
+            <DatePickerPremium value={ap.fecha || ''} onChange={(iso) => {
+              const a = [...form.aprobaciones]; a[i] = { ...a[i], fecha: iso };
               setForm({ ...form, aprobaciones: a });
-            }} style={inp()} />
+            }} />
           </div>
         ))}
       </div>

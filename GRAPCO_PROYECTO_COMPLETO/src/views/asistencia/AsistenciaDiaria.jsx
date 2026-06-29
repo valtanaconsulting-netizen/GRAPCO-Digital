@@ -12,6 +12,7 @@ import { JORNADA_LEGAL } from '../../utils/constants';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import { usePersonal } from '../../hooks/useFirebaseData';
+import DatePickerPremium from '../../components/DatePickerPremium';
 
 const fmt2 = (n) => Math.round(n * 100) / 100;
 
@@ -186,8 +187,9 @@ export default function AsistenciaDiaria({ showToast }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: SPACING.md, alignItems: 'stretch' }}>
         <div style={card}>
           <p style={{ fontSize: '9px', fontWeight: '900', color: BASE.muted, letterSpacing: '0.8px' }}>FECHA</p>
-          <input type="date" value={fecha} onChange={e => setFecha(e.target.value)}
-            style={{ padding: '8px 10px', border: `1px solid ${BASE.border}`, borderRadius: RADIUS.md, fontSize: '13px', fontWeight: '700', marginTop: '6px', width: '100%' }}/>
+          <div style={{ marginTop: '6px' }}>
+            <DatePickerPremium value={fecha || ''} onChange={iso => setFecha(iso)}/>
+          </div>
         </div>
         {[
           { l: 'Obreros con marcaje', v: `${kpis.asistieron} / ${kpis.total_obreros}` },

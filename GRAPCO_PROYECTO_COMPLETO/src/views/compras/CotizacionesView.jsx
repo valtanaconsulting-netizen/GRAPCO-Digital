@@ -13,6 +13,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useConfirm } from '../../contexts/NotificationContext';
 import Modal from '../../components/Modal';
 import EmptyState from '../../components/EmptyState';
+import DatePickerPremium from '../../components/DatePickerPremium';
 
 const hoyISO = () => new Date().toISOString().slice(0, 10);
 
@@ -301,7 +302,7 @@ export default function CotizacionesView({ showToast }) {
                 </select>
               </Campo>
               <Campo label="Fecha del precio *" flex="1 1 150px">
-                <input type="date" value={form.fecha} onChange={e => setForm({ ...form, fecha: e.target.value })} style={inp} />
+                <DatePickerPremium value={form.fecha || ''} onChange={iso => setForm({ ...form, fecha: iso })} />
               </Campo>
             </div>
             <Campo label="Notas (opcional)">

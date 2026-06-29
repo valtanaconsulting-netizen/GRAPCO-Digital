@@ -15,6 +15,7 @@ import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 import { BASE, CB_COL, CHART_PALETTE } from '../utils/styles';
 import { EJE, GRILLA, TOOLTIP_STYLE, BARRA, SIN_ANIM } from '../utils/chartKit';
 import EmptyState from '../components/EmptyState';
+import DatePickerPremium from '../components/DatePickerPremium';
 import { optimizarCuadrilla } from '../utils/cartaBalanceAnalytics';
 import { METAS_CB_DEFAULT } from '../utils/cartaBalanceProductividad';
 import { partidaDe } from '../data/partidasCartaBalance';
@@ -342,9 +343,9 @@ export default function CartaBalanceAnalisis() {
           {diasSemana.map((d) => <option key={d.fecha} value={d.fecha}>{d.label}</option>)}
         </select>
         <span style={{ width: 1, height: 22, background: BASE.border }} />
-        <input type="date" value={desde} onChange={(e) => { setDesde(e.target.value); setSemanaSel(''); setDiaSel(''); }} style={inpTop} />
+        <DatePickerPremium value={desde || ''} onChange={(iso) => { setDesde(iso); setSemanaSel(''); setDiaSel(''); }} />
         <span style={{ color: BASE.muted }}>–</span>
-        <input type="date" value={hasta} onChange={(e) => { setHasta(e.target.value); setSemanaSel(''); setDiaSel(''); }} style={inpTop} />
+        <DatePickerPremium value={hasta || ''} onChange={(iso) => { setHasta(iso); setSemanaSel(''); setDiaSel(''); }} />
         <select value={selAct} onChange={(e) => setSelAct(e.target.value)} style={{ ...inpTop, minWidth: 150 }}>
           <option value="">🏗️ Todas las actividades</option>
           {actividades.map((a) => <option key={a} value={a}>{a}</option>)}

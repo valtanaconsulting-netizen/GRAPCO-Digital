@@ -14,6 +14,7 @@ import { BASE, CHART_PALETTE } from '../../utils/styles';
 import Modal from '../../components/Modal';
 import EmptyState from '../../components/EmptyState';
 import FotoUploader from '../../components/FotoUploader';
+import DatePickerPremium from '../../components/DatePickerPremium';
 
 const FORM_INICIAL = {
   fecha: new Date().toISOString().slice(0, 10),
@@ -117,8 +118,7 @@ export default function ATSGaleria({ showToast }) {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <input type="date" value={filtroFecha} onChange={(e) => setFiltroFecha(e.target.value)}
-            style={{ padding: '8px 12px', border: `1px solid ${BASE.border}`, borderRadius: '8px', fontSize: '12px' }} />
+          <DatePickerPremium value={filtroFecha || ''} onChange={iso => setFiltroFecha(iso)} />
           {filtroFecha && <button onClick={() => setFiltroFecha('')} style={btn(BASE.muted)}>Limpiar</button>}
           <button onClick={abrirNuevo} style={btn(CHART_PALETTE[2])}>+ Nuevo ATS</button>
         </div>
@@ -175,7 +175,7 @@ export default function ATSGaleria({ showToast }) {
       {modal && (
         <Modal onClose={() => setModal(null)} title={modal === 'NUEVO' ? 'Nuevo ATS' : 'Editar ATS'} maxW="720px">
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: '8px' }}>
-            <Campo label="Fecha"><input type="date" value={form.fecha} onChange={(e) => setForm({...form, fecha: e.target.value})} style={inp()} /></Campo>
+            <Campo label="Fecha"><DatePickerPremium value={form.fecha || ''} onChange={iso => setForm({...form, fecha: iso})} /></Campo>
             <Campo label="Hora"><input type="time" value={form.hora} onChange={(e) => setForm({...form, hora: e.target.value})} style={inp()} /></Campo>
             <Campo label="Frente *"><input value={form.frente} onChange={(e) => setForm({...form, frente: e.target.value})} style={inp()} placeholder="F1+F2 - PTARI" /></Campo>
           </div>
