@@ -302,7 +302,11 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
     const res = historialEnriquecido.filter(r => {
       const actCanon  = r._actividadCanonica || r.actividad;
       const partCanon = (r._partidaCanonica || r.partida || '').toUpperCase();
-      const subCanon  = (r._subpartidaCanonica || r.subpartida || '').toUpperCase();
+      // Sin subpartida ⇒ se asume subpartida = partida (mismo criterio que la
+      // agregación WBS, l.410). Así las actividades sueltas bajo una partida
+      // (p.ej. COLOCADO/HABILITADO DE ACERO) quedan bajo la subpartida «ACERO»
+      // y se pueden filtrar; antes daban 0 registros al elegir esa subpartida.
+      const subCanon  = (r._subpartidaCanonica || r.subpartida || '').toUpperCase() || partCanon;
       const mA  = fActividad  ? actCanon === fActividad                  : true;
       const mP  = fPartida    ? partCanon === fPartida.toUpperCase()     : true;
       const mSP = fSubpartida ? subCanon === fSubpartida.toUpperCase()   : true;
