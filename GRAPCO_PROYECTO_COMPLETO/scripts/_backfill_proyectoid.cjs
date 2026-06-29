@@ -30,6 +30,12 @@ const COLECCIONES = [
   'LPS', 'LPS_Plazos', 'PPC_Compromisos', 'VDC_Restricciones', 'VDC_Lecciones',
   'PullPlanningHitos', 'PullPlanningTareas', 'Cronogramas', 'Indicadores_Ejecutivos',
   'BIM_Modelos', 'BIM_Vinculos',
+  // Ampliación F2 (2026-06-29): colecciones aisladas que faltaban en la lista.
+  // NO se incluye Catalogo_WBS (su docId ES el proyectoId) ni globales legítimos
+  // (Materiales, PreciosMercado, Personal, Cuadrillas, Configuracion, Usuarios,
+  //  Proyectos, Frentes, TipoCambio, Bootstrap, Auditoria_Seguridad).
+  'Borradores_Capataz', 'Asignacion_Tareo', 'Almacenes', 'Stock_Actual',
+  'MetradosContractuales', 'PresupuestoF07', 'ValorizacionF07_Avance', 'Cartas', 'IndicesPolinomicos',
 ];
 
 async function main() {
