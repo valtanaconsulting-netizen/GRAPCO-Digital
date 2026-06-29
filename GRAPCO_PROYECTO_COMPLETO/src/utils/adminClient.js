@@ -19,3 +19,8 @@ export const eliminarUsuarioAdmin = (uid) =>
 
 export const sincronizarUsuariosAuth = () =>
   callFunction('adminSincronizarUsuariosAuth', {});
+
+// Re-emite los Custom Claims {rol, proy, sa} a todos los usuarios activos
+// (aislamiento multi-tenant, Fase F1). Devuelve { sincronizados, sinProyecto, ... }.
+export const sincronizarClaims = () =>
+  callFunction('adminSincronizarClaims', {});

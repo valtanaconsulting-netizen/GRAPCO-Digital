@@ -8,7 +8,7 @@ import { useConfirm } from '../../contexts/NotificationContext';
 import { BASE, CHART_PALETTE } from '../../utils/styles';
 import {
   crearUsuarioAdmin, cambiarRolUsuario, actualizarUsuarioAdmin,
-  desactivarUsuario, eliminarUsuarioAdmin, sincronizarUsuariosAuth,
+  desactivarUsuario, eliminarUsuarioAdmin, sincronizarUsuariosAuth, sincronizarClaims,
 } from '../../utils/adminClient';
 import StatusChip from '../../components/StatusChip';
 import Modal from '../../components/Modal';
@@ -138,6 +138,33 @@ export default function GestionUsuarios({ showToast }) {
           letterSpacing: '0.4px',
         }} title="Crear /Usuarios/{uid} para cada correo en Auth que aún no lo tenga">
           SINCRONIZAR AUTH
+        </button>
+        <button onClick={async () => {
+          const ok = await confirmar({
+            tono: 'navy',
+            icono: '🔐',
+            titulo: '¿Sincronizar Custom Claims de proyecto?',
+            mensaje: 'Re-emite el claim {rol, proyecto} en el token de CADA usuario activo (aislamiento multi-tenant, Fase F1). NO cambia permisos hoy: las reglas vivas aún no leen el claim. Reporta cuántos usuarios activos quedan SIN proyecto (gate antes del cutover).',
+            textoConfirmar: 'Sí, sincronizar claims',
+          });
+          if (!ok) return;
+          try {
+            const r = await sincronizarClaims();
+            const aviso = r.sinProyecto > 0
+              ? ` ⚠️ ${r.sinProyecto} sin proyecto: ${(r.usuariosSinProyecto || []).join(', ')}`
+              : '';
+            showToast?.(`✅ ${r.mensaje}${aviso}`, r.sinProyecto > 0 ? 'warning' : 'success');
+          } catch (e) {
+            showToast?.('❌ ' + (e.message || e), 'error');
+          }
+        }} style={{
+          padding: '9px 18px',
+          background: '#fff',
+          color: BASE.navy, border: `1.5px solid ${BASE.navy}`, borderRadius: '8px',
+          fontSize: '11.5px', fontWeight: '800', cursor: 'pointer',
+          letterSpacing: '0.4px',
+        }} title="Re-emite el Custom Claim {rol, proyecto} a todos los usuarios activos (Fase F1 del aislamiento multi-tenant)">
+          SINCRONIZAR CLAIMS
         </button>
         <button onClick={() => setShowCrear(true)} className="btn-feedback" style={{
           padding: '9px 18px',
