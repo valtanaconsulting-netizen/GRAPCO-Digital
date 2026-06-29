@@ -216,6 +216,9 @@ export default function SelectorPerfil({ onIrASeccion }) {
   const videoRef = useRef(null);
   // Móvil → SelectPremium usa bottom-sheet (no dropdown anclado). App nativa/celular.
   const isMobile = typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+  // Respeta a quien pidió menos movimiento: salta los transform de hover (las
+  // animaciones de keyframes ya se desactivan por CSS en prefers-reduced-motion).
+  const prefiereMenosMovimiento = typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // Nombre del usuario para el saludo: primero /Usuarios/{uid}.nombre; si no, displayName o email.
   useEffect(() => {
@@ -246,6 +249,19 @@ export default function SelectorPerfil({ onIrASeccion }) {
     document.addEventListener('visibilitychange', onVis);
     return () => { document.removeEventListener('visibilitychange', onVis); document.body.classList.remove('grapco-anim-paused'); };
   }, []);
+
+  // A11y / kiosko: teclado FÍSICO en el modo PIN (lectores de huella/teclados de
+  // obra). 0-9 escribe, Backspace borra, Escape sale del modo PIN.
+  useEffect(() => {
+    if (!modoPin) return;
+    const onKey = (e) => {
+      if (e.key >= '0' && e.key <= '9') setPin(p => (p.length < 4 ? p + e.key : p));
+      else if (e.key === 'Backspace') setPin(p => p.slice(0, -1));
+      else if (e.key === 'Escape') { setModoPin(false); setPin(''); setErrorPin(''); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [modoPin]);
 
   // Saludo según hora local + datos de contexto (fecha larga y semana del proyecto).
   const hora = new Date().getHours();
@@ -746,7 +762,7 @@ export default function SelectorPerfil({ onIrASeccion }) {
               boxShadow: `inset 0 1px 0 rgba(255,255,255,0.12), 0 12px 30px -18px ${BASE.gold}`,
               transition: 'all 0.2s ease',
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = BASE.gold; e.currentTarget.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.16), 0 16px 36px -16px ${BASE.gold}`; }}
+            onMouseEnter={(e) => { if (!prefiereMenosMovimiento) e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = BASE.gold; e.currentTarget.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.16), 0 16px 36px -16px ${BASE.gold}`; }}
             onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = `${BASE.gold}77`; e.currentTarget.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.12), 0 12px 30px -18px ${BASE.gold}`; }}
           >
             <span style={{
@@ -829,7 +845,7 @@ export default function SelectorPerfil({ onIrASeccion }) {
               minHeight: '0',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-6px)';
+              if (!prefiereMenosMovimiento) e.currentTarget.style.transform = 'translateY(-6px)';
               e.currentTarget.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.9), 0 30px 60px -20px ${acento}5C, 0 0 0 1.5px ${acento}`;
               e.currentTarget.style.borderColor = acento;
             }}
