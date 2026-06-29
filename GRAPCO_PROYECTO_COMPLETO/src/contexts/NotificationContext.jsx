@@ -120,7 +120,9 @@ function NotificationStack({ activas, onClose }) {
       aria-live="polite"
       style={{
         position: 'fixed',
-        top: '72px', left: '50%', transform: 'translateX(-50%)',
+        // Avisos/notificaciones SIEMPRE en el centro de la pantalla (regla GRAPCO,
+        // igual que los modales) — antes en top:72px.
+        top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px',
         zIndex: 9000,
         width: 'max-content', maxWidth: 'min(380px, 92vw)',
