@@ -212,6 +212,9 @@ export default function SelectorPerfil({ onIrASeccion }) {
   const [modoPin, setModoPin] = useState(false);
   const [pin, setPin] = useState('');
   const [errorPin, setErrorPin] = useState('');
+  // Rate-limit del PIN: tras 5 intentos fallidos bloquea el teclado 30 s (anti fuerza bruta).
+  const [pinIntentos, setPinIntentos] = useState(0);
+  const [pinBloqueadoHasta, setPinBloqueadoHasta] = useState(0);
   const [nombreUsuario, setNombreUsuario] = useState('');
   const videoRef = useRef(null);
   // Móvil → SelectPremium usa bottom-sheet (no dropdown anclado). App nativa/celular.
@@ -255,13 +258,14 @@ export default function SelectorPerfil({ onIrASeccion }) {
   useEffect(() => {
     if (!modoPin) return;
     const onKey = (e) => {
+      if (e.key === 'Escape') { setModoPin(false); setPin(''); setErrorPin(''); return; }
+      if (pinBloqueadoHasta > Date.now()) return;   // bloqueado por rate-limit
       if (e.key >= '0' && e.key <= '9') setPin(p => (p.length < 4 ? p + e.key : p));
       else if (e.key === 'Backspace') setPin(p => p.slice(0, -1));
-      else if (e.key === 'Escape') { setModoPin(false); setPin(''); setErrorPin(''); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [modoPin]);
+  }, [modoPin, pinBloqueadoHasta]);
 
   // Saludo según hora local + datos de contexto (fecha larga y semana del proyecto).
   const hora = new Date().getHours();
@@ -299,20 +303,40 @@ export default function SelectorPerfil({ onIrASeccion }) {
     if (primero && primero.id !== proyectoActivoId) setProyectoActivoId(primero.id);
   };
 
-  // Atajo: si el usuario teclea 4 dígitos, intenta entrar por PIN.
+  // Atajo: si el usuario teclea 4 dígitos, intenta entrar por PIN (con rate-limit).
   useEffect(() => {
     if (pin.length === 4) {
       const rolPin = PINS_OBRA[pin];
       if (rolPin) {
         entrarComoRol(rolPin);
       } else {
-        setErrorPin('PIN inválido');
-        setTimeout(() => { setPin(''); setErrorPin(''); }, 3000);
+        const intentos = pinIntentos + 1;
+        setPinIntentos(intentos);
+        if (intentos >= 5) {
+          // Lockout 30 s: el efecto de desbloqueo resetea pin/intentos/error al expirar.
+          setPinBloqueadoHasta(Date.now() + 30000);
+          setErrorPin('Demasiados intentos · espera 30 s');
+        } else {
+          setErrorPin(`PIN inválido (${intentos}/5)`);
+          setTimeout(() => { setPin(''); setErrorPin(''); }, 2500);
+        }
       }
     } else {
       setErrorPin('');
     }
+    // pinIntentos se lee del cierre del render donde `pin` cambió (siempre el último
+    // valor): añadirlo a deps re-dispararía el efecto y duplicaría el conteo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pin, entrarComoRol]);
+
+  // Desbloqueo automático del PIN al expirar el lockout de 30 s.
+  useEffect(() => {
+    if (!pinBloqueadoHasta) return;
+    const t = setTimeout(() => {
+      setPinBloqueadoHasta(0); setPinIntentos(0); setPin(''); setErrorPin('');
+    }, Math.max(0, pinBloqueadoHasta - Date.now()));
+    return () => clearTimeout(t);
+  }, [pinBloqueadoHasta]);
 
   // Al abrir el kiosko, si no hay proyecto activo y solo hay uno, lo elige solo.
   useEffect(() => {
@@ -320,6 +344,9 @@ export default function SelectorPerfil({ onIrASeccion }) {
       setProyectoActivoId(proyectos[0].id);
     }
   }, [modoMarcador, proyectoActivoId, proyectos, setProyectoActivoId]);
+
+  // ¿El teclado PIN está bloqueado ahora mismo? (rate-limit activo)
+  const pinBloqueado = pinBloqueadoHasta > Date.now();
 
   // ── KIOSKO DE REGISTRO DE PERSONAL (reconocimiento facial) ──
   // Pantalla completa, sin necesidad de entrar como rol. El obrero solo marca.
@@ -683,7 +710,8 @@ export default function SelectorPerfil({ onIrASeccion }) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '10px' }}>
             {['1','2','3','4','5','6','7','8','9','','0','⌫'].map((d, i) => (
               d === '' ? <div key={i} /> : (
-                <button key={i} onClick={() => {
+                <button key={i} disabled={pinBloqueado} onClick={() => {
+                  if (pinBloqueado) return;
                   if (d === '⌫') setPin(pin.slice(0, -1));
                   else if (pin.length < 4) setPin(pin + d);
                 }} style={{
@@ -693,7 +721,8 @@ export default function SelectorPerfil({ onIrASeccion }) {
                   borderRadius: '12px',
                   color: '#fff',
                   fontSize: '20px', fontWeight: 800,
-                  cursor: 'pointer',
+                  cursor: pinBloqueado ? 'not-allowed' : 'pointer',
+                  opacity: pinBloqueado ? 0.45 : 1,
                   transition: 'all 0.15s',
                 }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; }}
