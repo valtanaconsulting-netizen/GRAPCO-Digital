@@ -27,6 +27,8 @@ const fmtCorto = (s) => {
 
 export default function DatePickerPremium({ value = '', onChange, activo = false, isMobile = false, max = null, min = null }) {
   const [open, setOpen] = useState(false);
+  // Hacia dónde se abre el popover para no salirse de la pantalla (se calcula al abrir).
+  const [placement, setPlacement] = useState({ drop: 'down', align: 'left' });
   const rootRef = useRef(null);
 
   // Mes/año visibles en el calendario: arrancan en el valor seleccionado o en hoy.
@@ -34,11 +36,27 @@ export default function DatePickerPremium({ value = '', onChange, activo = false
   const sel = parseISO(value);
   const [cursor, setCursor] = useState(() => new Date((sel || hoy).getFullYear(), (sel || hoy).getMonth(), 1));
 
-  // Al abrir, reposiciona el calendario en el mes del valor seleccionado.
+  // Al abrir: reposiciona el mes en el valor seleccionado y decide la dirección de
+  // apertura según el espacio disponible (evita que el calendario se tape/recorte).
   useEffect(() => {
-    if (open) {
-      const base = parseISO(value) || new Date();
-      setCursor(new Date(base.getFullYear(), base.getMonth(), 1));
+    if (!open) return;
+    const base = parseISO(value) || new Date();
+    setCursor(new Date(base.getFullYear(), base.getMonth(), 1));
+
+    const el = rootRef.current;
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      const vh = window.innerHeight || document.documentElement.clientHeight;
+      const vw = window.innerWidth || document.documentElement.clientWidth;
+      const CAL_H = 372;                          // alto aprox. del calendario
+      const CAL_W = Math.min(288, vw * 0.9);      // ancho real del popover
+      const espacioAbajo = vh - rect.bottom;
+      const espacioArriba = rect.top;
+      // Si abajo no cabe y arriba hay más sitio, se abre hacia arriba.
+      const drop = espacioAbajo < CAL_H + 12 && espacioArriba > espacioAbajo ? 'up' : 'down';
+      // Si alineado a la izquierda se sale por la derecha, se ancla a la derecha.
+      const align = rect.left + CAL_W > vw - 8 ? 'right' : 'left';
+      setPlacement({ drop, align });
     }
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -107,7 +125,9 @@ export default function DatePickerPremium({ value = '', onChange, activo = false
 
       {open && (
         <div style={{
-          position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 1000,
+          position: 'absolute', zIndex: 1000,
+          ...(placement.drop === 'up' ? { bottom: 'calc(100% + 6px)' } : { top: 'calc(100% + 6px)' }),
+          ...(placement.align === 'right' ? { right: 0 } : { left: 0 }),
           width: '288px', maxWidth: '90vw',
           background: BASE.white, borderRadius: '14px',
           border: `1px solid ${BASE.border}`, borderTop: `3px solid ${BASE.navy}`,
