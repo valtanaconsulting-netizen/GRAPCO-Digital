@@ -20,7 +20,13 @@ import {
 } from '../utils/helpers';
 import CostoRealCR from './modulos/resultadoOperativo/CostoRealCR';
 
-export default function ControlGerencial({ historialEnriquecido, wbs, personalDB, configuracion, isMobile, asistencia }) {
+// `historial` = registros YA FILTRADOS por el dashboard (semana/acumulado, partida,
+// subpartida, actividad, capataz, persona, fechas). Ingeniero le pasa `filtrados`, no
+// el historial completo, para que las 3 vistas (Reporte de Tareos, Control HH
+// Variaciones, Control de IP) y el CR «conversen» con el filtro activo y con el CPI:
+// todas cuelgan de los MISMOS tareos filtrados. Filtrar «hasta Semana 8 + acumulado»
+// recorta TODOS estos reportes a r.semana ≤ 8.
+export default function ControlGerencial({ historial, wbs, personalDB, configuracion, isMobile, asistencia }) {
   const [tab, setTab] = useState('tareosCR');
   const [partidaExpandida, setPartidaExpandida] = useState(null);
 
@@ -105,7 +111,7 @@ export default function ControlGerencial({ historialEnriquecido, wbs, personalDB
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 440px), 1fr))', gap: '12px', alignItems: 'start' }}>
           <div style={{ minWidth: 0 }}>
             <ReporteTareos
-              historial={historialEnriquecido}
+              historial={historial}
               tarifaPromedio={tarifaPromedio}
               partidaExpandida={partidaExpandida}
               setPartidaExpandida={setPartidaExpandida}
@@ -113,20 +119,20 @@ export default function ControlGerencial({ historialEnriquecido, wbs, personalDB
             />
           </div>
           <div style={{ minWidth: 0 }}>
-            <CostoRealCR historial={historialEnriquecido} wbs={wbs} />
+            <CostoRealCR historial={historial} wbs={wbs} />
           </div>
         </div>
       )}
       {tab === 'variaciones' && (
         <ControlVariaciones
-          historial={historialEnriquecido}
+          historial={historial}
           numTrabajadores={numTrabajadores}
           asistencia={asistencia}
           isMobile={isMobile}
         />
       )}
       {tab === 'ip' && (
-        <MatrizIP historial={historialEnriquecido} isMobile={isMobile} />
+        <MatrizIP historial={historial} isMobile={isMobile} />
       )}
     </div>
   );

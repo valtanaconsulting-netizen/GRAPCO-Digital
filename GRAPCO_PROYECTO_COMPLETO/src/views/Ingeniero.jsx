@@ -1100,7 +1100,10 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
       {view==='cockpit'    && <CockpitEjecutivo historial={historialEnriquecido} wbs={wbs} filtrados={filtrados} costosCustomMap={costosCustomMap} isMobile={isMobile}/>}
       {view==='auditoria'  && <Auditoria filtrados={filtrados} eliminar={eliminar} guardarMetrado={guardarMetrado} hhPorSemana={hhPorSemana} hhTotales={hhTotales} totalBaseDatos={(historial||[]).length}/>}
       {view==='wbs-editor' && <EditorWbsIsp showToast={showToast}/>}
-      {view==='control'    && <ControlGerencial historialEnriquecido={historialEnriquecido} wbs={wbs} personalDB={personalDB} configuracion={configuracion} asistencia={asistencia} isMobile={isMobile}/>}
+      {/* `filtrados` (no el historial completo): el Control Gerencial respeta el filtro del
+          dashboard — Semana 8 + Acumulado recorta Reporte de Tareos, Control HH y Control de IP
+          a r.semana ≤ 8, igual que el CPI. Misma data filtrada → todo «conversa». */}
+      {view==='control'    && <ControlGerencial historial={filtrados} wbs={wbs} personalDB={personalDB} configuracion={configuracion} asistencia={asistencia} isMobile={isMobile}/>}
       {/* CPI/EAC (el ISP) vive en Producción/GRAPCO. VDC/LAP ('vdc') → app PLANEAMIENTO_PLATAFORMA (2026-06-24). */}
       {view==='analisis'   && <CpiEac wbs={wbs} historial={historialEnriquecido} filtrados={filtrados} infoMap={infoWbs} onModificarWBS={() => handleSetView('wbs-editor')} onActualizarFlags={actualizarFlagsActividad} showToast={showToast}/>}
       {view==='graficos'   && <Graficos grafData={grafData} filtrados={filtrados} wbs={wbs}/>}
