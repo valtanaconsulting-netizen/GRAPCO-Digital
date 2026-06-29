@@ -567,6 +567,23 @@ export default function SelectorPerfil({ onIrASeccion }) {
               <p style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.6)', margin: '1px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '240px' }}>
                 {proyectoActivo?.nombre || proyectoActivo?.codigo || '— sin proyecto —'}
               </p>
+              {/* Estado TERMINADO: badge sobrio cuando el proyecto activo está
+                  marcado como `completado` en el editor de proyecto (reusa el
+                  campo `estado` existente; no hay data nueva). */}
+              {proyectoActivo?.estado === 'completado' && (
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '5px',
+                  marginTop: '6px',
+                  background: `${BASE.green}1f`,
+                  border: `1px solid ${BASE.green}66`,
+                  color: '#34d399',
+                  padding: '2px 9px 2px 7px', borderRadius: '999px',
+                  fontSize: '9px', fontWeight: 900, letterSpacing: '0.8px',
+                }}>
+                  <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#34d399' }} />
+                  PROYECTO TERMINADO
+                </span>
+              )}
             </div>
           </div>
 

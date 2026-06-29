@@ -502,12 +502,12 @@ export default function ProyectoEditor({ proyecto, onClose, showToast }) {
                 <input type="number" step="0.1" value={form.margenMetaPct}
                   onChange={e => updField('margenMetaPct', e.target.value)} style={inpS} />
               </Field>
-              <Field label="Estado inicial">
+              <Field label="Estado del proyecto">
                 <select value={form.estado} onChange={e => updField('estado', e.target.value)} style={selS}>
                   <option value="planificado">📅 Planificado</option>
                   <option value="en_ejecucion">🟡 En ejecución</option>
                   <option value="suspendido">⏸️ Suspendido</option>
-                  <option value="completado">✅ Completado</option>
+                  <option value="completado">✅ Terminado</option>
                 </select>
               </Field>
             </Grid>

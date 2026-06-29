@@ -14,7 +14,7 @@ const ESTADOS = {
   planificado:  { l: 'Planificado',   c: '#2563eb', i: '📅' },
   en_ejecucion: { l: 'En ejecución',  c: '#f59e0b', i: '🟡' },
   suspendido:   { l: 'Suspendido',    c: '#dc2626', i: '⏸️' },
-  completado:   { l: 'Completado',    c: '#16a34a', i: '✅' },
+  completado:   { l: 'Terminado',     c: '#16a34a', i: '✅' },
   cancelado:    { l: 'Cancelado',     c: '#64748b', i: '❌' },
 };
 
