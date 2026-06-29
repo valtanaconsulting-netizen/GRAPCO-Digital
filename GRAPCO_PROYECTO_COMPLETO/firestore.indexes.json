@@ -1,6 +1,24 @@
 {
   "indexes": [
     {
+      "_comment": "Aislamiento multi-tenant (F4): where(proyectoId) + orderBy en la colección más caliente.",
+      "collectionGroup": "Registros_Campo",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "proyectoId", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "Registros_Campo",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "proyectoId", "order": "ASCENDING" },
+        { "fieldPath": "frenteId", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "Usuarios",
       "queryScope": "COLLECTION",
       "fields": [
