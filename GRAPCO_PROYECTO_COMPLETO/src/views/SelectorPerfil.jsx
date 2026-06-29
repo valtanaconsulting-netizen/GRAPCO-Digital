@@ -13,14 +13,13 @@ import { conexionLenta } from '../utils/connection';
 import { obtenerSemana } from '../utils/helpers';
 import { FECHA_INICIO_PROYECTO } from '../utils/constants';
 import Icon from '../components/Icon';
+import SelectPremium from '../components/SelectPremium';
 // Lazy: face-api.js (~1 MB+) NO se carga en el arranque, solo al abrir el kiosko.
 const MarcadorAsistencia = lazy(() => import('./asistencia/MarcadorAsistencia'));
 
 const lblKiosk = { display: 'block', color: '#94a3b8', fontSize: '10px', fontWeight: 900, letterSpacing: '1px', marginBottom: '6px' };
-const selKiosk = { width: '100%', padding: '11px 12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.18)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer' };
-// Las opciones del desplegable nativo se pintan sobre fondo blanco del SO:
-// forzamos texto oscuro para que se lean (bug texto blanco sobre blanco).
-const optKiosk = { color: '#0F2A47', background: '#ffffff', fontWeight: 700 };
+// (selKiosk/optKiosk retirados: los <select> nativos migraron a SelectPremium —
+//  cohesión navy/gold + bottom-sheet en Android, regla "dropdowns = SelectPremium".)
 
 // PINs de obra → entran directo al rol asignado (modo kiosk).
 // Personalízalos con los códigos de tu obra. Por seguridad real esto debería
@@ -215,6 +214,8 @@ export default function SelectorPerfil({ onIrASeccion }) {
   const [errorPin, setErrorPin] = useState('');
   const [nombreUsuario, setNombreUsuario] = useState('');
   const videoRef = useRef(null);
+  // Móvil → SelectPremium usa bottom-sheet (no dropdown anclado). App nativa/celular.
+  const isMobile = typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
 
   // Nombre del usuario para el saludo: primero /Usuarios/{uid}.nombre; si no, displayName o email.
   useEffect(() => {
@@ -353,17 +354,23 @@ export default function SelectorPerfil({ onIrASeccion }) {
         }}>
           <div>
             <label style={lblKiosk}>🏗️ PROYECTO</label>
-            <select value={proyectoActivoId || ''} onChange={e => setProyectoActivoId(e.target.value)} style={selKiosk}>
-              <option value="" style={optKiosk}>— Selecciona proyecto —</option>
-              {(proyectos || []).map(p => <option key={p.id} value={p.id} style={optKiosk}>{p.nombre || p.codigo || p.id}</option>)}
-            </select>
+            <SelectPremium
+              title="Proyecto" isMobile={isMobile}
+              value={proyectoActivoId || ''}
+              onChange={v => setProyectoActivoId(v)}
+              placeholder="— Selecciona proyecto —"
+              options={(proyectos || []).map(p => ({ value: p.id, label: p.nombre || p.codigo || p.id }))}
+            />
           </div>
           <div>
             <label style={lblKiosk}>📍 FRENTE</label>
-            <select value={frenteActivoId || ''} onChange={e => setFrenteActivoId(e.target.value)} style={selKiosk}>
-              <option value="" style={optKiosk}>— Todos / sin frente —</option>
-              {(frentesDelProyecto || []).map(f => <option key={f.id} value={f.id} style={optKiosk}>{f.codigo ? `${f.codigo} · ` : ''}{f.nombre || f.id}</option>)}
-            </select>
+            <SelectPremium
+              title="Frente" isMobile={isMobile}
+              value={frenteActivoId || ''}
+              onChange={v => setFrenteActivoId(v)}
+              placeholder="— Todos / sin frente —"
+              options={[{ value: '', label: '— Todos / sin frente —' }, ...(frentesDelProyecto || []).map(f => ({ value: f.id, label: `${f.codigo ? f.codigo + ' · ' : ''}${f.nombre || f.id}` }))]}
+            />
           </div>
         </div>
 
@@ -606,17 +613,23 @@ export default function SelectorPerfil({ onIrASeccion }) {
           <div style={{ flex: '1 1 360px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '14px' }}>
             <div>
               <label style={lblKiosk}>🏢 CLIENTE</label>
-              <select value={clienteActivo} onChange={e => cambiarCliente(e.target.value)} style={selKiosk}>
-                {!clienteActivo && <option value="" style={optKiosk}>— Selecciona cliente —</option>}
-                {clientes.map(c => <option key={c} value={c} style={optKiosk}>{c}</option>)}
-              </select>
+              <SelectPremium
+                title="Cliente" isMobile={isMobile}
+                value={clienteActivo}
+                onChange={v => cambiarCliente(v)}
+                placeholder="— Selecciona cliente —"
+                options={clientes.map(c => ({ value: c, label: c }))}
+              />
             </div>
             <div>
               <label style={lblKiosk}>🏗️ PROYECTO</label>
-              <select value={proyectoActivoId || ''} onChange={e => setProyectoActivoId(e.target.value)} style={selKiosk}>
-                <option value="" style={optKiosk}>— Selecciona proyecto —</option>
-                {proyectosFiltrados.map(p => <option key={p.id} value={p.id} style={optKiosk}>{p.nombre || p.codigo || p.id}</option>)}
-              </select>
+              <SelectPremium
+                title="Proyecto" isMobile={isMobile}
+                value={proyectoActivoId || ''}
+                onChange={v => setProyectoActivoId(v)}
+                placeholder="— Selecciona proyecto —"
+                options={proyectosFiltrados.map(p => ({ value: p.id, label: p.nombre || p.codigo || p.id }))}
+              />
             </div>
           </div>
         </div>
