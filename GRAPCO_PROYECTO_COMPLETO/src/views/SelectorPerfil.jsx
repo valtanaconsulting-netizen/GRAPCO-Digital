@@ -37,6 +37,7 @@ const PERFILES = [
     titulo: 'Administración',
     iconName: 'package',
     color: '#B45309',
+    orden: 3,
     kicker: 'Almacén · Logística',
     descripcion: 'Control y gestión de recursos, documentación y procesos administrativos que respaldan la operación del proyecto con orden, trazabilidad y eficiencia.',
     // Etiquetas = secciones REALES del Almacén (MaterialesPanel). Cada una entra directo.
@@ -55,6 +56,7 @@ const PERFILES = [
     titulo: 'Producción',
     iconName: 'barChart3',
     color: '#047857',
+    orden: 1,
     kicker: 'Avance · Productividad',
     descripcion: 'Control integral de avance, productividad y carta balance bajo Lean Construction, orientado a maximizar cumplimiento y desempeño operativo.',
     // Módulos REALES del área (moduloIngeniero). Planeamiento (Cronograma/Last Planner/
@@ -72,6 +74,7 @@ const PERFILES = [
     titulo: 'Oficina Técnica',
     iconName: 'coins',
     color: '#1D4ED8',
+    orden: 2,
     kicker: 'Costos · Valorización',
     descripcion: 'Gestión centralizada de RO, valorizaciones, adicionales, deductivos, garantizando control económico, trazabilidad y soporte para la toma de decisiones.',
     // Secciones REALES del área (moduloOT / ot.*). Entran directo vía tabExterna.
@@ -94,6 +97,7 @@ const PERFILES = [
     titulo: 'Administración del Sistema',
     iconName: 'shieldAdmin',
     color: BASE.navy,
+    orden: 4,
     descripcion: 'Configuración y control global de la plataforma, gestión de usuarios, permisos y auditoría de información. Garantiza seguridad, gobernanza y trazabilidad sobre todos los procesos del sistema.',
     // Sub-pestañas REALES de AdminPanel. Entran directo vía tabInicial.
     accesos: [
@@ -243,7 +247,11 @@ export default function SelectorPerfil({ onIrASeccion }) {
   // Cards visibles según el rol almacenado del usuario
   // Sin escalada: si el rol no está mapeado, solo ve su propia área (no TODAS).
   const permitidos = ROL_CARDS_PERMITIDAS[rolPermitido] || (rolPermitido ? [rolPermitido] : []);
-  const perfilesFiltrados = PERFILES.filter(p => permitidos.includes(p.rol));
+  // Orden de las tarjetas por el campo `orden` (no por el orden del array): así
+  // reordenar es cambiar un número. Pedido 2026-06-29: Producción · Oficina Técnica ·
+  // Administración · Administración del Sistema (acceso total al final).
+  const perfilesFiltrados = PERFILES.filter(p => permitidos.includes(p.rol))
+    .sort((a, b) => (a.orden ?? 99) - (b.orden ?? 99));
 
   // Cliente de cada proyecto (campo cliente/empresa).
   const clienteDe = (p) => p?.cliente || p?.clienteNombre || p?.empresa || '';
@@ -377,7 +385,7 @@ export default function SelectorPerfil({ onIrASeccion }) {
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'flex-start',
-      padding: '18px 20px 22px',
+      padding: '40px 20px 32px',
       background: '#0a1628',
       fontFamily: BASE.font,
       position: 'relative',
@@ -723,16 +731,18 @@ export default function SelectorPerfil({ onIrASeccion }) {
       )}
 
       {/* Grid de las 4 áreas (solo cuando NO está en modo PIN) — una fila, en orden:
-          Administración · Producción · Oficina Técnica · Administración del Sistema.
-          Las columnas las fija la clase grapco-perfil-grid (responsive por media query). */}
+          Producción · Oficina Técnica · Administración · Administración del Sistema.
+          El orden lo fija el campo `orden` de cada perfil (no el array). Las columnas
+          las fija la clase grapco-perfil-grid (responsive por media query). */}
       {!modoPin && (
       <div className="grapco-perfil-grid" style={{
         position: 'relative', zIndex: 1,
-        gap: '14px',
+        gap: '16px',
         width: '100%',
         maxWidth: '1180px',
-        marginTop: '18px',   // ~½ cm más abajo (pedido del usuario); el contenedor es
-                             // flex-start con minHeight:100dvh, así que sigue encajando.
+        margin: '0 auto',
+        marginTop: '34px',   // separación clara header/contexto → tarjetas (pedido del
+                             // usuario): empuja la grilla hacia abajo y centra el bloque.
       }}>
         {perfilesFiltrados.map((p) => {
           const acento = p.destacado ? BASE.gold : p.color;
@@ -784,8 +794,8 @@ export default function SelectorPerfil({ onIrASeccion }) {
             <div style={{
               margin: '-14px -15px 0',
               padding: '14px 15px 12px',
-              background: `linear-gradient(135deg, ${acento}16 0%, ${acento}07 55%, transparent 100%)`,
-              borderBottom: `1px solid ${acento}1f`,
+              background: `linear-gradient(135deg, ${acento}10 0%, ${acento}04 60%, transparent 100%)`,
+              borderBottom: `1px solid ${acento}14`,
               display: 'flex', flexDirection: 'column', gap: '9px',
             }}>
               {/* Fila kicker / insignia — presente en TODAS las tarjetas para que los
