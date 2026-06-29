@@ -23,8 +23,12 @@ service cloud.firestore {
     function tk()     { return request.auth.token; }
     function rol()    { return isAuth() && tk().rol != null ? tk().rol : ''; }
     function isSuperAdmin() {
-      return isAuth() && (tk().sa == true ||
-        tk().email in ['fjrosash@gmail.com', 'abasurco@grapcosac.com']); // failsafe gobernanza
+      // Guardas `key in map` para no tocar propiedades ausentes (un token de no-superadmin
+      // no trae `sa`); evita el ruido "Property sa is undefined" y cualquier edge-case.
+      return isAuth() && (
+        (('sa' in tk()) && tk().sa == true) ||
+        (('email' in tk()) && tk().email in ['fjrosash@gmail.com', 'abasurco@grapcosac.com']) // failsafe gobernanza
+      );
     }
     function isAdmin()       { return isSuperAdmin() || rol() == 'admin'; }
     function isIngeniero()   { return isSuperAdmin() || rol() == 'ingeniero'; }
@@ -186,7 +190,9 @@ service cloud.firestore {
     }
     match /Planes_Diarios/{docId} {
       allow read: if leeDoc();
-      allow create, update: if (isIngeniero() || isAdmin()) && (request.method == 'create' ? escribeNuevo() : escribeExist());
+      allow create: if (isIngeniero() || isAdmin()) && escribeNuevo();
+      allow update: if (isIngeniero() || isAdmin()) && escribeExist();
+      allow delete: if isAdmin() && leeDoc();
     }
     match /PPC_Compromisos/{docId} {
       allow read: if leeDoc();
@@ -493,6 +499,6 @@ service cloud.firestore {
     }
   }
 }
-// NOTA: el helper `request.method` no existe en rules; en /Planes_Diarios reemplazar el
-// create,update combinado por bloques separados (allow create: ...&&escribeNuevo(); allow update: ...&&escribeExist();)
-// igual que el resto. Se dejó marcado para corregir en revisión.
+// FIX 2026-06-29: /Planes_Diarios se separó en create/update/delete (el helper
+// `request.method` no existe en rules y rompía la compilación). Validado por la
+// suite cross-tenant en firestore-tests/ (Gate 3).
