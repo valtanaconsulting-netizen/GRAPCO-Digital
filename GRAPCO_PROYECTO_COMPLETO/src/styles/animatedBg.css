@@ -147,10 +147,32 @@
 
 /* Reduce motion */
 @media (prefers-reduced-motion: reduce) {
-  .grapco-mesh, .grapco-blob, .grapco-scan, .grapco-fi, .grapco-particle {
+  .grapco-mesh, .grapco-blob, .grapco-scan, .grapco-fi, .grapco-particle,
+  .grapco-perfil-grid > * {
     animation: none !important;
   }
+  .grapco-chip { transition: none !important; }
 }
+
+/* Pausa de animaciones del fondo cuando la app/pestaña está en segundo plano
+ * (ahorro de batería en obra; se activa desde SelectorPerfil con visibilitychange). */
+.grapco-anim-paused .grapco-mesh,
+.grapco-anim-paused .grapco-blob,
+.grapco-anim-paused .grapco-scan,
+.grapco-anim-paused .grapco-fi,
+.grapco-anim-paused .grapco-particle { animation-play-state: paused !important; }
+
+/* Chips de acceso del selector — hover/foco por CSS (sin handlers JS = menos reflow).
+ * Los valores del acento llegan como CSS vars desde el componente (ChipAcceso). */
+.grapco-chip:hover,
+.grapco-chip:focus-visible {
+  background: var(--chip-bg-h) !important;
+  border-color: var(--chip-bd-h) !important;
+  color: #0F2A47 !important;
+  transform: translateY(-1px);
+  box-shadow: var(--chip-sh-h) !important;
+}
+.grapco-chip:focus-visible { outline: 2px solid rgba(229,168,47,0.75); outline-offset: 2px; }
 
 /* Mobile */
 @media (max-width: 640px) {

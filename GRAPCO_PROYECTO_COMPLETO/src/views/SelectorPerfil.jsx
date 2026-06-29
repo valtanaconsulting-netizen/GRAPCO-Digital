@@ -3,11 +3,11 @@
 // Paleta GRAPCO: navy + gold del isotipo, con tarjetas claras y acento por rol.
 
 import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, getDocFromCache } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { useAuth } from '../contexts/AuthContext';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
-import { BASE, LOGO, LOGO_FALLBACK } from '../utils/styles';
+import { BASE, LOGO, LOGO_FALLBACK, AREA_COLORS } from '../utils/styles';
 import { HERO_VIDEO } from '../utils/heroVideo';
 import { conexionLenta } from '../utils/connection';
 import { obtenerSemana } from '../utils/helpers';
@@ -36,7 +36,7 @@ const PERFILES = [
     rol: 'almacenero',
     titulo: 'Administración',
     iconName: 'package',
-    color: '#B45309',
+    color: AREA_COLORS.almacenero,
     orden: 3,
     kicker: 'Almacén · Logística',
     descripcion: 'Control y gestión de recursos, documentación y procesos administrativos que respaldan la operación del proyecto con orden, trazabilidad y eficiencia.',
@@ -55,7 +55,7 @@ const PERFILES = [
     rol: 'ingeniero',
     titulo: 'Producción',
     iconName: 'barChart3',
-    color: '#047857',
+    color: AREA_COLORS.ingeniero,
     orden: 1,
     kicker: 'Avance · Productividad',
     descripcion: 'Control integral de avance, productividad y carta balance bajo Lean Construction, orientado a maximizar cumplimiento y desempeño operativo.',
@@ -73,7 +73,7 @@ const PERFILES = [
     rol: 'oficina_tecnica',
     titulo: 'Oficina Técnica',
     iconName: 'coins',
-    color: '#1D4ED8',
+    color: AREA_COLORS.oficina_tecnica,
     orden: 2,
     kicker: 'Costos · Valorización',
     descripcion: 'Gestión centralizada de RO, valorizaciones, adicionales, deductivos, garantizando control económico, trazabilidad y soporte para la toma de decisiones.',
@@ -168,25 +168,18 @@ const logoClienteConocido = (nombre) => {
 function ChipAcceso({ label, acento, onClick, fill = false }) {
   return (
     <span
+      className="grapco-chip"
       role="button" tabIndex={0}
+      aria-label={`Ir directo a ${label}`}
       title={`Ir directo a ${label}`}
       onClick={(e) => { e.stopPropagation(); onClick(); }}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onClick(); } }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = `${acento}1f`;
-        e.currentTarget.style.borderColor = `${acento}99`;
-        e.currentTarget.style.color = BASE.navy;
-        e.currentTarget.style.transform = 'translateY(-1px)';
-        e.currentTarget.style.boxShadow = `0 5px 12px -7px ${acento}cc`;
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = `${acento}0d`;
-        e.currentTarget.style.borderColor = `${acento}33`;
-        e.currentTarget.style.color = '#33445c';
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = 'none';
-      }}
       style={{
+        // Hover/foco se manejan por CSS (.grapco-chip) para evitar reflow por handlers
+        // JS en 18-30 chips; los valores del acento viajan como CSS vars.
+        '--chip-bg-h': `${acento}1f`,
+        '--chip-bd-h': `${acento}99`,
+        '--chip-sh-h': `0 5px 12px -7px ${acento}cc`,
         display: fill ? 'flex' : 'inline-flex',
         width: fill ? '100%' : undefined,
         boxSizing: 'border-box',
@@ -228,14 +221,30 @@ export default function SelectorPerfil({ onIrASeccion }) {
     let activo = true;
     setNombreUsuario(primerNombre(user?.displayName || (user?.email || '').split('@')[0]));
     if (!user?.uid) return;
-    getDoc(doc(db, 'Usuarios', user.uid))
+    const ref = doc(db, 'Usuarios', user.uid);
+    // Cache-first: arranque instantáneo (offline-first); si no hay cache, va al server.
+    getDocFromCache(ref)
+      .catch(() => getDoc(ref))
       .then(snap => {
-        const n = snap.exists() ? snap.data()?.nombre : '';
+        const n = snap?.exists() ? snap.data()?.nombre : '';
         if (activo && n) setNombreUsuario(primerNombre(n));
       })
       .catch(() => {});
     return () => { activo = false; };
-  }, [user]);
+  }, [user?.uid]);
+
+  // Ahorro de batería en obra: pausa el video y las animaciones del fondo cuando la
+  // app/pestaña pasa a segundo plano; las reanuda al volver (Capacitor / LTE variable).
+  useEffect(() => {
+    const onVis = () => {
+      const oculto = document.hidden;
+      document.body.classList.toggle('grapco-anim-paused', oculto);
+      const v = videoRef.current;
+      if (v) { if (oculto) v.pause?.(); else v.play?.().catch(() => {}); }
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => { document.removeEventListener('visibilitychange', onVis); document.body.classList.remove('grapco-anim-paused'); };
+  }, []);
 
   // Saludo según hora local + datos de contexto (fecha larga y semana del proyecto).
   const hora = new Date().getHours();
@@ -281,7 +290,7 @@ export default function SelectorPerfil({ onIrASeccion }) {
         entrarComoRol(rolPin);
       } else {
         setErrorPin('PIN inválido');
-        setTimeout(() => { setPin(''); setErrorPin(''); }, 1500);
+        setTimeout(() => { setPin(''); setErrorPin(''); }, 3000);
       }
     } else {
       setErrorPin('');
@@ -385,7 +394,9 @@ export default function SelectorPerfil({ onIrASeccion }) {
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'flex-start',
-      padding: '40px 20px 32px',
+      // Safe-areas Capacitor: respeta notch/barra de gestos para no recortar la última
+      // tarjeta; conserva el aire superior (40px) y centra el bloque.
+      padding: 'max(40px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left))',
       background: '#0a1628',
       fontFamily: BASE.font,
       position: 'relative',
@@ -430,6 +441,7 @@ export default function SelectorPerfil({ onIrASeccion }) {
       {/* Botón SALIR (cierre de sesión total → vuelve al Login) */}
       <button
         onClick={() => logout?.()}
+        aria-label="Cerrar sesión y volver al login"
         style={{
           position: 'absolute',
           top: '20px',
@@ -553,7 +565,7 @@ export default function SelectorPerfil({ onIrASeccion }) {
               }}>{monogramaCliente(clienteActivo)}</span>
               {logoClienteUrl && (
                 <img src={logoClienteUrl} alt={clienteActivo || 'Cliente'}
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                  onError={(e) => { e.currentTarget.style.opacity = '0'; }}
                   style={{ position: 'relative', width: '100%', height: '100%', objectFit: 'contain', background: '#fff' }} />
               )}
             </div>
@@ -682,10 +694,12 @@ export default function SelectorPerfil({ onIrASeccion }) {
         }}>
           {/* Izquierda — saludo + fecha + semana */}
           <div style={{ textAlign: 'left', minWidth: 0 }}>
+            {/* Saludo = contexto suave (no héroe): no debe competir con el logo ni con
+                las tarjetas de área. Jerarquía: GRAPCO S.A.C. >> áreas >> saludo. */}
             <p style={{
               margin: 0, color: '#fff',
-              fontSize: '24px', fontWeight: 900,
-              letterSpacing: '0.5px', textTransform: 'uppercase', lineHeight: 1.2,
+              fontSize: '18px', fontWeight: 800,
+              letterSpacing: '0.4px', textTransform: 'uppercase', lineHeight: 1.25,
             }}>
               {saludo}{nombreUsuario ? <>, <span style={{ color: '#E5A82F' }}>{nombreUsuario}</span></> : null}
             </p>
@@ -751,15 +765,29 @@ export default function SelectorPerfil({ onIrASeccion }) {
           Producción · Oficina Técnica · Administración · Administración del Sistema.
           El orden lo fija el campo `orden` de cada perfil (no el array). Las columnas
           las fija la clase grapco-perfil-grid (responsive por media query). */}
-      {!modoPin && (
+      {/* Estado vacío: rol sin áreas mapeadas (p.ej. rol legacy migrado a otra app). */}
+      {!modoPin && perfilesFiltrados.length === 0 && (
+        <div style={{
+          position: 'relative', zIndex: 1, width: '100%', maxWidth: '1180px', margin: '24px auto 0',
+          background: 'rgba(255,255,255,0.05)', border: `1px solid ${BASE.gold}33`, borderRadius: '16px',
+          padding: '30px 22px', textAlign: 'center',
+        }}>
+          <p style={{ color: '#fff', fontSize: '15px', fontWeight: 800, margin: 0 }}>Sin áreas asignadas</p>
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12.5px', margin: '6px 0 0', lineHeight: 1.5 }}>
+            Tu usuario aún no tiene áreas habilitadas en este proyecto.<br />Contacta al administrador del sistema.
+          </p>
+        </div>
+      )}
+
+      {!modoPin && perfilesFiltrados.length > 0 && (
       <div className="grapco-perfil-grid" style={{
         position: 'relative', zIndex: 1,
         gap: '16px',
         width: '100%',
         maxWidth: '1180px',
         margin: '0 auto',
-        marginTop: '34px',   // separación clara header/contexto → tarjetas (pedido del
-                             // usuario): empuja la grilla hacia abajo y centra el bloque.
+        marginTop: '24px',   // separación header/contexto → tarjetas; el saludo más chico
+                             // libera altura, así no hace falta un margen tan grande.
       }}>
         {perfilesFiltrados.map((p) => {
           const acento = p.destacado ? BASE.gold : p.color;
@@ -887,20 +915,21 @@ export default function SelectorPerfil({ onIrASeccion }) {
                 {/* Abrir esta área en OTRA pestaña → multi-pestaña (ej. Calidad + Planeamiento) */}
                 <span
                   role="button" tabIndex={0}
+                  aria-label={`Abrir ${p.titulo} en una pestaña nueva`}
                   title="Abrir esta área en una pestaña nueva"
                   onClick={(e) => { e.stopPropagation(); window.open(`${window.location.pathname}#/${p.rol}`, '_blank'); }}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); window.open(`${window.location.pathname}#/${p.rol}`, '_blank'); } }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); window.open(`${window.location.pathname}#/${p.rol}`, '_blank'); } }}
                   style={{
-                    width: '26px', height: '26px', borderRadius: '999px',
+                    width: '30px', height: '30px', borderRadius: '999px',
                     border: `1.5px solid ${acento}55`, background: '#fff',
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    color: acento, fontSize: '12px', fontWeight: 900, cursor: 'alias',
+                    color: acento, fontSize: '13px', fontWeight: 900, cursor: 'alias',
                   }}>⧉</span>
-                <span style={{
-                  width: '26px', height: '26px', borderRadius: '999px',
+                <span aria-hidden="true" style={{
+                  width: '30px', height: '30px', borderRadius: '999px',
                   background: `linear-gradient(145deg, ${acento}, ${acento}cc)`,
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', fontSize: '13px', fontWeight: 900,
+                  color: '#fff', fontSize: '14px', fontWeight: 900,
                   boxShadow: `0 4px 10px -3px ${acento}88`,
                 }}>→</span>
               </span>

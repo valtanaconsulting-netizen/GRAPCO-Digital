@@ -116,6 +116,14 @@ export const BASE = {
   shadowFocus: '0 0 0 3px rgba(229,168,47,0.30)',  // halo dorado al foco
 };
 
+// Colores de ÁREA del selector de perfil — fuente única (antes hardcodeados en
+// SelectorPerfil.jsx). Sobrios, uno por familia operativa. La tarjeta de admin usa BASE.navy.
+export const AREA_COLORS = {
+  ingeniero:       '#047857', // Producción — emerald profundo
+  oficina_tecnica: '#1D4ED8', // Oficina Técnica — azul
+  almacenero:      '#B45309', // Administración / Almacén — bronce
+};
+
 export const inp = (extra={}) => ({
   width:'100%', padding:'10px 12px', borderRadius:'8px',
   border:'1.5px solid #e2e8f0', fontSize:'13px', color:BASE.text,

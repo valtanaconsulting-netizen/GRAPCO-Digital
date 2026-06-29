@@ -7,6 +7,7 @@ import { db, storage } from '../../../firebaseConfig';
 import { BASE } from '../../../utils/styles';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useProyectoActivo } from '../../../contexts/ProyectoActivoContext';
+import ConfirmModal from '../../../components/ConfirmModal';
 
 const TIPOS_OBRA = [
   { id: 'edificacion', label: '🏢 Edificación',  color: '#7c3aed', desc: 'Edificios, viviendas, oficinas' },
@@ -33,6 +34,8 @@ export default function ProyectoEditor({ proyecto, onClose, showToast }) {
   const esNuevo = proyecto === 'NUEVO' || !proyecto;
   const [paso, setPaso] = useState(1);
   const [guardando, setGuardando] = useState(false);
+  // Pide confirmación (modal centrado) antes de marcar el proyecto como TERMINADO.
+  const [confirmarTerminado, setConfirmarTerminado] = useState(false);
 
   const [form, setForm] = useState({
     codigo: '',
@@ -210,6 +213,17 @@ export default function ProyectoEditor({ proyecto, onClose, showToast }) {
         actualizadoEn: serverTimestamp(),
         actualizadoPor: user?.email || 'desconocido',
       };
+
+      // Trazabilidad de cierre: al pasar a 'completado' (Terminado) graba quién/cuándo;
+      // al reabrir (salir de 'completado') limpia esos campos.
+      const eraCompletado = proyecto && typeof proyecto === 'object' && proyecto.estado === 'completado';
+      if (proyData.estado === 'completado' && !eraCompletado) {
+        proyData.completadoEn = serverTimestamp();
+        proyData.completadoPor = user?.email || 'desconocido';
+      } else if (proyData.estado !== 'completado' && eraCompletado) {
+        proyData.completadoEn = null;
+        proyData.completadoPor = null;
+      }
 
       if (esNuevo) {
         proyData.creadoEn = serverTimestamp();
@@ -503,7 +517,12 @@ export default function ProyectoEditor({ proyecto, onClose, showToast }) {
                   onChange={e => updField('margenMetaPct', e.target.value)} style={inpS} />
               </Field>
               <Field label="Estado del proyecto">
-                <select value={form.estado} onChange={e => updField('estado', e.target.value)} style={selS}>
+                <select value={form.estado} onChange={e => {
+                  const nuevo = e.target.value;
+                  // Marcar TERMINADO pide confirmación; el resto aplica directo.
+                  if (nuevo === 'completado' && form.estado !== 'completado') setConfirmarTerminado(true);
+                  else updField('estado', nuevo);
+                }} style={selS}>
                   <option value="planificado">📅 Planificado</option>
                   <option value="en_ejecucion">🟡 En ejecución</option>
                   <option value="suspendido">⏸️ Suspendido</option>
@@ -635,6 +654,20 @@ export default function ProyectoEditor({ proyecto, onClose, showToast }) {
           </button>
         )}
       </div>
+
+      {/* Confirmación centrada al marcar el proyecto como TERMINADO (estado completado) */}
+      <ConfirmModal
+        abierto={confirmarTerminado}
+        tono="peligro"
+        icono="🏁"
+        titulo="¿Marcar proyecto como TERMINADO?"
+        mensaje="El proyecto quedará marcado como Terminado y se registrará la fecha y el responsable del cierre."
+        detalle="Podrás reabrirlo cambiando el estado nuevamente."
+        textoConfirmar="Sí, marcar Terminado"
+        textoCancelar="Cancelar"
+        onConfirmar={() => { updField('estado', 'completado'); setConfirmarTerminado(false); }}
+        onCancelar={() => setConfirmarTerminado(false)}
+      />
     </div>
   );
 }
