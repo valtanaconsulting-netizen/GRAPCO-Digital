@@ -154,10 +154,84 @@ const glbExistente = async (storagePath) => {
   return `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(storagePath)}?alt=media&token=${token}`;
 };
 
-// OBJ (+MTL) → GLB. Compresión Draco best-effort: si falla, GLB plano.
+// Endereza y centra el GLB para AR editando su nodo raíz (sin tocar la geometría):
+//   1. Rota −90° en X: Revit/APS exportan Z-arriba; glTF/AR usan Y-arriba
+//      (sin esto el edificio sale "acostado", como se vio en obra el 2026-07-07).
+//   2. Detecta unidades por magnitud del bbox (pies internos de Revit / mm / m)
+//      y escala a metros para que "Escala real 1:1" sea 1:1 de verdad.
+//   3. Centra la planta en el origen con la base en el piso: el punto donde el
+//      usuario toca el piso en AR es el centro del modelo (el "0,0") y de ahí
+//      se levanta todo. Sin esto, la geometría queda desplazada donde Revit
+//      tenga su base point (a veces cientos de metros del origen) y en AR
+//      "no se ve nada".
+const enderezarYCentrarGlb = (glb) => {
+  const jsonLen = glb.readUInt32LE(12);
+  const gltf = JSON.parse(glb.toString('utf8', 20, 20 + jsonLen));
+
+  // bbox del modelo desde los accessors POSITION (obj2gltf siempre escribe min/max)
+  const min = [Infinity, Infinity, Infinity];
+  const max = [-Infinity, -Infinity, -Infinity];
+  for (const mesh of gltf.meshes || []) {
+    for (const prim of mesh.primitives || []) {
+      const acc = (gltf.accessors || [])[prim.attributes?.POSITION];
+      if (!acc?.min || !acc?.max) continue;
+      for (let i = 0; i < 3; i++) {
+        if (acc.min[i] < min[i]) min[i] = acc.min[i];
+        if (acc.max[i] > max[i]) max[i] = acc.max[i];
+      }
+    }
+  }
+  if (!Number.isFinite(min[0])) return { glb, info: 'sin bbox — GLB sin transformar' };
+
+  const dims = [max[0] - min[0], max[1] - min[1], max[2] - min[2]];
+  const maxDim = Math.max(...dims);
+  let s = 1, unidades = 'm';
+  if (maxDim > 3000) { s = 0.001; unidades = 'mm'; }
+  else if (maxDim >= 60) { s = 0.3048; unidades = 'ft (Revit)'; }
+
+  // Tras escalar s y rotar −90° en X: (x,y,z) → (s·x, s·z, −s·y)
+  const xw = [s * min[0], s * max[0]];
+  const yw = [s * min[2], s * max[2]];
+  const zw = [-s * max[1], -s * min[1]];
+  const t = [-(xw[0] + xw[1]) / 2, -yw[0], -(zw[0] + zw[1]) / 2];
+
+  const escena = gltf.scenes[gltf.scene ?? 0];
+  gltf.nodes = gltf.nodes || [];
+  gltf.nodes.push({
+    name: 'GRAPCO_AR_raiz',
+    children: escena.nodes,
+    rotation: [-Math.SQRT1_2, 0, 0, Math.SQRT1_2],  // −90° eje X (Z-up → Y-up)
+    scale: [s, s, s],
+    translation: t,
+  });
+  escena.nodes = [gltf.nodes.length - 1];
+
+  // Reconstruir el GLB con el JSON nuevo (padded a múltiplo de 4 con espacios)
+  let nuevoJson = Buffer.from(JSON.stringify(gltf), 'utf8');
+  const pad = (4 - (nuevoJson.length % 4)) % 4;
+  if (pad) nuevoJson = Buffer.concat([nuevoJson, Buffer.alloc(pad, 0x20)]);
+  const resto = glb.subarray(20 + jsonLen);  // chunk BIN completo (header + data)
+  const out = Buffer.alloc(20 + nuevoJson.length + resto.length);
+  glb.copy(out, 0, 0, 12);
+  out.writeUInt32LE(out.length, 8);
+  out.writeUInt32LE(nuevoJson.length, 12);
+  out.writeUInt32LE(0x4E4F534A, 16);  // 'JSON'
+  nuevoJson.copy(out, 20);
+  resto.copy(out, 20 + nuevoJson.length);
+
+  const fmt = (v) => (v).toFixed(1);
+  const info = `unidades=${unidades} · ${fmt(dims[0] * s)}×${fmt(dims[1] * s)}×${fmt(dims[2] * s)} m (largo×ancho×alto)`;
+  return { glb: out, info };
+};
+
+// OBJ (+MTL) → GLB enderezado/centrado. Compresión Draco best-effort.
 const convertirObjAGlb = async (objPath) => {
   const obj2gltf = require('obj2gltf');
   let glb = await obj2gltf(objPath, { binary: true });
+  glb = Buffer.isBuffer(glb) ? glb : Buffer.from(glb);
+  const { glb: glbAR, info } = enderezarYCentrarGlb(glb);
+  console.log(`[arGlb] transformación AR: ${info}`);
+  glb = glbAR;
   try {
     const { processGlb } = require('gltf-pipeline');
     const r = await processGlb(glb, { dracoOptions: { compressionLevel: 7 } });
@@ -165,7 +239,7 @@ const convertirObjAGlb = async (objPath) => {
   } catch (err) {
     console.warn('[arGlb] Draco falló, se usa GLB sin comprimir:', err.message);
   }
-  return Buffer.isBuffer(glb) ? glb : Buffer.from(glb);
+  return { glb: Buffer.isBuffer(glb) ? glb : Buffer.from(glb), info };
 };
 
 // ════════════════════════════════════════════════════════════════
@@ -227,12 +301,14 @@ exports.apsEstadoGlb = onRequest(
       const urn = req.query.urn || req.body?.urn;
       if (!urn) return res.status(400).json({ error: 'Falta urn' });
 
-      const storagePath = `bim-ar/${urn}.glb`;
+      // v2: GLB enderezado (Y-arriba), en metros y centrado en el origen.
+      // Los bim-ar/{urn}.glb sin sufijo son la v1 volteada — se ignoran.
+      const storagePath = `bim-ar/${urn}-v2.glb`;
 
       // 1) ¿Ya está convertido? (idempotencia sin estado en Firestore)
       const urlExistente = await glbExistente(storagePath);
       if (urlExistente) {
-        return res.json({ status: 'success', glbUrl: urlExistente, glbPath: storagePath });
+        return res.json({ status: 'success', glbUrl: urlExistente, glbPath: storagePath, glbVersion: 2 });
       }
 
       // 2) Estado del export OBJ en el manifest
@@ -274,15 +350,17 @@ exports.apsEstadoGlb = onRequest(
           await descargarDerivative(urn, hijoMtl.urn, mtlPath, token);
         }
 
-        const glb = await convertirObjAGlb(objPath);
-        console.log(`[apsEstadoGlb] GLB generado: ${(glb.length / 1e6).toFixed(1)} MB`);
+        const { glb, info } = await convertirObjAGlb(objPath);
+        console.log(`[apsEstadoGlb] GLB generado: ${(glb.length / 1e6).toFixed(1)} MB · ${info}`);
         const glbUrl = await subirGlbAStorage(glb, storagePath);
 
         res.json({
           status: 'success',
           glbUrl,
           glbPath: storagePath,
+          glbVersion: 2,
           tamanoMB: +(glb.length / 1e6).toFixed(1),
+          transformacion: info,
         });
       } finally {
         fs.rmSync(dirTmp, { recursive: true, force: true });

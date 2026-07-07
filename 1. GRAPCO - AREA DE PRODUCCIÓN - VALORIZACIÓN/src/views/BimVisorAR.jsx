@@ -38,7 +38,11 @@ export default function BimVisorAR({ modelo, onClose, showToast }) {
       try {
         await import('@google/model-viewer');
         if (!vivoRef.current) return;
-        if (modelo?.glbUrl) { setGlbUrl(modelo.glbUrl); setFase('listo'); return; }
+        // Solo GLB v2+ (enderezado, en metros, centrado). Los v1 salían volteados
+        // y desplazados en AR — si el doc tiene uno viejo, se reconvierte.
+        if (modelo?.glbUrl && (modelo?.glbVersion || 0) >= 2) {
+          setGlbUrl(modelo.glbUrl); setFase('listo'); return;
+        }
         // ¿Existe ya el GLB en Storage? (modelos preparados antes o por otro usuario)
         setFase('verificando');
         const estado = await consultarEstadoGlb(modelo.urn);
