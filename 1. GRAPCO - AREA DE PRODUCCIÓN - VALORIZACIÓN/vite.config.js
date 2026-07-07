@@ -92,6 +92,10 @@ export default defineConfig({
             || id.includes('png-js') || id.includes('linebreak') || id.includes('unicode-properties')
             || id.includes('unicode-trie') || id.includes('tiny-inflate') || id.includes('/brotli')
             || id.includes('/dfa/')) return;
+          // model-viewer + three (~1 MB, visor AR de BIM): 100% lazy, solo se alcanza
+          // vía await import desde BimVisorAR. Igual que @react-pdf: undefined → chunk
+          // DINÁMICO sin arista eager al arranque.
+          if (id.includes('@google/model-viewer') || id.includes('node_modules/three/')) return;
           // Catch-all: UN chunk POR PAQUETE en vez de un monolito 'vendor' de ~420 KB.
           // Antes, cualquier módulo del arranque que tocara UNA sola lib de ese bucket
           // (react-is, etc.) arrastraba los 420 KB enteros a la carga inicial. Con un

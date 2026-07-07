@@ -176,6 +176,65 @@ export const esperarTraduccion = (urn, onUpdate, intervaloMs = 15_000, timeoutMs
 export const obtenerTokenVisor = () =>
   callFunction('apsTokenViewer', null, 'POST');
 
+// ── AR (realidad aumentada): export OBJ → GLB en Storage ──
+
+/** Lanza (o relanza) el export OBJ del modelo en APS. Idempotente. */
+export const iniciarExportGlb = (urn) =>
+  callFunction('apsGenerarGlb', { urn }, 'POST', { timeout: 90_000 });
+
+/**
+ * Estado del GLB para AR. Cuando el export OBJ termina, ESTA llamada dispara la
+ * conversión en el server (puede tardar 1-5 min en modelos grandes) → timeout amplio.
+ */
+export const consultarEstadoGlb = (urn) =>
+  callFunction(`apsEstadoGlb?urn=${encodeURIComponent(urn)}`, null, 'GET', { timeout: 8 * 60_000 });
+
+// Persiste la URL del GLB en el doc del modelo (cliente, no Function — ver header).
+// Best-effort: si el rol no puede escribir, la URL se recupera igual vía apsEstadoGlb.
+const registrarGlbEnDoc = async (urn, { glbUrl, glbPath }) => {
+  try {
+    const q = query(collection(db, 'BIM_Modelos'), where('urn', '==', urn), limit(1));
+    const snap = await getDocs(q);
+    if (snap.empty) return;
+    await updateDoc(snap.docs[0].ref, {
+      glbStatus: 'success',
+      glbUrl,
+      glbPath,
+      glbGeneradoEn: serverTimestamp(),
+    });
+  } catch (err) {
+    console.warn('[apsClient] No pude registrar el GLB en Firestore:', err);
+  }
+};
+
+/**
+ * Polling hasta que el GLB esté listo (espejo de esperarTraduccion).
+ * status del server: sin_traduccion | sin_export | exportando | failed | success
+ */
+export const esperarGlb = (urn, onUpdate, intervaloMs = 15_000, timeoutMs = 30 * 60 * 1000) => {
+  return new Promise((resolve, reject) => {
+    const inicio = Date.now();
+    const tick = async () => {
+      try {
+        const data = await consultarEstadoGlb(urn);
+        if (onUpdate) onUpdate(data);
+        if (data.status === 'success') {
+          registrarGlbEnDoc(urn, data);
+          return resolve(data);
+        }
+        if (data.status === 'failed') return reject(new Error(data.error || 'Export OBJ falló'));
+        if (data.status === 'sin_traduccion') return reject(new Error('El modelo aún no tiene traducción APS'));
+        if (data.status === 'sin_export') return reject(new Error('Export no iniciado. Pulsa "Preparar modelo AR".'));
+        if (Date.now() - inicio > timeoutMs) return reject(new Error('Timeout preparando el modelo AR'));
+        setTimeout(tick, intervaloMs);
+      } catch (err) {
+        reject(err);
+      }
+    };
+    tick();
+  });
+};
+
 // Elimina el modelo del bucket APS (server) y del Firestore (cliente, en su proyecto).
 export const eliminarModeloAPS = async (docId, objectKey) => {
   // 1) Borrar de APS bucket (server-side: requiere credenciales APS)

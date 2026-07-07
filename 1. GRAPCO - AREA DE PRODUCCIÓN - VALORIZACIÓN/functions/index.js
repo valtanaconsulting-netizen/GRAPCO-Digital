@@ -359,3 +359,11 @@ exports.apsEliminarModelo = functions.https.onRequest(async (req, res) => {
 // ════════════════════════════════════════════════════════════════
 const archivado = require('./protocolosArchivado');
 exports.protocoloPdfFirmadoSync = archivado.protocoloPdfFirmadoSync;
+
+// ════════════════════════════════════════════════════════════════
+// 7) AR — export OBJ y conversión a GLB para realidad aumentada
+//    (2nd Gen por memoria/timeout; módulo separado ./arGlb.js)
+// ════════════════════════════════════════════════════════════════
+const arGlb = require('./arGlb');
+exports.apsGenerarGlb = arGlb.apsGenerarGlb;
+exports.apsEstadoGlb  = arGlb.apsEstadoGlb;

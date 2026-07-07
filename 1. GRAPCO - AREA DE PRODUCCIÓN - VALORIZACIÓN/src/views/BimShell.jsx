@@ -4,10 +4,13 @@
 // panel dark (der) con tarjetas de Nivel y cross-filter. El contenido analítico
 // de la derecha lo aporta cada módulo vía renderPanel(ctx).
 
-import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect, lazy, Suspense } from 'react';
 import { extraerElementosBIM } from '../utils/bimQuantities';
 import BimViewerAPS from './BimViewerAPS';
 import BimUploader from './BimUploader';
+
+// Visor AR: lazy — solo carga (junto con <model-viewer>) al pulsar el botón AR
+const BimVisorAR = lazy(() => import('./BimVisorAR'));
 
 // Disciplina (macro-categoría) a partir de la categoría Revit
 const _n = (s) => (s || '').toString().toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -65,6 +68,7 @@ export default function BimShell({ titulo, objetivo, accent = '#3B82F6', modelos
   const [verClasif, setVerClasif] = useState(true);
   const [soloSel, setSoloSel] = useState(true);   // true = solo lo elegido · false = mostrar todo (resaltado)
   const [leftPct, setLeftPct] = useState(40);   // ancho del visor (arrastrable)
+  const [showAR, setShowAR] = useState(false);  // visor de realidad aumentada
   const viewerRef = useRef(null);
   const dualRef = useRef(null);
 
@@ -252,8 +256,32 @@ export default function BimShell({ titulo, objetivo, accent = '#3B82F6', modelos
             onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
             ⬆ Subir Revit
           </button>
+          <button onClick={() => hayModelo && setShowAR(true)} disabled={!hayModelo}
+            title={hayModelo ? 'Ver el modelo con la cámara (realidad aumentada)' : 'Selecciona un modelo primero'}
+            style={{
+              padding: '8px 16px', borderRadius: D.radiusSm, border: 'none',
+              cursor: hayModelo ? 'pointer' : 'not-allowed', opacity: hayModelo ? 1 : 0.45,
+              background: `linear-gradient(135deg,${D.gold},#C98F1F)`, color: '#0F2A47',
+              fontSize: '12px', fontWeight: 800, letterSpacing: '0.2px',
+              boxShadow: hayModelo ? `0 6px 16px -6px ${D.gold}` : 'none', transition: `transform .15s ${D.ease}`,
+            }}
+            onMouseEnter={e => { if (hayModelo) e.currentTarget.style.transform = 'translateY(-1px)'; }}
+            onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
+            📷 Ver en obra (AR)
+          </button>
         </div>
       </div>
+
+      {/* VISOR AR — overlay fullscreen (lazy: carga model-viewer solo al abrirse) */}
+      {showAR && hayModelo && (
+        <Suspense fallback={null}>
+          <BimVisorAR
+            modelo={modelosDisponibles.find(m => m.urn === urnSel) || { urn: urnSel }}
+            onClose={() => setShowAR(false)}
+            showToast={showToast}
+          />
+        </Suspense>
+      )}
 
       {showUpload && (
         <div style={{ background: D.soft, padding: '14px', borderBottom: `1px solid ${D.border}` }}>
