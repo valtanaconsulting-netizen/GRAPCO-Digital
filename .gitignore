@@ -1,5 +1,5 @@
 # .gitignore de la RAÍZ del repo (GRAPCO-Digital)
-# El código vive en GRAPCO_PROYECTO_COMPLETO/ (tiene su propio .gitignore).
+# El código vive en las carpetas "1. GRAPCO ..." a "4. GRAPCO ..." (cada una con su propio .gitignore).
 
 # Config local de herramientas, por máquina — NO versionar
 .claude/
@@ -18,3 +18,13 @@ settings.local.json
 
 # Backups de reglas / artefactos regenerables
 *.original.bak
+
+# Tesis: pesada (PDF/imágenes/versiones) y con su propio control en VERSIONES_PREVIAS/ — NO versionar
+/INFORME DE TESIS/
+
+# Archivo histórico de la limpieza de producción (2026-07-06): docs, scratch y one-shots retirados — NO versionar
+/_ARCHIVO - PRODUCCION - VALORIZACION/
+
+# Proyectos paralelos no versionados en este repo
+/PAQUETE_REIMPORTACION_CREDITEX_S1-8/
+/PROYECTO_CASA_DEMO_4SEMANAS/
