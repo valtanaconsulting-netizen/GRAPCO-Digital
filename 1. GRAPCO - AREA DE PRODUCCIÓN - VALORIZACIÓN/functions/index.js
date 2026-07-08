@@ -367,3 +367,10 @@ exports.protocoloPdfFirmadoSync = archivado.protocoloPdfFirmadoSync;
 const arGlb = require('./arGlb');
 exports.apsGenerarGlb = arGlb.apsGenerarGlb;
 exports.apsEstadoGlb  = arGlb.apsEstadoGlb;
+
+// ════════════════════════════════════════════════════════════════
+// 8) Extracción total de parámetros del modelo (analítica BIM)
+//    (2nd Gen; módulo separado ./bimProps.js)
+// ════════════════════════════════════════════════════════════════
+const bimProps = require('./bimProps');
+exports.apsExtraerPropiedades = bimProps.apsExtraerPropiedades;

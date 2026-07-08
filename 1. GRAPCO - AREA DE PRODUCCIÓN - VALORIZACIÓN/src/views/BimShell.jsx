@@ -6,8 +6,10 @@
 
 import React, { useState, useMemo, useCallback, useRef, useEffect, lazy, Suspense } from 'react';
 import { extraerElementosBIM } from '../utils/bimQuantities';
+import { cargarPropiedades, mapearDbIds } from '../utils/bimPropsStore';
 import BimViewerAPS from './BimViewerAPS';
 import BimUploader from './BimUploader';
+import BimFichaElemento from './BimFichaElemento';
 
 // Visor AR: lazy — solo carga (junto con <model-viewer>) al pulsar el botón AR
 const BimVisorAR = lazy(() => import('./BimVisorAR'));
@@ -69,6 +71,10 @@ export default function BimShell({ titulo, objetivo, accent = '#3B82F6', modelos
   const [soloSel, setSoloSel] = useState(true);   // true = solo lo elegido · false = mostrar todo (resaltado)
   const [leftPct, setLeftPct] = useState(40);   // ancho del visor (arrastrable)
   const [showAR, setShowAR] = useState(false);  // visor de realidad aumentada
+  // Parámetros COMPLETOS server-side (bimPropsStore): fuente de verdad de la data
+  const [store, setStore] = useState(null);
+  const [propsEstado, setPropsEstado] = useState('');   // '' | cargando | listo | fallback
+  const [elemSel, setElemSel] = useState(null);          // elemento clickeado en el 3D
   const viewerRef = useRef(null);
   const dualRef = useRef(null);
 
@@ -106,12 +112,35 @@ export default function BimShell({ titulo, objetivo, accent = '#3B82F6', modelos
   const onModelReady = useCallback((viewer) => {
     viewerRef.current = viewer;
     const u = getSavedUrn();
-    if (u && ELS_CACHE.has(u)) { setEls(ELS_CACHE.get(u)); setExtrayendo(false); return; }
-    setExtrayendo(true); setErr('');
-    extraerElementosBIM(viewer)
-      .then(r => { ELS_CACHE.set(u, r); setEls(r); setExtrayendo(false); })
-      .catch(e => { setErr(e.message); setExtrayendo(false); });
+    setErr('');
+    (async () => {
+      // 1) Parámetros COMPLETOS server-side (todos los parámetros Revit, categorías
+      //    reales de la jerarquía, unidades verificadas). Cacheado por URN.
+      try {
+        setPropsEstado('cargando');
+        setExtrayendo(true);
+        const st = await cargarPropiedades(u);
+        const mapa = await mapearDbIds(viewer);
+        const r = st.quantities(mapa);
+        ELS_CACHE.set(u, r);
+        setStore(st); setEls(r); setExtrayendo(false); setPropsEstado('listo');
+        return;
+      } catch (e) {
+        console.warn('[BimShell] Parámetros server-side no disponibles, fallback al visor:', e?.message);
+        setStore(null);
+        setPropsEstado('fallback');
+      }
+      // 2) Fallback: extracción básica desde el visor (comportamiento anterior)
+      if (u && ELS_CACHE.has(u)) { setEls(ELS_CACHE.get(u)); setExtrayendo(false); return; }
+      extraerElementosBIM(viewer)
+        .then(r => { ELS_CACHE.set(u, r); setEls(r); setExtrayendo(false); })
+        .catch(e => { setErr(e.message); setExtrayendo(false); });
+    })();
   }, []);
+
+  // Selección en el 3D → ficha con todos los parámetros. Memoizado: el useEffect
+  // del visor depende de onSeleccion; una identidad nueva por render lo reiniciaría.
+  const onSeleccion = useCallback((sel) => setElemSel(sel), []);
 
   const niveles = useMemo(() => {
     const m = {};
@@ -292,13 +321,17 @@ export default function BimShell({ titulo, objetivo, accent = '#3B82F6', modelos
       {/* DUAL · con divisor arrastrable */}
       <div ref={dualRef} style={{ display: 'flex', minHeight: '600px', position: 'relative', userSelect: 'none' }}>
         {/* IZQ · VISOR REAL */}
-        <div style={{ flex: `0 0 ${leftPct}%`, minWidth: 0, background: 'linear-gradient(160deg,#FBFCFD,#EEF1F5)', padding: '14px', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: `0 0 ${leftPct}%`, minWidth: 0, background: 'linear-gradient(160deg,#FBFCFD,#EEF1F5)', padding: '14px', display: 'flex', flexDirection: 'column', position: 'relative' }}>
           <p style={{ fontSize: '12px', fontWeight: 900, color: '#0F172A' }}>Visor BIM · Modelo Real (Forge)</p>
           <p style={{ fontSize: '10px', color: '#64748B', marginBottom: '10px' }}>
-            {hayModelo ? (extrayendo ? 'Extrayendo cantidades…' : `${els.length} elementos · ${niveles.length} niveles`) : 'Sin modelo seleccionado'}
+            {hayModelo
+              ? (extrayendo
+                ? (propsEstado === 'cargando' ? 'Extrayendo TODOS los parámetros del modelo…' : 'Extrayendo cantidades…')
+                : `${els.length} elementos · ${niveles.length} niveles${propsEstado === 'listo' && store ? ` · ${store.stats.params} parámetros Revit` : ''} · toca un elemento para ver su ficha`)
+              : 'Sin modelo seleccionado'}
           </p>
           {hayModelo ? (
-            <BimViewerAPS urn={urnSel} onModelReady={onModelReady} alturaVisor="520px" />
+            <BimViewerAPS urn={urnSel} onModelReady={onModelReady} onSeleccion={onSeleccion} alturaVisor="520px" />
           ) : (
             <div style={{ flex: 1, minHeight: '520px', borderRadius: '14px', border: '2px dashed #CBD5E1', background: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', textAlign: 'center', padding: '24px' }}>
               <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: `linear-gradient(135deg,${accent},#1E4674)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '24px' }}>⬆</div>
@@ -308,6 +341,11 @@ export default function BimShell({ titulo, objetivo, accent = '#3B82F6', modelos
               </p>
               <button onClick={() => setShowUpload(true)} style={{ padding: '9px 18px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: accent, color: '#fff', fontSize: '12px', fontWeight: 800 }}>Subir modelo ahora</button>
             </div>
+          )}
+
+          {/* FICHA DEL ELEMENTO — flotante sobre el visor (todos los parámetros Revit) */}
+          {elemSel && hayModelo && (
+            <BimFichaElemento seleccion={elemSel} store={store} onCerrar={() => setElemSel(null)} />
           )}
         </div>
 
@@ -458,7 +496,7 @@ export default function BimShell({ titulo, objetivo, accent = '#3B82F6', modelos
                 </div>
               </div>
 
-              {renderPanel && renderPanel({ els, elsF, niveles, categorias, secSel, catSel, soloSel, setSecSel: elegirNivel, setCatSel: elegirCat, toggleCats, isolate, viewerRef })}
+              {renderPanel && renderPanel({ els, elsF, niveles, categorias, secSel, catSel, soloSel, setSecSel: elegirNivel, setCatSel: elegirCat, toggleCats, isolate, viewerRef, store, propsEstado })}
 
               {(secSel.length > 0 || catSel.length > 0) && (
                 <div style={{ marginTop: '14px', display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap', alignItems: 'center' }}>

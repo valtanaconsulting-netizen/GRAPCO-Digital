@@ -17,6 +17,7 @@ import { calcularCostoAPU } from '../utils/planMaestroAnalytics';
 import { clasificarAPU } from '../data/seed/apusCreditex';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 import BimShell, { D, PAL } from './BimShell';
+import BimAnaliticaPanel from './BimAnaliticaPanel';
 
 const norm = (s) => (s || '').toString().trim().toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 const macroDe = (c) => {
@@ -29,6 +30,17 @@ const card = { background: D.card, border: `1px solid ${D.border}`, borderRadius
 const sec = { fontSize: '11.5px', fontWeight: 800, color: D.text, letterSpacing: '0.3px', textTransform: 'uppercase' };
 const num = D.num;
 const money = (n) => n.toLocaleString('es-PE', { maximumFractionDigits: 0 });
+
+// ════════════════════════════════════════════════════════════════
+// 0 · ANALÍTICA — todos los parámetros del modelo (estilo Power BI/Speckle)
+// ════════════════════════════════════════════════════════════════
+export function AnaliticaNexus({ modelosDisponibles, showToast }) {
+  return (
+    <BimShell titulo="BIM · Analítica del Modelo" objetivo="Todos los parámetros Revit: filtra, agrupa, colorea el 3D y exporta"
+      accent="#0F2A47" modelosDisponibles={modelosDisponibles} showToast={showToast}
+      renderPanel={(ctx) => <BimAnaliticaPanel {...ctx} />} />
+  );
+}
 
 // ════════════════════════════════════════════════════════════════
 // 1 · COSTO — Metrado & Presupuesto (modelo × APU)
@@ -153,18 +165,85 @@ export function SectorizacionNexus({ modelosDisponibles, showToast }) {
       renderPanel={(ctx) => <SectorPanel {...ctx} />} />
   );
 }
-function SectorPanel({ elsF, niveles, secSel, catSel, setSecSel, setCatSel }) {
+function SectorPanel({ elsF, niveles, secSel, catSel, setSecSel, setCatSel, isolate, store }) {
+  // Sectorizar por: nivel Revit (default) o un parámetro REAL de zona del modelo
+  // (Sector/Zona/Fase/Comentarios/Mark…) detectado en los parámetros completos.
+  const [sectorPor, setSectorPor] = useState('nivel');
+  const paramsSector = useMemo(() => store?.detectarParamsSector?.() || [], [store]);
+
+  const sectores = useMemo(() => {
+    if (sectorPor === 'nivel' || !store) {
+      return niveles.map(n => ({ nombre: n.nivel, n: n.n, vol: n.vol, dbIds: n.dbIds, color: n.color, esNivel: true }));
+    }
+    const porExt = new Map();
+    elsF.forEach(e => { if (e.externalId) porExt.set(e.externalId, e); });
+    const out = [];
+    let i = 0;
+    for (const [valor, ids] of store.valoresDe(+sectorPor)) {
+      const elems = [...ids].map(id => porExt.get(id)).filter(Boolean);
+      if (!elems.length) continue;
+      out.push({
+        nombre: valor, n: elems.length,
+        vol: +elems.reduce((s, e) => s + e.volumen, 0).toFixed(1),
+        dbIds: elems.map(e => e.dbId), color: PAL[i++ % PAL.length], esNivel: false,
+      });
+    }
+    return out.sort((a, b) => b.vol - a.vol);
+  }, [sectorPor, store, niveles, elsF]);
+
+  const [sectorSel, setSectorSel] = useState('');
+  const elegirSector = (s) => {
+    if (s.esNivel) { setSecSel(s.nombre); return; }
+    const nuevo = sectorSel === s.nombre ? '' : s.nombre;
+    setSectorSel(nuevo);
+    isolate(nuevo ? s.dbIds : [], s.color);
+  };
+
   const porCat = useMemo(() => {
     const m = {};
     elsF.forEach(e => { const k = e.categoria || 'Sin categoría'; (m[k] = m[k] || { cat: k, vol: 0, n: 0 }); m[k].vol += e.volumen; m[k].n++; });
     return Object.values(m).map(x => ({ ...x, vol: +x.vol.toFixed(1) })).sort((a, b) => b.vol - a.vol);
   }, [elsF]);
-  const distrib = useMemo(() => niveles.map(n => ({ name: n.nivel, value: n.vol })), [niveles]);
+  const distrib = useMemo(() => sectores.map(s => ({ name: s.nombre, value: s.vol })), [sectores]);
+  const sectorActivo = (nombre, esNivel) => esNivel ? (secSel || []).includes(nombre) : sectorSel === nombre;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      {/* Sectorizar por: nivel o parámetro real del modelo */}
+      <div style={{ ...card, padding: '12px 16px', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: '11px', fontWeight: 800, color: D.muted, letterSpacing: '0.5px', textTransform: 'uppercase' }}>Sectorizar por</span>
+        <select value={sectorPor} onChange={e => { setSectorPor(e.target.value); setSectorSel(''); isolate([]); }}
+          style={{ padding: '7px 12px', borderRadius: 8, border: `1px solid ${D.border}`, background: D.card, color: D.text, fontSize: '12px', fontWeight: 600 }}>
+          <option value="nivel">Nivel Revit</option>
+          {paramsSector.map(p => <option key={p.idx} value={p.idx}>{p.clave}</option>)}
+        </select>
+        {store
+          ? <span style={{ fontSize: '10.5px', color: D.dim }}>{paramsSector.length ? `${paramsSector.length} parámetros de zona detectados en el modelo` : 'Sin parámetros de zona detectados (usa Nivel)'}</span>
+          : <span style={{ fontSize: '10.5px', color: D.dim }}>Parámetros completos no disponibles — sectorización por nivel</span>}
+      </div>
+
+      {/* Chips de sectores: clic = aislar y colorear en el 3D */}
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {sectores.slice(0, 24).map(s => {
+          const on = sectorActivo(s.nombre, s.esNivel);
+          return (
+            <button key={s.nombre} onClick={() => elegirSector(s)} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 7, padding: '6px 12px',
+              borderRadius: 999, cursor: 'pointer', fontSize: '11.5px', fontWeight: 700,
+              border: `1px solid ${on ? s.color : D.border}`,
+              background: on ? `linear-gradient(135deg, ${s.color}22, ${D.card})` : D.card,
+              color: on ? s.color : D.text, boxShadow: on ? `0 4px 12px -6px ${s.color}80` : D.shadow,
+            }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: s.color }} />
+              {s.nombre}
+              <span style={{ fontSize: '10px', color: D.dim, fontFamily: num.fontFamily }}>{s.n}</span>
+            </button>
+          );
+        })}
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '10px' }}>
-        {[['Sectores (niveles)', niveles.length, D.green], ['Niveles activos', (secSel || []).length || 'Todos', D.accent], ['Elementos', elsF.length, D.gold]].map(([l, v, c]) => (
+        {[['Sectores', sectores.length, D.green], ['Sector activo', sectorPor === 'nivel' ? ((secSel || []).length || 'Todos') : (sectorSel || 'Todos'), D.accent], ['Elementos', elsF.length, D.gold]].map(([l, v, c]) => (
           <div key={l} style={{ ...card, padding: '14px' }}><p style={{ fontSize: '9.5px', color: D.muted, fontWeight: 700 }}>{l}</p><p style={{ fontSize: '20px', fontWeight: 900, color: c, marginTop: '4px', fontFamily: num.fontFamily, fontFeatureSettings: num.fontFeatureSettings }}>{v}</p></div>
         ))}
       </div>
@@ -175,8 +254,8 @@ function SectorPanel({ elsF, niveles, secSel, catSel, setSecSel, setCatSel }) {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie {...SIN_ANIM} data={distrib} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={48} outerRadius={78} paddingAngle={3}
-                  onClick={(d) => setSecSel(d.name)} style={{ cursor: 'pointer' }}>
-                  {distrib.map((e, i) => { const on = (secSel || []).includes(e.name); return <Cell key={i} fill={niveles[i]?.color || PAL[i % PAL.length]} stroke={on ? D.text : 'none'} strokeWidth={on ? 2 : 0} opacity={(secSel || []).length && !on ? 0.4 : 1} />; })}
+                  onClick={(d) => { const s = sectores.find(x => x.nombre === d.name); if (s) elegirSector(s); }} style={{ cursor: 'pointer' }}>
+                  {distrib.map((e, i) => { const on = sectorActivo(e.name, sectores[i]?.esNivel); return <Cell key={i} fill={sectores[i]?.color || PAL[i % PAL.length]} stroke={on ? D.text : 'none'} strokeWidth={on ? 2 : 0} opacity={(secSel || []).length || sectorSel ? (on ? 1 : 0.4) : 1} />; })}
                 </Pie>
                 <Tooltip contentStyle={{ background: D.soft, border: `1px solid ${D.border}`, borderRadius: '8px', fontSize: '11px', color: D.text }} formatter={(v, n) => [`${fmt1(v)} m³`, n]} />
                 <Legend wrapperStyle={{ fontSize: '10px' }} />

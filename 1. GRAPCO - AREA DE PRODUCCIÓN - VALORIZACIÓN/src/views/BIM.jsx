@@ -20,7 +20,7 @@ import {
 import Modal from '../components/Modal';
 import BimUploader, { ESPECIALIDADES } from './BimUploader';
 import BimViewerAPS from './BimViewerAPS';
-import { CostoNexus, SectorizacionNexus, PlazosNexus } from './BimNexusModulos';
+import { AnaliticaNexus, CostoNexus, SectorizacionNexus, PlazosNexus } from './BimNexusModulos';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 import { useConfirm } from '../contexts/NotificationContext';
 
@@ -30,7 +30,7 @@ export default function BIM({ historialEnriquecido = [], showToast }) {
   // filtrarPorContexto oculta los de otros proyectos (y los legacy sin proyectoId
   // solo se ven en el proyecto default). proyectoActivoId sella cada doc nuevo.
   const { filtrarPorContexto, proyectoActivoId } = useProyectoActivo();
-  const [tab, setTab] = useState('costo');  // costo | sectorizacion | plazos
+  const [tab, setTab] = useState('analitica');  // analitica | costo | sectorizacion | plazos
   const [urnSeleccionado, setUrnSeleccionado] = useState('');
   // Federación: lista de URNs cargados simultáneamente en el visor
   const [urnsFederacion, setUrnsFederacion] = useState([]);
@@ -187,13 +187,14 @@ export default function BIM({ historialEnriquecido = [], showToast }) {
       }}>
         <h2 style={{ fontSize: '15px', fontWeight: '900' }}>Módulo BIM</h2>
         <p style={{ fontSize: '11px', opacity: 0.85 }}>
-          3 usos: <strong>Costo</strong> (incluye metrado) · <strong>Sectorización</strong> · <strong>Plazos (4D)</strong>
+          <strong>Analítica</strong> (todos los parámetros) · <strong>Costo</strong> · <strong>Sectorización</strong> · <strong>Plazos (4D)</strong>
         </p>
       </div>
 
       {/* Tabs principales */}
       <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: '12px', padding: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
         {[
+          { id: 'analitica',     l: '📊 Analítica del modelo' },
           { id: 'costo',         l: '💰 Costo (incluye metrado)' },
           { id: 'sectorizacion', l: '🧱 Sectorización (zonas 3D)' },
           { id: 'plazos',        l: '📅 Plazos (4D)' },
@@ -211,6 +212,11 @@ export default function BIM({ historialEnriquecido = [], showToast }) {
           );
         })}
       </div>
+
+      {/* === 0 · ANALÍTICA (todos los parámetros del modelo) === */}
+      {tab === 'analitica' && (
+        <AnaliticaNexus modelosDisponibles={modelosDisponibles} showToast={showToast} />
+      )}
 
       {/* === 1 · COSTO (incluye metrado) === */}
       {tab === 'costo' && (
