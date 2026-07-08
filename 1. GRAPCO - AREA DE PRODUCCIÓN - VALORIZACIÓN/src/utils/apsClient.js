@@ -200,9 +200,10 @@ const registrarGlbEnDoc = async (urn, { glbUrl, glbPath, glbVersion, transformac
       glbStatus: 'success',
       glbUrl,
       glbPath,
-      // v2 = GLB enderezado (Y-arriba), en metros y centrado en el origen.
-      // El visor AR ignora URLs sin esta versión (los v1 salían volteados).
-      glbVersion: glbVersion || 2,
+      // v3 = GLB enderezado (Y-arriba), en metros, centrado y con dimensiones
+      // en metadatos. El visor AR ignora versiones menores (v1 volteada; v2 sin
+      // dimensiones verificables).
+      glbVersion: glbVersion || 3,
       // Dimensiones reales y unidades detectadas — el visor las muestra para
       // poder verificar la escala de un vistazo.
       ...(transformacion && { glbInfo: transformacion }),

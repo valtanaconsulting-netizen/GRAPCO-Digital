@@ -42,9 +42,9 @@ export default function BimVisorAR({ modelo, onClose, showToast }) {
       try {
         await import('@google/model-viewer');
         if (!vivoRef.current) return;
-        // Solo GLB v2+ (enderezado, en metros, centrado). Los v1 salían volteados
-        // y desplazados en AR — si el doc tiene uno viejo, se reconvierte.
-        if (modelo?.glbUrl && (modelo?.glbVersion || 0) >= 2) {
+        // Solo GLB v3+ (enderezado, en metros, centrado, con dimensiones en
+        // metadatos). Versiones menores se reconvierten solas.
+        if (modelo?.glbUrl && (modelo?.glbVersion || 0) >= 3) {
           setGlbUrl(modelo.glbUrl); setFase('listo'); return;
         }
         // ¿Existe ya el GLB en Storage? (modelos preparados antes o por otro usuario)
@@ -119,6 +119,11 @@ export default function BimVisorAR({ modelo, onClose, showToast }) {
           <div style={{ minWidth: 0 }}>
             <p style={{ fontSize: 13.5, fontWeight: 800, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {nombre} · Realidad Aumentada
+              {/* Sello de versión: confirma de un vistazo que la tablet corre el código nuevo */}
+              <span style={{
+                marginLeft: 8, padding: '2px 8px', borderRadius: 999, background: GOLD,
+                color: NAVY, fontSize: 9, fontWeight: 900, verticalAlign: 'middle', letterSpacing: 0.4,
+              }}>AR v3</span>
             </p>
             <p style={{ fontSize: 10, color: '#9DB0C7' }}>
               Pulsa "Ver en obra (AR)", apunta al piso y toca una vez para anclar el modelo
@@ -158,6 +163,7 @@ export default function BimVisorAR({ modelo, onClose, showToast }) {
             camera-controls
             touch-action="pan-y"
             shadow-intensity="1"
+            environment-image="neutral"
             exposure="1"
             style={{ width: '100%', height: '100%', background: '#101823' }}
           >
@@ -168,7 +174,7 @@ export default function BimVisorAR({ modelo, onClose, showToast }) {
               fontSize: 14, fontWeight: 900, letterSpacing: 0.2,
               boxShadow: '0 10px 28px -6px rgba(229,168,47,0.65)',
             }}>
-              📷 Ver en obra (AR)
+              {escalaReal ? '📷 Ver en obra (AR) · TAMAÑO REAL 1:1' : '📷 Ver en AR · maqueta mini'}
             </button>
           </model-viewer>
         )}

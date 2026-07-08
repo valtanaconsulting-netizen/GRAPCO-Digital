@@ -307,9 +307,11 @@ exports.apsEstadoGlb = onRequest(
       const urn = req.query.urn || req.body?.urn;
       if (!urn) return res.status(400).json({ error: 'Falta urn' });
 
-      // v2: GLB enderezado (Y-arriba), en metros y centrado en el origen.
-      // Los bim-ar/{urn}.glb sin sufijo son la v1 volteada — se ignoran.
-      const storagePath = `bim-ar/${urn}-v2.glb`;
+      // v3: GLB enderezado (Y-arriba), en metros, centrado y con las dimensiones
+      // reales grabadas en metadatos (los v1 salían volteados; los v2 no llevaban
+      // dimensiones y no se podía verificar la escala en pantalla). Los archivos
+      // de versiones previas en bim-ar/ se ignoran.
+      const storagePath = `bim-ar/${urn}-v3.glb`;
 
       // 1) ¿Ya está convertido? (idempotencia sin estado en Firestore)
       const existente = await glbExistente(storagePath);
@@ -318,7 +320,7 @@ exports.apsEstadoGlb = onRequest(
           status: 'success',
           glbUrl: existente.glbUrl,
           glbPath: storagePath,
-          glbVersion: 2,
+          glbVersion: 3,
           transformacion: existente.transformacion,
         });
       }
@@ -370,7 +372,7 @@ exports.apsEstadoGlb = onRequest(
           status: 'success',
           glbUrl,
           glbPath: storagePath,
-          glbVersion: 2,
+          glbVersion: 3,
           tamanoMB: +(glb.length / 1e6).toFixed(1),
           transformacion: info,
         });
