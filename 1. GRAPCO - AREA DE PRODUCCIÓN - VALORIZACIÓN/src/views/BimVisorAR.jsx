@@ -28,7 +28,11 @@ export default function BimVisorAR({ modelo, onClose, showToast }) {
   const [glbUrl, setGlbUrl] = useState(modelo?.glbUrl || '');
   const [progreso, setProgreso] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-  const [escalaReal, setEscalaReal] = useState(false);  // false = maqueta, true = 1:1
+  // Por DEFECTO escala real 1:1 — el caso de uso principal es ver la estructura a
+  // tamaño real en obra. En Maqueta el sistema ENCOGE el modelo a propósito para
+  // verlo entero (por eso "se veía muy pequeño" cuando era el default, 2026-07-07).
+  const [escalaReal, setEscalaReal] = useState(true);
+  const [dimsInfo, setDimsInfo] = useState(modelo?.glbInfo || '');
   const vivoRef = useRef(true);
 
   // Carga lazy de la librería + resolución del GLB
@@ -47,7 +51,12 @@ export default function BimVisorAR({ modelo, onClose, showToast }) {
         setFase('verificando');
         const estado = await consultarEstadoGlb(modelo.urn);
         if (!vivoRef.current) return;
-        if (estado.status === 'success') { setGlbUrl(estado.glbUrl); setFase('listo'); return; }
+        if (estado.status === 'success') {
+          setGlbUrl(estado.glbUrl);
+          if (estado.transformacion) setDimsInfo(estado.transformacion);
+          setFase('listo');
+          return;
+        }
         if (estado.status === 'exportando') { seguirEsperando(); return; }
         setFase('sin-glb');
       } catch (err) {
@@ -70,6 +79,7 @@ export default function BimVisorAR({ modelo, onClose, showToast }) {
       .then((d) => {
         if (!vivoRef.current) return;
         setGlbUrl(d.glbUrl);
+        if (d.transformacion) setDimsInfo(d.transformacion);
         setFase('listo');
         showToast?.('Modelo AR listo 🎉', 'success');
       })
@@ -118,7 +128,7 @@ export default function BimVisorAR({ modelo, onClose, showToast }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {fase === 'listo' && (
             <div style={{ display: 'inline-flex', background: 'rgba(255,255,255,0.08)', border: '1px solid #2A3F5C', borderRadius: 999, padding: 3 }}>
-              {[{ v: false, l: '🏠 Maqueta' }, { v: true, l: '📏 Escala real 1:1' }].map(o => (
+              {[{ v: true, l: '📏 Escala real 1:1' }, { v: false, l: '🏠 Maqueta (mini)' }].map(o => (
                 <button key={String(o.v)} onClick={() => setEscalaReal(o.v)} style={{
                   padding: '6px 14px', borderRadius: 999, border: 'none', cursor: 'pointer',
                   background: escalaReal === o.v ? GOLD : 'transparent',
@@ -221,10 +231,17 @@ export default function BimVisorAR({ modelo, onClose, showToast }) {
         )}
       </div>
 
-      {/* PIE — requisitos */}
+      {/* PIE — dimensiones reales + requisitos */}
+      {dimsInfo && (
+        <p style={{ fontSize: 11, color: GOLD, textAlign: 'center', fontWeight: 800 }}>
+          📐 Dimensiones reales del modelo: {dimsInfo}
+        </p>
+      )}
       <p style={{ fontSize: 9.5, color: '#5B6878', textAlign: 'center' }}>
-        AR requiere: Android con ARCore (Chrome) o iPad/iPhone (Safari). En equipos sin AR el visor 3D funciona igual.
-        {escalaReal ? ' · Escala real 1:1: camina el modelo en el terreno.' : ' · Maqueta: colócalo sobre una mesa y ajusta el tamaño con dos dedos.'}
+        {escalaReal
+          ? '📏 ESCALA REAL: el modelo aparece a TAMAÑO REAL alrededor del punto que toques — te rodeará; camina dentro de él. '
+          : '🏠 MAQUETA: el sistema lo ENCOGE a propósito para verlo entero; pellizca con dos dedos para ajustar. Para tamaño real usa "Escala real 1:1" ANTES de entrar a la cámara. '}
+        AR requiere: Android con ARCore (Chrome) o iPad/iPhone (Safari).
       </p>
     </div>
   );

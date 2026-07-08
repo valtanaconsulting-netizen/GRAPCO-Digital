@@ -129,20 +129,23 @@ const descargarDerivative = async (urn, derivativeUrn, destino, token) => {
 
 // URL pública estilo Firebase (token de descarga en query, no requiere header de auth
 // → funciona como src de <model-viewer> y para Scene Viewer)
-const subirGlbAStorage = async (glbBuffer, storagePath) => {
+const subirGlbAStorage = async (glbBuffer, storagePath, transformacion = '') => {
   const bucket = admin.storage().bucket();
   const downloadToken = crypto.randomUUID();
   await bucket.file(storagePath).save(glbBuffer, {
     contentType: 'model/gltf-binary',
     metadata: {
       cacheControl: 'public, max-age=31536000',
-      metadata: { firebaseStorageDownloadTokens: downloadToken },
+      // transformacion queda en los metadatos: dimensiones reales y unidades
+      // detectadas — recuperable después sin reconvertir (glbExistente).
+      metadata: { firebaseStorageDownloadTokens: downloadToken, transformacion },
     },
   });
   return `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(storagePath)}?alt=media&token=${downloadToken}`;
 };
 
 // Si el GLB ya existe en Storage devuelve su URL (reconstruida del token guardado)
+// y las dimensiones reales guardadas en sus metadatos.
 const glbExistente = async (storagePath) => {
   const bucket = admin.storage().bucket();
   const file = bucket.file(storagePath);
@@ -151,7 +154,10 @@ const glbExistente = async (storagePath) => {
   const [meta] = await file.getMetadata();
   const token = meta?.metadata?.firebaseStorageDownloadTokens;
   if (!token) return null;
-  return `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(storagePath)}?alt=media&token=${token}`;
+  return {
+    glbUrl: `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(storagePath)}?alt=media&token=${token}`,
+    transformacion: meta?.metadata?.transformacion || '',
+  };
 };
 
 // Endereza y centra el GLB para AR editando su nodo raíz (sin tocar la geometría):
@@ -306,9 +312,15 @@ exports.apsEstadoGlb = onRequest(
       const storagePath = `bim-ar/${urn}-v2.glb`;
 
       // 1) ¿Ya está convertido? (idempotencia sin estado en Firestore)
-      const urlExistente = await glbExistente(storagePath);
-      if (urlExistente) {
-        return res.json({ status: 'success', glbUrl: urlExistente, glbPath: storagePath, glbVersion: 2 });
+      const existente = await glbExistente(storagePath);
+      if (existente) {
+        return res.json({
+          status: 'success',
+          glbUrl: existente.glbUrl,
+          glbPath: storagePath,
+          glbVersion: 2,
+          transformacion: existente.transformacion,
+        });
       }
 
       // 2) Estado del export OBJ en el manifest
@@ -352,7 +364,7 @@ exports.apsEstadoGlb = onRequest(
 
         const { glb, info } = await convertirObjAGlb(objPath);
         console.log(`[apsEstadoGlb] GLB generado: ${(glb.length / 1e6).toFixed(1)} MB · ${info}`);
-        const glbUrl = await subirGlbAStorage(glb, storagePath);
+        const glbUrl = await subirGlbAStorage(glb, storagePath, info);
 
         res.json({
           status: 'success',

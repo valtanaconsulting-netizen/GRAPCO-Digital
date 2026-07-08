@@ -191,7 +191,7 @@ export const consultarEstadoGlb = (urn) =>
 
 // Persiste la URL del GLB en el doc del modelo (cliente, no Function — ver header).
 // Best-effort: si el rol no puede escribir, la URL se recupera igual vía apsEstadoGlb.
-const registrarGlbEnDoc = async (urn, { glbUrl, glbPath, glbVersion }) => {
+const registrarGlbEnDoc = async (urn, { glbUrl, glbPath, glbVersion, transformacion }) => {
   try {
     const q = query(collection(db, 'BIM_Modelos'), where('urn', '==', urn), limit(1));
     const snap = await getDocs(q);
@@ -203,6 +203,9 @@ const registrarGlbEnDoc = async (urn, { glbUrl, glbPath, glbVersion }) => {
       // v2 = GLB enderezado (Y-arriba), en metros y centrado en el origen.
       // El visor AR ignora URLs sin esta versión (los v1 salían volteados).
       glbVersion: glbVersion || 2,
+      // Dimensiones reales y unidades detectadas — el visor las muestra para
+      // poder verificar la escala de un vistazo.
+      ...(transformacion && { glbInfo: transformacion }),
       glbGeneradoEn: serverTimestamp(),
     });
   } catch (err) {
