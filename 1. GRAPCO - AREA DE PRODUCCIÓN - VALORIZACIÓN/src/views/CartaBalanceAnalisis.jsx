@@ -35,6 +35,11 @@ const partesNombre = (full) => {
 const nombreCorto = (full) => { const { nom, ape } = partesNombre(full); return `${nom}${ape ? ` ${ape}` : ''}`.trim() || '—'; };
 const corta = (s, n = 10) => (s && s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
+// Pantalla táctil (tablet/celular): el tap deja el tooltip de recharts pegado sobre
+// el gráfico (nunca llega mouseleave), así que en táctil se suprime — el tap ya
+// filtra y las barras llevan su % en LabelList. Mismo criterio que pantallaCompleta.js.
+const TACTIL = typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+
 // ── Cargos ── normaliza códigos (CAP/OP/OFI/AY) y nombres a etiqueta + color ──
 const CARGO_LABEL = { CAP: 'Capataz', OP: 'Operario', OF: 'Oficial', OFI: 'Oficial', AY: 'Ayudante', PE: 'Ayudante' };
 const CARGO_ABBR = { Capataz: 'CAP', Operario: 'OP', Oficial: 'OFI', Ayudante: 'AY', 'Sin cargo': '—' };
@@ -85,11 +90,14 @@ const tpGrade = (tp) => tp >= 55 ? { g: 'A', l: 'Excelente', c: BASE.greenDark, 
 function BarApilada({ data, onClick, filtroVal }) {
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <BarChart data={data} stackOffset="expand" margin={{ top: 14, right: 6, left: -20, bottom: 0 }}>
+      {/* left:0 + YAxis 36: con left:-20 y width:32 quedaban 12px y el "60%" se leía "6" */}
+      <BarChart data={data} stackOffset="expand" margin={{ top: 14, right: 6, left: 0, bottom: 0 }}>
         <CartesianGrid {...GRILLA} />
-        <XAxis {...EJE} dataKey="label" interval={0} />
-        <YAxis {...EJE} tickFormatter={(v) => `${Math.round(v * 100)}%`} domain={[0, 1]} width={32} />
-        <Tooltip {...TOOLTIP_STYLE} formatter={(v, n, p) => [`${Math.round(v / (p.payload.n || 1) * 100)}% (${v})`, n]} />
+        {/* Con muchas fechas, interval={0} encimaba los ticks ("05/116/119…"): se deja
+            que recharts saltee; con pocas categorías (por cargo) se muestran todas. */}
+        <XAxis {...EJE} dataKey="label" interval={data.length > 7 ? 'preserveStartEnd' : 0} minTickGap={14} />
+        <YAxis {...EJE} tickFormatter={(v) => `${Math.round(v * 100)}%`} domain={[0, 1]} width={36} />
+        {!TACTIL && <Tooltip {...TOOLTIP_STYLE} formatter={(v, n, p) => [`${Math.round(v / (p.payload.n || 1) * 100)}% (${v})`, n]} />}
         {[['tp', 'Productivo', CB_COL.TP, 'tpPct'], ['tc', 'Contributorio', CB_COL.TC, 'tcPct'], ['tnc', 'No contributorio', CB_COL.TNC, 'tncPct']].map(([key, nm, col, pk], bi) => (
           <Bar {...SIN_ANIM} key={key} {...BARRA} dataKey={key} stackId="a" name={nm} radius={bi === 2 ? [5, 5, 0, 0] : undefined} cursor="pointer" onClick={(d) => d && onClick && onClick(d.key)}>
             {data.map((e, i) => <Cell key={i} fill={col} opacity={filtroVal && filtroVal !== e.key ? 0.3 : 1} />)}
@@ -136,6 +144,17 @@ export default function CartaBalanceAnalisis() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('resumen');
   const [fullscreen, setFullscreen] = useState(false);
+  // Ancho de ventana (mismo patrón rAF de App.jsx): la vista debe adaptarse a la
+  // pantalla real — en tablet el tablero de 3 columnas fijas quedaba sobreplasmado.
+  const [ww, setWw] = useState(() => (typeof window !== 'undefined' ? window.innerWidth : 1280));
+  useEffect(() => {
+    let rafId = 0;
+    const h = () => { if (rafId) return; rafId = requestAnimationFrame(() => { rafId = 0; setWw(window.innerWidth); }); };
+    window.addEventListener('resize', h);
+    window.addEventListener('orientationchange', h);
+    return () => { if (rafId) cancelAnimationFrame(rafId); window.removeEventListener('resize', h); window.removeEventListener('orientationchange', h); };
+  }, []);
+  const angosto = ww < 1100;   // tablets y ventanas medianas: tablero apilable con scroll
   useEffect(() => {
     if (!fullscreen) return undefined;
     const onKey = (e) => { if (e.key === 'Escape') setFullscreen(false); };
@@ -328,8 +347,9 @@ export default function CartaBalanceAnalisis() {
 
   return (
     <div style={fullscreen
-      ? { position: 'fixed', inset: 0, zIndex: 4000, background: BASE.bg, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10, height: '100dvh' }
-      : { display: 'flex', flexDirection: 'column', gap: 10, height: 'calc(100dvh - 150px)', minHeight: 460 }}>
+      ? { position: 'fixed', inset: 0, zIndex: 4000, background: BASE.bg, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10, height: '100dvh', overflowY: angosto ? 'auto' : 'hidden' }
+      // En pantallas angostas el "tablero de una pantalla" no cabe: altura libre + scroll
+      : { display: 'flex', flexDirection: 'column', gap: 10, ...(angosto ? {} : { height: 'calc(100dvh - 150px)', minHeight: 460 }) }}>
       {!fullscreen && <Tabs tab={tab} setTab={setTab} />}
 
       {/* BARRA DE CONTROL */}
@@ -343,9 +363,15 @@ export default function CartaBalanceAnalisis() {
           {diasSemana.map((d) => <option key={d.fecha} value={d.fecha}>{d.label}</option>)}
         </select>
         <span style={{ width: 1, height: 22, background: BASE.border }} />
-        <DatePickerPremium value={desde || ''} onChange={(iso) => { setDesde(iso); setSemanaSel(''); setDiaSel(''); }} />
+        {/* Cajas de ancho fijo: el root del datepicker es width:100% y sin caja cada
+            uno se robaba una fila entera del header en tablet */}
+        <div style={{ width: 128, flex: '0 0 auto' }}>
+          <DatePickerPremium value={desde || ''} onChange={(iso) => { setDesde(iso); setSemanaSel(''); setDiaSel(''); }} />
+        </div>
         <span style={{ color: BASE.muted }}>–</span>
-        <DatePickerPremium value={hasta || ''} onChange={(iso) => { setHasta(iso); setSemanaSel(''); setDiaSel(''); }} />
+        <div style={{ width: 128, flex: '0 0 auto' }}>
+          <DatePickerPremium value={hasta || ''} onChange={(iso) => { setHasta(iso); setSemanaSel(''); setDiaSel(''); }} />
+        </div>
         <select value={selAct} onChange={(e) => setSelAct(e.target.value)} style={{ ...inpTop, minWidth: 150 }}>
           <option value="">🏗️ Todas las actividades</option>
           {actividades.map((a) => <option key={a} value={a}>{a}</option>)}
@@ -372,12 +398,16 @@ export default function CartaBalanceAnalisis() {
         {(chips.length || desde || hasta || selAct) ? <button onClick={clearAll} style={{ fontSize: 11, fontWeight: 800, color: BASE.red, background: 'transparent', border: 'none', cursor: 'pointer' }}>Limpiar</button> : null}
       </div>
 
-      {/* GRID DE UNA PANTALLA */}
-      <div id="print-area" style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '1.25fr 1fr 1fr', gridTemplateRows: 'auto 1fr 1.05fr', gap: 10 }}>
+      {/* GRID DE UNA PANTALLA (laptop) · APILABLE CON SCROLL (tablet/angosto) */}
+      <div id="print-area" style={{
+        flex: 1, minHeight: 0, display: 'grid', gap: 10,
+        gridTemplateColumns: angosto ? '1fr 1fr' : '1.25fr 1fr 1fr',
+        ...(angosto ? {} : { gridTemplateRows: 'auto 1fr 1.05fr' }),
+      }}>
         {/* Hero — TP + medidores TP/TC/TNC */}
-        <div style={{ gridColumn: '1 / 3', gridRow: '1', background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', borderRadius: 14, padding: '12px 14px', boxShadow: BASE.shadowMd, display: 'flex', alignItems: 'stretch', gap: 12, minWidth: 0 }}>
+        <div style={{ gridColumn: angosto ? '1 / -1' : '1 / 3', gridRow: angosto ? 'auto' : '1', background: `linear-gradient(135deg, ${BASE.navy}, ${BASE.navyDark})`, color: '#fff', borderRadius: 14, padding: '12px 14px', boxShadow: BASE.shadowMd, display: 'flex', alignItems: 'stretch', gap: 12, minWidth: 0, flexWrap: 'wrap' }}>
           {/* Cuadrito de contexto: actividad + fecha */}
-          <div style={{ flexShrink: 0, minWidth: 0, maxWidth: 280, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '11px 14px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <div style={{ flexShrink: 0, minWidth: 0, maxWidth: angosto ? '100%' : 280, flex: angosto ? '1 1 100%' : '0 1 auto', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '11px 14px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <p style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1.2, color: BASE.gold }}>ANÁLISIS DE PRODUCTIVIDAD {chips.length || selAct || desde || filtros.fecha ? '· FILTRADO' : '· GLOBAL'}</p>
             <p title={selAct || 'Todas las actividades'} style={{ fontSize: 16, fontWeight: 900, lineHeight: 1.2, marginTop: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>🏗️ {selAct || 'Todas las actividades'}</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 8, flexWrap: 'wrap' }}>
@@ -386,19 +416,19 @@ export default function CartaBalanceAnalisis() {
             </div>
             <p style={{ fontSize: 10, opacity: 0.6, marginTop: 8 }}>Meta TP {tpMeta}%</p>
           </div>
-          {/* Cuadritos de métricas TP / TC / TNC en fila */}
-          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 80px), 1fr))', gap: 10, minWidth: 0 }}>
+          {/* Cuadritos de métricas TP / TC / TNC en fila. Etiqueta ARRIBA del número
+              (antes competían en la misma fila y en tablet quedaba "P… 41%"); la
+              sigla va primero para que el recorte, si lo hay, sea del lado largo. */}
+          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 108px), 1fr))', gap: 10, minWidth: 0 }}>
             {[
               { l: 'Productivo', sub: 'TP', v: k.pTP, c: CB_COL.TP, tx: '#4ade80' },
               { l: 'Contributorio', sub: 'TC', v: k.pTC, c: CB_COL.TC, tx: '#fbbf24' },
               { l: 'No contrib.', sub: 'TNC', v: k.pTNC, c: CB_COL.TNC, tx: '#f87171' },
             ].map((s) => (
               <div key={s.sub} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderTop: `3px solid ${s.c}`, borderRadius: 12, padding: '10px 13px', display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 6 }}>
-                  <span style={{ fontSize: 11, fontWeight: 800, opacity: 0.9, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.l} <span style={{ opacity: 0.55, fontWeight: 700 }}>· {s.sub}</span></span>
-                  <span style={{ fontSize: 23, fontWeight: 900, color: s.tx, lineHeight: 1 }}>{Math.round(s.v)}%</span>
-                </div>
-                <div style={{ height: 7, borderRadius: 999, background: 'rgba(255,255,255,0.14)', marginTop: 9, overflow: 'hidden' }}>
+                <span style={{ fontSize: 11, fontWeight: 800, opacity: 0.9, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.sub} <span style={{ opacity: 0.55, fontWeight: 700 }}>· {s.l}</span></span>
+                <span style={{ fontSize: angosto ? 20 : 23, fontWeight: 900, color: s.tx, lineHeight: 1, marginTop: 4 }}>{Math.round(s.v)}%</span>
+                <div style={{ height: 7, borderRadius: 999, background: 'rgba(255,255,255,0.14)', marginTop: 8, overflow: 'hidden' }}>
                   <div style={{ width: `${Math.round(s.v)}%`, height: '100%', background: s.c, borderRadius: 999 }} />
                 </div>
               </div>
@@ -406,7 +436,7 @@ export default function CartaBalanceAnalisis() {
           </div>
         </div>
         {/* Conclusiones + Recomendación (reemplaza la calificación) — lo clave para los jefes */}
-        <div style={{ ...panel({ borderRadius: 14 }), gridColumn: '3', gridRow: '1 / 3', minHeight: 0 }}>
+        <div style={{ ...panel({ borderRadius: 14 }), gridColumn: angosto ? '1 / -1' : '3', gridRow: angosto ? 'auto' : '1 / 3', minHeight: 0, ...(angosto ? { maxHeight: 340 } : {}) }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 6, marginBottom: 6 }}>
             <p style={{ ...titBox, marginBottom: 0 }}>📋 Conclusiones y recomendación</p>
             {selAct && <span style={{ fontSize: 9, fontWeight: 800, color: BASE.gold, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 140 }} title={`${selAct} · ${fechaLabel}`}>{fechaLabel}</span>}
@@ -455,15 +485,15 @@ export default function CartaBalanceAnalisis() {
         </div>
 
         {/* Dona */}
-        <div style={{ ...panel(), gridColumn: '1', gridRow: '2' }}>
+        <div style={{ ...panel(), gridColumn: '1', ...(angosto ? {} : { gridRow: '2' }) }}>
           <p style={titBox}>Distribución TP/TC/TNC · clic filtra</p>
-          <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+          <div style={{ position: 'relative', ...(angosto ? { height: 220 } : { flex: 1, minHeight: 0 }) }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie {...SIN_ANIM} data={donut} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius="70%" outerRadius="96%" paddingAngle={2} cornerRadius={9} stroke="none" onClick={(d) => setF('categoria', d?.cat)} cursor="pointer">
                   {donut.map((d, i) => <Cell key={i} fill={d.color} opacity={filtros.categoria && filtros.categoria !== d.cat ? 0.3 : 1} />)}
                 </Pie>
-                <Tooltip {...TOOLTIP_STYLE} formatter={(v) => `${v}%`} />
+                {!TACTIL && <Tooltip {...TOOLTIP_STYLE} formatter={(v) => `${v}%`} />}
               </PieChart>
             </ResponsiveContainer>
             <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
@@ -482,7 +512,7 @@ export default function CartaBalanceAnalisis() {
         </div>
 
         {/* Composición por fecha / por cargo (toggle) */}
-        <div style={{ ...panel(), gridColumn: '2', gridRow: '2' }}>
+        <div style={{ ...panel(), gridColumn: '2', ...(angosto ? {} : { gridRow: '2' }) }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4, gap: 6 }}>
             <p style={{ ...titBox, marginBottom: 0 }}>TP/TC/TNC {vistaMedio === 'fecha' ? 'por fecha' : 'por cargo'} · clic filtra</p>
             <div style={{ display: 'flex', gap: 3, background: BASE.bg, borderRadius: 7, padding: 2 }}>
@@ -491,7 +521,7 @@ export default function CartaBalanceAnalisis() {
               ))}
             </div>
           </div>
-          <div style={{ flex: 1, minHeight: 0 }}>
+          <div style={angosto ? { height: 220 } : { flex: 1, minHeight: 0 }}>
             {vistaMedio === 'fecha'
               ? <BarApilada data={porFecha} filtroVal={filtros.fecha} onClick={(key) => setF('fecha', key)} />
               : <BarApilada data={porCargo} filtroVal={filtros.cargo} onClick={(key) => setF('cargo', key)} />}
@@ -501,7 +531,7 @@ export default function CartaBalanceAnalisis() {
         {/* (Tarjetas clave eliminadas a pedido; "Causas de pérdida" ocupa col 3, filas 2–3) */}
 
         {/* Crew Balance — por trabajador (con cargo) */}
-        <div style={{ ...panel(), gridColumn: '1 / 3', gridRow: '3' }}>
+        <div style={{ ...panel(), gridColumn: angosto ? '1 / -1' : '1 / 3', ...(angosto ? {} : { gridRow: '3' }) }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4, gap: 8, flexWrap: 'wrap' }}>
             <p style={{ ...titBox, marginBottom: 0 }}>Crew Balance · por trabajador (nombre · cargo) · clic enfoca</p>
             <div style={{ display: 'flex', gap: 10 }}>
@@ -510,14 +540,15 @@ export default function CartaBalanceAnalisis() {
               <span style={chip()}><i style={dot(CB_COL.TNC)} />No contributorio</span>
             </div>
           </div>
-          <div style={{ flex: 1, minHeight: 0, overflowX: 'auto', overflowY: 'hidden' }}>
-            <div style={{ width: '100%', minWidth: Math.max(0, crew.length * 56), height: '100%' }}>
+          <div style={{ overflowX: 'auto', overflowY: 'hidden', ...(angosto ? { height: 250 } : { flex: 1, minHeight: 0 }) }}>
+            {/* 64px por trabajador en táctil (dedos), 56 con mouse */}
+            <div style={{ width: '100%', minWidth: Math.max(0, crew.length * (TACTIL ? 64 : 56)), height: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={crew} stackOffset="expand" margin={{ top: 6, right: 6, left: -20, bottom: 2 }}>
+                <BarChart data={crew} stackOffset="expand" margin={{ top: 6, right: 6, left: 0, bottom: 2 }}>
                   <CartesianGrid {...GRILLA} />
                   <XAxis {...EJE} dataKey="nombre" tick={<TickCrew />} interval={0} height={46} />
-                  <YAxis {...EJE} tickFormatter={(v) => `${Math.round(v * 100)}%`} domain={[0, 1]} width={32} />
-                  <Tooltip {...TOOLTIP_STYLE} formatter={(v, n, p) => [`${Math.round(v / (p.payload.n || 1) * 100)}%`, n]} labelFormatter={(l) => `${nombreCorto(l)} · ${cargoDeTrab[l] || ''}`} />
+                  <YAxis {...EJE} tickFormatter={(v) => `${Math.round(v * 100)}%`} domain={[0, 1]} width={36} />
+                  {!TACTIL && <Tooltip {...TOOLTIP_STYLE} formatter={(v, n, p) => [`${Math.round(v / (p.payload.n || 1) * 100)}%`, n]} labelFormatter={(l) => `${nombreCorto(l)} · ${cargoDeTrab[l] || ''}`} />}
                   <Bar {...SIN_ANIM} {...BARRA} dataKey="tp" stackId="a" name="Productivo" radius={undefined} cursor="pointer" onClick={(d) => d && setF('persona', d.nombre)}>
                     {crew.map((e, i) => <Cell key={i} fill={CB_COL.TP} opacity={filtros.persona && filtros.persona !== e.nombre ? 0.3 : 1} />)}
                     <LabelList dataKey="tpPct" position="center" fill="#fff" fontSize={9} fontWeight={800} formatter={(v) => (v >= 8 ? `${v}%` : '')} />
@@ -537,14 +568,14 @@ export default function CartaBalanceAnalisis() {
         </div>
 
         {/* Causas de pérdida TNC (col 3, fila 3) */}
-        <div style={{ ...panel(), gridColumn: '3', gridRow: '3' }}>
+        <div style={{ ...panel(), gridColumn: angosto ? '1 / -1' : '3', ...(angosto ? {} : { gridRow: '3' }) }}>
           <p style={titBox}>Causas de pérdida (TNC) · clic filtra</p>
-          <div style={{ flex: 1, minHeight: 0 }}>
+          <div style={angosto ? { height: Math.max(180, compTNC.length * 30) } : { flex: 1, minHeight: 0 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={compTNC} layout="vertical" margin={{ top: 0, right: 34, left: 2, bottom: 0 }}>
                 <XAxis type="number" hide domain={[0, 100]} />
-                <YAxis {...EJE} type="category" dataKey="name" width={96} />
-                <Tooltip {...TOOLTIP_STYLE} formatter={(v) => `${v}%`} />
+                <YAxis {...EJE} type="category" dataKey="name" width={angosto ? 110 : 96} tickFormatter={(v) => corta(v, angosto ? 16 : 15)} />
+                {!TACTIL && <Tooltip {...TOOLTIP_STYLE} formatter={(v) => `${v}%`} />}
                 <Bar {...SIN_ANIM} {...BARRA} dataKey="value" radius={[0, 5, 5, 0]} cursor="pointer" onClick={(d) => d && setF('codigo', d.codigo)} label={{ position: 'right', fontSize: 9.5, fontWeight: 800, fill: BASE.navy, formatter: (v) => `${v}%` }}>
                   {compTNC.map((e, i) => <Cell key={i} fill={filtros.codigo && filtros.codigo !== e.codigo ? `${CB_COL.TNC}44` : CB_COL.TNC} />)}
                 </Bar>

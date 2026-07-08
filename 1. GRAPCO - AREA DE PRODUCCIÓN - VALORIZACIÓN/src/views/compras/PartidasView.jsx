@@ -158,7 +158,7 @@ export default function PartidasView({ showToast }) {
             <Inp label="Codigo *" value={form.codigo} onChange={v => setForm({...form, codigo: v.toUpperCase()})} placeholder="01.01.001" />
             <Inp label="Descripcion *" value={form.descripcion} onChange={v => setForm({...form, descripcion: v})} placeholder="Concreto fc=210" />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '12px', marginTop: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '12px', marginTop: '12px' }}>
             <Inp label="Unidad" value={form.unidad} onChange={v => setForm({...form, unidad: v})} />
             <Inp label="Metrado" type="number" value={form.metrado} onChange={v => setForm({...form, metrado: v})} />
             <Inp label="P. Unit (S/.)" type="number" value={form.precioUnit} onChange={v => setForm({...form, precioUnit: v})} />

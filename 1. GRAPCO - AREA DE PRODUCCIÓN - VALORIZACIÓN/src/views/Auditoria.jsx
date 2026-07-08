@@ -100,7 +100,7 @@ export default function Auditoria({ filtrados, eliminar, guardarMetrado, hhPorSe
         {/* overflow:visible (NO 'auto'): un overflow:auto/scroll haría de este div un contenedor
             de scroll que "captura" el sticky e impide que el encabezado se ancle a la ventana.
             Sin contenedor de scroll, el encabezado se pega de verdad bajo el navbar al bajar. */}
-        <div style={{overflow:'visible'}}>
+        <div className="tabla-desborda" style={{overflow:'visible'}}>
           <table style={{width:'100%',borderCollapse:'collapse',fontSize:'12px',minWidth:'960px'}}>
             <thead>
               {/* sticky top:0 = se queda fijo arriba del contenedor de scroll de Ingeniero al bajar */}

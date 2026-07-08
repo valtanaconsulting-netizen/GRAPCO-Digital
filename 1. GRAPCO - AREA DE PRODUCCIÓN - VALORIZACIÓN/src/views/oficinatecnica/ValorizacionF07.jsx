@@ -139,7 +139,7 @@ export default function ValorizacionF07({ showToast }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {/* CABECERA F07 (tal cual el Excel) */}
       <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderRadius: 12, overflow: 'hidden' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '70px 1fr 200px', alignItems: 'stretch' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '70px 1fr minmax(120px, 200px)', alignItems: 'stretch' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: `1px solid ${BASE.border}`, padding: 8 }}>
             <img src={LOGO} alt="GRAPCO" style={{ width: 52, height: 52, objectFit: 'contain' }} />
           </div>

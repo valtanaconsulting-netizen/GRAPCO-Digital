@@ -279,7 +279,7 @@ export default function CartaBalance({ cuadrillasActivas, personalDB = [], isMob
                 <input type="text" value={cbObra} placeholder="Nombre de la obra..." onChange={e => setCbObra(e.target.value)} style={inp()}/>
               </div>
               <DateInput label="FECHA" value={cbFecha} onChange={setCbFecha}/>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px'}}>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(min(100%, 140px), 1fr))',gap:'10px'}}>
                 {[['HORA INICIO ⏰',cbHoraInicio,setCbHoraInicio],['HORA FIN 🏁',cbHoraFin,setCbHoraFin]].map(([lab,val,set]) => (
                   <div key={lab}>
                     <label style={{fontSize:'10px',fontWeight:'700',color:BASE.muted,letterSpacing:'0.6px',display:'block',marginBottom:'5px'}}>{lab}</label>

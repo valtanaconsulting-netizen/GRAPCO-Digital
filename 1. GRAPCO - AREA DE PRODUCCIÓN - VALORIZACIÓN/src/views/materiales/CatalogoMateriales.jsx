@@ -218,7 +218,7 @@ export default function CatalogoMateriales({ showToast }) {
             {editando === 'NUEVO' ? 'Nuevo Material' : 'Editar Material'}
           </h3>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '12px', marginBottom: '12px' }}>
             <Input label="Codigo interno *" value={form.codigo} onChange={v => setForm({...form, codigo: v.toUpperCase()})} />
             <Input label="Codigo S10 *" value={form.codigoS10} onChange={v => setForm({...form, codigoS10: v.toUpperCase()})} placeholder="020201050001" />
             <Select label="Categoria" value={form.categoria} onChange={v => setForm({...form, categoria: v})}
@@ -232,7 +232,7 @@ export default function CatalogoMateriales({ showToast }) {
             <Input label="Stock minimo" type="number" value={form.stockMinimo} onChange={v => setForm({...form, stockMinimo: v})} />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginTop: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '12px', marginTop: '12px' }}>
             <Input label="Precio ref. (S/.)" type="number" step="0.01" value={form.precioReferencia} onChange={v => setForm({...form, precioReferencia: v})} />
             <Input label="Lead time (dias)" type="number" value={form.leadTimeDias} onChange={v => setForm({...form, leadTimeDias: v})} />
             <Input label="Merma std (%)" type="number" step="0.1" value={form.mermaEstandarPct} onChange={v => setForm({...form, mermaEstandarPct: v})} />
@@ -242,7 +242,7 @@ export default function CatalogoMateriales({ showToast }) {
             <p style={{ fontSize: '11px', fontWeight: '800', color: BASE.navy, marginBottom: '8px', letterSpacing: '0.4px' }}>
               VINCULO CON APU (PARA RECONCILIACION)
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', gap: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '10px' }}>
               <Input label="Partida APU" value={form.partidaAPU} onChange={v => setForm({...form, partidaAPU: v})} placeholder="Ej: CONCRETO" />
               <Input label="Ratio teorico" type="number" step="0.01" value={form.ratioConsumoTeorico} onChange={v => setForm({...form, ratioConsumoTeorico: v})} placeholder="7.5" />
               <Select label="Por unidad" value={form.unidadRatio} onChange={v => setForm({...form, unidadRatio: v})}

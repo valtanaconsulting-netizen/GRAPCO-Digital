@@ -1064,7 +1064,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
                   display: 'block', marginBottom: '2px',
                 }}>{heroKpi.l}</small>
                 <strong style={{
-                  fontSize: '32px', fontWeight: '900', lineHeight: 1.1,
+                  fontSize: 'clamp(22px, 3.5vw, 32px)', fontWeight: '900', lineHeight: 1.1,
                   fontFamily: mono, color: heroKpi.c,
                 }}>{heroKpi.v}</strong>
                 {heroKpi.sub && (
@@ -1084,7 +1084,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
                       letterSpacing: '1px', textTransform: 'uppercase',
                       display: 'block', marginBottom: '3px',
                     }}>{s.l}</small>
-                    <strong style={{ fontSize: '17px', fontWeight: '800', fontFamily: mono, color: s.c, whiteSpace: 'nowrap' }}>{s.v}</strong>
+                    <strong style={{ fontSize: '17px', fontWeight: '800', fontFamily: mono, color: s.c }}>{s.v}</strong>
                     {s.sub && <p style={{ fontSize: '9.5px', color: BASE.mutedSoft, marginTop: '2px', fontWeight: '600' }}>{s.sub}</p>}
                   </div>
                 ))}

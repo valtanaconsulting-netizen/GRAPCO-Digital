@@ -188,7 +188,7 @@ export default function PETEditor({ petId, onClose, showToast }) {
 function Cabecera({ form, setForm }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 100px 120px', gap: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '10px' }}>
         <Campo label="Código *">
           <input value={form.codigo} onChange={(e) => setForm({ ...form, codigo: e.target.value })} style={inp()} placeholder="SGC-CAL-PETS-001" />
         </Campo>

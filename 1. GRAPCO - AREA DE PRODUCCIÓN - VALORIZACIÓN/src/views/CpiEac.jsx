@@ -654,7 +654,7 @@ export default function CpiEac({ wbs, historial = [], filtrados = null, infoMap,
             contenedor de scroll y "captura" el sticky, impidiendo que el encabezado se ancle a la
             ventana. Sin contenedor de scroll, el encabezado + la fila TOTAL se pegan de verdad bajo
             el navbar al hacer scroll de página. La tabla entra completa en pantalla. */}
-        <div ref={scrollWrapRef} style={{overflow:'visible'}}>
+        <div ref={scrollWrapRef} className="tabla-desborda" style={{overflow:'visible'}}>
           {/* borderCollapse:'separate' + borderSpacing:0 → cada celda fija (sticky) pinta su
               propio fondo opaco; elimina los «huecos» blancos por donde se asomaba el cuerpo
               en la zona fijada (bug clásico de sticky + border-collapse:collapse en Chrome). */}

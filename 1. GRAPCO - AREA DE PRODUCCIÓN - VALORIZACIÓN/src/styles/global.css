@@ -282,3 +282,11 @@ html { scroll-behavior: smooth; }
     scroll-behavior: auto !important;
   }
 }
+
+/* ── Tablas anchas con sticky-a-ventana (Auditoria, CpiEac) ───────────────────
+   En laptop overflow:visible (el thead sticky se ancla a la ventana). En tablet esa
+   tabla de minWidth 900-960px desbordaba la página entera: bajo 1024px se convierte
+   en scroll interno del card (el sticky degrada a anclarse dentro del card). */
+@media (max-width: 1024px) {
+  .tabla-desborda { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+}

@@ -305,7 +305,7 @@ export default function OrdenEditor({ tipoOrden = 'OC', ordenExistente = null, s
               border: it.esDescargaDirecta ? `2px solid ${BASE.gold}` : `1px solid ${BASE.border}`,
               marginBottom: '8px',
             }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr auto', gap: '8px', alignItems: 'flex-end' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '8px', alignItems: 'flex-end' }}>
                 <Field label={tipoOrden === 'OS' ? 'Servicio' : 'Material'}>
                   {tipoOrden === 'OS' && !it.materialId ? (
                     <input type="text" value={it.descripcion} onChange={e => actualizarItem(i, 'descripcion', e.target.value)} placeholder="Alquiler grua / asesoria geotecnica" style={inpS} />

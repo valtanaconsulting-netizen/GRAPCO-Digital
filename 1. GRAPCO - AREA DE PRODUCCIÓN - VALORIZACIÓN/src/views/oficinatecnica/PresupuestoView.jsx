@@ -168,7 +168,7 @@ export default function PresupuestoView({ showToast }) {
             <Campo label="Código *"><input value={form.codigo} onChange={(e) => setForm({ ...form, codigo: e.target.value.toUpperCase() })} placeholder="1001" style={inpS} /></Campo>
             <Campo label="Descripción *"><input value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} placeholder="TRABAJOS PRELIMINARES" style={inpS} /></Campo>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: 10 }}>
             <Campo label="Unidad">
               <select value={form.unidad} onChange={(e) => setForm({ ...form, unidad: e.target.value })} style={{ ...inpS, cursor: 'pointer' }}>
                 {['GLB', 'M3', 'M2', 'ML', 'KG', 'TN', 'UND'].map((u) => <option key={u} value={u}>{u}</option>)}

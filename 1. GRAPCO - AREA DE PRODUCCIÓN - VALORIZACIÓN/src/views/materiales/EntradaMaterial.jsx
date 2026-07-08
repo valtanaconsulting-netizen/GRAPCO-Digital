@@ -425,7 +425,7 @@ export default function EntradaMaterial({ showToast, onSaved }) {
               border: it.esDescargaDirecta ? `2px solid #f59e0b` : `1px solid ${BASE.border}`,
               marginBottom: '8px',
             }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 0.7fr 0.9fr 1fr 1fr auto', gap: '8px', alignItems: 'flex-end' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '8px', alignItems: 'flex-end' }}>
                 <Field label="Material">
                   {modo === 'MANUAL' ? (
                     <select value={it.materialId} onChange={e => actualizarItem(i, 'materialId', e.target.value)} style={selS}>

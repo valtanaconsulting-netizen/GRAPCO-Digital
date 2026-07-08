@@ -304,7 +304,7 @@ export default function SalidaMaterial({ showToast, onSaved }) {
               border: `1px solid ${cantInsuficiente ? BASE.red : BASE.border}`,
               marginBottom: '8px',
             }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr auto', gap: '8px', alignItems: 'flex-end' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '8px', alignItems: 'flex-end' }}>
                 <Field label="Material">
                   <select value={it.materialId} onChange={e => actualizarItem(i, 'materialId', e.target.value)} style={selS}>
                     <option value="">— Selecciona —</option>
