@@ -13,7 +13,10 @@ export default function AlertasPanel({ alertas = [] }) {
   const [fAct, setFAct]             = useState('');
   const [busq, setBusq]             = useState('');
 
-  if (!alertas.length) return null;
+  // OJO: nada de returns tempranos por encima de los hooks. Si salimos antes de
+  // los useMemo, React ejecuta 4 hooks con la lista vacía y 7 cuando llegan las
+  // alertas, y lanza "Rendered more hooks than during the previous render".
+  // El corte por lista vacía va DESPUÉS de declararlos todos.
 
   // Listas únicas para los selects
   const capataces = useMemo(() => {
@@ -45,6 +48,9 @@ export default function AlertasPanel({ alertas = [] }) {
       return true;
     });
   }, [alertas, fSev, fCap, fAct, busq]);
+
+  // Ya están declarados todos los hooks: aquí sí es seguro cortar.
+  if (!alertas.length) return null;
 
   const altas       = alertasFiltradas.filter(a => a.severidad === 'alta');
   const medias      = alertasFiltradas.filter(a => a.severidad === 'media');
