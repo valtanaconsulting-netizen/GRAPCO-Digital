@@ -19,6 +19,17 @@ settings.local.json
 # Backups de reglas / artefactos regenerables
 *.original.bak
 
+# Credenciales — NUNCA versionar, en ninguna carpeta (el repo es público)
+serviceAccount*.json
+
+# Datasets de ML: datos reales de obra — NO versionar en un repo público
+/ml/datasets/
+/ml/modelos/
+
+# Bytecode de Python: regenerable
+__pycache__/
+*.pyc
+
 # Tesis: pesada (PDF/imágenes/versiones) y con su propio control en VERSIONES_PREVIAS/ — NO versionar
 /INFORME DE TESIS/
 
