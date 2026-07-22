@@ -418,4 +418,16 @@ export const CUADRILLAS_MAESTRAS = {
 
 export const JORNADA_LEGAL         = 8.5;   // tope de HN lun-vie
 export const JORNADA_SABADO        = 5.5;   // tope de HN el sábado (media jornada)
+// Horario lun-vie: 07:30–17:00 menos 1 h de refrigerio = 8.5 h, que es de donde
+// sale JORNADA_LEGAL. Se muestra junto al tope para que el número no parezca
+// arbitrario. Las horas reales las aplica el Marcador de asistencia.
+export const JORNADA_HORARIO       = '07:30–17:00';
+
+// Orden jerárquico de cargos en obra. El tareo en papel se lista así; el digital
+// debe salir igual para poder cotejarlos línea a línea.
+export const ORDEN_CARGOS = ['Capataz', 'Operario', 'Oficial', 'Ayudante', 'Peón'];
+export const rangoCargo = (cargo) => {
+  const i = ORDEN_CARGOS.findIndex(c => c.toLowerCase() === String(cargo || '').trim().toLowerCase());
+  return i === -1 ? ORDEN_CARGOS.length : i;   // cargo desconocido → al final
+};
 export const FECHA_INICIO_PROYECTO = new Date("2025-11-03T00:00:00");

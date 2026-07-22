@@ -7,7 +7,7 @@
 // El modelo de datos es el mismo `actividad`; solo cambia qué secciones se ven.
 import React, { useState, useDeferredValue } from 'react';
 import { BASE, inp } from '../../../utils/styles';
-import { CATALOGO_MASTER, INFO_MAP } from '../../../utils/constants';
+import { CATALOGO_MASTER, INFO_MAP, JORNADA_LEGAL, JORNADA_HORARIO, rangoCargo } from '../../../utils/constants';
 import { normalizeText } from '../../../utils/helpers';
 import FotoUploader from '../../../components/FotoUploader';
 import SelectPremium from '../../../components/SelectPremium';
@@ -350,15 +350,28 @@ export default function EditorActividad({
               border: `1px solid ${limiteHN <= 0 ? BASE.gold + '55' : BASE.border}`,
               padding: '3px 9px', borderRadius: '999px', whiteSpace: 'nowrap',
             }}>
-              {limiteHN <= 0 ? '🟡 Domingo · solo HE' : `Tope HN ${limiteHN}h · luego HE`}
+              {limiteHN <= 0
+                ? '🟡 Domingo · solo HE'
+                /* En jornada completa se muestra el horario del que sale el tope:
+                   07:30–17:00 menos 1 h de refrigerio = 8.5 h. El sábado es media
+                   jornada y no le corresponde ese horario. */
+                : limiteHN === JORNADA_LEGAL
+                  ? `${JORNADA_HORARIO} · tope HN ${limiteHN}h · luego HE`
+                  : `Media jornada · tope HN ${limiteHN}h · luego HE`}
             </span>
           </div>
 
           {(() => {
             const q = buscarTrabDiferido.trim().toLowerCase();
-            const lista = q
+            const base = q
               ? actividadActiva.detalleTareo.filter(t => (t.nombre || '').toLowerCase().includes(q))
               : actividadActiva.detalleTareo;
+            // Mismo orden que el tareo en papel: Capataz → Operario → Oficial →
+            // Ayudante → Peón, y alfabético dentro de cada cargo. Copia antes de
+            // ordenar: `detalleTareo` es estado y no se muta.
+            const lista = [...base].sort((a, b) =>
+              rangoCargo(a.cargo) - rangoCargo(b.cargo) ||
+              String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es'));
             if (actividadActiva.detalleTareo.length === 0) {
               return (
                 <p style={{ textAlign: 'center', padding: '24px', color: BASE.muted, fontSize: '12px', fontStyle: 'italic' }}>

@@ -35,6 +35,8 @@ export default function SidebarCapataz({
   estadoBorrador,
   ultSubida,
   buscarTrab,
+  proyectoNombre,
+  frenteNombre,
   // Setters
   setFecha,
   setCapataz,
@@ -97,6 +99,21 @@ export default function SidebarCapataz({
             {miembrosCuadrilla?.length > 0 && (
               <span style={{ fontSize: '9.5px', color: BASE.muted }}>
                 👥 {miembrosCuadrilla.length} en cuadrilla
+              </span>
+            )}
+            {/* Identificación del registro: sin proyecto y frente, un tareo impreso
+                no se puede atribuir. La fecha y la semana ya van arriba. */}
+            {proyectoNombre && (
+              <span style={{ display: 'block', fontSize: '9.5px', color: BASE.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {proyectoNombre}{frenteNombre ? ` · ${frenteNombre}` : ''}
+              </span>
+            )}
+            {/* Sello del último envío: deja constancia de que el día ya se cerró y
+                cuándo. El "quién" es el capataz de la línea de arriba. */}
+            {ultSubida?.ts > 0 && (
+              <span style={{ display: 'block', fontSize: '9.5px', fontWeight: 700, color: BASE.green }}>
+                ✓ Enviado {new Date(ultSubida.ts).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}
+                {ultSubida.n ? ` · ${ultSubida.n} actividad${ultSubida.n === 1 ? '' : 'es'}` : ''}
               </span>
             )}
           </span>

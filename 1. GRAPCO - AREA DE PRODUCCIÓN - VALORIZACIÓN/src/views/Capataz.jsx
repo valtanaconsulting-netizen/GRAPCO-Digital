@@ -79,8 +79,10 @@ export default function Capataz({
   // `rolPermitido !== 'capataz'`. Solo un capataz REAL debe quedar atado a una
   // cuadrilla — así nadie se "convierte" en otro capataz por accidente.
   const esCapatazReal = rolPermitido === 'capataz';
-  const { proyectoActivoId, proyectoActivo, frenteActivoId, modoTodosFrentes, FRENTE_DEFAULT_ID, filtrarPorContexto } = useProyectoActivo();
+  const { proyectoActivoId, proyectoActivo, frenteActivoId, frenteActivo, modoTodosFrentes, FRENTE_DEFAULT_ID, filtrarPorContexto } = useProyectoActivo();
   const proyectoNombre = proyectoActivo?.nombre || proyectoActivo?.codigo || '';
+  // Con "todos los frentes" activo no hay frente que nombrar: frenteActivo es null.
+  const frenteNombre = frenteActivo?.nombre || '';
   const clienteNombre = proyectoActivo?.cliente || proyectoActivo?.clienteNombre || proyectoActivo?.empresa || '';
 
   // Override forzoso: si el usuario tiene proyectoIdAsignado en /Usuarios, ESE es el proyectoId
@@ -575,6 +577,17 @@ export default function Capataz({
       (a.detalleTareo || []).some(t => (parseFloat(t?.hn) || 0) + (parseFloat(t?.he) || 0) > 0)
     ), [actividades]);
   const tieneTareo = actividadesConHH.length > 0;
+
+  // Motivo por el que NO se puede enviar todavía, para deshabilitar el botón en vez
+  // de dejar pulsar y responder con una lista de errores. Cubre solo lo que se puede
+  // saber sin recalcular: las validaciones finas (topes de HN, metrado sin
+  // observación) siguen viviendo en `subir()`, que es quien manda.
+  const bloqueoEnvio = useMemo(() => {
+    if (!tieneTareo) return 'Asigna horas primero';
+    const sinDefinir = actividadesConHH.some(a => !a.partida || !a.subpartida || !a.actividad);
+    if (sinDefinir) return 'Falta definir la actividad';
+    return null;
+  }, [tieneTareo, actividadesConHH]);
 
   // Lista de actividades visible según el paso: en metrado, solo las del tareo.
   const actividadesVista = vista === 'metrado' ? actividadesConHH : actividades;
@@ -1168,6 +1181,8 @@ export default function Capataz({
       estadoBorrador={estadoBorrador}
       ultSubida={ultSubida}
       buscarTrab={buscarTrab}
+      proyectoNombre={proyectoNombre}
+      frenteNombre={frenteNombre}
       setFecha={setFecha}
       setCapataz={setCapataz}
       setBuscarTrab={setBuscarTrab}
@@ -1362,6 +1377,8 @@ export default function Capataz({
           isMobile={isMobile}
           estadoBorrador={estadoBorrador}
           actividadesCount={actividadesConHH.length}
+          totales={totalHHActivas}
+          bloqueo={bloqueoEnvio}
           onGuardar={guardarBorrador}
           onSubir={subir}
           onEliminar={() => actividadActiva && eliminarActividad(actividadActiva.id)}
