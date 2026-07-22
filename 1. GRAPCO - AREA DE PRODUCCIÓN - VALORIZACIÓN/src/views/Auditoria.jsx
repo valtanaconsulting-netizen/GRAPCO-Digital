@@ -5,7 +5,7 @@ import { calcCPI, getEstado, fmt1, fmtCPIPct } from '../utils/helpers';
 import { FotoGaleriaCompacta } from '../components/FotoUploader';
 import VistaHeader from '../components/VistaHeader';
 import Modal from '../components/Modal';
-import PlanillaMetrado, { TIPOS_METRADO, parcialFila } from './oficinatecnica/PlanillaMetrado';
+import PlanillaMetrado, { TIPOS_METRADO, parcialFila, detectarTipoMetrado } from './oficinatecnica/PlanillaMetrado';
 
 export default function Auditoria({ filtrados, eliminar, guardarMetrado, hhPorSemana = [], hhTotales = { hn:0, he:0, total:0 }, totalBaseDatos = 0 }) {
   const [hhOpen, setHhOpen] = useState(false);
@@ -227,23 +227,12 @@ export default function Auditoria({ filtrados, eliminar, guardarMetrado, hhPorSe
 
 // Infiere el TIPO de formato de metrado a partir de la partida / actividad / unidad
 // del registro. Es solo un valor inicial: el selector de la planilla permite cambiarlo.
-function inferirTipoMetrado(r) {
-  const txt = `${r._partidaCanonica || r.partida || ''} ${r._actividadCanonica || r.actividad || ''}`
-    .normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
-  if (/ACERO|REFUERZO|VARILLA|FIERRO/.test(txt)) return 'acero';
-  if (/ENCOFRAD/.test(txt)) return 'encofrado';
-  if (/TARRAJEO|SOLAQUEO|REVOQUE/.test(txt)) return 'tarrajeo';
-  if (/DEMOLIC/.test(txt)) return 'demolicion';
-  if (/ELIMINAC|DESMONTE|ACARREO|VOLQUETE/.test(txt)) return 'eliminacion';
-  if (/EXCAVAC/.test(txt)) return 'excavacion';
-  if (/RELLENO/.test(txt)) return 'relleno';
-  if (/CONCRETO|VACIAD|ZAPATA|COLUMNA|VIGA|LOSA|SOLADO|CIMIENTO|PLACA/.test(txt)) return 'concreto';
-  // Respaldo por unidad del registro
-  const u = (r.unidad || '').toLowerCase();
-  if (u === 'kg') return 'acero';
-  if (u === 'm2') return 'encofrado';
-  if (u === 'm3') return 'concreto';
-  return 'generico';
+// Delega en el detector compartido de PlanillaMetrado: el ISP y la auditoría deben
+// deducir el MISMO formato ante el mismo registro. Devuelve { tipo, via }; `via`
+// es lo que permite a la planilla ahorrarse la pregunta cuando el nombre ya lo dice.
+function deteccionDeRegistro(r) {
+  const txt = `${r._partidaCanonica || r.partida || ''} ${r._actividadCanonica || r.actividad || ''}`;
+  return detectarTipoMetrado(txt, r.unidad);
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -253,7 +242,11 @@ function inferirTipoMetrado(r) {
 // metrado del registro; el IP Real y el CPI se recalculan solos.
 // ────────────────────────────────────────────────────────────────────────────
 function ModalMetrado({ registro: r, onCerrar, onGuardar }) {
-  const tipoInicial = r.tipoMetrado || inferirTipoMetrado(r);
+  // Si el registro ya trae un tipo guardado, manda ese (fue una decisión explícita);
+  // si no, el deducido. La detección se pasa a la planilla para que pueda confirmar
+  // en una línea en vez de desplegar las nueve opciones.
+  const deteccion = deteccionDeRegistro(r);
+  const tipoInicial = r.tipoMetrado || deteccion.tipo;
   const tieneFormato = Array.isArray(r.detalleMetrado) && r.detalleMetrado.length > 0;
   const [modo, setModo] = useState(tieneFormato ? 'formato' : 'directo'); // 'directo' | 'formato'
 
@@ -370,6 +363,7 @@ function ModalMetrado({ registro: r, onCerrar, onGuardar }) {
           unidad={pUnidad}
           detalle={pDetalle}
           meta={pMeta}
+          deteccion={deteccion}
           onChange={({ tipo, unidad, detalle, total, meta }) => {
             setPTipo(tipo); setPUnidad(unidad); setPDetalle(detalle);
             setPTotal(total); setPMeta(meta || {});

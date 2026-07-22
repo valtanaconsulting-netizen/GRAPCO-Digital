@@ -14,7 +14,7 @@
 //
 // onChange entrega { tipo, unidad, detalle, total, meta } al padre, que lo
 // persiste y usa el total como metrado de la partida valorizada.
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { BASE } from '../../utils/styles';
 import { obtenerSemana } from '../../utils/helpers';
 import { FECHA_INICIO_PROYECTO } from '../../utils/constants';
@@ -73,6 +73,33 @@ export const TIPOS_METRADO = {
 };
 export const familiaDe = (tipo) => TIPOS_METRADO[tipo]?.familia || 'volumen';
 
+// Detecta el formato de metrado a partir del NOMBRE de la actividad y, como
+// respaldo, de su unidad. Fuente ÚNICA para todas las pantallas que metran: el
+// ISP y la auditoría deben deducir lo mismo ante el mismo registro.
+//
+// `via` dice con qué confianza se dedujo, y es lo que decide si la interfaz puede
+// ahorrarle la pregunta al usuario:
+//   'texto'  → el nombre lo dice ("ENCOFRADO DE COLUMNA") → alta confianza
+//   'unidad' → solo se sabe por la unidad (m2 puede ser encofrado, tarrajeo o
+//              demolición) → ambiguo, hay que dejar elegir
+//   'ninguno'→ sin pistas
+export function detectarTipoMetrado(texto, unidad) {
+  const t = String(texto || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
+  if (/ACERO|REFUERZO|VARILLA|FIERRO/.test(t))                 return { tipo: 'acero', via: 'texto' };
+  if (/ENCOFRAD/.test(t))                                      return { tipo: 'encofrado', via: 'texto' };
+  if (/TARRAJEO|SOLAQUEO|REVOQUE/.test(t))                     return { tipo: 'tarrajeo', via: 'texto' };
+  if (/DEMOLIC/.test(t))                                       return { tipo: 'demolicion', via: 'texto' };
+  if (/ELIMINAC|DESMONTE|ACARREO|VOLQUETE/.test(t))            return { tipo: 'eliminacion', via: 'texto' };
+  if (/EXCAVAC/.test(t))                                       return { tipo: 'excavacion', via: 'texto' };
+  if (/RELLENO/.test(t))                                       return { tipo: 'relleno', via: 'texto' };
+  if (/CONCRETO|VACIAD|ZAPATA|COLUMNA|VIGA|LOSA|SOLADO|CIMIENTO|PLACA/.test(t)) return { tipo: 'concreto', via: 'texto' };
+  const u = String(unidad || '').toLowerCase().replace('²', '2').replace('³', '3');
+  if (u === 'kg') return { tipo: 'acero', via: 'unidad' };
+  if (u === 'm2') return { tipo: 'encofrado', via: 'unidad' };
+  if (u === 'm3') return { tipo: 'concreto', via: 'unidad' };
+  return { tipo: 'generico', via: 'ninguno' };
+}
+
 const num = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
 // Para dimensiones: en blanco = 1 (así un conteo simple no se anula al multiplicar).
 const dim = (v) => { if (v === '' || v === null || v === undefined) return 1; const n = parseFloat(v); return Number.isFinite(n) ? n : 1; };
@@ -112,9 +139,15 @@ const COLS = {
   area:    [['nVeces','Nº', 52,'1'], ['largo','Largo/Perím (m)', 96,'0.00'], ['alto','Alto (m)', 78,'0.00'], ['caras','Caras', 60,'1']],
 };
 
-export default function PlanillaMetrado({ tipo = 'concreto', unidad, detalle = [], meta = {}, onChange }) {
+export default function PlanillaMetrado({ tipo = 'concreto', unidad, detalle = [], meta = {}, onChange, deteccion = null }) {
   const filas = detalle.length ? detalle : [];
   const fam = familiaDe(tipo);
+  // Si el formato se dedujo del NOMBRE de la actividad y el usuario no lo ha
+  // cambiado, no se le pregunta: se confirma en una línea y se ofrece cambiarlo.
+  // Con detección ambigua (solo por unidad) o ya cambiada, se muestran las opciones.
+  const detectadoFirme = deteccion?.via === 'texto' && deteccion.tipo === tipo;
+  const [mostrarTodos, setMostrarTodos] = useState(false);
+  const elegirVisible = !detectadoFirme || mostrarTodos;
   const total = useMemo(() => filas.reduce((s, r) => s + parcialFila(tipo, r), 0), [filas, tipo]);
   const un = unidad || TIPOS_METRADO[tipo]?.unidad || 'und';
   const factorEspon = meta?.factorEsponjamiento != null ? meta.factorEsponjamiento : 0.30;
@@ -136,20 +169,64 @@ export default function PlanillaMetrado({ tipo = 'concreto', unidad, detalle = [
   const setCampo = (id, k, v) => emit(filas.map(r => r.id === id ? { ...r, [k]: v } : r));
   const setFactor = (v) => emit(filas, tipo, un, { ...meta, factorEsponjamiento: (parseFloat(v) || 0) });
 
+  // Orden de las opciones cuando SÍ hay que elegir: primero la sugerida, después
+  // las que comparten unidad con la partida, y al final el resto. Así lo probable
+  // queda arriba en vez de repartido por la rejilla.
+  const tiposOrdenados = useMemo(() => {
+    const unRef = String(unidad || '').toLowerCase().replace('²', '2').replace('³', '3');
+    const rango = (k) => (k === deteccion?.tipo ? 0 : TIPOS_METRADO[k].unidad === unRef ? 1 : 2);
+    return Object.keys(TIPOS_METRADO).sort((a, b) => rango(a) - rango(b));
+  }, [deteccion, unidad]);
+
+  // Formato deducido del nombre de la actividad: se confirma en una línea, sin
+  // obligar a elegir entre nueve opciones que ya sabemos cuál es.
+  const Confirmacion = (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: '11px', flexWrap: 'wrap',
+      padding: '11px 13px', borderRadius: '12px',
+      border: `1.5px solid ${BASE.border}`, background: BASE.bgSoft,
+    }}>
+      <span style={{ fontSize: '20px', flexShrink: 0 }}>{TIPOS_METRADO[tipo]?.icon}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontSize: '9.5px', fontWeight: 900, color: BASE.muted, letterSpacing: '0.6px', margin: 0 }}>
+          FORMATO DE METRADO
+        </p>
+        <p style={{ fontSize: '13.5px', fontWeight: 800, color: BASE.navy, margin: '1px 0 0' }}>
+          {TIPOS_METRADO[tipo]?.label} <span style={{ color: BASE.muted, fontWeight: 700 }}>· {un}</span>
+        </p>
+      </div>
+      <span style={{
+        fontSize: '9.5px', fontWeight: 800, color: BASE.navy, background: BASE.navySoft,
+        padding: '3px 9px', borderRadius: '999px', flexShrink: 0,
+      }}>
+        Según la actividad
+      </span>
+      <button type="button" onClick={() => setMostrarTodos(true)} style={{
+        background: 'none', border: 'none', padding: '4px 2px', cursor: 'pointer',
+        fontSize: '11px', fontWeight: 800, color: BASE.muted,
+        textDecoration: 'underline', fontFamily: BASE.font, flexShrink: 0,
+      }}>
+        Cambiar
+      </button>
+    </div>
+  );
+
   // Selector de tipo (común a todos) — grid con botones grandes y aireados.
-  const Selector = (
+  const Rejilla = (
     <div>
       <p style={{ fontSize: '10px', fontWeight: 900, color: BASE.muted, letterSpacing: '0.7px', marginBottom: '8px' }}>
-        TIPO DE METRADO — ELIGE EL FORMATO
+        {deteccion?.tipo ? 'TIPO DE METRADO — LO PROBABLE VA PRIMERO' : 'TIPO DE METRADO — ELIGE EL FORMATO'}
       </p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))', gap: '8px' }}>
-        {Object.entries(TIPOS_METRADO).map(([k, t]) => {
+        {tiposOrdenados.map((k) => {
+          const t = TIPOS_METRADO[k];
           const activo = tipo === k;
+          const sugerido = deteccion?.tipo === k && !activo;
           return (
             <button key={k} type="button" onClick={() => cambiarTipo(k)} style={{
               display: 'flex', alignItems: 'center', gap: '9px',
               padding: '11px 12px', borderRadius: '12px', cursor: 'pointer', textAlign: 'left',
-              border: activo ? `2px solid ${BASE.gold}` : `1.5px solid ${BASE.border}`,
+              border: activo ? `2px solid ${BASE.gold}` : `1.5px solid ${sugerido ? BASE.gold : BASE.border}`,
               background: activo ? BASE.navy : BASE.white,
               color: activo ? '#fff' : BASE.navy,
               boxShadow: activo ? `0 4px 12px ${BASE.navy}33` : 'none',
@@ -158,7 +235,9 @@ export default function PlanillaMetrado({ tipo = 'concreto', unidad, detalle = [
               <span style={{ fontSize: '19px', flexShrink: 0 }}>{t.icon}</span>
               <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15, minWidth: 0 }}>
                 <span style={{ fontSize: '12.5px', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.label}</span>
-                <span style={{ fontSize: '9.5px', opacity: 0.7, fontWeight: 700, letterSpacing: '0.3px' }}>{t.unidad}</span>
+                <span style={{ fontSize: '9.5px', opacity: 0.7, fontWeight: 700, letterSpacing: '0.3px' }}>
+                  {sugerido ? `${t.unidad} · sugerido` : t.unidad}
+                </span>
               </span>
             </button>
           );
@@ -170,6 +249,10 @@ export default function PlanillaMetrado({ tipo = 'concreto', unidad, detalle = [
       )}
     </div>
   );
+
+  // Una cosa u otra: confirmación de una línea cuando el nombre de la actividad
+  // ya determina el formato, y la rejilla completa cuando de verdad hay que elegir.
+  const Selector = elegirVisible ? Rejilla : Confirmacion;
 
   // ─────────── FAMILIA VOLQUETES (eliminación / salida de material) ───────────
   if (fam === 'volquetes') {

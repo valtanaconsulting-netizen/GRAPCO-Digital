@@ -17,7 +17,7 @@ import Modal from '../../components/Modal';
 import ConfirmModal from '../../components/ConfirmModal';
 import EmptyState from '../../components/EmptyState';
 import FotoUploader from '../../components/FotoUploader';
-import PlanillaMetrado, { TIPOS_METRADO, parcialFila } from './PlanillaMetrado';
+import PlanillaMetrado, { TIPOS_METRADO, parcialFila, detectarTipoMetrado } from './PlanillaMetrado';
 import PlantillaCalzadura from './PlantillaCalzadura';
 import { sugerirPrefijo, familiaDe, colorPrefijo } from '../../utils/prefijos';
 
@@ -126,6 +126,9 @@ export default function SustentoMetrados({ showToast }) {
       prefijo: p.prefijo || f.prefijo || '',
       unidad: p.und || f.unidad,
       descripcion: f.descripcion || p.descripcion || '',
+      // La descripción de la partida ya dice el formato; solo se aplica si aún no
+      // se ha empezado la planilla, para no cambiarla debajo del usuario.
+      tipoMetrado: f.detalleMetrado?.length ? f.tipoMetrado : detectarTipoMetrado(p.descripcion, p.und).tipo,
     }));
   };
 
@@ -452,6 +455,7 @@ export default function SustentoMetrados({ showToast }) {
               unidad={form.unidad}
               detalle={form.detalleMetrado}
               meta={form.metaMetrado}
+              deteccion={detectarTipoMetrado(`${form.partida} ${form.descripcion}`, form.unidad)}
               onChange={({ tipo, unidad, detalle, total, meta }) =>
                 setForm((f) => ({ ...f, tipoMetrado: tipo, unidad, detalleMetrado: detalle, metaMetrado: meta || {}, metrado: total }))}
             />

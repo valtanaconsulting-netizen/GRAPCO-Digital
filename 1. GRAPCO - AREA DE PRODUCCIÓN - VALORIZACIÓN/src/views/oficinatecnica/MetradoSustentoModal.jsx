@@ -13,20 +13,16 @@ import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import { BASE } from '../../utils/styles';
 import Modal from '../../components/Modal';
 import FotoUploader from '../../components/FotoUploader';
-import PlanillaMetrado, { TIPOS_METRADO } from './PlanillaMetrado';
+import PlanillaMetrado, { TIPOS_METRADO, detectarTipoMetrado } from './PlanillaMetrado';
 import { sugerirPrefijo, familiaDe, colorPrefijo } from '../../utils/prefijos';
 import { obtenerSemana } from '../../utils/helpers';
 
 const inp = () => ({ width: '100%', padding: '8px 10px', border: `1px solid ${BASE.border}`, borderRadius: '8px', fontSize: '12px', fontFamily: BASE.font });
 
-// Tipo de planilla por defecto a partir de la unidad de la partida (m3→concreto, kg→acero…).
-const tipoPorUnidad = (und) => {
-  const u = String(und || '').toLowerCase();
-  if (u.includes('kg')) return 'acero';
-  if (u.includes('m2') || u.includes('m²')) return 'encofrado';
-  if (u.includes('m3') || u.includes('m³')) return 'concreto';
-  return 'concreto';
-};
+// El formato de planilla se deduce del NOMBRE de la actividad y, en su defecto, de
+// la unidad — con `detectarTipoMetrado`, el mismo detector que usa la auditoría.
+// Antes aquí solo se miraba la unidad, y m2 se resolvía siempre como encofrado
+// aunque la actividad dijera "TARRAJEO" o "DEMOLICIÓN".
 
 export default function MetradoSustentoModal({ actividad, familia, unidad, onClose, showToast }) {
   const { user } = useAuth();
@@ -51,11 +47,14 @@ export default function MetradoSustentoModal({ actividad, familia, unidad, onClo
     [actividad, familia],
   );
 
+  // Detección del formato por el nombre de la actividad del ISP.
+  const deteccion = useMemo(() => detectarTipoMetrado(actividad, unidad), [actividad, unidad]);
+
   const [form, setForm] = useState({
     prefijo: prefijoSugerido,
     codigoPartida: '',
     valorizacionRef: '',
-    tipoMetrado: tipoPorUnidad(unidad),
+    tipoMetrado: deteccion.tipo,
     detalleMetrado: [],
     metaMetrado: {},
     metrado: 0,
@@ -102,7 +101,9 @@ export default function MetradoSustentoModal({ actividad, familia, unidad, onClo
       codigoPartida: p.item || '',
       prefijo: p.prefijo || f.prefijo || '',
       unidad: p.und || f.unidad,
-      tipoMetrado: f.detalleMetrado.length ? f.tipoMetrado : tipoPorUnidad(p.und),
+      // Con la partida F07 ya elegida, su descripción afina la detección; si el
+      // usuario ya empezó la planilla, no se le cambia el formato debajo.
+      tipoMetrado: f.detalleMetrado.length ? f.tipoMetrado : detectarTipoMetrado(`${actividad} ${p.descripcion}`, p.und).tipo,
       descripcion: f.descripcion || `${actividad} — ${p.descripcion}`,
     }));
   };
@@ -203,6 +204,7 @@ export default function MetradoSustentoModal({ actividad, familia, unidad, onClo
             unidad={form.unidad}
             detalle={form.detalleMetrado}
             meta={form.metaMetrado}
+            deteccion={deteccion}
             onChange={({ tipo, unidad, detalle, total, meta }) =>
               setForm(f => ({ ...f, tipoMetrado: tipo, unidad, detalleMetrado: detalle, metaMetrado: meta || {}, metrado: total }))}
           />
