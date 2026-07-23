@@ -7,7 +7,7 @@
 // Nota de rendimiento: solo se descarga el video elegido (uno por sesión), no todos.
 
 export const HERO_VIDEOS = [
-  '/grapco-bg.mp4',
+  '/grapco-bg-0723.mp4',
 ];
 
 // Elegido una sola vez, cuando el módulo se importa por primera vez en la carga.

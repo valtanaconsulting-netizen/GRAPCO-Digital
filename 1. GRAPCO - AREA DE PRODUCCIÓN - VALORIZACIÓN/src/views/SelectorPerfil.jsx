@@ -554,12 +554,6 @@ export default function SelectorPerfil({ onIrASeccion }) {
             style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '14px' }}
           />
         </div>
-        <h1 style={{
-          color: '#fff', fontSize: '28px', fontWeight: '900',
-          margin: '0 0 6px', letterSpacing: '0.5px',
-        }}>
-          GRAPCO <span style={{ color: BASE.gold }}>S.A.C.</span>
-        </h1>
         {/* Eyebrow premium con líneas a los lados */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', margin: '0 auto' }}>
           <span style={{ height: '1px', width: '34px', background: `linear-gradient(90deg, transparent, ${BASE.gold}aa)` }} />
@@ -568,14 +562,14 @@ export default function SelectorPerfil({ onIrASeccion }) {
           </span>
           <span style={{ height: '1px', width: '34px', background: `linear-gradient(90deg, ${BASE.gold}aa, transparent)` }} />
         </div>
-        <p style={{
-          color: '#94a3b8', fontSize: '12px',
-          margin: '8px auto 0', maxWidth: '520px', lineHeight: 1.4,
-        }}>
-          {modoPin
-            ? 'Ingresa el PIN de obra (4 dígitos). Modo kiosk para personal de campo.'
-            : 'Selecciona el perfil con el que quieres entrar. Cada perfil aterriza en sus módulos.'}
-        </p>
+        {modoPin && (
+          <p style={{
+            color: '#94a3b8', fontSize: '12px',
+            margin: '8px auto 0', maxWidth: '520px', lineHeight: 1.4,
+          }}>
+            Ingresa el PIN de obra (4 dígitos). Modo kiosk para personal de campo.
+          </p>
+        )}
         <button onClick={() => { setModoPin(!modoPin); setPin(''); setErrorPin(''); }} style={{
           marginTop: '10px',
           background: 'rgba(255,255,255,0.08)',
@@ -774,9 +768,6 @@ export default function SelectorPerfil({ onIrASeccion }) {
                 Semana {semanaProyecto} del proyecto
               </span>
             </div>
-            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>
-              ¿En qué área vas a trabajar hoy?
-            </p>
           </div>
 
           {/* Derecha — Registro de Personal · Facial (abre el kiosko de marcación) */}
@@ -998,13 +989,16 @@ export default function SelectorPerfil({ onIrASeccion }) {
       </div>
       )}
 
-      <p style={{
-        position: 'relative', zIndex: 1,
-        marginTop: '16px', color: '#94a3b8',
-        fontSize: '11px', textAlign: 'center', letterSpacing: '0.4px',
-      }}>
-        © {new Date().getFullYear()} Valtana Consultoría & Construcción · Todos los derechos reservados
-      </p>
+      <div style={{ position: 'relative', zIndex: 1, marginTop: '18px', textAlign: 'center' }}>
+        <img
+          src="/brand/valtana-logo.png"
+          alt="Valtana Consultoría & Construcción"
+          style={{
+            width: '150px', height: 'auto', display: 'block', margin: '0 auto',
+            filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.35))',
+          }}
+        />
+      </div>
     </div>
   );
 }

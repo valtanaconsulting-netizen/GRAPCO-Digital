@@ -105,7 +105,6 @@ const ROL_ITEMS = {
 // Bloque 11 — UX Avanzada
 import { ThemeProvider } from './contexts/ThemeContext';
 import { NotificationProvider, useNotifications } from './contexts/NotificationContext';
-import PwaInstallPrompt from './components/PwaInstallPrompt';
 import ActualizacionBanner from './components/ActualizacionBanner';
 import CommandPalette from './components/CommandPalette';
 import OfflineBanner from './components/OfflineBanner';
@@ -203,7 +202,6 @@ export default function App() {
           <NotificationProvider>
           <ErrorBoundary>
             <AppInnerKeyed />
-            <PwaInstallPrompt />
             {/* Aviso global "Hay una nueva actualización" tras cada deploy. */}
             <ActualizacionBanner />
           </ErrorBoundary>

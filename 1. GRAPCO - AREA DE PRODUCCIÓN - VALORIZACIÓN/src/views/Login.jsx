@@ -212,14 +212,14 @@ export default function Login() {
   // En móvil (1 columna) la tarjeta va más compacta para no ocupar tanto alto.
   const compact = !isWide;
 
-  // Campo "glass": translúcido oscuro con texto claro (para el card glassmorphism).
+  // Campo claro (estilo presupuestos): fondo casi blanco con texto oscuro.
   const inpGlass = (extra = {}) => ({
     width: '100%', boxSizing: 'border-box',
     padding: compact ? '13px 14px' : '14px 16px',
     borderRadius: '14px',
-    background: '#0f1d33',
-    border: '1px solid rgba(255,255,255,0.28)',
-    color: '#fff', WebkitTextFillColor: '#fff', caretColor: '#fff',
+    background: '#eef2f7',
+    border: '1px solid rgba(15,31,58,0.14)',
+    color: '#0f1f3a', WebkitTextFillColor: '#0f1f3a', caretColor: '#0f1f3a',
     fontSize: '14px', fontWeight: 600, outline: 'none',
     transition: 'border-color 0.18s, box-shadow 0.18s',
     ...extra,
@@ -228,35 +228,25 @@ export default function Login() {
   // ── Bloque reutilizable: la tarjeta de login (header + cuerpo + footer Valtana) ──
   const tarjeta = (
     <div style={{
-      // Caja OSCURA densa (vidrio esmerilado) — ancla el formulario, sin dejar ver
-      // el video a través del texto. Más denso que el overlay general.
-      background: 'rgba(8,16,30,0.82)',
-      backdropFilter: 'blur(20px) saturate(125%)',
-      WebkitBackdropFilter: 'blur(20px) saturate(125%)',
+      // Estilo "presupuestos": formulario ABIERTO sobre el fondo, sin caja ni borde.
+      background: 'transparent',
       borderRadius: '20px',
       padding: '0',
       width: '100%', maxWidth: compact ? '92vw' : '410px',
       textAlign: 'center',
-      // Borde 1px blanco muy fino + sombras suaves en capas = profundidad 3D real.
-      border: '1px solid rgba(255,255,255,0.18)',
-      boxShadow: '0 24px 60px -12px rgba(0,0,0,0.65), 0 10px 28px -10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.14)',
+      border: 'none',
+      boxShadow: 'none',
       position: 'relative', zIndex: 5,
       animation: 'grapco-card-in 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
-      overflow: 'hidden',
+      overflow: 'visible',
     }}>
 
-      {/* Header con identidad GRAPCO (navy + acento dorado) */}
+      {/* Header con identidad GRAPCO — abierto sobre el fondo (sin caja navy) */}
       <div style={{
-        background: `linear-gradient(135deg, ${BASE.navy} 0%, ${BASE.navyDark || '#0f1a2e'} 100%)`,
+        background: 'transparent',
         padding: compact ? '18px 24px 14px' : '28px 32px 22px',
         position: 'relative',
-        borderBottom: `3px solid ${BASE.gold}`,
       }}>
-        {/* Linea de acento dorada en la parte superior */}
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: '4px',
-          background: `linear-gradient(90deg, transparent 0%, ${BASE.gold} 50%, transparent 100%)`,
-        }} />
 
         {/* Logo en cuadro blanco con halo dorado */}
         <div style={{
@@ -290,6 +280,12 @@ export default function Login() {
         }}>
           {APP_META.tagline}
         </p>
+        {/* Línea fina divisoria (estilo presupuestos) */}
+        <div style={{
+          height: '1px', maxWidth: '260px',
+          margin: compact ? '12px auto 0' : '16px auto 0',
+          background: `linear-gradient(90deg, transparent, ${BASE.gold}88, transparent)`,
+        }} />
       </div>
 
       {/* Cuerpo del card */}
@@ -424,10 +420,10 @@ export default function Login() {
               fontSize: '18px',
               padding: '6px',
               borderRadius: '6px',
-              color: 'rgba(255,255,255,0.65)',
+              color: 'rgba(15,31,58,0.55)',
               lineHeight: 1,
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.10)'; }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(15,31,58,0.08)'; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
           >
             <IconoOjo off={verPassword} size={18} />
@@ -537,9 +533,9 @@ export default function Login() {
           @keyframes grapco-spin {
             to { transform: rotate(360deg); }
           }
-          .login-glass-input::placeholder { color: rgba(255,255,255,0.55) !important; -webkit-text-fill-color: rgba(255,255,255,0.55) !important; }
-          /* Texto SIEMPRE blanco sobre fondo OSCURO SÓLIDO en TODOS los estados
-             (normal, hover, focus, y autofill de Chrome) → jamás blanco-sobre-blanco. */
+          .login-glass-input::placeholder { color: rgba(15,31,58,0.45) !important; -webkit-text-fill-color: rgba(15,31,58,0.45) !important; }
+          /* Texto SIEMPRE oscuro sobre fondo CLARO SÓLIDO en TODOS los estados
+             (normal, hover, focus, y autofill de Chrome) → jamás oscuro-sobre-oscuro. */
           .login-glass-input,
           .login-glass-input:hover,
           .login-glass-input:focus,
@@ -548,19 +544,19 @@ export default function Login() {
           .login-glass-input:-webkit-autofill:hover,
           .login-glass-input:-webkit-autofill:focus,
           .login-glass-input:-webkit-autofill:active {
-            color: #fff !important;
-            -webkit-text-fill-color: #fff !important;
-            background-color: #0f1d33 !important;
+            color: #0f1f3a !important;
+            -webkit-text-fill-color: #0f1f3a !important;
+            background-color: #eef2f7 !important;
             background-image: none !important;
-            -webkit-box-shadow: 0 0 0 1000px #0f1d33 inset !important;
-            box-shadow: 0 0 0 1000px #0f1d33 inset !important;
-            caret-color: #fff !important;
+            -webkit-box-shadow: 0 0 0 1000px #eef2f7 inset !important;
+            box-shadow: 0 0 0 1000px #eef2f7 inset !important;
+            caret-color: #0f1f3a !important;
             /* Defiende contra la animación de fondo del autofill de Chrome */
             transition: background-color 99999s ease 0s !important;
           }
           .login-glass-input:focus {
             border-color: rgba(243,193,78,0.85) !important;
-            box-shadow: 0 0 0 1000px #0f1d33 inset, 0 0 0 3px rgba(243,193,78,0.22) !important;
+            box-shadow: 0 0 0 1000px #eef2f7 inset, 0 0 0 3px rgba(243,193,78,0.30) !important;
           }
           .btn-ingresar:not(:disabled):hover { transform: scale(1.02); box-shadow: 0 12px 30px rgba(216,154,58,0.55); }
           .btn-ingresar:not(:disabled):active { transform: scale(0.99); }
@@ -622,122 +618,25 @@ export default function Login() {
 
       </div>{/* === fin cuerpo del card === */}
 
-      {/* === FOOTER VALTANA · luces neón verticales + logo translúcido === */}
-      <div className="vt-foot" aria-label="Valtana Consultoría y Construcción">
-        {/* Logo Valtana translúcido de fondo (sin su fondo blanco) */}
-        <div
-          className="vt-foot__logo"
-          style={{ backgroundImage: "url('/brand/valtana-logo.png')" }}
-          aria-hidden="true"
-        />
-        {/* Haces de luz neón que descienden, en los colores del logo */}
-        <span className="vt-beam vt-beam--navy"   style={{ left: '12%' }} aria-hidden="true" />
-        <span className="vt-beam vt-beam--yellow" style={{ left: '34%' }} aria-hidden="true" />
-        <span className="vt-beam vt-beam--orange" style={{ left: '58%' }} aria-hidden="true" />
-        <span className="vt-beam vt-beam--yellow" style={{ left: '78%' }} aria-hidden="true" />
-        <span className="vt-beam vt-beam--navy"   style={{ left: '90%' }} aria-hidden="true" />
-        {/* Texto con neón que cambia de color — marca Valtana destacada */}
-        <p className="vt-foot__txt">
-          <span className="vt-foot__copy">© {new Date().getFullYear()}</span>
-          <strong className="vt-foot__brand">VALTANA</strong>
-          <span className="vt-foot__sub">Consultoría &amp; Construcción</span>
+      {/* === FOOTER VALTANA · copyright + emblema montaña (estilo presupuestos) === */}
+      <div style={{ marginTop: compact ? '22px' : '30px', textAlign: 'center' }}>
+        <p style={{
+          margin: '0 0 16px', fontSize: '11.5px', fontWeight: 600,
+          letterSpacing: '0.3px', color: 'rgba(255,255,255,0.62)',
+        }}>
+          © {new Date().getFullYear()} · <strong style={{ color: '#fff', fontWeight: 900, letterSpacing: '1px' }}>VALTANA</strong>{' '}
+          <span style={{ color: 'rgba(255,255,255,0.78)' }}>Consultoría &amp; Construcción</span>
         </p>
-
-        <style>{`
-          .vt-foot {
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 78px;
-            padding: 20px 24px;
-            background:
-              radial-gradient(120% 140% at 50% -20%, rgba(248,149,29,0.14) 0%, transparent 60%),
-              linear-gradient(180deg, #0b1733 0%, #11254D 55%, #0a142b 100%);
-            border-top: 2px solid rgba(248,149,29,0.45);
-          }
-          /* Logo Valtana translúcido, respirando suavemente */
-          .vt-foot__logo {
-            position: absolute; inset: 0;
-            background-repeat: no-repeat;
-            background-position: center;
-            background-size: 150px auto;
-            opacity: 0.12;
-            pointer-events: none;
-            animation: vt-logo-breathe 6s ease-in-out infinite;
-          }
-          @keyframes vt-logo-breathe {
-            0%, 100% { opacity: 0.09; transform: scale(1); }
-            50%      { opacity: 0.18; transform: scale(1.05); }
-          }
-          /* Haces de neón verticales (arriba -> abajo) */
-          .vt-beam {
-            position: absolute; top: -45%;
-            width: 2px; height: 45%;
-            border-radius: 2px;
-            pointer-events: none;
-            animation: vt-beam-fall 3.4s linear infinite;
-          }
-          .vt-beam--navy {
-            background: linear-gradient(180deg, transparent, #5b8af0);
-            box-shadow: 0 0 10px 2px rgba(91,138,240,0.85), 0 0 18px 4px rgba(91,138,240,0.4);
-            animation-delay: 0s;
-          }
-          .vt-beam--yellow {
-            background: linear-gradient(180deg, transparent, #F1CA16);
-            box-shadow: 0 0 10px 2px rgba(241,202,22,0.9), 0 0 18px 4px rgba(241,202,22,0.45);
-            animation-delay: 1.1s;
-          }
-          .vt-beam--orange {
-            background: linear-gradient(180deg, transparent, #F8951D);
-            box-shadow: 0 0 10px 2px rgba(248,149,29,0.9), 0 0 18px 4px rgba(248,149,29,0.45);
-            animation-delay: 2.1s;
-          }
-          @keyframes vt-beam-fall {
-            0%   { transform: translateY(0);    opacity: 0; }
-            12%  { opacity: 1; }
-            82%  { opacity: 1; }
-            100% { transform: translateY(360%); opacity: 0; }
-          }
-          /* Texto del copyright: más grande, resaltado + neón que cambia de color */
-          .vt-foot__txt {
-            position: relative; z-index: 2; margin: 0;
-            display: inline-flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
-            justify-content: center;
-            white-space: nowrap;
-          }
-          .vt-foot__copy {
-            font-size: 12px; font-weight: 700; color: #9db4e0;
-            letter-spacing: 0.4px;
-          }
-          /* Marca VALTANA: el elemento más prominente, neón intenso que pulsa */
-          .vt-foot__brand {
-            font-size: 19px; font-weight: 900;
-            letter-spacing: 2.6px;
-            animation: vt-text-neon 6s ease-in-out infinite;
-          }
-          .vt-foot__sub {
-            font-size: 12.5px; font-weight: 700; color: #cdd9f2;
-            letter-spacing: 0.6px;
-            text-shadow: 0 0 6px rgba(91,138,240,0.4);
-          }
-          @keyframes vt-text-neon {
-            0%, 100% { color: #eaf1ff; text-shadow: 0 0 8px rgba(91,138,240,0.9),  0 0 20px rgba(91,138,240,0.6),  0 0 34px rgba(91,138,240,0.35); }
-            33%      { color: #fff3a8; text-shadow: 0 0 8px rgba(241,202,22,1),    0 0 22px rgba(241,202,22,0.65), 0 0 36px rgba(241,202,22,0.4); }
-            66%      { color: #ffd29a; text-shadow: 0 0 8px rgba(248,149,29,1),    0 0 22px rgba(248,149,29,0.65), 0 0 36px rgba(248,149,29,0.4); }
-          }
-          @media (max-width: 640px) {
-            .vt-foot__txt { gap: 6px; }
-            .vt-foot__brand { font-size: 16px; letter-spacing: 1.8px; }
-            .vt-foot__copy, .vt-foot__sub { font-size: 11px; }
-            .vt-foot__logo { background-size: 120px auto; }
-          }
-          @media (prefers-reduced-motion: reduce) {
-            .vt-foot__logo, .vt-beam, .vt-foot__brand { animation: none !important; }
-            .vt-foot__brand { color: #ffe87a; text-shadow: 0 0 10px rgba(241,202,22,0.7); }
-          }
-        `}</style>
+        <img
+          src="/brand/valtana-logo.png"
+          alt="Valtana Consultoría & Construcción"
+          style={{
+            width: compact ? '140px' : '180px', height: 'auto',
+            display: 'block', margin: '0 auto',
+            marginTop: compact ? '28px' : '44px',
+            filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.35))',
+          }}
+        />
       </div>
     </div>
   );
