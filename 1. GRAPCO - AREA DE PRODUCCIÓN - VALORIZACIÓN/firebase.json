@@ -20,56 +20,67 @@
       ]
     }
   ],
-  "hosting": {
-    "site": "grapco-produccion",
-    "public": "dist",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "rewrites": [
-      { "source": "**", "destination": "/index.html" }
-    ],
-    "headers": [
-      {
-        "source": "**/*.@(js|css)",
-        "headers": [
-          { "key": "Cache-Control", "value": "max-age=31536000, immutable" }
-        ]
-      },
-      {
-        "source": "/sw.js",
-        "headers": [
-          { "key": "Cache-Control", "value": "no-cache" },
-          { "key": "Service-Worker-Allowed", "value": "/" }
-        ]
-      },
-      {
-        "source": "/index.html",
-        "headers": [
-          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
-        ]
-      },
-      {
-        "source": "/manifest.json",
-        "headers": [
-          { "key": "Cache-Control", "value": "no-cache" }
-        ]
-      },
-      {
-        "source": "/brand/**",
-        "headers": [
-          { "key": "Cache-Control", "value": "public, max-age=86400, must-revalidate" }
-        ]
-      },
-      {
-        "source": "**",
-        "headers": [
-          { "key": "X-Frame-Options", "value": "DENY" },
-          { "key": "X-Content-Type-Options", "value": "nosniff" },
-          { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-          { "key": "Permissions-Policy", "value": "camera=(self), microphone=(), geolocation=(self)" }
-        ]
-      }
-    ]
-  },
+  "hosting": [
+    {
+      "site": "grapco-gestion-vdc",
+      "public": "dist",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "rewrites": [
+        { "source": "**", "destination": "/index.html" }
+      ],
+      "headers": [
+        {
+          "source": "**/*.@(js|css)",
+          "headers": [
+            { "key": "Cache-Control", "value": "max-age=31536000, immutable" }
+          ]
+        },
+        {
+          "source": "/sw.js",
+          "headers": [
+            { "key": "Cache-Control", "value": "no-cache" },
+            { "key": "Service-Worker-Allowed", "value": "/" }
+          ]
+        },
+        {
+          "source": "/index.html",
+          "headers": [
+            { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+          ]
+        },
+        {
+          "source": "/manifest.json",
+          "headers": [
+            { "key": "Cache-Control", "value": "no-cache" }
+          ]
+        },
+        {
+          "source": "/brand/**",
+          "headers": [
+            { "key": "Cache-Control", "value": "public, max-age=86400, must-revalidate" }
+          ]
+        },
+        {
+          "source": "**",
+          "headers": [
+            { "key": "X-Frame-Options", "value": "DENY" },
+            { "key": "X-Content-Type-Options", "value": "nosniff" },
+            { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+            { "key": "Permissions-Policy", "value": "camera=(self), microphone=(), geolocation=(self)" }
+          ]
+        }
+      ]
+    },
+    {
+      "site": "grapco-produccion",
+      "public": "dist",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "redirects": [
+        { "source": "/", "destination": "https://grapco-gestion-vdc.web.app/", "type": 301 },
+        { "source": "/:path*", "destination": "https://grapco-gestion-vdc.web.app/:path*", "type": 301 }
+      ]
+    }
+  ],
   "emulators": {
     "auth":      { "port": 9099 },
     "firestore": { "port": 8080 },
