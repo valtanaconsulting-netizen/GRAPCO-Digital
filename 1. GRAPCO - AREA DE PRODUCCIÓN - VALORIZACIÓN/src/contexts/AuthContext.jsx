@@ -21,6 +21,11 @@ import { leerRutaHash, escribirRutaHash, limpiarRutaHash } from '../utils/urlNav
 const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
 
+// Correos que SIEMPRE son administradores (dueño de la app), sin depender del
+// rol guardado en Firestore. valtanaconsulting@gmail.com = admin principal.
+const ADMIN_EMAILS = ['valtanaconsulting@gmail.com'];
+const esCorreoAdmin = (email) => ADMIN_EMAILS.includes(String(email || '').trim().toLowerCase());
+
 const USUARIO_DEMO = {
   uid: 'demo-local',
   email: 'demo@grapco.pe',
@@ -119,6 +124,15 @@ export function AuthProvider({ children }) {
   // Si el usuario no tiene perfil aun, lo auto-crea como 'ingeniero' (acceso compartido).
   const cargarPerfil = async (firebaseUser) => {
     const uid = firebaseUser.uid;
+    // Admin principal por correo: acceso total como 'admin' sin depender del
+    // documento en Firestore (funciona aunque las reglas bloqueen la lectura).
+    if (esCorreoAdmin(firebaseUser.email)) {
+      return {
+        rol: 'admin',
+        activo: true,
+        nombre: firebaseUser.displayName || (firebaseUser.email || '').split('@')[0] || 'Administrador',
+      };
+    }
     try {
       const ref = doc(db, 'Usuarios', uid);
       // CACHE-FIRST: en arranques en caliente el perfil ya está en IndexedDB, así que
