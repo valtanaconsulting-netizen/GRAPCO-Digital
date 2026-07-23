@@ -202,6 +202,19 @@ service cloud.firestore {
     }
 
     // ════════════════════════════════════════════════════════════════
+    // /Asignacion_Tareo
+    // Espejo por día de qué actividades tocan a cada capataz (doc id =
+    // {proyectoId}_{fecha}). Lo escribe el ingeniero al "Asignar al tareo"
+    // desde el Plan Diario; el capataz lo lee para ver solo lo suyo.
+    // Mismo criterio que Planes_Diarios, del que deriva. Sin esta regla
+    // caía en el deny-all final → "Missing or insufficient permissions".
+    // ════════════════════════════════════════════════════════════════
+    match /Asignacion_Tareo/{docId} {
+      allow read: if isAuth();
+      allow write: if isIngeniero() || isAdmin();
+    }
+
+    // ════════════════════════════════════════════════════════════════
     // /PPC_Compromisos, /VDC_Restricciones, /VDC_Lecciones (Last Planner)
     // Ingenieros gestionan, capataces leen.
     // ════════════════════════════════════════════════════════════════
