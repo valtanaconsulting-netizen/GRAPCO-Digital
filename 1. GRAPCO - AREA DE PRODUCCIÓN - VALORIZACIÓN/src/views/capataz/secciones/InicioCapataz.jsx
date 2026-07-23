@@ -103,8 +103,12 @@ export default function InicioCapataz({
   fecha, capataz, proyectoNombre, clienteNombre,
   cuadrillasParaSelect, miembrosCuadrilla, setCapataz, rol, esCapatazReal, cargandoCuadrilla, obtenerSemana, isMobile,
   actividadesCount, actividadesConHHCount, totalHH, tieneTareo,
+  planDelDia,
   onAbrirTareo, onAbrirMetrado,
 }) {
+  // Totales del plan que el ingeniero le programó para hoy (solo lectura).
+  const planHH = (planDelDia || []).reduce((s, p) => s + (Number(p.hhProg) || 0), 0);
+  const planObr = (planDelDia || []).reduce((s, p) => Math.max(s, Number(p.obreros) || 0), 0);
   const hora = new Date().getHours();
   const saludo = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches';
   const fechaLargaRaw = (() => {
@@ -284,6 +288,52 @@ export default function InicioCapataz({
             onClick={onAbrirMetrado}
           />
         </div>
+
+        {/* PLAN DIARIO — lo que el ingeniero programó para este capataz hoy.
+            Solo visualización: cuántas actividades, cuántas HH y cuánta gente
+            debería dedicarle. Aparece solo si hay plan asignado al día. */}
+        {planDelDia && planDelDia.length > 0 && (
+          <div style={{
+            marginTop: isMobile ? '16px' : '20px',
+            background: 'rgba(255,255,255,0.06)',
+            border: `1px solid ${BASE.gold}44`,
+            borderRadius: '16px',
+            padding: isMobile ? '13px 14px' : '16px 18px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '11px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '10px', fontWeight: 900, color: BASE.gold, letterSpacing: '1.4px' }}>
+                📋 PLAN DEL DÍA
+              </span>
+              <span style={{ display: 'inline-flex', gap: '12px', fontSize: '10.5px', fontWeight: 700, color: 'rgba(255,255,255,0.72)' }}>
+                <span><b style={{ color: '#fff' }}>{planDelDia.length}</b> act.</span>
+                <span><b style={{ color: '#fff' }}>{planHH.toFixed(1)}</b> HH prog</span>
+                <span>~<b style={{ color: '#fff' }}>{planObr}</b> obreros</span>
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
+              {planDelDia.map((p, i) => (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.10)',
+                  borderRadius: '10px', padding: '9px 11px',
+                }}>
+                  <span style={{ flex: 1, minWidth: 0, fontSize: '12px', fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {p.actividad}
+                  </span>
+                  {Number(p.metrado) > 0 && (
+                    <span style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.6)', whiteSpace: 'nowrap' }}>
+                      {Number(p.metrado).toLocaleString('es-PE')} {p.und}
+                    </span>
+                  )}
+                  <span style={{ fontSize: '10px', fontWeight: 800, color: BASE.navy, background: BASE.gold, borderRadius: '999px', padding: '2px 9px', whiteSpace: 'nowrap' }}>
+                    {(Number(p.hhProg) || 0).toFixed(1)} HH
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Mini-resumen del día */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', flexWrap: 'wrap', marginTop: isMobile ? '14px' : '18px' }}>

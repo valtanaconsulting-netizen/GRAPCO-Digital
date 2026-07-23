@@ -1,10 +1,9 @@
 // src/views/capataz/secciones/TabsActividades.jsx
 // Si no hay actividades → empty state con CTA "Crear primera actividad".
-// Si hay → grilla compacta de 3 filas que crece en columnas (column-major):
-// se ven 2 columnas (6 actividades) y se desliza horizontalmente de 3 en 3
-// para ver el resto, ocupando el mismo espacio. La activa se resalta con
-// borde dorado y fondo navy. Cada celda muestra # de orden, nombre, HH del
-// día y check si ya se subió ese registro.
+// Si hay → rejilla de CUADROS que se reacomoda sola al ancho (auto-fill): 2
+// columnas en móvil, más en tablet/desktop, sin scroll horizontal. Cada cuadro
+// muestra # de orden, nombre en dos líneas (no una tira con elipsis), HH del día
+// y un check si ya se subió. La activa va con borde dorado y fondo navy.
 import React from 'react';
 import { BASE } from '../../../utils/styles';
 
@@ -74,51 +73,57 @@ export default function TabsActividades({
       </div>
       <div style={{
         display: 'grid',
-        gridAutoFlow: 'column',
-        gridTemplateRows: 'repeat(3, auto)',
-        gridAutoColumns: 'calc(50% - 3px)',
-        columnGap: '6px', rowGap: '5px',
-        overflowX: 'auto', overflowY: 'hidden',
-        paddingBottom: '4px',
-        marginRight: '-6px', paddingRight: '6px',
-        scrollSnapType: 'x proximity',
+        // Cuadros que se reacomodan al ancho: ~140px mínimo → 2 en móvil, más en
+        // tablet/desktop. Sin scroll horizontal, todo a la vista.
+        gridTemplateColumns: `repeat(auto-fill, minmax(${isMobile ? '132px' : '150px'}, 1fr))`,
+        gap: '8px',
       }}>
         {actividades.map((a, i) => {
           const esActiva = a.id === actActivaId;
           const totalHHAct = a.detalleTareo.reduce((s, t) => s + (t.hn || 0) + (t.he || 0), 0);
+          const definida = !!a.actividad;
           return (
             <button key={a.id} type="button" onClick={() => onSetActActivaId(a.id)} style={{
-              padding: '6px 9px', borderRadius: '8px',
+              position: 'relative',
+              padding: '10px 11px', borderRadius: '12px',
               border: esActiva ? `2px solid ${BASE.gold}` : `1.5px solid ${BASE.border}`,
               background: esActiva ? BASE.navy : BASE.white,
               color: esActiva ? '#fff' : BASE.text,
-              fontSize: '10px', fontWeight: '700', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: '6px',
+              cursor: 'pointer',
+              display: 'flex', flexDirection: 'column', gap: '8px',
               width: '100%', boxSizing: 'border-box', textAlign: 'left',
               transition: 'all 0.15s',
-              boxShadow: esActiva ? '0 3px 10px -2px rgba(15,42,71,0.30)' : BASE.shadowSm,
-              flexShrink: 0,
-              scrollSnapAlign: 'start',
+              boxShadow: esActiva ? '0 4px 14px -3px rgba(15,42,71,0.35)' : BASE.shadowSm,
+              minHeight: '78px',
             }}>
+              {/* Fila superior: nº de orden y check de subido */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{
+                  fontSize: '10px', fontWeight: '800',
+                  background: esActiva ? BASE.gold : BASE.bgSoft,
+                  color: esActiva ? BASE.navy : BASE.muted,
+                  padding: '2px 8px', borderRadius: '6px',
+                }}>{i + 1}</span>
+                {a._registroExistenteId
+                  ? <span title="Ya subido" style={{ fontSize: '13px' }}>✅</span>
+                  : !definida && <span title="Falta definir" style={{ fontSize: '13px' }}>✏️</span>}
+              </div>
+              {/* Nombre en dos líneas (no una tira con elipsis) */}
               <span style={{
-                fontSize: '9px', fontWeight: '800',
-                background: esActiva ? BASE.gold : BASE.bgSoft,
-                color: esActiva ? BASE.navy : BASE.muted,
-                padding: '2px 6px', borderRadius: '5px',
-                flexShrink: 0,
-              }}>{i + 1}</span>
-              <span style={{
-                flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                flex: 1, fontSize: '11.5px', fontWeight: '700', lineHeight: 1.25,
+                color: esActiva ? '#fff' : (definida ? BASE.text : BASE.mutedSoft),
+                display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
               }}>
                 {a.actividad || 'Sin definir'}
               </span>
+              {/* HH del día */}
               <span style={{
-                fontSize: '9px',
+                alignSelf: 'flex-start',
+                fontSize: '10px', fontWeight: '800',
                 background: esActiva ? 'rgba(255,255,255,0.18)' : BASE.bgSoft,
-                padding: '1px 6px', borderRadius: '4px',
-                opacity: esActiva ? 1 : 0.7, flexShrink: 0,
-              }}>{totalHHAct.toFixed(1)}h</span>
-              {a._registroExistenteId && <span title="Ya subido" style={{ fontSize: '11px', flexShrink: 0 }}>✅</span>}
+                color: esActiva ? '#fff' : BASE.navy,
+                padding: '3px 9px', borderRadius: '999px',
+              }}>{totalHHAct.toFixed(1)} h</span>
             </button>
           );
         })}

@@ -91,6 +91,15 @@ const BANDS = { P: { l: 'PROGRAMADO', c: BASE.navy }, E: { l: 'EJECUTADO', c: '#
 
 const num = (v) => parseFloat(v) || 0;
 const hhProg = (it) => +(num(it.metrado) * num(it.ip)).toFixed(2);          // HH programado = metrado × IP
+// Obreros necesarios = HH programadas ÷ HH por jornada, redondeado hacia arriba
+// (una persona más para el resto). Sale del metrado y el IP; el ingeniero ya no
+// lo teclea. Sin metrado/IP todavía → 0. Es la cuenta clásica del F06: 15 HH a
+// 8.5 h/jornada = 2 obreros.
+const obrerosNec = (it) => {
+  const jornada = num(it.hhJornada) || 8.5;
+  const hh = hhProg(it);
+  return hh > 0 ? Math.ceil(hh / jornada) : 0;
+};
 const rendReal = (it) => num(it.ejMetrado) > 0 ? num(it.ejHH) / num(it.ejMetrado) : 0; // IP real
 const pctAvance = (it) => num(it.metrado) > 0 ? (num(it.ejMetrado) / num(it.metrado)) * 100 : 0;
 
@@ -329,8 +338,16 @@ export default function PlanDiario({ planesDiarios, cuadrillasActivas, historial
         });
         if (!reg) return it;
         llenados++;
-        // El "ejecutado" del plan = avance REPORTADO por el capataz en el tareo (fallback legacy).
-        return { ...it, ejMetrado: num(reg.metradoReportado ?? reg.metrado), ejHH: num(reg.totalHH) };
+        // El "ejecutado" del plan = lo que el capataz reportó en el tareo: metrado,
+        // HH reales y su observación de campo → la causa de no cumplimiento se
+        // rellena sola. No se pisa una causa ya escrita a mano si el capataz no
+        // dejó observación.
+        return {
+          ...it,
+          ejMetrado: num(reg.metradoReportado ?? reg.metrado),
+          ejHH: num(reg.totalHH),
+          causas: reg.observacion || it.causas || '',
+        };
       }),
     })));
     showToast(llenados ? `✅ ${llenados} actividad(es) autocompletadas desde registros` : 'No se encontraron registros del día que coincidan', llenados ? 'success' : 'warning');
@@ -340,7 +357,7 @@ export default function PlanDiario({ planesDiarios, cuadrillasActivas, historial
     let nItems = 0, totObr = 0, hhP = 0, hhE = 0, metP = 0, metE = 0;
     grupos.forEach(g => g.items.forEach(it => {
       nItems++;
-      totObr += num(it.totalObreros);
+      totObr += obrerosNec(it);
       hhP += hhProg(it);
       hhE += num(it.ejHH);
       metP += num(it.metrado);
@@ -391,13 +408,29 @@ export default function PlanDiario({ planesDiarios, cuadrillasActivas, historial
     if (!proyectoActivoId) { showToast('Selecciona un proyecto activo', 'warning'); return; }
     setPdAsignando(true);
     try {
+      // porCapataz: solo NOMBRES → es lo que el tareo del capataz usa para acotar
+      //   su catálogo (no se toca su formato para no romper ese gating).
+      // planPorCapataz: el MISMO plan pero con detalle (HH prog y obreros por
+      //   actividad) → lo lee la pantalla del capataz para MOSTRARLE su plan del
+      //   día. Aditivo: si un cliente viejo no lo lee, no pasa nada.
       const porCapataz = {};
+      const planPorCapataz = {};
       grupos.forEach(g => {
         const cap = capatazDeGrupo(g);
         if (!cap) return;
-        const acts = (g.items || []).map(it => (it.actividad || '').trim()).filter(Boolean);
-        if (!acts.length) return;
-        porCapataz[cap] = [...new Set([...(porCapataz[cap] || []), ...acts])];
+        (g.items || []).forEach(it => {
+          const nombre = (it.actividad || '').trim();
+          if (!nombre) return;
+          porCapataz[cap] = [...new Set([...(porCapataz[cap] || []), nombre])];
+          (planPorCapataz[cap] = planPorCapataz[cap] || []).push({
+            actividad: nombre,
+            metrado: num(it.metrado),
+            und: it.und || 'UND',
+            hhProg: hhProg(it),
+            obreros: obrerosNec(it),
+            horario: it.horario || '',
+          });
+        });
       });
       if (!Object.keys(porCapataz).length) { showToast('No hay actividades por capataz para asignar', 'warning'); return; }
       const asigId = `${proyectoActivoId}_${pdFecha}`;
@@ -405,7 +438,7 @@ export default function PlanDiario({ planesDiarios, cuadrillasActivas, historial
         proyectoId: proyectoActivoId,
         frenteId: (!modoTodosFrentes && frenteActivoId) ? frenteActivoId : null,
         fecha: pdFecha, semana: obtenerSemana(pdFecha),
-        porCapataz, planRef: pdEditingId, asignadoEn: serverTimestamp(),
+        porCapataz, planPorCapataz, planRef: pdEditingId, asignadoEn: serverTimestamp(),
       });
       await updateDoc(doc(db, 'Planes_Diarios', pdEditingId), { asignadoAlTareo: true, asignadoEn: serverTimestamp() });
       showToast(`Plan asignado al tareo ✓ · ${Object.keys(porCapataz).length} capataz(es)`, 'success');
@@ -437,7 +470,7 @@ export default function PlanDiario({ planesDiarios, cuadrillasActivas, historial
         g.items.forEach((it, ii) => {
           aoa.push([
             ii + 1, it.zona, it.ubicacion, it.fases, it.actividad, it.categoria,
-            num(it.totalObreros), num(it.obrerosAct), it.horario, num(it.hhJornada),
+            obrerosNec(it), num(it.obrerosAct), it.horario, num(it.hhJornada),
             num(it.metrado), it.und, num(it.ip), hhProg(it),
             num(it.ejHH), num(it.ejPremio), num(it.ejMetrado),
             rendReal(it) ? +rendReal(it).toFixed(4) : '', num(it.rendGrapco) || '',
@@ -474,14 +507,14 @@ export default function PlanDiario({ planesDiarios, cuadrillasActivas, historial
         const av = num(it.metrado) > 0 && num(it.ejMetrado) > 0 ? `${Math.round(pctAvance(it))}%` : '';
         rows.push([
           ii + 1, it.zona || '', it.ubicacion || '', it.fases || '', it.actividad || '', it.categoria || '',
-          num(it.totalObreros) || '', num(it.obrerosAct) || '', it.horario || '', num(it.hhJornada) || '',
+          obrerosNec(it) || '', num(it.obrerosAct) || '', it.horario || '', num(it.hhJornada) || '',
           num(it.metrado) || '', it.und || '', num(it.ip) || '', hhProg(it) || '',
           num(it.ejHH) || '', num(it.ejMetrado) || '', rendReal(it) ? rendReal(it).toFixed(4) : '', av, it.causas || '',
         ]);
       });
       const gHHp = g.items.reduce((s, it) => s + hhProg(it), 0);
       const gHHe = g.items.reduce((s, it) => s + num(it.ejHH), 0);
-      const gObr = g.items.reduce((s, it) => s + num(it.totalObreros), 0);
+      const gObr = g.items.reduce((s, it) => s + obrerosNec(it), 0);
       rows.push([{
         content: `SUBTOTAL ${g.titulo}  —  Actividades: ${g.items.length}  ·  Obreros: ${gObr}  ·  HH Programadas: ${gHHp.toFixed(1)}  ·  HH Consumidas: ${gHHe.toFixed(1)}`,
         colSpan: NCOL, styles: { fillColor: [226, 232, 240], textColor: [30, 58, 95], fontStyle: 'bold', halign: 'right' },
@@ -557,7 +590,15 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${Mat
         </td>
       );
       case 'categoria': return <td style={celdaP}><select value={it.categoria} onChange={e => setItem(gi, ii, 'categoria', e.target.value)} style={miniInp(86)}>{CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}</select></td>;
-      case 'totalObreros': return <td style={celdaP}><input type="number" min="0" value={it.totalObreros} onChange={e => setItem(gi, ii, 'totalObreros', e.target.value)} style={miniInp(48, 'center')} /></td>;
+      case 'totalObreros': {
+        // Calculado, no tecleado: HH programadas ÷ jornada, redondeado arriba.
+        const o = obrerosNec(it);
+        return (
+          <td style={{ padding: '4px', textAlign: 'center' }}>
+            <span title="Se calcula del metrado y el IP" style={{ display: 'inline-block', padding: '5px 10px', background: o > 0 ? BASE.navySoft : BASE.bgSoft, color: o > 0 ? BASE.navy : BASE.muted, borderRadius: '6px', fontSize: '11px', fontWeight: '900', minWidth: '38px' }}>{o || '—'}</span>
+          </td>
+        );
+      }
       case 'obrerosAct': return <td style={celdaP}><input type="number" min="0" value={it.obrerosAct} onChange={e => setItem(gi, ii, 'obrerosAct', e.target.value)} style={miniInp(48, 'center')} /></td>;
       case 'trabajadores': {
         const tr = Array.isArray(it.trabajadores) ? it.trabajadores : [];
@@ -727,7 +768,7 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${Mat
               );
             })}
             <span style={{ fontSize: '10px', color: BASE.muted, fontStyle: 'italic', marginLeft: 'auto' }}>
-              HH Prog, Rend. y % Avance se calculan solos
+              Obreros, HH Prog, Rend. y % Avance se calculan solos
             </span>
           </div>
 
@@ -794,7 +835,7 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${Mat
                           <span style={{ display: 'inline-flex', gap: '18px', flexWrap: 'wrap', letterSpacing: '0.3px' }}>
                             <span>SUBTOTAL «{g.titulo}»</span>
                             <span style={{ opacity: 0.85 }}>Actividades: <b>{g.items.length}</b></span>
-                            <span style={{ opacity: 0.85 }}>Obreros: <b>{g.items.reduce((s, it) => s + num(it.totalObreros), 0)}</b></span>
+                            <span style={{ opacity: 0.85 }}>Obreros: <b>{g.items.reduce((s, it) => s + obrerosNec(it), 0)}</b></span>
                             <span style={{ color: '#fcd34d' }}>HH Programadas: <b>{gHHp.toFixed(1)}</b></span>
                             <span style={{ color: '#86efac' }}>HH Consumidas: <b>{gHHe.toFixed(1)}</b></span>
                           </span>

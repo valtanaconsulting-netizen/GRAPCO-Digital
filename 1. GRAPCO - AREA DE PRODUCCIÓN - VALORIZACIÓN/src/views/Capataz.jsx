@@ -208,6 +208,21 @@ export default function Capataz({
     return set.size ? set : null;
   }, [asignacionTareo, capataz, capatazVinculado]);
 
+  // Plan del día de ESTE capataz (detalle con HH y obreros por actividad), para
+  // MOSTRÁRSELO como resumen. Mismo emparejamiento por nombre que el gating de
+  // arriba. Solo visualización: no toca lo que puede o no tarear.
+  const planDelDia = useMemo(() => {
+    const plan = asignacionTareo?.planPorCapataz;
+    if (!plan || !capataz) return null;
+    let lista = plan[capataz] || (capatazVinculado ? plan[capatazVinculado] : null);
+    if (!lista) {
+      const objetivo = normalizeText(capataz);
+      const k = Object.keys(plan).find(key => normalizeText(key) === objetivo);
+      lista = k ? plan[k] : null;
+    }
+    return Array.isArray(lista) && lista.length ? lista : null;
+  }, [asignacionTareo, capataz, capatazVinculado]);
+
   // ── Cuadrillas disponibles para el selector ──────────────────────────
   // Consulta DIRECTA a Firestore como respaldo: garantiza que el panel
   // tenga las cuadrillas reales aunque el snapshot de App aún no llegue.
@@ -1218,6 +1233,7 @@ export default function Capataz({
         actividadesConHHCount={actividadesConHH.length}
         totalHH={totalHHActivas.total}
         tieneTareo={tieneTareo}
+        planDelDia={planDelDia}
         onAbrirTareo={irATareo}
         onAbrirMetrado={irAMetrado}
       />
