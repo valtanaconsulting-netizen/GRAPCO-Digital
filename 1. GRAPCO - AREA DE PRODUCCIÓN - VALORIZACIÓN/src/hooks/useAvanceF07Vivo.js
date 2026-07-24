@@ -21,6 +21,7 @@ import { collection, doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { sugerirPrefijo, normTxt, familiaDe } from '../utils/prefijos';
 import { COSTO_HORA_PROMEDIO } from '../utils/helpers';
+import { resolverItemF07 } from '../utils/vinculoF07';
 
 const norm = (s) => String(s || '').toUpperCase()
   .replace(/[ÁÀÄÂ]/g, 'A').replace(/[ÉÈËÊ]/g, 'E').replace(/[ÍÌÏÎ]/g, 'I')
@@ -36,9 +37,10 @@ export default function useAvanceF07Vivo({ proyId, presu, enabled = true }) {
   const [registros, setRegistros] = useState([]);
   const [sustentos, setSustentos] = useState([]);
   const [prefMap, setPrefMap] = useState({ ispMap: {}, f07Map: {} }); // Prefijos_Catalogo
+  const [vinculos, setVinculos] = useState({});                       // Mapeo_Actividad_F07
 
   useEffect(() => {
-    if (!proyId || !enabled) { setRegistros([]); setSustentos([]); setPrefMap({ ispMap: {}, f07Map: {} }); return; }
+    if (!proyId || !enabled) { setRegistros([]); setSustentos([]); setPrefMap({ ispMap: {}, f07Map: {} }); setVinculos({}); return; }
     // Todos los tareos del proyecto (no solo metrado>0): el metrado alimenta el avance,
     // y las HH (totalHH) alimentan el Costo Real (CR = HH × S/25.5) por familia.
     const u1 = onSnapshot(collection(db, 'Registros_Campo'), (s) =>
@@ -49,7 +51,12 @@ export default function useAvanceF07Vivo({ proyId, presu, enabled = true }) {
       const data = d.data();
       setPrefMap({ ispMap: data?.ispMap || {}, f07Map: data?.f07Map || {} });
     });
-    return () => { u1(); u2(); u3(); };
+    // Diccionario explícito actividad→ítem F07 que llena Oficina Técnica. Es el
+    // cruce de MÁXIMA precisión: manda por encima del emparejamiento por nombre.
+    const u4 = onSnapshot(doc(db, 'Mapeo_Actividad_F07', proyId),
+      (d) => setVinculos(d.data()?.mapa || {}),
+      () => setVinculos({}));
+    return () => { u1(); u2(); u3(); u4(); };
   }, [proyId, enabled]);
 
   return useMemo(() => {
@@ -90,13 +97,25 @@ export default function useAvanceF07Vivo({ proyId, presu, enabled = true }) {
     const contarCD = (mkey, q, pu) => { cdVivo += q * (pu || 0); const pf = itemPref[mkey] || '(sin)'; cdPorPref[pf] = (cdPorPref[pf] || 0) + q * (pu || 0); };
     const contarUnmapped = (q, nombre, pref) => { unmappedQ += q; sinCruce[nombre] = (sinCruce[nombre] || 0) + q; const pf = pref || '(sin)'; unmappedPorPref[pf] = (unmappedPorPref[pf] || 0) + q; };
 
-    // 1) Registros_Campo → ítem por descripción; si no cruza, intento por prefijo (familia con ítem único).
+    // Índice por mkey para resolver la partida que designó el diccionario de OT.
+    const porMkey = {};
+    partidas.forEach(p => { if (p.mkey) porMkey[p.mkey] = p; });
+
+    // 1) Registros_Campo. Cascada de cruce, de más preciso a más difuso:
+    //    a) DICCIONARIO explícito de OT (actividad[+frente] → ítem F07). Es el
+    //       único capaz de desambiguar cuando varias partidas comparten
+    //       descripción y solo difieren en código.
+    //    b) Descripción normalizada (el cruce histórico, truncado a 24).
+    //    c) Prefijo/familia, solo si esa familia tiene UN ítem valorizable.
     registros.forEach(r => {
       // El avance→valorización usa el metrado VALIDADO por el ingeniero (OT). Fallback a
       // metradoReportado (capataz) y al legacy `metrado` para registros antiguos.
       const q = Number(r.metradoValidado ?? r.metradoReportado ?? r.metrado) || 0;
       if (q <= 0) return; // sin metrado no aporta avance (sus HH sí cuentan abajo en el CR)
       const valN = r.semana ? Math.ceil(r.semana / 2) : null;
+      const vin = resolverItemF07(vinculos, r.actividad, r.frenteId);
+      const pv = vin && (porMkey[vin.mkey] || porItem[itemNorm(vin.item)]);
+      if (pv) { if (add(valN, pv.mkey, q)) contarCD(pv.mkey, q, pv.pu); return; }
       const p = porDesc[norm(r.actividad)];
       if (p) { if (add(valN, p.mkey, q)) contarCD(p.mkey, q, p.pu); return; }
       const pref = prefDeReg(r.actividad, r.partida);
@@ -164,9 +183,10 @@ export default function useAvanceF07Vivo({ proyId, presu, enabled = true }) {
       unmapped: r2(unmappedQ),
       registros: registros.length, sustentos: sustentos.length,
       conPrefijos: Object.keys(ispMap).length > 0 || Object.keys(f07Map).length > 0,
+      vinculados: Object.keys(vinculos).length,   // actividades ya mapeadas al F07 por OT
       porPrefijo, crPorPrefijo, crVivo: r2(hhTotal * COSTO_HORA_PROMEDIO), hhVivo: r2(hhTotal),
       sinCruce: Object.entries(sinCruce).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([n, q]) => ({ nombre: n, metrado: r2(q) })),
     };
     return { avancesVivo: docs, cobertura };
-  }, [registros, sustentos, presu, prefMap]);
+  }, [registros, sustentos, presu, prefMap, vinculos]);
 }

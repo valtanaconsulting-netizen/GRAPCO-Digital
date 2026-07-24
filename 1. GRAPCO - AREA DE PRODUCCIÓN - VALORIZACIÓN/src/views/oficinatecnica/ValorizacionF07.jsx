@@ -10,9 +10,11 @@
 //     el metrado del ISP ya cruzado al ítem y agrupado por quincena. El "Actual" es
 //     (acumulado de la val − acumulado de la val anterior); "Saldo" = Cant − Acumulado.
 import React, { useEffect, useMemo, useState } from 'react';
-import { collection, doc, onSnapshot } from 'firebase/firestore';
+import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { BASE, LOGO } from '../../utils/styles';
+import SelectPremium from '../../components/SelectPremium';
+import { claveVinculo } from '../../utils/vinculoF07';
 import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 import useAvanceF07Vivo from '../../hooks/useAvanceF07Vivo';
 import { generarPDFValorizacionF07 } from '../../utils/valorizacionF07Pdf';
@@ -215,7 +217,7 @@ export default function ValorizacionF07({ showToast }) {
           El cruce campo→F07 es por DESCRIPCIÓN: lo que no calza no se valoriza. Antes
           este dato se calculaba pero no se mostraba, así que la fuga era invisible.
           Aquí solo se reporta lo que NO cruzó (no se atribuye nada). */}
-      <FugaMetrado cobertura={cobertura} />
+      <FugaMetrado cobertura={cobertura} presu={presu} proyId={proyId} showToast={showToast} />
 
       {/* Grilla F07 — panel congelado (estilo Excel): contenedor con scroll propio;
           encabezado fijo arriba (top) + columnas ITEM y DESCRIPCIÓN fijas a la
@@ -333,12 +335,40 @@ function Kpi({ label, v, c }) {
 // vieja tira de cobertura). Solo dice cuánto se está quedando fuera y en qué
 // actividades, que es lo que hace falta para poder corregir el catálogo o mapear
 // la partida a mano en el Sustento.
-function FugaMetrado({ cobertura }) {
+function FugaMetrado({ cobertura, presu, proyId, showToast }) {
   // El hook va SIEMPRE antes del corte: si el return temprano queda por encima,
   // React ejecuta distinto número de hooks entre renders y revienta la vista.
   const [abierto, setAbierto] = useState(false);
+  const [guardando, setGuardando] = useState('');
   const sinCruce = cobertura?.sinCruce || [];
   const nRegs = cobertura?.registros || 0;
+  const vinculados = cobertura?.vinculados || 0;
+
+  // Opciones = partidas valorizables del F07. El código va PRIMERO en la etiqueta
+  // porque varias partidas comparten descripción y solo se distinguen por él.
+  const opcionesF07 = useMemo(() => (presu || [])
+    .filter(p => p.esPartida && p.mkey)
+    .map(p => ({ value: p.mkey, label: `${p.item} · ${p.descripcion}`, sub: `${p.und || ''} · P.U. ${soles(p.pu)}` })),
+    [presu]);
+
+  // Guarda el vínculo actividad→ítem. Se resuelve en LECTURA, así que en cuanto
+  // se guarda, todo el histórico de esa actividad empieza a valorizar.
+  const vincular = async (nombreActividad, mkey) => {
+    const p = (presu || []).find(x => x.mkey === mkey);
+    if (!p || !proyId) return;
+    setGuardando(nombreActividad);
+    try {
+      await setDoc(
+        doc(db, 'Mapeo_Actividad_F07', proyId),
+        { proyectoId: proyId, mapa: { [claveVinculo(nombreActividad)]: { item: p.item, mkey: p.mkey, descripcion: p.descripcion } } },
+        { merge: true },
+      );
+      showToast?.(`✅ "${nombreActividad}" vinculada a ${p.item} — su histórico ya valoriza`, 'success');
+    } catch (e) {
+      showToast?.('No se pudo vincular: ' + (e?.message || e), 'error');
+    } finally { setGuardando(''); }
+  };
+
   if (!sinCruce.length) return null;
   return (
     <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderLeft: `4px solid ${BASE.gold}`, borderRadius: 12, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: abierto ? 8 : 0 }}>
@@ -347,21 +377,37 @@ function FugaMetrado({ cobertura }) {
           {abierto ? '▾' : '▸'} ⚠️ METRADO QUE NO LLEGA A LA VALORIZACIÓN
         </button>
         <span style={{ fontSize: 10.5, color: BASE.muted }}>
-          · {sinCruce.length} actividad(es) sin cruzar{nRegs ? ` de ${nRegs} registros` : ''} — su nombre no calza con ninguna partida del F07
+          · {sinCruce.length} actividad(es) sin vincular{nRegs ? ` de ${nRegs} registros` : ''} — trabajo ejecutado que no se está cobrando
         </span>
+        {vinculados > 0 && (
+          <span style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 800, color: BASE.green }}>✓ {vinculados} ya vinculadas</span>
+        )}
       </div>
       {abierto && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <p style={{ fontSize: 10.5, color: BASE.muted, lineHeight: 1.45 }}>
+            Elige a qué partida del F07 pertenece cada actividad. Al vincularla, <b>todo su histórico
+            empieza a valorizar</b> — no hay que volver a registrar nada.
+          </p>
           {sinCruce.map((s, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '5px 8px', borderRadius: 7, background: BASE.bgSoft }}>
-              <span style={{ flex: 1, minWidth: 0, fontSize: 11.5, fontWeight: 700, color: BASE.navy, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.nombre}</span>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 9px', borderRadius: 8, background: BASE.bgSoft, flexWrap: 'wrap' }}>
+              <span style={{ flex: '1 1 190px', minWidth: 0, fontSize: 11.5, fontWeight: 700, color: BASE.navy, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.nombre}</span>
               <span style={{ fontSize: 11, fontWeight: 800, fontFamily: 'monospace', color: BASE.goldDark, whiteSpace: 'nowrap' }}>{Number(s.metrado).toLocaleString('es-PE')}</span>
+              <div style={{ flex: '1 1 240px', minWidth: 190 }}>
+                <SelectPremium
+                  value=""
+                  onChange={(mkey) => mkey && vincular(s.nombre, mkey)}
+                  options={opcionesF07}
+                  placeholder={guardando === s.nombre ? 'Vinculando…' : '→ vincular a partida F07…'}
+                  disabled={guardando === s.nombre}
+                  fontSize="11px"
+                  title="Partida del F07"
+                  searchable
+                  dark
+                />
+              </div>
             </div>
           ))}
-          <p style={{ fontSize: 10.5, color: BASE.muted, marginTop: 4, lineHeight: 1.45 }}>
-            Para recuperarlo: metra esa partida desde <b>Sustento de Metrados</b> (ahí eliges el ítem F07 exacto),
-            o alinea el nombre de la actividad en el <b>Editor WBS</b> con el del presupuesto.
-          </p>
         </div>
       )}
     </div>

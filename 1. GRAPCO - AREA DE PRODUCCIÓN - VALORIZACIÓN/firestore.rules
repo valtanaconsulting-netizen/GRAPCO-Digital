@@ -215,6 +215,18 @@ service cloud.firestore {
     }
 
     // ════════════════════════════════════════════════════════════════
+    // /Mapeo_Actividad_F07/{proyectoId}
+    // Diccionario actividad de campo → ítem del presupuesto F07. Es la llave
+    // que convierte el metrado de obra en dinero valorizado (y la base del
+    // Valor Ganado). Lo mantiene Oficina Técnica; lo lee todo el que calcula
+    // avance. Sin esta regla caería en el deny-all final.
+    // ════════════════════════════════════════════════════════════════
+    match /Mapeo_Actividad_F07/{docId} {
+      allow read: if isAuth();
+      allow write: if isIngeniero() || isAdmin();
+    }
+
+    // ════════════════════════════════════════════════════════════════
     // /PPC_Compromisos, /VDC_Restricciones, /VDC_Lecciones (Last Planner)
     // Ingenieros gestionan, capataces leen.
     // ════════════════════════════════════════════════════════════════
