@@ -208,19 +208,32 @@ export default function Capataz({
     return set.size ? set : null;
   }, [asignacionTareo, capataz, capatazVinculado]);
 
-  // Plan del día de ESTE capataz (detalle con HH y obreros por actividad), para
-  // MOSTRÁRSELO como resumen. Mismo emparejamiento por nombre que el gating de
-  // arriba. Solo visualización: no toca lo que puede o no tarear.
-  const planDelDia = useMemo(() => {
-    const plan = asignacionTareo?.planPorCapataz;
-    if (!plan || !capataz) return null;
-    let lista = plan[capataz] || (capatazVinculado ? plan[capatazVinculado] : null);
-    if (!lista) {
+  // Plan del día de ESTE capataz, para MOSTRÁRSELO como resumen. Solo lectura:
+  // no toca lo que puede tarear. Empareja el nombre del capataz igual que el
+  // gating de arriba, sobre cualquier mapa {capataz: valor} del doc.
+  const matchCapataz = (mapa) => {
+    if (!mapa || !capataz) return null;
+    let v = mapa[capataz] || (capatazVinculado ? mapa[capatazVinculado] : null);
+    if (!v) {
       const objetivo = normalizeText(capataz);
-      const k = Object.keys(plan).find(key => normalizeText(key) === objetivo);
-      lista = k ? plan[k] : null;
+      const k = Object.keys(mapa).find(key => normalizeText(key) === objetivo);
+      v = k ? mapa[k] : null;
     }
-    return Array.isArray(lista) && lista.length ? lista : null;
+    return v;
+  };
+  const planDelDia = useMemo(() => {
+    // Detalle nuevo (planPorCapataz: con HH y obreros).
+    const detalle = matchCapataz(asignacionTareo?.planPorCapataz);
+    if (Array.isArray(detalle) && detalle.length) return detalle;
+    // Respaldo: los planes asignados ANTES de que existiera planPorCapataz solo
+    // traen nombres (porCapataz). Mostramos al menos la lista para que el plan se
+    // vea aunque el doc sea viejo; sin HH ni obreros hasta que se reasigne.
+    const nombres = matchCapataz(asignacionTareo?.porCapataz);
+    if (Array.isArray(nombres) && nombres.length) {
+      return nombres.map(n => ({ actividad: n, metrado: 0, und: '', hhProg: 0, obreros: 0 }));
+    }
+    return null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [asignacionTareo, capataz, capatazVinculado]);
 
   // ── Cuadrillas disponibles para el selector ──────────────────────────
@@ -1198,6 +1211,7 @@ export default function Capataz({
       buscarTrab={buscarTrab}
       proyectoNombre={proyectoNombre}
       frenteNombre={frenteNombre}
+      planDelDia={planDelDia}
       setFecha={setFecha}
       setCapataz={setCapataz}
       setBuscarTrab={setBuscarTrab}

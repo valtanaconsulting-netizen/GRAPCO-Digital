@@ -45,7 +45,25 @@ export default function SelectPremium({
   searchable,            // forzar buscador; por defecto auto (> 7 opciones)
   openToken = 0,         // apertura programática: al incrementarlo, este selector se abre solo
   openOnMount = false,   // abrir automáticamente al montar (p. ej. al desplegar una sección vacía)
+  dark = false,          // panel oscuro (navy) con texto blanco — para listas de personas
+  addMode = false,       // "elegir para AÑADIR": no marca selección; onChange y se limpia el query
 }) {
+  // Paleta del panel: por defecto claro (blanco/texto navy); en `dark` el panel es
+  // navy y los nombres salen en BLANCO — la lista "premium" que se pidió. Solo
+  // cambia el desplegable, no el campo, así encaja en cualquier fondo.
+  const pal = dark ? {
+    panel: '#10233c', border: 'rgba(255,255,255,0.12)',
+    optText: 'rgba(255,255,255,0.94)', optHover: 'rgba(255,255,255,0.08)',
+    selBg: BASE.gold, selText: '#10233c',
+    searchBg: 'rgba(255,255,255,0.08)', searchText: '#fff', searchBorder: 'rgba(255,255,255,0.18)',
+    title: '#fff', empty: 'rgba(255,255,255,0.6)',
+  } : {
+    panel: '#fff', border: BASE.border,
+    optText: BASE.text, optHover: BASE.bg,
+    selBg: BASE.goldSoft, selText: BASE.navy,
+    searchBg: BASE.bgSoft, searchText: BASE.text, searchBorder: BASE.border,
+    title: BASE.navy, empty: BASE.muted,
+  };
   const opciones = useMemo(() => normalizar(options), [options]);
   const [abierto, setAbierto] = useState(false);
   const [query, setQuery] = useState('');
@@ -87,7 +105,9 @@ export default function SelectPremium({
     setAbierto(true);
   };
   const cerrar = () => setAbierto(false);
-  const elegir = (v) => { onChange?.(v); setAbierto(false); };
+  // En addMode (elegir para AÑADIR, p. ej. "+ obrero") no se cierra: se limpia el
+  // buscador y queda abierto para seguir añadiendo. En modo normal, se cierra.
+  const elegir = (v) => { onChange?.(v); if (addMode) setQuery(''); else setAbierto(false); };
 
   // Apertura programática — cadena Partida → Subpartida → Actividad.
   // Cuando el padre incrementa openToken, abrimos este selector solo (si tiene
@@ -149,8 +169,8 @@ export default function SelectPremium({
     <>
       {conBuscador && (
         <div style={{
-          padding: '10px', borderBottom: `1px solid ${BASE.border}`,
-          background: '#fff', flexShrink: 0,
+          padding: '10px', borderBottom: `1px solid ${pal.border}`,
+          background: pal.panel, flexShrink: 0,
         }}>
           <input
             autoFocus={!isMobile}
@@ -160,8 +180,8 @@ export default function SelectPremium({
             aria-label="Buscar opción"
             style={{
               width: '100%', padding: '9px 11px', boxSizing: 'border-box',
-              border: `1px solid ${BASE.border}`, borderRadius: '8px',
-              fontSize: '13px', color: BASE.text, background: BASE.bgSoft,
+              border: `1px solid ${pal.searchBorder}`, borderRadius: '8px',
+              fontSize: '13px', color: pal.searchText, background: pal.searchBg,
               outline: 'none', fontFamily: BASE.font,
             }}
           />
@@ -169,7 +189,7 @@ export default function SelectPremium({
       )}
       <div role="listbox" style={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', padding: '6px' }}>
         {filtradas.length === 0 ? (
-          <div style={{ padding: '22px', textAlign: 'center', color: BASE.muted, fontSize: '12.5px', fontStyle: 'italic' }}>
+          <div style={{ padding: '22px', textAlign: 'center', color: pal.empty, fontSize: '12.5px', fontStyle: 'italic' }}>
             Sin resultados
           </div>
         ) : filtradas.map(o => {
@@ -181,7 +201,7 @@ export default function SelectPremium({
               role="option"
               aria-selected={sel}
               onClick={() => elegir(o.value)}
-              onMouseEnter={e => { if (!sel) e.currentTarget.style.background = BASE.bg; }}
+              onMouseEnter={e => { if (!sel) e.currentTarget.style.background = pal.optHover; }}
               onMouseLeave={e => { if (!sel) e.currentTarget.style.background = 'transparent'; }}
               style={{
                 width: '100%', boxSizing: 'border-box', textAlign: 'left',
@@ -189,8 +209,8 @@ export default function SelectPremium({
                 padding: isMobile ? '13px 14px' : '9px 12px',
                 marginBottom: '2px',
                 border: 'none', borderRadius: '9px',
-                background: sel ? BASE.goldSoft : 'transparent',
-                color: sel ? BASE.navy : BASE.text,
+                background: sel ? pal.selBg : 'transparent',
+                color: sel ? pal.selText : pal.optText,
                 fontSize: isMobile ? '14px' : '13px',
                 fontWeight: sel ? 800 : 600,
                 fontFamily: BASE.font, cursor: 'pointer',
@@ -199,7 +219,7 @@ export default function SelectPremium({
               <span style={{ flex: 1, minWidth: 0 }}>
                 {o.label}
                 {o.sub && (
-                  <span style={{ display: 'block', fontSize: '10.5px', fontWeight: 500, color: BASE.muted, marginTop: '2px' }}>{o.sub}</span>
+                  <span style={{ display: 'block', fontSize: '10.5px', fontWeight: 500, color: pal.empty, marginTop: '2px' }}>{o.sub}</span>
                 )}
               </span>
               {sel && <Check />}
@@ -251,7 +271,7 @@ export default function SelectPremium({
               top: coords.top ?? undefined, bottom: coords.bottom ?? undefined,
               maxHeight: coords.maxH, zIndex: 99999,
               display: 'flex', flexDirection: 'column', overflow: 'hidden',
-              background: '#fff', border: `1px solid ${BASE.border}`, borderRadius: '12px',
+              background: pal.panel, border: `1px solid ${pal.border}`, borderRadius: '12px',
               boxShadow: BASE.shadowLg,
               animation: 'grapco-pop-in 0.16s cubic-bezier(0.16,1,0.3,1)',
             }}>
@@ -274,7 +294,7 @@ export default function SelectPremium({
             animation: 'grapco-fade-in 0.18s ease-out',
           }}>
           <div style={{
-            background: '#fff',
+            background: pal.panel,
             borderTopLeftRadius: '20px', borderTopRightRadius: '20px',
             maxHeight: '72dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
             boxShadow: '0 -12px 40px rgba(15,23,42,0.25)',
@@ -287,9 +307,9 @@ export default function SelectPremium({
             {/* cabecera */}
             <div style={{
               padding: '6px 16px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              borderBottom: `1px solid ${BASE.border}`, flexShrink: 0,
+              borderBottom: `1px solid ${pal.border}`, flexShrink: 0,
             }}>
-              <span style={{ fontSize: '14px', fontWeight: 800, color: BASE.navy, letterSpacing: '0.3px' }}>
+              <span style={{ fontSize: '14px', fontWeight: 800, color: pal.title, letterSpacing: '0.3px' }}>
                 {title || 'Seleccionar'}
               </span>
               <button type="button" onClick={cerrar} style={{

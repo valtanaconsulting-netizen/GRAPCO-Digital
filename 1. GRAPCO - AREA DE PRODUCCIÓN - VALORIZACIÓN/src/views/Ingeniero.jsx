@@ -1020,6 +1020,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
                   isMobile={isMobile}
                   fontSize="12.5px"
                   title={f.label}
+                  dark={f.label === 'Persona' || f.label === 'Capataz'}
                 />
               </div>
             ))}

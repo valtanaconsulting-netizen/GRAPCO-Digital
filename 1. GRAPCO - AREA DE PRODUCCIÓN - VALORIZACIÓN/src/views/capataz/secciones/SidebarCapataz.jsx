@@ -37,6 +37,7 @@ export default function SidebarCapataz({
   buscarTrab,
   proyectoNombre,
   frenteNombre,
+  planDelDia,
   // Setters
   setFecha,
   setCapataz,
@@ -117,6 +118,34 @@ export default function SidebarCapataz({
               </span>
             )}
           </span>
+        </div>
+      )}
+
+      {/* PLAN DEL DÍA — lo que el ingeniero programó, visible mientras trabaja
+          (no solo en la pantalla de entrada). Solo lectura. */}
+      {capataz && planDelDia && planDelDia.length > 0 && (
+        <div style={{
+          background: BASE.bgSoft, border: `1px solid ${BASE.gold}55`,
+          borderRadius: '10px', padding: '9px 11px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '7px' }}>
+            <span style={{ fontSize: '9.5px', fontWeight: '800', color: BASE.gold, letterSpacing: '0.8px' }}>📋 PLAN DEL DÍA</span>
+            <span style={{ fontSize: '9px', fontWeight: '700', color: BASE.muted }}>{planDelDia.length} act.</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+            {planDelDia.map((p, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                <span style={{ flex: 1, minWidth: 0, fontSize: '10.5px', fontWeight: '700', color: BASE.navy, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {p.actividad}
+                </span>
+                {Number(p.hhProg) > 0 && (
+                  <span style={{ fontSize: '9px', fontWeight: '800', color: BASE.navy, background: BASE.goldSoft, borderRadius: '999px', padding: '1px 7px', whiteSpace: 'nowrap' }}>
+                    {(Number(p.hhProg)).toFixed(1)} HH
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

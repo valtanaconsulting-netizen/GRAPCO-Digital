@@ -613,10 +613,21 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${Mat
                 </span>
               ))}
             </div>
-            <input list="pd-trabajadores" placeholder="+ obrero…"
-              onKeyDown={e => { if (e.key === 'Enter') { addTrabajador(gi, ii, e.target.value); e.target.value = ''; } }}
-              onChange={e => { const v = e.target.value; if (listaTrabajadores.includes(v)) { addTrabajador(gi, ii, v); e.target.value = ''; } }}
-              style={miniInp(195)} />
+            {/* Picker de obreros: SelectPremium en tema oscuro (nombres en BLANCO,
+                no el datalist nativo que salía negro) y modo "añadir" — cada nombre
+                elegido se suma como chip y el picker queda listo para el siguiente. */}
+            <SelectPremium
+              value=""
+              onChange={(v) => { if (v) addTrabajador(gi, ii, v); }}
+              options={listaTrabajadores}
+              placeholder="+ obrero…"
+              isMobile={isMobile}
+              fontSize="11px"
+              title="Añadir obrero"
+              dark
+              addMode
+              searchable
+            />
           </td>
         );
       }
