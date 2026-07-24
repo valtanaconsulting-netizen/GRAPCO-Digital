@@ -211,6 +211,12 @@ export default function ValorizacionF07({ showToast }) {
       {/* RESUMEN POR FAMILIA (PREFIJO) — la valorización leída por familia (S/ reales) */}
       <ResumenFamilia data={resumenFamilia} abierto={verFamilias} onToggle={() => setVerFamilias(v => !v)} />
 
+      {/* METRADO QUE NO LLEGA A LA VALORIZACIÓN — el hueco entre campo y presupuesto.
+          El cruce campo→F07 es por DESCRIPCIÓN: lo que no calza no se valoriza. Antes
+          este dato se calculaba pero no se mostraba, así que la fuga era invisible.
+          Aquí solo se reporta lo que NO cruzó (no se atribuye nada). */}
+      <FugaMetrado cobertura={cobertura} />
+
       {/* Grilla F07 — panel congelado (estilo Excel): contenedor con scroll propio;
           encabezado fijo arriba (top) + columnas ITEM y DESCRIPCIÓN fijas a la
           izquierda (left). La barra horizontal abajo desliza el resto de columnas. */}
@@ -318,6 +324,46 @@ function Kpi({ label, v, c }) {
     <div style={{ background: c + '12', border: `1px solid ${c}33`, borderLeft: `4px solid ${c}`, borderRadius: 10, padding: '9px 12px' }}>
       <p style={{ fontSize: 9, fontWeight: 900, color: BASE.muted, letterSpacing: 0.4 }}>{label.toUpperCase()}</p>
       <p style={{ fontSize: 14, fontWeight: 900, color: c, marginTop: 2, fontFamily: 'monospace' }}>{v}</p>
+    </div>
+  );
+}
+
+// Metrado de campo que NO cruzó a ninguna partida del F07 → no se valoriza.
+// Es puramente diagnóstico: NO atribuye ese metrado a nada (ese fue el error de la
+// vieja tira de cobertura). Solo dice cuánto se está quedando fuera y en qué
+// actividades, que es lo que hace falta para poder corregir el catálogo o mapear
+// la partida a mano en el Sustento.
+function FugaMetrado({ cobertura }) {
+  // El hook va SIEMPRE antes del corte: si el return temprano queda por encima,
+  // React ejecuta distinto número de hooks entre renders y revienta la vista.
+  const [abierto, setAbierto] = useState(false);
+  const sinCruce = cobertura?.sinCruce || [];
+  const nRegs = cobertura?.registros || 0;
+  if (!sinCruce.length) return null;
+  return (
+    <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderLeft: `4px solid ${BASE.gold}`, borderRadius: 12, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: abierto ? 8 : 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <button onClick={() => setAbierto(v => !v)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 11, fontWeight: 900, color: BASE.navy, letterSpacing: 0.4, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          {abierto ? '▾' : '▸'} ⚠️ METRADO QUE NO LLEGA A LA VALORIZACIÓN
+        </button>
+        <span style={{ fontSize: 10.5, color: BASE.muted }}>
+          · {sinCruce.length} actividad(es) sin cruzar{nRegs ? ` de ${nRegs} registros` : ''} — su nombre no calza con ninguna partida del F07
+        </span>
+      </div>
+      {abierto && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {sinCruce.map((s, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '5px 8px', borderRadius: 7, background: BASE.bgSoft }}>
+              <span style={{ flex: 1, minWidth: 0, fontSize: 11.5, fontWeight: 700, color: BASE.navy, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.nombre}</span>
+              <span style={{ fontSize: 11, fontWeight: 800, fontFamily: 'monospace', color: BASE.goldDark, whiteSpace: 'nowrap' }}>{Number(s.metrado).toLocaleString('es-PE')}</span>
+            </div>
+          ))}
+          <p style={{ fontSize: 10.5, color: BASE.muted, marginTop: 4, lineHeight: 1.45 }}>
+            Para recuperarlo: metra esa partida desde <b>Sustento de Metrados</b> (ahí eliges el ítem F07 exacto),
+            o alinea el nombre de la actividad en el <b>Editor WBS</b> con el del presupuesto.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
