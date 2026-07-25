@@ -32,6 +32,14 @@ const itemNorm = (c) => String(c || '').trim().split('.').map(s => String(parseI
 const pqNum = (ref) => { const m = String(ref || '').match(/(\d+)/); return m ? parseInt(m[1], 10) : null; };
 const r3 = (x) => Math.round(x * 1000) / 1000;
 const r2 = (x) => Math.round(x * 100) / 100;
+// Unidad normalizada (m² → M2, m³ → M3). Dos unidades son COMPATIBLES si alguna
+// falta (registros antiguos sin unidad) o si son la misma.
+// Este guardarraíl es lo que impide el vertedero que se detectó en CREDITEX-PTAR:
+// metrado en M2/M3/KG de nueve actividades distintas caía sobre una partida GLB
+// ("MOVILIZACIÓN Y DESMOVILIZACIÓN", P.U. S/16.685) y valorizaba S/9,7 MILLONES
+// fantasma. Sumar kilos sobre una partida global no es un cruce: es un error.
+const und = (u) => String(u || '').toUpperCase().replace('²', '2').replace('³', '3').replace(/[^A-Z0-9]/g, '');
+const undCompatible = (a, b) => { const x = und(a), y = und(b); return !x || !y || x === y; };
 
 export default function useAvanceF07Vivo({ proyId, presu, enabled = true }) {
   const [registros, setRegistros] = useState([]);
@@ -101,6 +109,39 @@ export default function useAvanceF07Vivo({ proyId, presu, enabled = true }) {
     const porMkey = {};
     partidas.forEach(p => { if (p.mkey) porMkey[p.mkey] = p; });
 
+    // ── ANTI DOBLE CONTEO ──────────────────────────────────────────────────
+    // El sustento de OT y el tareo del capataz son DOS REGISTROS DEL MISMO
+    // TRABAJO, no dos avances. El flujo que los duplica es el que la propia app
+    // ofrece: en el ISP se pulsa "Metrar con formato" sobre una actividad que ya
+    // viene de los tareos, y eso crea un doc en SustentoMetrados sin anular el
+    // Registro_Campo de origen. Sin deduplicar, ese metrado se valoriza al 200%
+    // — sobrefacturación que además se imprime en el PDF oficial del F07.
+    //
+    // Criterio: el SUSTENTO MANDA (es el cómputo formal, con planilla y ítem F07
+    // exacto) y el tareo de esa misma actividad cede en ese periodo. La llave ya
+    // estaba en el dato y no se usaba: `actividadISP` (o la descripción) del
+    // sustento apunta a la actividad del tareo. Se compara por actividad+quincena
+    // para no anular tareos de otras semanas de la misma partida.
+    const sustentadoEnPeriodo = new Set();
+    sustentos.forEach(s => {
+      const q = Number(s.metrado) || 0;
+      if (q <= 0) return;
+      const valN = pqNum(s.valorizacionRef) || (s.semana ? Math.ceil(s.semana / 2) : null);
+      const acts = [s.actividadISP, s.descripcion].filter(Boolean);
+      acts.forEach(a => {
+        const k = normTxt(a);
+        if (!k) return;
+        sustentadoEnPeriodo.add(`${k}|${valN ?? '*'}`);
+        sustentadoEnPeriodo.add(`${k}|*`);   // sustento sin periodo → cubre toda la actividad
+      });
+    });
+    const yaSustentado = (actividad, valN) => {
+      const k = normTxt(actividad);
+      if (!k) return false;
+      return sustentadoEnPeriodo.has(`${k}|${valN ?? '*'}`) || sustentadoEnPeriodo.has(`${k}|*`);
+    };
+    let dupEvitados = 0, qDupEvitado = 0;
+
     // 1) Registros_Campo. Cascada de cruce, de más preciso a más difuso:
     //    a) DICCIONARIO explícito de OT (actividad[+frente] → ítem F07). Es el
     //       único capaz de desambiguar cuando varias partidas comparten
@@ -113,14 +154,21 @@ export default function useAvanceF07Vivo({ proyId, presu, enabled = true }) {
       const q = Number(r.metradoValidado ?? r.metradoReportado ?? r.metrado) || 0;
       if (q <= 0) return; // sin metrado no aporta avance (sus HH sí cuentan abajo en el CR)
       const valN = r.semana ? Math.ceil(r.semana / 2) : null;
+      // Si OT ya sustentó formalmente esta actividad en este periodo, ese cómputo
+      // es el bueno: este tareo NO se vuelve a acreditar (sus HH sí siguen
+      // contando para el Costo Real más abajo, que es trabajo realmente pagado).
+      if (yaSustentado(r.actividad, valN)) { dupEvitados++; qDupEvitado += q; return; }
+      // Toda acreditación exige unidad compatible: el metrado del campo y la
+      // partida deben medirse en lo mismo. Lo que no calza NO se inventa: cae a
+      // "sin cruzar", que es visible y se resuelve vinculándolo a mano.
       const vin = resolverItemF07(vinculos, r.actividad, r.frenteId);
       const pv = vin && (porMkey[vin.mkey] || porItem[itemNorm(vin.item)]);
-      if (pv) { if (add(valN, pv.mkey, q)) contarCD(pv.mkey, q, pv.pu); return; }
+      if (pv && undCompatible(r.unidad, pv.und)) { if (add(valN, pv.mkey, q)) contarCD(pv.mkey, q, pv.pu); return; }
       const p = porDesc[norm(r.actividad)];
-      if (p) { if (add(valN, p.mkey, q)) contarCD(p.mkey, q, p.pu); return; }
+      if (p && undCompatible(r.unidad, p.und)) { if (add(valN, p.mkey, q)) contarCD(p.mkey, q, p.pu); return; }
       const pref = prefDeReg(r.actividad, r.partida);
       const unico = pref && unicoItemDePref[pref];
-      if (unico) { if (add(valN, unico.mkey, q)) contarCD(unico.mkey, q, unico.pu); return; }
+      if (unico && undCompatible(r.unidad, unico.und)) { if (add(valN, unico.mkey, q)) contarCD(unico.mkey, q, unico.pu); return; }
       contarUnmapped(q, r.actividad || '(sin actividad)', pref);
     });
     // 2) SustentoMetrados → ítem por codigoPartida (preciso) o descripción; fallback prefijo único.
@@ -128,10 +176,13 @@ export default function useAvanceF07Vivo({ proyId, presu, enabled = true }) {
       const q = Number(s.metrado) || 0;
       const valN = pqNum(s.valorizacionRef) || (s.semana ? Math.ceil(s.semana / 2) : null);
       const p = porItem[itemNorm(s.codigoPartida)] || porDesc[norm(s.descripcion)];
-      if (p) { if (add(valN, p.mkey, q)) contarCD(p.mkey, q, p.pu); return; }
+      // El cruce por codigoPartida es explícito (OT eligió el ítem): se respeta.
+      // El cruce por descripción sí exige unidad compatible, como en los tareos.
+      const pOk = p && (porItem[itemNorm(s.codigoPartida)] ? true : undCompatible(s.unidad, p.und));
+      if (pOk) { if (add(valN, p.mkey, q)) contarCD(p.mkey, q, p.pu); return; }
       const pref = prefDeReg(s.descripcion, s.partida);
       const unico = pref && unicoItemDePref[pref];
-      if (unico) { if (add(valN, unico.mkey, q)) contarCD(unico.mkey, q, unico.pu); return; }
+      if (unico && undCompatible(s.unidad, unico.und)) { if (add(valN, unico.mkey, q)) contarCD(unico.mkey, q, unico.pu); return; }
       contarUnmapped(q, s.descripcion || s.codigoPartida || '(sustento)', pref);
     });
 
@@ -148,15 +199,26 @@ export default function useAvanceF07Vivo({ proyId, presu, enabled = true }) {
     const crPorPrefijo = {};
     Object.entries(hhPorPref).forEach(([p, hh]) => { crPorPrefijo[p] = { hh: r2(hh), cr: r2(hh * COSTO_HORA_PROMEDIO) }; });
 
-    // Construye avances acumulados por quincena.
+    // Construye avances acumulados por quincena, TOPADOS a lo contratado.
+    // Una partida no puede valorizar más de lo que tiene en contrato: sin este
+    // tope se producían acumulados de 58.626% (ENCOFRADO DE GRADAS llegó a
+    // 78.388%) que inflaban el Valor Ganado y falseaban el CPI. El exceso NO se
+    // descarta en silencio: se guarda en `excesos` para revisarlo como adicional.
     const valNs = Object.keys(perVal).map(Number).sort((a, b) => a - b);
     const acumPrev = {}; const docs = [];
+    const excesoPorMkey = {};
     valNs.forEach(n => {
       const periodo = perVal[n];
       const avances = Object.entries(periodo).map(([key, act]) => {
-        const ant = acumPrev[key] || 0; const acum = ant + act;
+        const ant = acumPrev[key] || 0;
+        const bruto = ant + act;
+        const tope = Number(porMkey[key]?.cant) || 0;
+        const acum = tope > 0 ? Math.min(bruto, tope) : bruto;
+        if (bruto > acum) excesoPorMkey[key] = r3((excesoPorMkey[key] || 0) + (bruto - acum));
         acumPrev[key] = acum;
-        return { key, actual: r3(act), acum: r3(acum) };
+        // `actual` = lo que de verdad entra este periodo tras el tope, para que
+        // la serie Actual/Acumulado siga cuadrando entre quincenas.
+        return { key, actual: r3(acum - ant), acum: r3(acum) };
       });
       Object.keys(acumPrev).forEach(key => { if (!periodo[key]) avances.push({ key, actual: 0, acum: r3(acumPrev[key]) }); });
       docs.push({ valN: n, label: `Q-${String(n).padStart(2, '0')}`, avances });
@@ -184,6 +246,23 @@ export default function useAvanceF07Vivo({ proyId, presu, enabled = true }) {
       registros: registros.length, sustentos: sustentos.length,
       conPrefijos: Object.keys(ispMap).length > 0 || Object.keys(f07Map).length > 0,
       vinculados: Object.keys(vinculos).length,   // actividades ya mapeadas al F07 por OT
+      // Tareos que NO se acreditaron porque OT ya los sustentó formalmente: es la
+      // sobrefacturación evitada. Se reporta para que se vea que el sistema
+      // dedujo, no que perdió avance.
+      dupEvitados, qDupEvitado: r2(qDupEvitado),
+      // Metrado que superó lo contratado y quedó fuera de la valorización. Es
+      // trabajo real: o es un adicional por aprobar, o hay un error de registro.
+      // En cualquier caso debe verse, no desaparecer.
+      excesos: Object.entries(excesoPorMkey)
+        .map(([mkey, exceso]) => {
+          const p = porMkey[mkey];
+          return {
+            item: p?.item || mkey, descripcion: p?.descripcion || '', und: p?.und || '',
+            contratado: r2(Number(p?.cant) || 0), exceso: r2(exceso),
+            soles: r2(exceso * (Number(p?.pu) || 0)),
+          };
+        })
+        .sort((a, b) => b.soles - a.soles),
       porPrefijo, crPorPrefijo, crVivo: r2(hhTotal * COSTO_HORA_PROMEDIO), hhVivo: r2(hhTotal),
       sinCruce: Object.entries(sinCruce).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([n, q]) => ({ nombre: n, metrado: r2(q) })),
     };

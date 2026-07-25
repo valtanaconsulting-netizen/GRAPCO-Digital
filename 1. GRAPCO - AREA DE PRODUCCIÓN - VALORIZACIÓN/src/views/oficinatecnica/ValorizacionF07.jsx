@@ -219,6 +219,12 @@ export default function ValorizacionF07({ showToast }) {
           Aquí solo se reporta lo que NO cruzó (no se atribuye nada). */}
       <FugaMetrado cobertura={cobertura} presu={presu} proyId={proyId} showToast={showToast} />
 
+      {/* METRADO SOBRE LO CONTRATADO — la otra cara de la fuga. La valorización se
+          topa a lo contratado (una partida no puede cobrar más de su contrato),
+          pero el exceso es trabajo real: o es adicional por aprobar, o hay un
+          error de registro. Verlo es lo que permite decidir. */}
+      <ExcesoContrato cobertura={cobertura} />
+
       {/* Grilla F07 — panel congelado (estilo Excel): contenedor con scroll propio;
           encabezado fijo arriba (top) + columnas ITEM y DESCRIPCIÓN fijas a la
           izquierda (left). La barra horizontal abajo desliza el resto de columnas. */}
@@ -406,6 +412,54 @@ function FugaMetrado({ cobertura, presu, proyId, showToast }) {
                   dark
                 />
               </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Partidas cuyo metrado acumulado superó lo contratado. La valorización ya está
+// topada (no se cobra de más), así que esto es una BANDEJA DE DECISIÓN: aprobar
+// adicional o corregir el registro. Antes ese exceso se valorizaba en silencio y
+// producía acumulados de 58.626%, que inflaban el Valor Ganado y falseaban el CPI.
+function ExcesoContrato({ cobertura }) {
+  const [abierto, setAbierto] = useState(false);
+  const excesos = cobertura?.excesos || [];
+  const dup = cobertura?.dupEvitados || 0;
+  if (!excesos.length && !dup) return null;
+  const totalSoles = excesos.reduce((s, e) => s + (Number(e.soles) || 0), 0);
+  return (
+    <div style={{ background: BASE.white, border: `1px solid ${BASE.border}`, borderLeft: '4px solid #b91c1c', borderRadius: 12, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: abierto ? 8 : 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <button onClick={() => setAbierto(v => !v)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 11, fontWeight: 900, color: BASE.navy, letterSpacing: 0.4, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          {abierto ? '▾' : '▸'} 🛑 METRADO SOBRE LO CONTRATADO
+        </button>
+        {!!excesos.length && (
+          <span style={{ fontSize: 10.5, color: BASE.muted }}>
+            · {excesos.length} partida(s) · {soles(totalSoles)} fuera de la valorización (topada al contrato)
+          </span>
+        )}
+        {!!dup && (
+          <span style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 800, color: BASE.green }}>
+            ✓ {dup} tareo(s) no duplicado(s) — ya sustentados por OT
+          </span>
+        )}
+      </div>
+      {abierto && !!excesos.length && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <p style={{ fontSize: 10.5, color: BASE.muted, lineHeight: 1.45 }}>
+            La valorización se topa al contrato, así que esto <b>no se está cobrando</b>. Decide: si es
+            trabajo adicional, tramítalo como tal; si no, revisa el registro (suele ser metrado
+            acumulado repetido o unidad equivocada).
+          </p>
+          {excesos.slice(0, 15).map((e, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '5px 8px', borderRadius: 7, background: BASE.bgSoft }}>
+              <span style={{ fontSize: 10.5, fontFamily: 'monospace', fontWeight: 800, color: BASE.navy, whiteSpace: 'nowrap' }}>{e.item}</span>
+              <span style={{ flex: 1, minWidth: 0, fontSize: 11, color: BASE.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.descripcion}</span>
+              <span style={{ fontSize: 10.5, color: BASE.muted, whiteSpace: 'nowrap' }}>contrato {cant(e.contratado)} {e.und}</span>
+              <span style={{ fontSize: 11, fontWeight: 800, fontFamily: 'monospace', color: '#b91c1c', whiteSpace: 'nowrap' }}>+{cant(e.exceso)} · {soles(e.soles)}</span>
             </div>
           ))}
         </div>
