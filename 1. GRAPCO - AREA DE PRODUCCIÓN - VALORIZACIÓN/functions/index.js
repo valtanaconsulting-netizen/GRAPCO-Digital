@@ -23,8 +23,8 @@ if (!admin.apps.length) admin.initializeApp();
 
 // ── CONFIG ──
 // functions.config() ya NO existe en el runtime 2nd Gen (lanza error al llamarse).
-// Como este index.js también lo carga la función 2nd Gen `protocoloPdfFirmadoSync`,
-// envolvemos la llamada para que no rompa el arranque del contenedor. Las funciones
+// (La función 2nd Gen protocoloPdfFirmadoSync se ELIMINÓ en la depuración 2026-07-25;
+// se mantiene el wrapper defensivo por si se agregan funciones 2nd Gen. Las funciones
 // APS (1st Gen) lo siguen leyendo igual en su propio runtime.
 const _apsCfg = () => { try { return functions.config().aps || {}; } catch (_) { return {}; } };
 const APS_CLIENT_ID     = process.env.APS_CLIENT_ID     || _apsCfg().client_id;
@@ -350,15 +350,6 @@ exports.apsEliminarModelo = functions.https.onRequest(async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-// ════════════════════════════════════════════════════════════════
-// 6) protocoloPdfFirmadoSync (Storage trigger)
-//    Cuando se sube un PDF firmado a protocolos-firmados/{tipo}/{frente}/{semana}/
-//    lo sincroniza a Google Drive + Google Sheets de control.
-//    Definido en módulo separado para no contaminar este archivo.
-// ════════════════════════════════════════════════════════════════
-const archivado = require('./protocolosArchivado');
-exports.protocoloPdfFirmadoSync = archivado.protocoloPdfFirmadoSync;
 
 // ════════════════════════════════════════════════════════════════
 // 7) AR — export OBJ y conversión a GLB para realidad aumentada

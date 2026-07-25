@@ -20,8 +20,6 @@ const ROLES_INFO = {
   oficina_tecnica:    { label: 'Oficina Técnica',          color: CHART_PALETTE[5],  icon: '📐', desc: 'Valorizaciones, RO (Costo Real), partidas contractuales' },
   calidad:            { label: 'Gestión de Calidad',      color: '#ec4899',   icon: '🦺', desc: 'Protocolos, PETs, NCs, ensayos' },
   // SSOMA / Seguridad movido a la plataforma independiente SIGMA (2026-06-15).
-  almacenero:         { label: 'Almacenero',               color: CHART_PALETTE[3],  icon: '📦', desc: 'Almacén, kardex, vales, recepciones' },
-  logistica:          { label: 'Logística / Compras',      color: CHART_PALETTE[5],  icon: '🚛', desc: 'OCs, OSs, proveedores' },
   capataz:            { label: 'Capataz',                  color: BASE.green,  icon: '👷', desc: 'Tareo, registro de producción, fotos' },
   carta_balance:      { label: 'Carta Balance',            color: CHART_PALETTE[3],  icon: '⚖️', desc: 'Solo muestreos de Carta Balance' },
   supervisor_cliente: { label: 'Supervisor Cliente',       color: CHART_PALETTE[11], icon: '🔍', desc: 'Inspección externa, lectura + firma' },

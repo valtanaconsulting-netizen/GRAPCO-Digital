@@ -19,7 +19,7 @@ export default function ProyectosPanel({ showToast }) {
   const [editando, setEditando] = useState(null);
 
   return (
-    <RoleGuard rolesPermitidos={['admin', 'ingeniero', 'capataz', 'oficina_tecnica', 'subcontratista', 'calidad', 'almacenero']}>
+    <RoleGuard rolesPermitidos={['admin', 'ingeniero', 'capataz', 'oficina_tecnica', 'subcontratista', 'calidad']}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         {/* Header */}
         <div style={{

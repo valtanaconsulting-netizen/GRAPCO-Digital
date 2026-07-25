@@ -121,7 +121,6 @@ export const BASE = {
 export const AREA_COLORS = {
   ingeniero:       '#047857', // Producción — emerald profundo
   oficina_tecnica: '#1D4ED8', // Oficina Técnica — azul
-  almacenero:      '#B45309', // Administración / Almacén — bronce
 };
 
 export const inp = (extra={}) => ({

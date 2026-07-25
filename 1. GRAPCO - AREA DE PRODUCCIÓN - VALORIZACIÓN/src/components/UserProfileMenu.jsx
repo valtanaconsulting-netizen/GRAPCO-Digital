@@ -21,8 +21,6 @@ const ROL_LABEL = {
   calidad: 'Calidad',
   oficina_tecnica: 'Oficina Técnica',
   seguridad: 'SOMMA',
-  almacenero: 'Almacenero',
-  logistica: 'Logística',
   planeamiento: 'Planeamiento',
   supervisor_cliente: 'Supervisor de Cliente',
   carta_balance: 'Carta Balance',

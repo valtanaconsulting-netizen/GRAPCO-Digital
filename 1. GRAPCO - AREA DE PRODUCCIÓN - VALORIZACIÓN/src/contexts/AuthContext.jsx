@@ -85,8 +85,6 @@ const auditar = async (uid, accion, detalles = {}) => {
 const AUTO_AREA = {
   capataz: 'capataz',
   carta_balance: 'carta_balance',
-  almacenero: 'almacenero',
-  logistica: 'almacenero',
 };
 // Roles que un rolPermitido puede activar. admin/ingeniero = cualquiera (null).
 // Para cualquier rol no listado, solo se permite su propio rol (sin escalada).
@@ -470,8 +468,6 @@ export function AuthProvider({ children }) {
     isIngeniero: rol === 'ingeniero',
     isAdmin: rol === 'admin',
     // Roles del Bloque 19 (modulo Materiales/Subcontratos)
-    isAlmacenero: rol === 'almacenero',
-    isLogistica: rol === 'logistica',
     isSubcontratista: rol === 'subcontratista',
     // Roles del Bloque 20 (Calidad + Oficina Tecnica)
     isCalidad: rol === 'calidad',

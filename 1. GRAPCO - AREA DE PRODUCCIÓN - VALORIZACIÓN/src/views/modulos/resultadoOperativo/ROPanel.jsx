@@ -11,10 +11,6 @@
 import React, { useState } from 'react';
 import { BASE } from '../../../utils/styles';
 import RoleGuard from '../../../components/RoleGuard';
-import RODashboard from './RODashboard';
-import ROporPartida from './ROporPartida';
-import ROProyeccion from './ROProyeccion';
-import CurvaSFinanciera from './CurvaSFinanciera';
 import ControlRegistros from './ControlRegistros';
 import Adicionales from './Adicionales';
 import Deductivos from './Deductivos';
@@ -22,19 +18,13 @@ import ResultadoOperativoOficial from './ResultadoOperativoOficial';
 import CostoRealOficial from './CostoRealOficial';
 import CostoRealCR from './CostoRealCR';
 import CRValorizacion from './CRValorizacion';
-import ROFrentes from './ROFrentes';
 import useTareosProyecto from './useTareosProyecto';
 
 // Secciones de primer nivel (las claves coinciden con el menú lateral: ot.ro.<id>).
 const SECCIONES = [
-  { id: 'dashboard',   l: 'Dashboard RO',      icono: '📊', desc: 'KPIs ejecutivos',             color: '#f59e0b' },
   { id: 'costoReal',   l: 'Costo Real (CR · HH)', icono: '🧾', desc: 'HH × S/25.5 · EVM · Controles', color: '#0ea5e9' },
   { id: 'crVal',       l: 'CR Valorización',   icono: '💰', desc: 'Vendido vs CR · margen por familia', color: '#16a34a' },
   { id: 'oficial',     l: 'RO Oficial (F06)',  icono: '📑', desc: 'Formato Excel · EVM completo', color: '#0f1f3a' },
-  { id: 'partidas',    l: 'Por Partida',       icono: '📋', desc: 'Detalle CPI / Margen',        color: '#7c3aed' },
-  { id: 'frentes',     l: 'Por Frente (F1/F2)', icono: '🎯', desc: 'PTARI vs NAVE · comparativo', color: '#0d9488' },
-  { id: 'proyeccion',  l: 'Proyección',        icono: '🔮', desc: 'EAC + ETC + VAC',             color: '#dc2626' },
-  { id: 'curvaS',      l: 'Curva S',           icono: '📈', desc: 'Programada vs Real',          color: '#0d9488' },
   { id: 'adicionales', l: 'Adicionales',       icono: '➕', desc: 'PQ · Avance Prog/Val',        color: '#16a34a' },
   { id: 'deductivos',  l: 'Deductivos',        icono: '➖', desc: 'PQ · Avance Prog/Val',        color: '#ef4444' },
 ];
@@ -48,7 +38,7 @@ const CR_SUBTABS = [
 
 export default function ROPanel({ showToast, seccionExterna = null }) {
   const externo = !!seccionExterna;
-  const [seccionInterna, setSeccionInterna] = useState('dashboard');
+  const [seccionInterna, setSeccionInterna] = useState('costoReal');
   const seccion = externo ? seccionExterna : seccionInterna;
   const [crSub, setCrSub] = useState('crVivo');
   const { tareos } = useTareosProyecto();
@@ -87,17 +77,12 @@ export default function ROPanel({ showToast, seccionExterna = null }) {
 
   const renderSeccion = () => {
     switch (seccion) {
-      case 'dashboard':   return <RODashboard showToast={showToast} />;
       case 'costoReal':   return renderCostoReal();
       case 'crVal':       return <CRValorizacion />;
       case 'oficial':     return <ResultadoOperativoOficial showToast={showToast} />;
-      case 'partidas':    return <ROporPartida showToast={showToast} />;
-      case 'frentes':     return <ROFrentes />;
-      case 'proyeccion':  return <ROProyeccion showToast={showToast} />;
-      case 'curvaS':      return <CurvaSFinanciera showToast={showToast} />;
       case 'adicionales': return <Adicionales showToast={showToast} />;
       case 'deductivos':  return <Deductivos showToast={showToast} />;
-      default:            return <RODashboard showToast={showToast} />;
+      default:            return renderCostoReal();
     }
   };
 

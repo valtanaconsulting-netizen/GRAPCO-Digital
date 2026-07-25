@@ -30,7 +30,6 @@ import AnalisisHHCross from './AnalisisHHCross';
 import PagoObreros from './PagoObreros';
 import Tareo from './Tareo';
 import Personal from './Personal';
-import ImpactoTesis from './ImpactoTesis';
 // VDC/LAP, Programación Diaria (PlanDiario), Curva S y Tablero LPS se movieron a la
 // app independiente PLANEAMIENTO_PLATAFORMA (2026-06-24). CPI/EAC (el ISP) volvió a
 // vivir COMPLETAMENTE en Producción/GRAPCO (2026-06-25, decisión del usuario).
@@ -95,7 +94,6 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
     tareo: 'gestion', gestion: 'gestion',
     'pago-obreros': 'gestion',
     'export': 'gestion',
-    impacto: null, // Vista TESIS: accesible via botón global en el topbar (no en tabs).
   };
 
   const handleSetView = (newView) => {
@@ -104,19 +102,6 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
     if (g) setGrupoActivo(g);
   };
 
-  // Listener para botón TESIS en el header global: cambia a la vista de Impacto Tesis
-  useEffect(() => {
-    // Si el flag fue puesto antes de que Ingeniero estuviese montado, lo consumimos al inicio
-    try {
-      if (sessionStorage.getItem('grapco_nav_tesis') === '1') {
-        sessionStorage.removeItem('grapco_nav_tesis');
-        setView('impacto');
-      }
-    } catch (e) {}
-    const onGoTesis = () => setView('impacto');
-    window.addEventListener('grapco:nav-tesis', onGoTesis);
-    return () => window.removeEventListener('grapco:nav-tesis', onGoTesis);
-  }, []);
 
   const confirmar = useConfirm();
   const eliminar = async r => {
@@ -1142,7 +1127,6 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
           />
         </div>
       )}
-      {view==='impacto'    && <ImpactoTesis historialEnriquecido={historialEnriquecido} configuracion={configuracion}/>}
       </div>
 
       </div>

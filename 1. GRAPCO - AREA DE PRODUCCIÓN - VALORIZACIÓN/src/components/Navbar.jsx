@@ -15,8 +15,6 @@ const ROL_META = {
   capataz:           { iconName: 'hardhat',    badge: 'CAPATAZ DE OBRA',     color: BASE.green },
   calidad:           { iconName: 'shield',     badge: 'CALIDAD',             color: '#ec4899' },
   oficina_tecnica:   { iconName: 'fileText',   badge: 'OFICINA TÉCNICA',     color: '#6366f1' },
-  almacenero:        { iconName: 'package',    badge: 'ALMACÉN',             color: '#7c3aed' },
-  logistica:         { iconName: 'cart',       badge: 'LOGÍSTICA',           color: '#2563eb' },
   supervisor_cliente:{ iconName: 'shield',     badge: 'SUPERVISIÓN CLIENTE', color: '#0ea5e9' },
   planeamiento:      { iconName: 'tree',       badge: 'PLANEAMIENTO',        color: '#0d9488' },
   admin:             { iconName: 'shieldAdmin',badge: 'ADMINISTRADOR',       color: BASE.navy },

@@ -13,11 +13,8 @@ import GestionUsuarios from './GestionUsuarios';
 import VisorAuditoria  from './VisorAuditoria';
 import ConfigSistema   from '../ConfigSistema';
 import SaludSistema    from './SaludSistema';
-import SeedDemoView    from '../modulos/admin/SeedDemoView';
 import AsistenciaDiaria from '../asistencia/AsistenciaDiaria';
 // Lazy: face-api.js (~1 MB+) fuera del bundle inicial; carga al abrir la tab.
-const EnrolamientoFacial = lazy(() => import('../asistencia/EnrolamientoFacial'));
-const MarcadorAsistencia = lazy(() => import('../asistencia/MarcadorAsistencia'));
 
 // `t` = etiqueta limpia (sin emoji), `icon` = nombre SVG (Icon) para look formal GRAPCO.
 // `l` se conserva por compatibilidad pero la UI ya no lo usa.
@@ -25,12 +22,9 @@ const TABS = [
   { id: 'resumen',     l: '📊 Resumen',          t: 'Resumen',         icon: 'dashboard',   desc: 'Vista general del sistema' },
   { id: 'usuarios',    l: '👥 Usuarios',         t: 'Usuarios',        icon: 'users',       desc: 'Gestión de cuentas y roles' },
   { id: 'asistencia',  l: '⏱️ Asistencia',       t: 'Asistencia',      icon: 'clock',       desc: 'Control de entrada/salida de obreros (fuente oficial de HH admin)' },
-  { id: 'marcador',    l: '🎯 Marcador Facial',  t: 'Marcador Facial', icon: 'target',      desc: 'Reconocimiento facial en vivo para marcar entrada del día' },
-  { id: 'enrolamiento',l: '🧬 Enrol. Facial',    t: 'Enrol. Facial',   icon: 'user',        desc: 'Registrar 3 fotos de cada obrero para reconocimiento posterior' },
   { id: 'auditoria',   l: '🕵️ Auditoría',        t: 'Auditoría',       icon: 'fileText',    desc: 'Log de operaciones críticas' },
   { id: 'config',      l: '⚙️ Configuración',    t: 'Configuración',   icon: 'settings',    desc: 'Tarifas y parámetros globales' },
   { id: 'salud',       l: '💚 Salud sistema',    t: 'Salud sistema',   icon: 'pulse',       desc: 'Estado de Firebase + APS' },
-  { id: 'seed',        l: '🚀 Datos Demo',       t: 'Datos Demo',      icon: 'package',     desc: 'Cargar seed PTARI para sustentación' },
 ];
 
 export default function AdminPanel({ showToast, tabInicial }) {
@@ -86,12 +80,9 @@ export default function AdminPanel({ showToast, tabInicial }) {
           {tab === 'resumen'      && <ResumenAdmin showToast={showToast} />}
           {tab === 'usuarios'     && <GestionUsuarios showToast={showToast} />}
           {tab === 'asistencia'   && <AsistenciaDiaria showToast={showToast} />}
-          {tab === 'marcador'     && <Suspense fallback={<p style={{padding:30,textAlign:'center',color:BASE.muted}}>⏳ Cargando reconocimiento facial…</p>}><MarcadorAsistencia showToast={showToast} /></Suspense>}
-          {tab === 'enrolamiento' && <Suspense fallback={<p style={{padding:30,textAlign:'center',color:BASE.muted}}>⏳ Cargando reconocimiento facial…</p>}><EnrolamientoFacial showToast={showToast} /></Suspense>}
           {tab === 'auditoria'    && <VisorAuditoria showToast={showToast} />}
           {tab === 'config'       && <ConfigSistema showToast={showToast} />}
           {tab === 'salud'        && <SaludSistema showToast={showToast} />}
-          {tab === 'seed'         && <SeedDemoView showToast={showToast} />}
         </div>
       </div>
     </RoleGuard>

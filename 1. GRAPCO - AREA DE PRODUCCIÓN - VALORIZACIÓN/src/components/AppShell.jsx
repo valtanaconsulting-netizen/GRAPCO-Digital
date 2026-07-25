@@ -30,8 +30,6 @@ const ROL_META = {
   capataz:          { titulo: 'Registro de Produccion', icono: '👷', badge: 'CAPATAZ',   color: BASE.green },
   calidad:          { titulo: 'Gestión de Calidad',   icono: '🦺', badge: 'CALIDAD',    color: '#ec4899' },
   oficina_tecnica:  { titulo: 'Oficina Tecnica',      icono: '📐', badge: 'OT',         color: '#6366f1' },
-  almacenero:       { titulo: 'Almacen',              icono: '📦', badge: 'ALMACEN',    color: '#7c3aed' },
-  logistica:        { titulo: 'Logistica',            icono: '🚛', badge: 'LOGISTICA',  color: '#7c3aed' },
   supervisor_cliente:{ titulo: 'Supervision',         icono: '🔍', badge: 'SUPERVISION', color: '#0ea5e9' },
   admin:            { titulo: 'Acceso Completo',      icono: '🛡️', badge: 'ADMIN',      color: BASE.navy },
 };
@@ -164,33 +162,6 @@ export default function AppShell({
           </span>
         )}
 
-        {/* Botón TESIS — atajo al dashboard de impacto académico */}
-        {(rol === 'ingeniero' || rol === 'admin') && (
-          <button
-            onClick={() => {
-              // Persistir intención (por si Ingeniero aún no está montado) + evento (si ya lo está)
-              try { sessionStorage.setItem('grapco_nav_tesis', '1'); } catch (e) {}
-              // Si el módulo activo no es 'dashboard', llevamos al usuario allí
-              if (typeof onSelectItem === 'function' && activeKey !== 'dashboard') {
-                onSelectItem('dashboard');
-              }
-              try { window.dispatchEvent(new CustomEvent('grapco:nav-tesis')); } catch (e) {}
-            }}
-            title="Impacto Tesis"
-            style={{
-              width: '34px', height: '34px',
-              borderRadius: '999px',
-              background: `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark || '#d97706'})`,
-              border: `1px solid ${BASE.gold}88`,
-              color: BASE.navy, fontSize: '15px',
-              cursor: 'pointer',
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: `0 2px 8px ${BASE.gold}55`,
-              padding: 0,
-            }}>
-            🎓
-          </button>
-        )}
 
         {/* Theme toggle */}
         <ThemeToggle />

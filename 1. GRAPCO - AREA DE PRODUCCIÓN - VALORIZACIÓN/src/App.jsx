@@ -48,54 +48,14 @@ const OT_SIDEBAR = {
   ],
 };
 
-// Menú lateral del área ALMACÉN / ADMINISTRACIÓN — mismo formato que "Producción y
-// Planeamiento" y "Oficina Técnica" (sidebar navy fijo, full-screen). Las keys mapean
-// a las pestañas internas de MaterialesPanel vía KEY_TO_TAB_MAT (prop tabExterna).
-// El almacenero deja de ver el panel de tarjetas: ahora opera a pantalla completa.
-const ALMACEN_SIDEBAR = {
-  'RESUMEN': [
-    { key: 'materiales.dashboard',  label: 'Dashboard',             iconName: 'dashboard',  color: BASE.gold },
-  ],
-  'OPERACIÓN DIARIA': [
-    { key: 'materiales.salida',     label: 'Vales / Salidas',       iconName: 'truck',      color: '#f87171' },
-    { key: 'materiales.entrada',    label: 'Registrar Entrada',     iconName: 'package',    color: '#34d399' },
-  ],
-  'INVENTARIO': [
-    { key: 'materiales.reporteS10', label: 'Stock Valorizado',      iconName: 'boxes',      color: '#fbbf24' },
-    { key: 'materiales.kardex',     label: 'Kardex de Movimientos', iconName: 'barChart3',  color: '#38bdf8' },
-  ],
-  'CONFIGURACIÓN': [
-    { key: 'materiales.catalogo',   label: 'Catálogo de Materiales', iconName: 'fileText',  color: '#c4b5fd' },
-    { key: 'materiales.almacenes',  label: 'Almacenes',             iconName: 'building',   color: '#a5b4fc' },
-  ],
-  'CARGA DE DATOS': [
-    { key: 'materiales.importar',   label: 'Importar Registro S10', iconName: 'package',    color: BASE.gold },
-  ],
-  // Compras y Logística vive ahora en esta área (antes estaba en Producción).
-  // Su key NO es 'materiales.*': el render del área la deriva a ComprasPanel.
-  'COMPRAS Y LOGÍSTICA': [
-    { key: 'compras',               label: 'Compras y Logística',   iconName: 'truck',      color: '#93c5fd' },
-  ],
-};
-// Reverso tab→key: cuando MaterialesPanel navega internamente (p.ej. al guardar una
-// salida salta a Kardex), traducimos el id de pestaña de vuelta a la key del sidebar.
-const TAB_TO_KEY_MAT = {
-  dashboard:  'materiales.dashboard',
-  salida:     'materiales.salida',
-  entrada:    'materiales.entrada',
-  reporteS10: 'materiales.reporteS10',
-  kardex:     'materiales.kardex',
-  catalogo:   'materiales.catalogo',
-  almacenes:  'materiales.almacenes',
-  importar:   'materiales.importar',
-};
+// Área ALMACÉN / ADMINISTRACIÓN (Materiales + Compras) ELIMINADA en la
+// depuración 2026-07-25: la operación no la usa. Roles almacenero/logistica
+// retirados de la plataforma.
 
 // Items del sidebar para roles que no son admin/ingeniero (estaticos)
 const ROL_ITEMS = {
   capataz:           [{ key: 'capataz',  label: 'Panel del Capataz',       iconName: 'hardhat',    color: '#16a34a', group: 'MI ÁREA' }],
   carta_balance:     [{ key: 'carta',    label: 'Carta Balance',           iconName: 'balance',    color: '#7c3aed', group: 'MI ÁREA' }],
-  almacenero:        [{ key: 'almacen',  label: 'Almacén',                 iconName: 'package',    color: '#7c3aed', group: 'MI ÁREA' }],
-  logistica:         [{ key: 'almacen',  label: 'Logística',               iconName: 'cart',       color: '#2563eb', group: 'MI ÁREA' }],
   oficina_tecnica:   [{ key: 'ot',       label: 'Oficina Técnica',         iconName: 'fileText',   color: '#6366f1', group: 'MI ÁREA' }],
   // SSOMA (Seguridad) → plataforma SIGMA (2026-06-15).
   // Planeamiento → plataforma PLANEAMIENTO_PLATAFORMA y Calidad (roles calidad/supervisor_cliente)
@@ -130,44 +90,26 @@ const PRELOAD_BY_KEY = {
   dashboard:   () => import('./views/Ingeniero'),
   registro:    () => import('./views/Capataz'),
   carta:       () => import('./views/CartaBalanceWrapper'),
-  warroom:     () => import('./views/WarRoomCuadrillas'),
   admin:       () => import('./views/admin/AdminPanel'),
-  materiales:  () => import('./views/MaterialesPanel'),
-  compras:     () => import('./views/ComprasPanel'),
-  almacen:     () => import('./views/Almacenero'),
   ot:          () => import('./views/OficinaTecnicaPanel'),
-  planMaestro: () => import('./views/modulos/planMaestro/PlanMaestroPanel'),
-  gerencia:    () => import('./views/modulos/panelGerencia/PanelGerencia'),
   proyectos:   () => import('./views/modulos/proyectos/ProyectosPanel'),
-  portfolio:   () => import('./views/modulos/portfolio/PortfolioPanel'),
   bim:         () => import('./views/BIM'),
   capataz:     () => import('./views/capataz/CapatazPanel'),
   // Planeamiento (lps/flujo/pullplanning/planvaciado/cronogramaobra/normaltec) → app PLANEAMIENTO_PLATAFORMA (2026-06-24).
-  radarProd:      () => import('./views/modulos/radarProduccion/RadarProduccion'),
-  dashEjecutivo:  () => import('./views/modulos/dashboardEjecutivo/DashboardEjecutivo'),
-  estadoObra:     () => import('./views/modulos/estadoObra/EstadoObra'),
+  // Almacén/Compras, Gerencia (Tablero/Portafolio/Indicadores), Plan Maestro,
+  // Estado de Obra, Radar y War Room ELIMINADOS en la depuración 2026-07-25.
 };
 const preloadModulo = (k) => { try { PRELOAD_BY_KEY[k]?.(); } catch { /* noop */ } };
 const Capataz             = lazy(() => import('./views/Capataz'));
 const Ingeniero           = lazy(() => import('./views/Ingeniero'));
 const CartaBalance        = lazy(() => import('./views/CartaBalanceWrapper'));
-const WarRoomCuadrillas   = lazy(() => import('./views/WarRoomCuadrillas'));
 const AdminPanel          = lazy(() => import('./views/admin/AdminPanel'));
-const MaterialesPanel     = lazy(() => import('./views/MaterialesPanel'));
-const ComprasPanel        = lazy(() => import('./views/ComprasPanel'));
-const Almacenero          = lazy(() => import('./views/Almacenero'));
 const OficinaTecnicaPanel = lazy(() => import('./views/OficinaTecnicaPanel'));
-const PlanMaestroPanel    = lazy(() => import('./views/modulos/planMaestro/PlanMaestroPanel'));
 // Planeamiento (Flujo/Cronograma/LPS/PullPlanning/PlanVaciado/NormalTecnológica) y
 // Calidad (CalidadPanel) → apps independientes PLANEAMIENTO_PLATAFORMA / CALIDAD_PLATAFORMA (2026-06-24).
-const PanelGerencia       = lazy(() => import('./views/modulos/panelGerencia/PanelGerencia'));
 const ProyectosPanel      = lazy(() => import('./views/modulos/proyectos/ProyectosPanel'));
-const PortfolioPanel      = lazy(() => import('./views/modulos/portfolio/PortfolioPanel'));
-const DashboardEjecutivo  = lazy(() => import('./views/modulos/dashboardEjecutivo/DashboardEjecutivo'));
-const RadarProduccion     = lazy(() => import('./views/modulos/radarProduccion/RadarProduccion'));
 const BIM                 = lazy(() => import('./views/BIM'));
 const CapatazPanel        = lazy(() => import('./views/capataz/CapatazPanel'));
-const EstadoObra          = lazy(() => import('./views/modulos/estadoObra/EstadoObra'));
 const PlanDiario          = lazy(() => import('./views/PlanDiario')); // Programación Diaria F06 — restaurada a Producción (2026-06-25)
 
 // ── Alcance de módulos por ÁREA (sidebar del shell ingeniero/admin/planeamiento) ──
@@ -177,12 +119,12 @@ const PlanDiario          = lazy(() => import('./views/PlanDiario')); // Program
 //   - admin      → null = TODOS los módulos (acceso completo)
 // Ingeniería de Producción ahora ABSORBE Planeamiento (Plan Maestro, Last Planner).
 // El APU (Análisis de Precios Unitarios) ya NO está en GRAPCO: es costos y vive en la plataforma de Costos aparte.
-// 'materiales' y 'compras' se movieron al área de Administración (almacenero) — 2026-06-24.
+// 'materiales' y 'compras' (área Almacén/Administración) ELIMINADOS — depuración 2026-07-25.
 // Planeamiento (flujo/cronogramaobra/normaltec/pullplanning/lps/planvaciado) se
 // extrajo a la app PLANEAMIENTO_PLATAFORMA → ya no son keys de Producción (2026-06-24).
 // Orden de Producción definido por el usuario (2026-06-25): Plan Diario · Auditoría/CPI-ISP · Carta · BIM · Registro.
 // 'dashboard' = el shell Ingeniero (abre en Auditoría, con CPI+EAC/ISP en pestaña contigua).
-// 'estadoObra', 'warroom', 'radarProd' retirados del menú de Producción (se conservan para admin/otras áreas).
+// 'estadoObra', 'warroom', 'radarProd' ELIMINADOS de la plataforma — depuración 2026-07-25.
 const KEYS_PRODUCCION  = ['planDiario', 'dashboard', 'carta', 'bim', 'registro'];
 // Devuelve la lista de keys permitidas para el rol, o null si ve todo (admin).
 const keysPermitidasPorRol = (rol) => {
@@ -249,7 +191,6 @@ function AppInner() {
   // así una pestaña nueva abre DIRECTO donde se le pidió (multi-pestaña).
   const [moduloIngeniero, setModuloIngeniero] = useState(() => leerRutaHash()?.modulo || 'planDiario');
   const [moduloOT, setModuloOT] = useState('ot.valoriz'); // sub-módulo activo del área Oficina Técnica (menú lateral)
-  const [moduloAlmacen, setModuloAlmacen] = useState('materiales.dashboard'); // sub-módulo activo del área Almacén (menú lateral)
   // Pestaña inicial de paneles con tabs internos, para que el SelectorPerfil pueda
   // hacer deep-link a una sección concreta (ej. Admin→Usuarios, Calidad→PETs).
   const [adminTab, setAdminTab] = useState('resumen');
@@ -281,8 +222,6 @@ function AppInner() {
       } else if (rolDestino === 'admin') {
         setModuloIngeniero('admin');
         setAdminTab(destino);
-      } else if (rolDestino === 'almacenero' || rolDestino === 'logistica') {
-        setModuloAlmacen(destino);
       } else if (rolDestino === 'oficina_tecnica') {
         setModuloOT(destino);
       }
@@ -692,19 +631,13 @@ function AppInner() {
             { key: 'carta',       label: 'Carta Balance',           iconName: 'balance',     color: BASE.orange,  group: 'PRODUCCIÓN' },
             { key: 'bim',         label: 'Modelo BIM',              iconName: 'layers',      color: '#38bdf8',    group: 'PRODUCCIÓN' },
             { key: 'registro',    label: 'Registro',                iconName: 'registro',    color: BASE.green,   group: 'PRODUCCIÓN' },
-            // Retirados del menú de Producción (2026-06-25) — se conservan para admin / otras áreas:
-            { key: 'estadoObra',  label: 'Estado de Obra',          iconName: 'dashboard',   color: BASE.gold,    group: 'RESUMEN' },
-            { key: 'radarProd',   label: 'Radar de Producción',     iconName: 'target',      color: '#f87171',    group: 'PRODUCCIÓN' },
-            { key: 'warroom',     label: 'Sala de Operaciones',     iconName: 'target',      color: '#f87171',    group: 'PRODUCCIÓN' },
-            // ALMACÉN (Materiales + Compras) MOVIDO al área de Administración (almacenero) — 2026-06-24.
+            // Estado de Obra, Radar, War Room, Almacén/Compras y GERENCIA (Tablero,
+            // Portafolio, Indicadores, Plan Maestro) ELIMINADOS — depuración 2026-07-25.
             // Gestión de Calidad → app independiente CALIDAD_PLATAFORMA (2026-06-24).
             { key: 'ot',          label: 'Oficina Técnica',         iconName: 'ruler',       color: '#a5b4fc',    group: 'OFICINA TÉCNICA' },
             // SSOMA (Seguridad y Medio Ambiente) movido a la plataforma independiente SIGMA (2026-06-15).
-            // GERENCIA — vista ejecutiva multi-proyecto
-            { key: 'gerencia',    label: 'Tablero Ejecutivo',       iconName: 'pulse',       color: '#fbbf24',    group: 'GERENCIA' },
-            { key: 'proyectos',   label: 'Cartera de Proyectos',    iconName: 'mapPin',      color: '#5eead4',    group: 'GERENCIA' },
-            { key: 'portfolio',   label: 'Portafolio Estratégico',  iconName: 'lineChart',   color: '#fcd34d',    group: 'GERENCIA' },
-            { key: 'dashEjecutivo', label: 'Indicadores Diarios',   iconName: 'trendingUp',  color: '#fbbf24',    group: 'GERENCIA' },
+            // Se conserva SOLO la Cartera de Proyectos: única pantalla para crear/editar proyectos y frentes.
+            { key: 'proyectos',   label: 'Cartera de Proyectos',    iconName: 'mapPin',      color: '#5eead4',    group: 'PROYECTOS' },
             ...(rol === 'admin' ? [
               { key: 'admin', label: 'Administración del Sistema', iconName: 'shieldAdmin', color: BASE.red, group: 'ADMINISTRACIÓN' },
             ] : []),
@@ -952,11 +885,6 @@ function AppInner() {
                   </>
                 )}
 
-            {/* Estado de Obra — tablero unificado (avance, CPI, PPC, calidad, seguridad) */}
-            {moduloIngeniero === 'estadoObra' && (
-              <EstadoObra irA={setModuloIngeniero} />
-            )}
-
             {/* Plan Diario (Programación Diaria F06) — restaurado a Producción (2026-06-25) */}
             {moduloIngeniero === 'planDiario' && (
               <PlanDiario
@@ -984,11 +912,6 @@ function AppInner() {
               />
             )}
 
-            {/* Radar de Producción — alertas predictivas */}
-            {moduloIngeniero === 'radarProd' && (
-              <RadarProduccion isMobile={isMobile} />
-            )}
-
             {/* PLANEAMIENTO (Flujo, Cronograma, Normal Tecnológica, Pull Planning,
                 Last Planner, Plan de Vaciado) → app independiente PLANEAMIENTO_PLATAFORMA (2026-06-24). */}
 
@@ -1014,49 +937,15 @@ function AppInner() {
               />
             )}
 
-            {/* War Room — Estado ejecutivo de cuadrillas */}
-            {moduloIngeniero === 'warroom' && (
-              <WarRoomCuadrillas historial={historial} />
-            )}
-
-            {/* Materiales — Modulo del Bloque 19 */}
-            {moduloIngeniero === 'materiales' && (
-              <MaterialesPanel showToast={showToast} />
-            )}
-
-            {/* Compras — OC/OS/Partidas/TC (Fases 1-7) */}
-            {moduloIngeniero === 'compras' && (
-              <ComprasPanel showToast={showToast} />
-            )}
-
-            {/* Bloque 21 - Plan Maestro WBS */}
-            {moduloIngeniero === 'planMaestro' && (
-              <PlanMaestroPanel showToast={showToast} />
-            )}
-
             {/* Modelo BIM - acceso transversal */}
             {moduloIngeniero === 'bim' && (
               <BIM showToast={showToast} />
             )}
 
-            {/* Bloque 22 - Panel Ejecutivo Gerencia */}
-            {moduloIngeniero === 'gerencia' && (
-              <PanelGerencia showToast={showToast} />
-            )}
-
-            {/* Bloque 23 - Multi-Proyecto Multi-Frente */}
+            {/* Cartera de Proyectos — Multi-Proyecto Multi-Frente (única pantalla para
+                crear/editar proyectos y frentes; se conserva en la depuración 2026-07-25) */}
             {moduloIngeniero === 'proyectos' && (
               <ProyectosPanel showToast={showToast} />
-            )}
-
-            {/* Bloque 24 - Portfolio Ejecutivo */}
-            {moduloIngeniero === 'portfolio' && (
-              <PortfolioPanel showToast={showToast} />
-            )}
-
-            {/* Dashboard Ejecutivo · Indicadores diarios (snapshot a Firestore) */}
-            {moduloIngeniero === 'dashEjecutivo' && (
-              <DashboardEjecutivo showToast={showToast} isMobile={isMobile} />
             )}
 
             {/* Gestión de Calidad → app independiente CALIDAD_PLATAFORMA (2026-06-24). */}
@@ -1077,37 +966,7 @@ function AppInner() {
           );
         })()}
 
-        {/* ── ROL: ALMACENERO / LOGISTICA (Bloque 19) ── */}
-        {/* Desktop: menú lateral navy (mismo formato que Producción/Planeamiento y
-            Oficina Técnica) que maneja las opciones del almacén; MaterialesPanel
-            ocupa todo el ancho restante. Móvil: panel de tarjetas mobile-first. */}
-        {(rol === 'almacenero' || rol === 'logistica') && (
-          isMobile ? (
-            <Almacenero showToast={showToast} isMobile={isMobile} />
-          ) : (
-            <div style={{ position: 'relative' }}>
-              <AreaSidebar
-                grupos={ALMACEN_SIDEBAR}
-                activeKey={moduloAlmacen}
-                onSelect={setModuloAlmacen}
-                collapsed={sidebarCollapsed}
-                onToggleCollapse={toggleSidebar}
-                sidebarWidth={SIDEBAR_W}
-              />
-              <div style={{ minWidth: 0 }}>
-                {moduloAlmacen === 'compras' ? (
-                  <ComprasPanel showToast={showToast} />
-                ) : (
-                  <MaterialesPanel
-                    showToast={showToast}
-                    tabExterna={moduloAlmacen}
-                    onChangeTab={(t) => setModuloAlmacen(TAB_TO_KEY_MAT[t] || 'materiales.dashboard')}
-                  />
-                )}
-              </div>
-            </div>
-          )
-        )}
+        {/* ── ROLES ALMACENERO / LOGISTICA → área ELIMINADA en la depuración 2026-07-25 ── */}
 
         {/* ── ROLES CALIDAD / SUPERVISOR_CLIENTE → app independiente CALIDAD_PLATAFORMA (2026-06-24) ── */}
 
@@ -1139,7 +998,7 @@ function AppInner() {
         {/* ── ROL: SEGURIDAD / SSOMA → movido a la plataforma independiente SIGMA (2026-06-15) ── */}
 
         {/* ── ROL NO RECONOCIDO ── */}
-        {rol && !['capataz', 'carta_balance', 'ingeniero', 'admin', 'almacenero', 'logistica', 'oficina_tecnica'].includes(rol) && (
+        {rol && !['capataz', 'carta_balance', 'ingeniero', 'admin', 'oficina_tecnica'].includes(rol) && (
           <div style={{
             maxWidth: '400px',
             margin: '60px auto',
