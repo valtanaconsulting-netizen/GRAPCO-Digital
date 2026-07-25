@@ -1,7 +1,7 @@
 // src/views/Ingeniero.jsx — V3 con Alertas, Ranking, CPI%, Costos HE
 import React, { useState, useMemo, useEffect, useRef, useCallback, useLayoutEffect, lazy, Suspense } from 'react';
 import { db } from '../firebaseConfig';
-import { doc, deleteDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, deleteDoc, updateDoc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { CATALOGO_MASTER, INFO_MAP, FECHA_INICIO_PROYECTO } from '../utils/constants';
 import { BASE, inp } from '../utils/styles';
 import {
@@ -182,21 +182,32 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
     if (!proyectoActivoId) { showToast?.('Sin proyecto activo', 'warning'); return; }
     const norm = (s) => (s || '').toString().toUpperCase().trim();
     const pT = norm(partidaNom), sT = norm(subpartidaNom), aT = norm(actividadNom);
-    const nuevo = (arbolWbs || []).map(p => norm(p.nombre) !== pT ? p : ({
-      ...p,
-      subpartidas: (p.subpartidas || []).map(s => norm(s.nombre) !== sT ? s : ({
-        ...s,
-        actividades: (s.actividades || []).map(a => norm(a.nombre) !== aT ? a : ({
-          ...a,
-          ...(flags || {}),
-        })),
-      })),
-    }));
     try {
-      await setDoc(doc(db, 'Catalogo_WBS', proyectoActivoId), {
-        proyectoId: proyectoActivoId,
-        arbol: nuevo,
-        actualizadoEn: serverTimestamp(),
+      // TRANSACCIÓN: se relee el catálogo que está en el servidor JUSTO ahora y el
+      // cambio se aplica sobre ÉL, no sobre la copia que tenía este navegador.
+      // Antes se reescribía el árbol entero desde memoria, así que marcar una
+      // actividad como terminada podía borrar en silencio lo que otra persona
+      // acababa de editar en el editor de WBS (o al revés).
+      const ref = doc(db, 'Catalogo_WBS', proyectoActivoId);
+      await runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
+        const arbolServidor = snap.exists() ? (snap.data()?.arbol || null) : null;
+        const base = Array.isArray(arbolServidor) && arbolServidor.length ? arbolServidor : (arbolWbs || []);
+        const aplicado = base.map(p => norm(p.nombre) !== pT ? p : ({
+          ...p,
+          subpartidas: (p.subpartidas || []).map(s => norm(s.nombre) !== sT ? s : ({
+            ...s,
+            actividades: (s.actividades || []).map(a => norm(a.nombre) !== aT ? a : ({
+              ...a,
+              ...(flags || {}),
+            })),
+          })),
+        }));
+        tx.set(ref, {
+          proyectoId: proyectoActivoId,
+          arbol: aplicado,
+          actualizadoEn: serverTimestamp(),
+        }, { merge: true });
       });
       showToast?.('Ajustes de la actividad guardados ✓', 'success');
     } catch (e) {
@@ -482,7 +493,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
   const hhTotales   = useMemo(() => calcularHHTotales(filtrados),   [filtrados]);
 
   const stats = useMemo(() => {
-    if (!filtrados.length) return { ipAvg:'-', met:0, ef:0, un:'', varHH:0, cpi:null };
+    if (!filtrados.length) return { ipAvg:'-', met:0, un:'', varHH:0, cpi:null };
     let tM = 0, tH = 0, tHM = 0, tHP = 0, sumUn = '';
     filtrados.forEach(r => {
       const met = Number(r.metradoValidado ?? r.metradoReportado ?? r.metrado) || 0;
@@ -495,7 +506,6 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
     return {
       ipAvg: tM > 0 ? (tH / tM).toFixed(3) : '0.000',
       met: tM.toFixed(1),
-      ef: tHM > 0 ? Math.round((tHM / tH) * 100) : 0,
       un: sumUn || 'UND',
       varHH: (tHP - tH).toFixed(1),
       cpi: calcCPI(tHM, tH),
@@ -619,7 +629,6 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
   const kpis = [
     { l:'IP PROMEDIO',     v: stats.ipAvg,                        c: BASE.text },
     metradoSumable && { l:'METRADO TOTAL',  v:`${stats.met} ${stats.un}`, c: BASE.text },
-    { l:'EFICIENCIA META', v:`${stats.ef}%`,                      c: stats.ef >= 100 ? BASE.green : '#dc2626' },
     { l:'AHORRO/PÉRDIDA',  v:`${stats.varHH} HH`,                 c: parseFloat(stats.varHH) >= 0 ? BASE.green : '#dc2626' },
     { l:'CPI GLOBAL',      v: fmtCPIPct(stats.cpi),               c: getEstado(stats.cpi).color },
     { l:'COSTO REAL',      v: fmtMoney(costos.real),              c: BASE.navy, sub: 'HN + HE 60/100' },
@@ -734,21 +743,6 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
               background: cpiEstado.color, alignSelf: 'center',
               boxShadow: `0 0 0 2px ${cpiEstado.color}33`,
             }}/>
-          </div>
-        </Tooltip>
-        <Tooltip texto="Eficiencia operativa: HH planificadas vs HH reales ejecutadas. ≥100% indica que se cumplió o superó la meta." variant="info">
-          <div style={{
-            padding: '6px 14px',
-            display: 'inline-flex',
-            alignItems: 'baseline',
-            gap: '7px',
-          }}>
-            <span style={{ fontSize: '9.5px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.7px' }}>EF</span>
-            <span style={{
-              fontSize: '15px', fontWeight: '900',
-              color: stats.ef >= 100 ? BASE.green : '#d97706',
-              fontFamily: 'var(--grapco-font-mono, monospace)',
-            }}>{stats.ef}%</span>
           </div>
         </Tooltip>
       </div>
@@ -1083,7 +1077,7 @@ export default function Ingeniero({ historial, cuadrillasActivas, cuadrillasDB, 
       {/* === VISTAS === Todos los grupos cargan el módulo activo a todo el ancho. */}
       <div>
       <div>
-      {view==='cockpit'    && <CockpitEjecutivo historial={historialEnriquecido} wbs={wbs} filtrados={filtrados} costosCustomMap={costosCustomMap} isMobile={isMobile}/>}
+      {view==='cockpit'    && <CockpitEjecutivo wbs={wbs} filtrados={filtrados} isMobile={isMobile}/>}
       {view==='auditoria'  && <Auditoria filtrados={filtrados} eliminar={eliminar} guardarMetrado={guardarMetrado} hhPorSemana={hhPorSemana} hhTotales={hhTotales} totalBaseDatos={(historial||[]).length}/>}
       {view==='wbs-editor' && <EditorWbsIsp showToast={showToast}/>}
       {/* `filtrados` (no el historial completo): el Control Gerencial respeta el filtro del

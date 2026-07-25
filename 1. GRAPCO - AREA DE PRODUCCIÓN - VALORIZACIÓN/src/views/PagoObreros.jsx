@@ -124,6 +124,20 @@ export default function PagoObreros({ historial = [], cuadrillasActivas = {}, co
       .sort((a, b) => b.subtotal.costoTotal - a.subtotal.costoTotal);
   }, [registrosFiltrados, costosCustomMap, busqueda]);
 
+  // ── BLINDAJE ANTI PAGO EN CERO ────────────────────────────────────
+  // Si el cargo de una persona no tiene tarifa configurada, su costo sale
+  // S/ 0.00 y antes se firmaba la planilla sin que nadie lo notara.
+  // Aquí se detecta y se avisa en rojo; además bloquea la exportación.
+  const sinTarifa = useMemo(() => {
+    const out = new Map(); // nombre -> horas
+    porCapataz.forEach(g => g.trabajadores.forEach(t => {
+      if ((t.totalHH || 0) > 0 && !(t.costoHora > 0)) {
+        out.set(t.nombre, (out.get(t.nombre) || 0) + (t.totalHH || 0));
+      }
+    }));
+    return [...out.entries()].map(([nombre, hh]) => ({ nombre, hh }));
+  }, [porCapataz]);
+
   const granTotal = useMemo(() => {
     return porCapataz.reduce((s, g) => ({
       personas: s.personas + g.trabajadores.length,
@@ -140,6 +154,11 @@ export default function PagoObreros({ historial = [], cuadrillasActivas = {}, co
 
   const handleExport = async () => {
     if (porCapataz.length === 0) return showToast?.('Sin datos para exportar', 'warning');
+    if (sinTarifa.length > 0) {
+      return showToast?.(
+        `No se puede exportar: ${sinTarifa.length} trabajador(es) quedarían en S/ 0.00 por falta de tarifa de su cargo. Configúrala en Personal → Tarifas.`,
+        'error');
+    }
     try {
       const { exportarCostosHE } = await import('../utils/excelExport');
       const todos = porCapataz.flatMap(g => g.trabajadores);
@@ -244,9 +263,29 @@ export default function PagoObreros({ historial = [], cuadrillasActivas = {}, co
           </div>
         </div>
 
+        {/* Aviso de pago en cero: nadie debe firmar una planilla con S/ 0.00 escondido */}
+        {sinTarifa.length > 0 && (
+          <div style={{
+            marginTop: '12px', background: '#fef2f2', border: '1.5px solid #dc2626',
+            borderRadius: '10px', padding: '11px 13px',
+          }}>
+            <p style={{ fontSize: '12.5px', fontWeight: 900, color: '#b91c1c' }}>
+              ⚠️ {sinTarifa.length} trabajador{sinTarifa.length !== 1 ? 'es' : ''} se pagaría{sinTarifa.length !== 1 ? 'n' : ''} S/ 0.00
+            </p>
+            <p style={{ fontSize: '11.5px', color: '#7f1d1d', marginTop: '4px', lineHeight: 1.45 }}>
+              Su cargo no tiene tarifa configurada. Ve a <strong>Personal → Tarifas</strong> y asígnale una.
+              Mientras tanto la exportación a Excel está bloqueada.
+            </p>
+            <p style={{ fontSize: '11px', color: '#991b1b', marginTop: '6px', fontWeight: 700 }}>
+              {sinTarifa.slice(0, 8).map(t => `${t.nombre} (${t.hh.toFixed(1)} HH)`).join(' · ')}
+              {sinTarifa.length > 8 ? ` … y ${sinTarifa.length - 8} más` : ''}
+            </p>
+          </div>
+        )}
+
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', gap: '10px', flexWrap: 'wrap' }}>
           <p style={{ fontSize: '10.5px', color: BASE.muted, lineHeight: 1.4 }}>
-            Fórmula: <strong>Costo = HN × tarifa + HE primeras 2h × 1.60 + HE resto × 2.00</strong>. Tarifa por trabajador/cargo (Configuración → Tarifas).
+            Fórmula: <strong>Costo = HN × tarifa + HE primeras 2h × 1.60 + HE resto × 2.00</strong>. Tarifa según el cargo (Personal → Tarifas).
           </p>
           <button onClick={handleExport}
             style={{

@@ -6,7 +6,7 @@
 // El resultado alimenta el ISP / Análisis de Desempeño (CPI).
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { db } from '../../../firebaseConfig';
 import { BASE } from '../../../utils/styles';
 import { CATALOGO_MASTER, INFO_MAP } from '../../../utils/constants';
@@ -36,6 +36,17 @@ export default function EditorWbsIsp({ showToast }) {
   const { proyectoActivoId, proyectos, frentes, fechaInicioProyecto, PROYECTO_DEFAULT_ID } = useProyectoActivo();
   const confirmar = useConfirm();
   const { loading, arbol: arbolRemoto, existe } = useCatalogoWBS(proyectoActivoId);
+  // Marca de tiempo del catálogo tal como se cargó: sirve para detectar si alguien
+  // más lo modificó antes de que guardemos (ver `guardar`).
+  const marcaCargadaRef = useRef(null);
+  useEffect(() => {
+    let vivo = true;
+    if (!proyectoActivoId) { marcaCargadaRef.current = null; return; }
+    getDoc(doc(db, 'Catalogo_WBS', proyectoActivoId))
+      .then(sn => { if (vivo) marcaCargadaRef.current = sn.exists() ? (sn.data()?.actualizadoEn?.toMillis?.() ?? null) : null; })
+      .catch(() => { if (vivo) marcaCargadaRef.current = null; });
+    return () => { vivo = false; };
+  }, [proyectoActivoId, arbolRemoto]);
 
   const [arbol, setArbol]   = useState([]);
   const [dirty, setDirty]   = useState(false);
@@ -216,9 +227,32 @@ export default function EditorWbsIsp({ showToast }) {
         setGuardando(false);
         return;
       }
-      await setDoc(doc(db, 'Catalogo_WBS', proyectoActivoId), {
-        proyectoId: proyectoActivoId, arbol: limpio, actualizadoEn: serverTimestamp(),
+      // CONTROL DE CONCURRENCIA: este guardado reemplaza el catálogo COMPLETO.
+      // Si alguien más lo tocó mientras esta pantalla estaba abierta (por ejemplo
+      // marcando una actividad como terminada desde CPI + EAC), guardar aquí
+      // borraría ese cambio sin avisar. Por eso se compara la marca de tiempo
+      // del servidor contra la que se cargó y, si no coinciden, se aborta.
+      const ref = doc(db, 'Catalogo_WBS', proyectoActivoId);
+      let conflicto = false;
+      await runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
+        const marcaServidor = snap.exists() ? (snap.data()?.actualizadoEn?.toMillis?.() ?? null) : null;
+        if (marcaCargadaRef.current != null && marcaServidor != null && marcaServidor !== marcaCargadaRef.current) {
+          conflicto = true;
+          return;
+        }
+        tx.set(ref, { proyectoId: proyectoActivoId, arbol: limpio, actualizadoEn: serverTimestamp() });
       });
+      if (conflicto) {
+        toast('Otra persona modificó el catálogo mientras lo editabas. Recarga la pantalla para traer sus cambios y vuelve a aplicar los tuyos (no se guardó nada para no borrar su trabajo).', 'error');
+        setGuardando(false);
+        return;
+      }
+      // Releer la marca para que un segundo guardado seguido no se crea desactualizado.
+      try {
+        const fresco = await getDoc(ref);
+        marcaCargadaRef.current = fresco.exists() ? (fresco.data()?.actualizadoEn?.toMillis?.() ?? null) : null;
+      } catch { /* si falla, el próximo guardado simplemente revalidará */ }
       setArbol(limpio); setDirty(false);
       toast('Catálogo WBS guardado ✓', 'success');
     } catch (e) {

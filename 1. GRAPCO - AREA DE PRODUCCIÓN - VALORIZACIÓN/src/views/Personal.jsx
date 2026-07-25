@@ -1,7 +1,7 @@
 // src/views/ingeniero/Personal.jsx
 import React, { useState, useMemo, useEffect } from 'react';
 import { db } from '../firebaseConfig';
-import { doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import {
   CARGOS, CARGOS_STAFF, CARGOS_CORTO, ESPECIALIDADES, LETRAS, BASE, inp
 } from '../utils/styles';
@@ -11,6 +11,14 @@ import { useConfirm } from '../contexts/NotificationContext';
 import Modal from '../components/Modal';
 import DatePickerPremium from '../components/DatePickerPremium';
 import PersonalBaseDatos from './PersonalBaseDatos';
+
+// ── Identidad de trabajadores (funciones puras, fuera del componente) ──
+const normNombre = (s) => String(s || '').trim().toUpperCase().replace(/\s+/g, ' ');
+const soloDigitos = (s) => String(s || '').replace(/\D/g, '');
+// ¿Este miembro de cuadrilla es el trabajador dado? Por código si lo tiene; si no, por nombre.
+const esMiembro = (m, trab) =>
+  (m.trabajadorId && trab?.id) ? m.trabajadorId === trab.id
+                               : normNombre(m.nombre) === normNombre(trab?.nombre);
 
 export default function Personal({ cuadrillasDB: cuadrillasTodas, personalDB: personalTodos, configuracion, showToast }) {
   const { proyectoActivoId, filtrarPorContexto, proyectos } = useProyectoActivo();
@@ -90,12 +98,36 @@ export default function Personal({ cuadrillasDB: cuadrillasTodas, personalDB: pe
   };
 
 
-  // ── Helper: encontrar la cuadrilla actual de un trabajador ──
-  const cuadrillaDeTrab = (nombreTrab) => {
-    return Object.entries(cuadrillasDB).find(([_, c]) =>
-      (c.miembros || []).some(m => m.nombre === nombreTrab)
-    );
+  // ══════════════════════════════════════════════════════════════════
+  // IDENTIDAD DE TRABAJADORES
+  // Un trabajador se identifica por el CÓDIGO de su ficha (id del documento),
+  // que nunca cambia aunque se corrija el nombre. El nombre viaja igual dentro
+  // de la cuadrilla, pero solo como etiqueta legible.
+  // Las cuadrillas antiguas guardaban únicamente el nombre: por eso toda
+  // búsqueda cae al nombre cuando el miembro todavía no tiene código, y al
+  // guardar se le completa (migración progresiva, sin tocar el histórico).
+  // ══════════════════════════════════════════════════════════════════
+  // Cuadrilla actual de un trabajador (recibe la FICHA, no el nombre suelto).
+  const cuadrillaDeTrab = (trab) => {
+    if (!trab) return null;
+    return Object.entries(cuadrillasDB).find((entry) =>
+      (entry[1].miembros || []).some(m => esMiembro(m, trab))
+    ) || null;
   };
+
+  // Completa el código de los miembros que aún no lo tienen, cruzando por nombre
+  // contra el padrón. Es la migración: se aplica sola cada vez que se guarda.
+  const conCodigos = (miembros) => (miembros || []).map(m => {
+    if (m.trabajadorId) return m;
+    const ficha = personalDB.find(p => normNombre(p.nombre) === normNombre(m.nombre));
+    return ficha ? { ...m, trabajadorId: ficha.id } : m;
+  });
+
+  // Escribe SOLO la lista de miembros. Antes se reescribía el documento entero
+  // desde la copia del navegador, así que dos personas editando a la vez se
+  // pisaban los cambios (y una pestaña vieja podía borrar los códigos).
+  const guardarMiembros = (cuadrillaId, miembros) =>
+    updateDoc(doc(db, 'Cuadrillas', cuadrillaId), { miembros: conCodigos(miembros) });
 
   // ── Cuadrilla CRUD ──
   const guardarCuadrilla = async () => {
@@ -107,7 +139,7 @@ export default function Personal({ cuadrillasDB: cuadrillasTodas, personalDB: pe
         capataz: cap?.nombre || '',
         capatazId: formCuadrilla.capatazId,
         especialidad: formCuadrilla.especialidad,
-        miembros: formCuadrilla.miembros,
+        miembros: conCodigos(formCuadrilla.miembros),
         proyectoId: proyectoActivoId || null,
       }, { merge: true });
       showToast(modalCuadrilla === 'nuevo' ? '✅ Cuadrilla creada' : '✅ Cuadrilla actualizada', 'success');
@@ -147,14 +179,47 @@ export default function Personal({ cuadrillasDB: cuadrillasTodas, personalDB: pe
   // ── Trabajador CRUD con asignación de cuadrilla ──
   const guardarTrabajador = async () => {
     if (!formTrabajador.nombre.trim()) return showToast('Ingresa el nombre', 'warning');
+
+    const id = modalTrabajador === 'nuevo' ? `personal_${Date.now()}` : modalTrabajador.id;
+    const nombreFinal = normNombre(formTrabajador.nombre);
+    const dniFinal = soloDigitos(formTrabajador.dni);
+
+    // ── VALIDACIÓN 1 · DNI repetido ─────────────────────────────────
+    // El DNI identifica a la persona en toda GRAPCO. Se compara contra el
+    // padrón COMPLETO (no solo esta obra) para que la misma persona no
+    // termine con dos fichas al pasar de una obra a otra. Sin DNI no bloquea.
+    if (dniFinal) {
+      const choque = (personalTodos || []).find(p => p.id !== id && soloDigitos(p.dni) === dniFinal);
+      if (choque) {
+        const mismaObra = (choque.proyectoId || null) === (proyectoActivoId || null);
+        return showToast(
+          mismaObra
+            ? `El DNI ${dniFinal} ya está registrado a nombre de ${choque.nombre}. Corrige el DNI o edita esa ficha.`
+            : `El DNI ${dniFinal} ya existe en otra obra (${choque.nombre}). Usa "Base de datos GRAPCO" para traer esa misma ficha en vez de crear una nueva.`,
+          'error');
+      }
+    }
+
+    // ── VALIDACIÓN 2 · Un trabajador, una sola cuadrilla ────────────
+    const nuevaCuadIdPre = formTrabajador.cuadrillaId;
+    if (nuevaCuadIdPre) {
+      const yaEn = Object.entries(cuadrillasDB).find(([cid, c]) =>
+        cid !== nuevaCuadIdPre &&
+        (c.miembros || []).some(m => (m.trabajadorId ? m.trabajadorId === id : normNombre(m.nombre) === nombreFinal))
+      );
+      if (yaEn) {
+        return showToast(
+          `${nombreFinal} ya pertenece a la cuadrilla de ${yaEn[1].capataz || 'otro capataz'}. Sácalo de esa cuadrilla antes de asignarlo aquí.`,
+          'error');
+      }
+    }
+
     try {
-      const id = modalTrabajador === 'nuevo' ? `personal_${Date.now()}` : modalTrabajador.id;
-      const nombreFinal = formTrabajador.nombre.trim().toUpperCase();
       const oldNombre = modalTrabajador?.nombre;
 
       await setDoc(doc(db, 'Personal', id), {
         nombre: nombreFinal,
-        dni: formTrabajador.dni.trim(),
+        dni: dniFinal,
         telefono: (formTrabajador.telefono || '').trim(),
         fechaNac: formTrabajador.fechaNac,
         cargo: formTrabajador.cargo,
@@ -165,34 +230,40 @@ export default function Personal({ cuadrillasDB: cuadrillasTodas, personalDB: pe
         proyectoId: proyectoActivoId || null,
       }, { merge: true });
 
-      // Si se asignó/cambió cuadrilla, actualizar la(s) cuadrilla(s)
-      const cuadActualEntry = oldNombre ? cuadrillaDeTrab(oldNombre) : null;
+      // Si se asignó/cambió cuadrilla, actualizar la(s) cuadrilla(s).
+      // El trabajador se ubica por CÓDIGO (o por nombre si la cuadrilla es antigua).
+      const trabRef = { id, nombre: oldNombre || nombreFinal };
+      const cuadActualEntry = cuadrillaDeTrab(trabRef);
       const nuevaCuadId = formTrabajador.cuadrillaId;
 
       // Quitar de la cuadrilla anterior si existe y es distinta
       if (cuadActualEntry && cuadActualEntry[0] !== nuevaCuadId) {
         const [cId, cuad] = cuadActualEntry;
-        const newMiembros = (cuad.miembros || []).filter(m => m.nombre !== oldNombre);
-        await setDoc(doc(db, 'Cuadrillas', cId), { ...cuad, miembros: newMiembros });
+        await guardarMiembros(cId, (cuad.miembros || []).filter(m => !esMiembro(m, trabRef)));
       }
       // Añadir a la nueva cuadrilla
       if (nuevaCuadId && (!cuadActualEntry || cuadActualEntry[0] !== nuevaCuadId)) {
         const cuad = cuadrillasDB[nuevaCuadId];
         if (cuad && formTrabajador.cargo !== 'Capataz') {
-          const yaExiste = (cuad.miembros || []).some(m => m.nombre === nombreFinal);
+          const yaExiste = (cuad.miembros || []).some(m => esMiembro(m, { id, nombre: nombreFinal }));
           if (!yaExiste) {
-            const nuevosMiembros = [...(cuad.miembros || []), { nombre: nombreFinal, cargo: formTrabajador.cargo }];
-            await setDoc(doc(db, 'Cuadrillas', nuevaCuadId), { ...cuad, miembros: nuevosMiembros });
+            await guardarMiembros(nuevaCuadId, [
+              ...(cuad.miembros || []),
+              { trabajadorId: id, nombre: nombreFinal, cargo: formTrabajador.cargo },
+            ]);
           }
         }
       }
-      // Si se cambió el nombre de un trabajador que ya estaba en una cuadrilla, actualizar
-      if (oldNombre && oldNombre !== nombreFinal && cuadActualEntry && cuadActualEntry[0] === nuevaCuadId) {
+      // Si cambió el nombre o el cargo de alguien que sigue en la misma cuadrilla,
+      // refrescar su etiqueta. Al ir por código, corregir un nombre ya no
+      // desvincula al trabajador de su cuadrilla.
+      if (cuadActualEntry && cuadActualEntry[0] === nuevaCuadId) {
         const [cId, cuad] = cuadActualEntry;
-        const newMiembros = (cuad.miembros || []).map(m =>
-          m.nombre === oldNombre ? { ...m, nombre: nombreFinal, cargo: formTrabajador.cargo } : m
-        );
-        await setDoc(doc(db, 'Cuadrillas', cId), { ...cuad, miembros: newMiembros });
+        await guardarMiembros(cId, (cuad.miembros || []).map(m =>
+          esMiembro(m, trabRef)
+            ? { ...m, trabajadorId: id, nombre: nombreFinal, cargo: formTrabajador.cargo }
+            : m
+        ));
       }
 
       showToast(modalTrabajador === 'nuevo' ? '✅ Trabajador registrado' : '✅ Trabajador actualizado', 'success');
@@ -214,11 +285,10 @@ export default function Personal({ cuadrillasDB: cuadrillasTodas, personalDB: pe
     try {
       // Quitar de su cuadrilla si está
       if (trab) {
-        const cuadEntry = cuadrillaDeTrab(trab.nombre);
+        const cuadEntry = cuadrillaDeTrab(trab);
         if (cuadEntry) {
           const [cId, cuad] = cuadEntry;
-          const newMiembros = (cuad.miembros || []).filter(m => m.nombre !== trab.nombre);
-          await setDoc(doc(db, 'Cuadrillas', cId), { ...cuad, miembros: newMiembros });
+          await guardarMiembros(cId, (cuad.miembros || []).filter(m => !esMiembro(m, trab)));
         }
       }
       await deleteDoc(doc(db, 'Personal', id));
@@ -232,7 +302,7 @@ export default function Personal({ cuadrillasDB: cuadrillasTodas, personalDB: pe
     if (item === 'nuevo') {
       setFormTrabajador({nombre:'',dni:'',telefono:'',fechaNac:'',cargo:'Operario',cuadrillaId:'',fechaIngreso:'',fechaSalida:'',fechaLiquidacion:''});
     } else {
-      const cuadEntry = cuadrillaDeTrab(item.nombre);
+      const cuadEntry = cuadrillaDeTrab(item);
       setFormTrabajador({
         nombre: item.nombre,
         dni: item.dni||'',
@@ -251,7 +321,7 @@ export default function Personal({ cuadrillasDB: cuadrillasTodas, personalDB: pe
   // ── Disponibles para agregar a cuadrilla (en modal cuadrilla) ──
   const disponibles = useMemo(() => personalDB.filter(p => {
     if (p.cargo === 'Capataz') return false;
-    if (formCuadrilla.miembros.find(m => m.nombre === p.nombre)) return false;
+    if (formCuadrilla.miembros.find(m => esMiembro(m, p))) return false;
     if (filtroCargo && p.cargo !== filtroCargo) return false;
     if (busqCuadModal && !p.nombre.toLowerCase().includes(busqCuadModal.toLowerCase())) return false;
     return true;
@@ -272,11 +342,35 @@ export default function Personal({ cuadrillasDB: cuadrillasTodas, personalDB: pe
           <div style={{display:'flex',flexDirection:'column',gap:'14px'}}>
             <div style={{background:BASE.navySoft,borderRadius:'8px',padding:'12px 14px',border:`1px solid ${BASE.border}`}}>
               <p style={{fontSize:'12px',color:BASE.navy,fontWeight:'600',lineHeight:1.5}}>
-                Estas tarifas aplican a todos los trabajadores en los cálculos de costos del Excel
-                (HN, HE 60%, HE 100%). Si un trabajador tiene una tarifa individual configurada
-                en su ficha, esa prevalece.
+                Estas tarifas se usan para el <strong>pago a obreros</strong> (HN, HE 60%, HE 100%)
+                y su Excel. Un cargo sin tarifa se paga <strong>S/ 0.00</strong>, así que revisa que
+                todos los cargos en uso tengan la suya.
+              </p>
+              <p style={{fontSize:'11px',color:BASE.muted,marginTop:'6px',lineHeight:1.45}}>
+                Ojo: los tableros de <strong>costo de obra</strong> (Cockpit y Control Gerencial) no usan
+                esta tabla — valorizan con el costo promedio de mano de obra del CR/ISP, para que
+                cuadren con lo que se le reporta al cliente.
               </p>
             </div>
+
+            {(() => {
+              // Cargos que SÍ tienen gente en la obra pero no figuran en la tabla:
+              // hoy esos trabajadores se pagarían S/ 0.00.
+              const enUso = [...new Set(personalDB.map(p => p.cargo).filter(Boolean))];
+              const huerfanos = enUso.filter(c => !CARGOS.includes(c));
+              if (!huerfanos.length) return null;
+              return (
+                <div style={{background:'#fef2f2',border:'1.5px solid #dc2626',borderRadius:'8px',padding:'10px 12px'}}>
+                  <p style={{fontSize:'12px',fontWeight:900,color:'#b91c1c'}}>
+                    ⚠️ {huerfanos.length} cargo{huerfanos.length!==1?'s':''} en uso sin tarifa
+                  </p>
+                  <p style={{fontSize:'11px',color:'#7f1d1d',marginTop:'4px',lineHeight:1.45}}>
+                    {huerfanos.join(' · ')} — quien tenga estos cargos se pagaría S/ 0.00 en el módulo
+                    de Pago a Obreros.
+                  </p>
+                </div>
+              );
+            })()}
 
             <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
               {CARGOS.map(cargo => {

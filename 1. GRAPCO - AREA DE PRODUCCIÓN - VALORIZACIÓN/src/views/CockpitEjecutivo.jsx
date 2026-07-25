@@ -8,17 +8,20 @@
 import React, { useMemo } from 'react';
 import { BASE } from '../utils/styles';
 import { getEstado, fmtCPIPct, fmt1, COSTO_HORA_PROMEDIO } from '../utils/helpers';
+import { proyectarCierre, rankearPerdidas } from '../utils/eac';
 
 const fmtS = (n) => 'S/ ' + Math.round(Number(n) || 0).toLocaleString('es-PE');
 const num = (v) => parseFloat(v) || 0;
 
-export default function CockpitEjecutivo({ historial = [], wbs = {}, filtrados = [], costosCustomMap = {}, isMobile }) {
+// `historial` y `costosCustomMap` se dejaron de recibir: llegaban y no se usaban.
+// El costo por hora es COSTO_HORA_PROMEDIO (ver nota al pie de la pantalla).
+export default function CockpitEjecutivo({ wbs = {}, filtrados = [], isMobile }) {
   // Costo S/./HH único de la plataforma (fijado por el usuario en S/25.50/h)
   const costoHH = COSTO_HORA_PROMEDIO;
 
   const k = useMemo(() => {
     // Acumulados ejecutados (respeta filtros)
-    let hhReal = 0, hhMeta = 0, metW = 0;
+    let hhReal = 0, hhMeta = 0;
     const porSem = {};
     filtrados.forEach(r => {
       const met = num(r.metrado), hh = num(r.totalHH);
@@ -27,7 +30,6 @@ export default function CockpitEjecutivo({ historial = [], wbs = {}, filtrados =
         hhMeta += met * r._ipMeta;
         porSem[r.semana] = (porSem[r.semana] || 0) + met * r._ipMeta;
       }
-      metW += met;
     });
 
     // Presupuesto total (catálogo WBS): Σ metradoContractual × IP meta
@@ -44,44 +46,37 @@ export default function CockpitEjecutivo({ historial = [], wbs = {}, filtrados =
     const costoSobre = hhSobre * costoHH;
     const avancePct = hhMetaTotal > 0 ? Math.min(100, (hhMeta / hhMetaTotal) * 100) : null;
 
-    // Proyección de cierre al ritmo actual
+    // Proyección de cierre — MISMA fórmula que la tabla de CPI + EAC:
+    // actividad por actividad con su propio rendimiento real, y luego se suma.
+    // Antes aquí se proyectaba con una sola eficiencia global y las dos
+    // pantallas daban cifras distintas para lo mismo.
     let cierre = null;
-    if (hhMetaTotal > 0 && hhMeta > 0 && cpi) {
-      const cpiRef = Math.max(0.25, Math.min(2, cpi));
-      const hhMetaRest = Math.max(0, hhMetaTotal - hhMeta);
-      const hhRealParaTerminar = hhMetaRest / cpiRef;
-      const hhRealTotalProy = hhReal + hhRealParaTerminar;
-      const costoFinalProy = hhRealTotalProy * costoHH;
-      const costoMetaPresup = hhMetaTotal * costoHH;
-      const sobreFinal = costoFinalProy - costoMetaPresup;
-      const sems = Object.keys(porSem).map(Number).sort((a, b) => a - b);
+    const proy = proyectarCierre(filtrados, wbs, costoHH);
+    if (proy.hhMetaTotal > 0 && proy.hhEAC > 0) {
+      // Semanas restantes: al ritmo de las últimas 4 semanas con avance.
+      const sems = Object.keys(porSem).map(Number).filter(Number.isFinite).sort((a, b) => a - b);
       const ult4 = sems.slice(-4);
       const vel = ult4.length ? ult4.reduce((s, x) => s + porSem[x], 0) / ult4.length : 0;
+      const hhMetaRest = Math.max(0, proy.hhMetaTotal - proy.hhGanadas);
       const semRest = vel > 0 ? Math.ceil(hhMetaRest / vel) : null;
       const semFin = semRest != null && sems.length ? sems[sems.length - 1] + semRest : null;
-      cierre = { costoFinalProy, costoMetaPresup, sobreFinal, semRest, semFin, cpiRef };
+      cierre = {
+        costoFinalProy: proy.costoEAC,
+        costoMetaPresup: proy.costoMeta,
+        sobreFinal: proy.desvioCosto,
+        semRest, semFin,
+        cpiRef: proy.cpi,
+      };
     }
 
-    // Top-5 actividades en rojo (peor CPI) con sobrecosto en S/.
-    const acc = {};
-    filtrados.forEach(r => {
-      const a = r._actividadCanonica || r.actividad;
-      const met = num(r.metrado), hh = num(r.totalHH);
-      if (!a || hh <= 0) return;
-      if (!acc[a]) acc[a] = { actividad: a, hhR: 0, hhM: 0 };
-      acc[a].hhR += hh;
-      if (r._ipMeta && met > 0) acc[a].hhM += met * r._ipMeta;
-    });
-    const top = Object.values(acc)
-      .map(x => ({ ...x, cpi: x.hhR > 0 ? x.hhM / x.hhR : 1, perdida: (x.hhR - x.hhM) * costoHH }))
-      .filter(x => x.hhM > 0 && x.cpi < 0.85)
-      .sort((a, b) => b.perdida - a.perdida)
-      .slice(0, 5);
+    // Top-5 de dónde se pierde — criterio ÚNICO compartido (utils/eac.js):
+    // ordena por HORAS PERDIDAS, no por porcentaje. Con el umbral anterior
+    // (CPI < 0.85) una actividad al 86% que perdía mucha plata quedaba fuera.
+    const top = rankearPerdidas(filtrados, { costoHora: costoHH, top: 5 });
 
     return { cpi, hhReal, hhMeta, hhSobre, costoSobre, avancePct, cierre, top, hhMetaTotal };
   }, [filtrados, wbs, costoHH]);
 
-  const est = getEstado(k.cpi);
   const enRojo = (k.cpi || 1) < 0.85;
   const heroBg = !k.cpi ? '#475569'
     : k.cpi >= 1 ? 'linear-gradient(135deg,#15803d,#166534)'
