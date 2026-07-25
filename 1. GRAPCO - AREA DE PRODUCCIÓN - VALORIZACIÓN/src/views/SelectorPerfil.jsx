@@ -488,31 +488,35 @@ export default function SelectorPerfil({ onIrASeccion }) {
 
         {/* ── Cabecera navy con la marca ── */}
         <div className="vdc-head">
+          {/* Isotipo en tile blanco con ANILLO DORADO — mismo acabado que la
+              portada de Presupuestos (ahí el logo lleva su contorno marcado). */}
           <div style={{
-            width: '58px', height: '58px', margin: '0 auto 8px',
+            width: '70px', height: '70px', margin: '0 auto 9px',
             background: 'linear-gradient(150deg, #ffffff 0%, #eef3f9 100%)',
-            borderRadius: '15px', padding: '2px', overflow: 'hidden',
+            borderRadius: '18px', padding: '5px', overflow: 'hidden',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: `0 13px 30px -16px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.5), 0 0 0 1.5px ${BASE.gold}40`,
+            border: `2px solid ${BASE.gold}`,
+            boxShadow: `0 14px 32px -16px rgba(0,0,0,0.75), 0 0 0 4px rgba(229,168,47,0.14)`,
           }}>
             <img
               src={LOGO} alt="GRAPCO"
               onError={(e) => { if (!e.target.dataset.fallback) { e.target.dataset.fallback = '1'; e.target.src = LOGO_FALLBACK; } }}
-              style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '14px' }}
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             />
           </div>
           <h1 style={{
-            margin: 0, color: '#fff', fontSize: '21px', fontWeight: 900, letterSpacing: '2.2px',
+            margin: 0, color: '#fff', fontSize: '25px', fontWeight: 900, letterSpacing: '3.4px',
+            textShadow: '0 2px 12px rgba(0,0,0,0.35)',
           }}>
             GRAPCO <span style={{ color: BASE.gold }}>SAC</span>
           </h1>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginTop: '7px' }}>
-            <span style={{ height: '1px', width: '30px', background: `linear-gradient(90deg, transparent, ${BASE.gold}aa)` }} />
-            <span style={{ color: BASE.gold, fontSize: '10px', fontWeight: 800, letterSpacing: '2.6px', textTransform: 'uppercase' }}>
-              Gestión de Proyectos VDC
-            </span>
-            <span style={{ height: '1px', width: '30px', background: `linear-gradient(90deg, ${BASE.gold}aa, transparent)` }} />
-          </div>
+          {/* Bajada sin líneas laterales, como "PRESUPUESTOS AD HOC" en la otra app. */}
+          <p style={{
+            margin: '6px 0 0', color: BASE.gold,
+            fontSize: '10.5px', fontWeight: 800, letterSpacing: '4px', textTransform: 'uppercase',
+          }}>
+            Gestión de Proyectos VDC
+          </p>
         </div>
 
         {/* ── Cuerpo claro ── */}
