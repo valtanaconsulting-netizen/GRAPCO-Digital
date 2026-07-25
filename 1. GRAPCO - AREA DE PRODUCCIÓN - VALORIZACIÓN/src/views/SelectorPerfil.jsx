@@ -60,16 +60,15 @@ const PERFILES = [
     kicker: 'Costos · Valorización',
     descripcion: 'Gestión centralizada de RO, valorizaciones, adicionales, deductivos, garantizando control económico, trazabilidad y soporte para la toma de decisiones.',
     // Secciones REALES del área (moduloOT / ot.*). Entran directo vía tabExterna.
-    // Orden por flujo (2026-06-25): Presupuesto → Ejecución (Registro/BIM) →
-    // Valorización (+ Sustento + Informe) → RO. RDO retirado.
+    // Orden por flujo: Presupuesto → Ejecución (Registro/BIM) → Valorización + Sustento.
+    // 'Informe PDF' y 'Resultado Operativo' se retiraron de ESTOS ACCESOS DIRECTOS
+    // (pedido del usuario 2026-07-25); siguen dentro del área, en su menú lateral.
     accesos: [
       { l: 'Presupuesto',          go: 'ot.partidas',      ic: 'fileText',   d: 'PPTO · CD · GG · Utilidad · IGV' },
       { l: 'Registro Fotográfico', go: 'ot.fotografico',   ic: 'layers',     d: 'Fotos de obra del capataz' },
       { l: 'Modelo BIM',           go: 'ot.bim',           ic: 'cube',       d: 'Vínculos y visor 3D' },
       { l: 'Valorización F07',     go: 'ot.valoriz',       ic: 'coins',      d: 'Formato oficial por metrado del ISP' },
       { l: 'Sustento',             go: 'ot.sustento',      ic: 'ruler',      d: 'Planilla de metrados y fotos' },
-      { l: 'Informe PDF',          go: 'ot.informe',       ic: 'fileText',   d: 'Genera el sustento imprimible' },
-      { l: 'Resultado Operativo',  go: 'ot.ro.costoReal',  ic: 'trendingUp', d: 'CR · Adicionales · Deductivos' },
     ],
   },
   // Gestión de Calidad (protocolos, PETs, NCs, ensayos, planos) → app independiente
