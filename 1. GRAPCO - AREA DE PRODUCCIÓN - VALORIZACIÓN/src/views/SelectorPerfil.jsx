@@ -2,7 +2,7 @@
 // Pantalla de entrada en modo bypass: el usuario elige con qué perfil entrar.
 // Paleta GRAPCO: navy + gold del isotipo, con tarjetas claras y acento por rol.
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import { doc, getDoc, getDocFromCache } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { useAuth } from '../contexts/AuthContext';
@@ -14,6 +14,8 @@ import { obtenerSemana } from '../utils/helpers';
 import { FECHA_INICIO_PROYECTO } from '../utils/constants';
 import Icon from '../components/Icon';
 import SelectPremium from '../components/SelectPremium';
+// Lazy: face-api.js (~1 MB+) NO se carga en el arranque, solo al abrir el kiosko.
+const MarcadorAsistencia = lazy(() => import('./asistencia/MarcadorAsistencia'));
 
 const lblKiosk = { display: 'block', color: '#94a3b8', fontSize: '10px', fontWeight: 900, letterSpacing: '1px', marginBottom: '6px' };
 // (selKiosk/optKiosk retirados: los <select> nativos migraron a SelectPremium —
@@ -185,6 +187,7 @@ export default function SelectorPerfil({ onIrASeccion }) {
   // (uso suelto del componente), cae a entrar al área sin sección específica.
   const irA = (rol, go) => (onIrASeccion ? onIrASeccion(rol, go) : entrarComoRol(rol));
   const { proyectos, proyectoActivo, frentesDelProyecto, proyectoActivoId, setProyectoActivoId, frenteActivoId, setFrenteActivoId, fechaInicioProyecto } = useProyectoActivo();
+  const [modoMarcador, setModoMarcador] = useState(false);
   const [modoPin, setModoPin] = useState(false);
   const [pin, setPin] = useState('');
   const [errorPin, setErrorPin] = useState('');
@@ -314,10 +317,104 @@ export default function SelectorPerfil({ onIrASeccion }) {
     return () => clearTimeout(t);
   }, [pinBloqueadoHasta]);
 
+  // Al abrir el kiosko, si no hay proyecto activo y solo hay uno, lo elige solo.
+  useEffect(() => {
+    if (modoMarcador && !proyectoActivoId && Array.isArray(proyectos) && proyectos.length >= 1) {
+      setProyectoActivoId(proyectos[0].id);
+    }
+  }, [modoMarcador, proyectoActivoId, proyectos, setProyectoActivoId]);
 
   // ¿El teclado PIN está bloqueado ahora mismo? (rate-limit activo)
   const pinBloqueado = pinBloqueadoHasta > Date.now();
 
+  // ── KIOSKO DE REGISTRO DE PERSONAL (reconocimiento facial) ──
+  // Pantalla completa, sin necesidad de entrar como rol. El obrero solo marca.
+  if (modoMarcador) {
+    return (
+      <div style={{
+        minHeight: '100dvh', background: '#0a1628',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        padding: '18px 14px 32px', fontFamily: BASE.font,
+      }}>
+        {/* Cabecera kiosko */}
+        <div style={{
+          width: '100%', maxWidth: '1280px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: '12px', flexWrap: 'wrap', marginBottom: '16px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: '46px', height: '46px', borderRadius: '12px', background: '#fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2px', overflow: 'hidden',
+            }}>
+              <img src={LOGO} alt="GRAPCO"
+                onError={(e) => { if (!e.target.dataset.fb) { e.target.dataset.fb = '1'; e.target.src = LOGO_FALLBACK; } }}
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            </div>
+            <div>
+              <p style={{ color: '#fff', fontSize: '17px', fontWeight: 900, letterSpacing: '0.4px' }}>
+                Registro de Personal
+              </p>
+              <p style={{ color: BASE.gold, fontSize: '11px', fontWeight: 800, letterSpacing: '1px' }}>
+                RECONOCIMIENTO FACIAL · GRAPCO
+              </p>
+            </div>
+          </div>
+          <button onClick={() => setModoMarcador(false)} style={{
+            background: 'rgba(255,255,255,0.08)', border: `1px solid ${BASE.gold}66`,
+            color: BASE.gold, padding: '9px 18px', borderRadius: '999px',
+            fontSize: '12px', fontWeight: 900, letterSpacing: '0.5px', cursor: 'pointer',
+          }}>◄ Volver al selector</button>
+        </div>
+
+        {/* Selector de Proyecto / Frente */}
+        <div style={{
+          width: '100%', maxWidth: '1280px',
+          background: 'rgba(255,255,255,0.05)', border: `1px solid rgba(255,255,255,0.12)`,
+          borderRadius: '14px', padding: '14px 16px', marginBottom: '14px',
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '12px',
+        }}>
+          <div>
+            <label style={lblKiosk}>🏗️ PROYECTO</label>
+            <SelectPremium
+              title="Proyecto" isMobile={isMobile}
+              value={proyectoActivoId || ''}
+              onChange={v => setProyectoActivoId(v)}
+              placeholder="— Selecciona proyecto —"
+              options={(proyectos || []).map(p => ({ value: p.id, label: p.nombre || p.codigo || p.id }))}
+            />
+          </div>
+          <div>
+            <label style={lblKiosk}>📍 FRENTE</label>
+            <SelectPremium
+              title="Frente" isMobile={isMobile}
+              value={frenteActivoId || ''}
+              onChange={v => setFrenteActivoId(v)}
+              placeholder="— Todos / sin frente —"
+              options={[{ value: '', label: '— Todos / sin frente —' }, ...(frentesDelProyecto || []).map(f => ({ value: f.id, label: `${f.codigo ? f.codigo + ' · ' : ''}${f.nombre || f.id}` }))]}
+            />
+          </div>
+        </div>
+
+        {/* Marcador facial */}
+        <div style={{
+          width: '100%', maxWidth: '1280px',
+          background: BASE.white, borderRadius: '16px', padding: '14px',
+          boxShadow: '0 16px 48px rgba(0,0,0,0.4)',
+        }}>
+          {!proyectoActivoId ? (
+            <p style={{ padding: '40px', textAlign: 'center', color: BASE.muted, fontWeight: 700 }}>
+              👆 Selecciona un proyecto para iniciar el registro facial.
+            </p>
+          ) : (
+            <Suspense fallback={<p style={{ padding: '40px', textAlign: 'center', color: BASE.muted, fontWeight: 700 }}>⏳ Cargando reconocimiento facial…</p>}>
+              <MarcadorAsistencia showToast={(m) => console.log('[kiosko]', m)} />
+            </Suspense>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{
@@ -652,6 +749,43 @@ export default function SelectorPerfil({ onIrASeccion }) {
             </div>
           </div>
 
+          {/* Derecha — Registro de Personal · Facial (abre el kiosko de marcación) */}
+          <button
+            onClick={() => setModoMarcador(true)}
+            style={{
+              cursor: 'pointer', flexShrink: 0,
+              display: 'flex', alignItems: 'center', gap: '12px',
+              background: 'linear-gradient(135deg, rgba(229,168,47,0.18), rgba(229,168,47,0.05))',
+              border: `1px solid ${BASE.gold}77`, borderRadius: '14px', padding: '11px 14px',
+              backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+              boxShadow: `inset 0 1px 0 rgba(255,255,255,0.12), 0 12px 30px -18px ${BASE.gold}`,
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => { if (!prefiereMenosMovimiento) e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = BASE.gold; e.currentTarget.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.16), 0 16px 36px -16px ${BASE.gold}`; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = `${BASE.gold}77`; e.currentTarget.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.12), 0 12px 30px -18px ${BASE.gold}`; }}
+          >
+            <span style={{
+              width: '40px', height: '40px', borderRadius: '12px',
+              background: `linear-gradient(145deg, ${BASE.gold}33, ${BASE.gold}11)`, border: `1px solid ${BASE.gold}55`,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+              <Icon name="user" size={20} color={BASE.gold} strokeWidth={2} />
+            </span>
+            <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
+              <span style={{ fontSize: '8.5px', fontWeight: 900, letterSpacing: '1.1px', textTransform: 'uppercase', color: BASE.gold, opacity: 0.9 }}>
+                Registro de Personal · Facial
+              </span>
+              <span style={{ fontSize: '14px', fontWeight: 800, color: '#fff', lineHeight: 1.2, marginTop: '2px' }}>
+                Marcar Entrada / Salida
+              </span>
+            </span>
+            <span style={{
+              width: '28px', height: '28px', borderRadius: '999px',
+              background: `linear-gradient(145deg, ${BASE.gold}, ${BASE.goldDark})`, color: '#fff',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '14px', fontWeight: 900, boxShadow: `0 4px 10px -3px ${BASE.gold}88`, marginLeft: '2px',
+            }}>→</span>
+          </button>
         </div>
       )}
 

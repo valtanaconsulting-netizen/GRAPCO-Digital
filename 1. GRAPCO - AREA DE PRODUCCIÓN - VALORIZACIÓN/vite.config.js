@@ -80,6 +80,7 @@ export default defineConfig({
             || id.includes('/fast-png') || id.includes('/iobuffer') || id.includes('/pako')) return;
           // TensorFlow + face-api → mismo chunk AISLADO (~0.6 MB). Solo se descarga al
           // abrir asistencia/reconocimiento facial (lazy), NO en el arranque.
+          if (id.includes('face-api.js') || id.includes('@tensorflow') || id.includes('tfjs') || id.includes('seedrandom')) return 'vendor-faceapi';
           // (Regla de @react-pdf/renderer retirada: la dependencia se quitó junto con
           //  TareoPDF.jsx y ProtocoloPreVaciadoPDF.jsx, sus únicos consumidores.
           //  Los PDF vivos se generan con jsPDF/html2canvas, cubiertos más arriba.)
