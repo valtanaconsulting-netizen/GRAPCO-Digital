@@ -152,6 +152,9 @@
     animation: none !important;
   }
   .grapco-chip { transition: none !important; }
+  .vdc-card { animation: none !important; }
+  .vdc-tile { transition: none !important; }
+  .vdc-tile:hover, .vdc-tile:focus-visible { transform: none !important; }
 }
 
 /* Pausa de animaciones del fondo cuando la app/pestaña está en segundo plano
@@ -184,6 +187,121 @@
     width: 280px !important; height: 280px !important;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+ * PANTALLA DE ENTRADA — formato unificado con la app de Presupuestos:
+ * un panel central (cabecera navy + cuerpo claro) con tiles en cuadrícula.
+ * ══════════════════════════════════════════════════════════════════════ */
+
+/* Panel central que contiene toda la pantalla */
+.vdc-card {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  border-radius: 22px;
+  overflow: hidden;
+  background: #fbfcfe;
+  border: 1px solid rgba(229,168,47,0.28);
+  box-shadow: 0 40px 90px -30px rgba(3,10,22,0.85), 0 0 0 1px rgba(255,255,255,0.05);
+}
+@media (prefers-color-scheme: dark) { .vdc-card { background: #f7f9fc; } }
+
+/* Cabecera navy con la marca */
+.vdc-head {
+  position: relative;
+  padding: 26px 24px 20px;
+  text-align: center;
+  background: linear-gradient(170deg, #12294a 0%, #0d1f3a 60%, #0b1b32 100%);
+  border-bottom: 3px solid #E5A82F;
+}
+.vdc-head::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(to right, rgba(229,168,47,0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(229,168,47,0.07) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: radial-gradient(circle at 50% 30%, #000 0%, transparent 75%);
+  -webkit-mask-image: radial-gradient(circle at 50% 30%, #000 0%, transparent 75%);
+}
+.vdc-head > * { position: relative; z-index: 1; }
+
+/* Cuerpo claro */
+.vdc-body { padding: 22px 24px 20px; }
+
+/* Cuadrícula de tiles: 3 columnas → 2 → 1 */
+.vdc-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.vdc-grid.dos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 900px) { .vdc-grid, .vdc-grid.dos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .vdc-grid, .vdc-grid.dos { grid-template-columns: 1fr; } }
+
+/* Tile: mismo lenguaje visual que los de Presupuestos */
+.vdc-tile {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+  width: 100%; box-sizing: border-box;
+  padding: 14px 15px;
+  text-align: left; cursor: pointer;
+  background: #fff;
+  border: 1px solid rgba(15,42,71,0.10);
+  border-radius: 14px;
+  box-shadow: 0 2px 8px -4px rgba(15,42,71,0.18);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.vdc-tile:hover, .vdc-tile:focus-visible {
+  transform: translateY(-3px);
+  border-color: var(--vdc-acento, #E5A82F);
+  box-shadow: 0 16px 30px -16px var(--vdc-sombra, rgba(229,168,47,0.55));
+  outline: none;
+}
+.vdc-tile:focus-visible { outline: 2px solid rgba(229,168,47,0.8); outline-offset: 2px; }
+.vdc-tile-ic {
+  width: 42px; height: 42px; border-radius: 12px; margin-bottom: 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--vdc-ic-bg, rgba(229,168,47,0.12));
+  border: 1px solid var(--vdc-ic-bd, rgba(229,168,47,0.28));
+}
+.vdc-tile-t { font-size: 13.5px; font-weight: 800; color: #0F2A47; line-height: 1.25; overflow-wrap: anywhere; }
+.vdc-tile-s { font-size: 11px; font-weight: 600; color: #64748b; line-height: 1.35; overflow-wrap: anywhere; }
+
+/* Cabecera y cuerpo más compactos en móvil */
+@media (max-width: 560px) {
+  .vdc-card { border-radius: 18px; }
+  .vdc-head { padding: 20px 16px 16px; }
+  .vdc-body { padding: 18px 14px 16px; }
+}
+
+/* Tile destacado (hero): un poco más grande y con acento */
+.vdc-tile.hero { padding: 17px 17px; border-width: 1.5px; }
+.vdc-tile.hero .vdc-tile-ic { width: 48px; height: 48px; border-radius: 14px; }
+.vdc-tile.hero .vdc-tile-t { font-size: 15.5px; }
+.vdc-tile.hero .vdc-tile-s { font-size: 11.5px; }
+
+/* Encabezado de cada bloque de área */
+.vdc-sec {
+  display: flex; align-items: center; gap: 10px;
+  margin: 20px 2px 10px;
+  flex-wrap: wrap;   /* en pantallas angostas baja a la línea siguiente en vez de desbordar */
+}
+.vdc-sec-line { flex: 1; min-width: 12px; height: 1px; background: rgba(15,42,71,0.10); }
+.vdc-sec-t {
+  font-size: 10.5px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase;
+  min-width: 0; overflow-wrap: anywhere;
+}
+.vdc-sec-k { font-size: 10.5px; font-weight: 600; color: #94a3b8; white-space: nowrap; }
+/* Móvil: el kicker del área sobra — el título ya identifica el bloque. */
+@media (max-width: 560px) { .vdc-sec-k { display: none; } }
+.vdc-sec-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: 999px; cursor: pointer;
+  font-size: 10.5px; font-weight: 900; letter-spacing: 0.5px;
+  border: 1px solid currentColor; background: transparent;
+  transition: all 0.16s ease;
+}
+.vdc-sec-btn:hover { background: currentColor; }
+.vdc-sec-btn:hover .vdc-sec-btn-l { color: #fff; }
 
 /* Grilla del selector de perfil — 3 columnas en escritorio (3 arriba / 3 abajo
  * para los 6 accesos), 2 en tablet y 1 en móvil. Va por clase (no inline) para

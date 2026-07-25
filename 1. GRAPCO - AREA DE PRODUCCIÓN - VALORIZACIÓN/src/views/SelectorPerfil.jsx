@@ -17,6 +17,8 @@ import SelectPremium from '../components/SelectPremium';
 // Lazy: face-api.js (~1 MB+) NO se carga en el arranque, solo al abrir el kiosko.
 const MarcadorAsistencia = lazy(() => import('./asistencia/MarcadorAsistencia'));
 
+// Etiqueta de los selectores sobre el panel CLARO de la pantalla de entrada.
+const lblCtx = { display: 'block', color: '#64748b', fontSize: '9.5px', fontWeight: 900, letterSpacing: '1px', marginBottom: '6px' };
 const lblKiosk = { display: 'block', color: '#94a3b8', fontSize: '10px', fontWeight: 900, letterSpacing: '1px', marginBottom: '6px' };
 // (selKiosk/optKiosk retirados: los <select> nativos migraron a SelectPremium —
 //  cohesión navy/gold + bottom-sheet en Android, regla "dropdowns = SelectPremium".)
@@ -42,11 +44,11 @@ const PERFILES = [
     // Módulos REALES del área (moduloIngeniero). Planeamiento (Cronograma/Last Planner/
     // Pull Planning) → app PLANEAMIENTO_PLATAFORMA; 'Materiales' → Administración (2026-06-24).
     accesos: [
-      { l: 'Plan Diario',         go: 'planDiario' },
-      { l: 'Auditoría · CPI/ISP', go: 'dashboard' },
-      { l: 'Carta Balance',       go: 'carta' },
-      { l: 'BIM',                 go: 'bim' },
-      { l: 'Registro',            go: 'registro' },
+      { l: 'Plan Diario',         go: 'planDiario', ic: 'registro',   d: 'Programación diaria por cuadrilla' },
+      { l: 'Auditoría · CPI/ISP', go: 'dashboard',  ic: 'chartBars',  d: 'Avance, CPI, EAC, tareo y personal' },
+      { l: 'Carta Balance',       go: 'carta',      ic: 'balance',    d: 'Medición de productividad en campo' },
+      { l: 'Modelo BIM',          go: 'bim',        ic: 'layers',     d: 'Visor 3D, costo, sectorización y 4D' },
+      { l: 'Registro',            go: 'registro',   ic: 'checkSquare', d: 'Registro de producción del día' },
     ],
   },
   {
@@ -61,13 +63,13 @@ const PERFILES = [
     // Orden por flujo (2026-06-25): Presupuesto → Ejecución (Registro/BIM) →
     // Valorización (+ Sustento + Informe) → RO. RDO retirado.
     accesos: [
-      { l: 'Presupuesto',          go: 'ot.partidas' },
-      { l: 'Registro Fotográfico', go: 'ot.fotografico' },
-      { l: 'BIM',                  go: 'ot.bim' },
-      { l: 'Valorización',         go: 'ot.valoriz' },
-      { l: 'Sustento',             go: 'ot.sustento' },
-      { l: 'Informe',              go: 'ot.informe' },
-      { l: 'Resultado Operativo',  go: 'ot.ro.costoReal' },
+      { l: 'Presupuesto',          go: 'ot.partidas',      ic: 'fileText',   d: 'PPTO · CD · GG · Utilidad · IGV' },
+      { l: 'Registro Fotográfico', go: 'ot.fotografico',   ic: 'layers',     d: 'Fotos de obra del capataz' },
+      { l: 'Modelo BIM',           go: 'ot.bim',           ic: 'cube',       d: 'Vínculos y visor 3D' },
+      { l: 'Valorización F07',     go: 'ot.valoriz',       ic: 'coins',      d: 'Formato oficial por metrado del ISP' },
+      { l: 'Sustento',             go: 'ot.sustento',      ic: 'ruler',      d: 'Planilla de metrados y fotos' },
+      { l: 'Informe PDF',          go: 'ot.informe',       ic: 'fileText',   d: 'Genera el sustento imprimible' },
+      { l: 'Resultado Operativo',  go: 'ot.ro.costoReal',  ic: 'trendingUp', d: 'CR · Adicionales · Deductivos' },
     ],
   },
   // Gestión de Calidad (protocolos, PETs, NCs, ensayos, planos) → app independiente
@@ -80,12 +82,13 @@ const PERFILES = [
     orden: 4,
     descripcion: 'Configuración y control global de la plataforma, gestión de usuarios, permisos y auditoría de información. Garantiza seguridad, gobernanza y trazabilidad sobre todos los procesos del sistema.',
     // Sub-pestañas REALES de AdminPanel. Entran directo vía tabInicial.
+    kicker: 'Gobierno · Seguridad',
     accesos: [
-      { l: 'Resumen',       go: 'resumen' },
-      { l: 'Usuarios',      go: 'usuarios' },
-      { l: 'Asistencia',    go: 'asistencia' },
-      { l: 'Auditoría',     go: 'auditoria' },
-      { l: 'Configuración', go: 'config' },
+      { l: 'Resumen',       go: 'resumen',    ic: 'dashboard',   d: 'Vista general del sistema' },
+      { l: 'Usuarios',      go: 'usuarios',   ic: 'users',       d: 'Cuentas, roles y aprobaciones' },
+      { l: 'Asistencia',    go: 'asistencia', ic: 'clock',       d: 'Entrada/salida de obreros · HH' },
+      { l: 'Auditoría',     go: 'auditoria',  ic: 'shield',      d: 'Log de operaciones críticas' },
+      { l: 'Configuración', go: 'config',     ic: 'settings',    d: 'Tarifas y parámetros globales' },
     ],
     destacado: true,
   },
@@ -138,49 +141,6 @@ const logoClienteConocido = (nombre) => {
   return '';
 };
 
-// Etiqueta-acceso: ahora es un BOTÓN que ENTRA directo a esa sección del área (deep-link).
-// Tinte sutil del color del área (cohesión visual) + realce claro al pasar el mouse, para
-// que se lea como algo clickeable y ordenado (no como texto suelto).
-// `fill`: estira el chip para ocupar toda su celda de la grilla, de modo que las
-// etiquetas queden alineadas en columnas (A B C / A B C), no empacadas a la izquierda.
-function ChipAcceso({ label, acento, onClick, fill = false }) {
-  return (
-    <span
-      className="grapco-chip"
-      role="button" tabIndex={0}
-      aria-label={`Ir directo a ${label}`}
-      title={`Ir directo a ${label}`}
-      onClick={(e) => { e.stopPropagation(); onClick(); }}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onClick(); } }}
-      style={{
-        // Hover/foco se manejan por CSS (.grapco-chip) para evitar reflow por handlers
-        // JS en 18-30 chips; los valores del acento viajan como CSS vars.
-        '--chip-bg-h': `${acento}1f`,
-        '--chip-bd-h': `${acento}99`,
-        '--chip-sh-h': `0 5px 12px -7px ${acento}cc`,
-        display: fill ? 'flex' : 'inline-flex',
-        width: fill ? '100%' : undefined,
-        boxSizing: 'border-box',
-        alignItems: 'center', justifyContent: 'flex-start', gap: '7px',
-        background: `${acento}0d`, color: '#33445c',
-        border: `1px solid ${acento}33`,
-        padding: '6px 10px 6px 9px', borderRadius: '9px',
-        fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.1px', lineHeight: 1.2,
-        cursor: 'pointer', userSelect: 'none', transition: 'all 0.16s ease',
-      }}
-    >
-      <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: acento, flexShrink: 0 }} />
-      {label}
-    </span>
-  );
-}
-
-// Rótulo "IR DIRECTO A" sobre el grupo de etiquetas — da estructura y avisa que son navegables.
-const eyebrowAccesos = (acento) => ({
-  fontSize: '8.5px', fontWeight: 900, letterSpacing: '1.2px',
-  textTransform: 'uppercase', color: acento, opacity: 0.72,
-});
-
 export default function SelectorPerfil({ onIrASeccion }) {
   const { user, entrarComoRol, logout, rolPermitido } = useAuth();
   // Deep-link a una sección concreta del área. Si el padre no pasó el handler
@@ -198,9 +158,6 @@ export default function SelectorPerfil({ onIrASeccion }) {
   const videoRef = useRef(null);
   // Móvil → SelectPremium usa bottom-sheet (no dropdown anclado). App nativa/celular.
   const isMobile = typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
-  // Respeta a quien pidió menos movimiento: salta los transform de hover (las
-  // animaciones de keyframes ya se desactivan por CSS en prefers-reduced-motion).
-  const prefiereMenosMovimiento = typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // Nombre del usuario para el saludo: primero /Usuarios/{uid}.nombre; si no, displayName o email.
   useEffect(() => {
@@ -416,6 +373,10 @@ export default function SelectorPerfil({ onIrASeccion }) {
     );
   }
 
+  // ── PANTALLA DE ENTRADA ──
+  // Formato unificado con la app de Presupuestos (grapco-presupuestos-2026):
+  // un solo panel central = cabecera navy con la marca + cuerpo claro con el
+  // saludo, el contexto del proyecto y los accesos como tiles en cuadrícula.
   return (
     <div style={{
       minHeight: '100dvh',
@@ -423,18 +384,14 @@ export default function SelectorPerfil({ onIrASeccion }) {
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'flex-start',
-      // Safe-areas Capacitor: respeta notch/barra de gestos para no recortar la última
-      // tarjeta; conserva el aire superior (40px) y centra el bloque.
-      padding: 'max(40px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left))',
+      // Safe-areas Capacitor: respeta notch/barra de gestos para no recortar el panel.
+      padding: 'max(64px, calc(env(safe-area-inset-top) + 56px)) max(18px, env(safe-area-inset-right)) calc(30px + env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left))',
       background: '#0a1628',
       fontFamily: BASE.font,
       position: 'relative',
       overflow: 'hidden',
     }}>
       {/* === VIDEO DE FONDO === */}
-      {/* Video hero a pantalla completa, en alta nitidez (grapco-bg.mp4). Sin
-          poster oscuro: aparece con fundido suave solo cuando puede reproducir,
-          así nunca se ve una imagen borrosa o lageada. */}
       {!conexionLenta() && <video
         ref={videoRef}
         autoPlay loop muted playsInline preload="auto"
@@ -447,8 +404,6 @@ export default function SelectorPerfil({ onIrASeccion }) {
           width: '100%', height: '100%',
           objectFit: 'cover',
           opacity: 0.82,
-          // Nítido y vívido (sin apagar el color): el navy overlay de abajo
-          // mantiene la cohesión y la legibilidad de las tarjetas.
           filter: 'saturate(1) brightness(0.9) contrast(1.06)',
           transition: 'opacity 0.4s ease',
           zIndex: 0,
@@ -457,52 +412,14 @@ export default function SelectorPerfil({ onIrASeccion }) {
       >
         <source src={HERO_VIDEO} type="video/mp4" />
       </video>}
-      {/* Lavado NAVY cohesivo (sin dorado) — unifica el fondo con la marca y hace
-          resaltar las tarjetas. Sustituye al overlay que mezclaba dorado+verde. */}
+      {/* Lavado NAVY cohesivo — unifica el fondo con la marca y resalta el panel. */}
       <div aria-hidden="true" style={{
         position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
         background:
           'radial-gradient(55% 38% at 50% 2%, rgba(40,74,118,0.55) 0%, transparent 62%),'
-          + 'linear-gradient(180deg, rgba(8,20,38,0.90) 0%, rgba(12,30,55,0.55) 46%, rgba(7,16,30,0.92) 100%),'
-          + 'radial-gradient(130% 110% at 50% 42%, transparent 52%, rgba(4,11,22,0.78) 100%)',
+          + 'linear-gradient(180deg, rgba(8,20,38,0.90) 0%, rgba(12,30,55,0.58) 46%, rgba(7,16,30,0.94) 100%),'
+          + 'radial-gradient(130% 110% at 50% 42%, transparent 52%, rgba(4,11,22,0.80) 100%)',
       }} />
-
-      {/* Botón SALIR (cierre de sesión total → vuelve al Login) */}
-      <button
-        onClick={() => logout?.()}
-        aria-label="Cerrar sesión y volver al login"
-        style={{
-          position: 'absolute',
-          top: '20px',
-          right: '20px',
-          zIndex: 10,
-          background: 'rgba(220,38,38,0.18)',
-          border: '1px solid rgba(220,38,38,0.55)',
-          color: '#fecaca',
-          padding: '8px 18px',
-          borderRadius: '8px',
-          fontSize: '11px',
-          fontWeight: '900',
-          letterSpacing: '0.8px',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-        }}
-        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(220,38,38,0.30)'; }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(220,38,38,0.18)'; }}
-      >
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-          <polyline points="16 17 21 12 16 7" />
-          <line x1="21" y1="12" x2="9" y2="12" />
-        </svg>
-        CERRAR SESIÓN
-      </button>
-
-      {/* === FONDO — solo capas neutras (sin blobs de colores que rompían la armonía) === */}
-      {/* Mesh muy atenuado para dar profundidad navy sin introducir color. Los blobs
-          ámbar/azul/rosa/verde se retiraron a propósito: chocaban con el video. */}
       <div className="grapco-mesh" style={{ opacity: 0.18, mixBlendMode: 'multiply' }} />
       <div className="grapco-particles" aria-hidden="true">
         {Array.from({ length: 18 }).map((_, i) => (
@@ -515,468 +432,354 @@ export default function SelectorPerfil({ onIrASeccion }) {
       </div>
       <div className="grapco-scan" />
 
-      {/* Header — plataforma GRAPCO (Valtana ya firma en el pie de página) */}
-      <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', marginBottom: '16px' }}>
-        {/* Isotipo GRAPCO — marco slim que ABRAZA el logo (no un plafón blanco grande) */}
-        <div style={{
-          width: '82px', height: '82px',
-          background: 'linear-gradient(150deg, #ffffff 0%, #eef3f9 100%)',
-          borderRadius: '19px',
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          marginBottom: '10px', padding: '2px', position: 'relative', overflow: 'hidden',
-          boxShadow: `0 13px 30px -16px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.5), 0 0 0 1.5px ${BASE.gold}40`,
-        }}>
-          <img
-            src={LOGO}
-            alt="GRAPCO"
-            onError={(e) => { if (!e.target.dataset.fallback) { e.target.dataset.fallback = '1'; e.target.src = LOGO_FALLBACK; } }}
-            style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '14px' }}
-          />
-        </div>
-        {/* Eyebrow premium con líneas a los lados */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', margin: '0 auto' }}>
-          <span style={{ height: '1px', width: '34px', background: `linear-gradient(90deg, transparent, ${BASE.gold}aa)` }} />
-          <span style={{ color: BASE.gold, fontSize: '10px', fontWeight: 800, letterSpacing: '2.8px', textTransform: 'uppercase' }}>
-            Gestión de Proyectos VDC
-          </span>
-          <span style={{ height: '1px', width: '34px', background: `linear-gradient(90deg, ${BASE.gold}aa, transparent)` }} />
-        </div>
-        {modoPin && (
-          <p style={{
-            color: '#94a3b8', fontSize: '12px',
-            margin: '8px auto 0', maxWidth: '520px', lineHeight: 1.4,
+      {/* === BARRA SUPERIOR FLOTANTE: identidad de sesión + salir === */}
+      <div style={{
+        position: 'absolute', top: '16px', right: '18px', zIndex: 10,
+        display: 'flex', alignItems: 'center', gap: '9px', flexWrap: 'wrap',
+        justifyContent: 'flex-end', maxWidth: 'calc(100% - 36px)',
+      }}>
+        {proyectoActivo?.estado === 'completado' && (
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: '6px',
+            background: 'rgba(22,163,74,0.16)', border: '1px solid rgba(52,211,153,0.5)',
+            color: '#34d399', padding: '6px 12px', borderRadius: '999px',
+            fontSize: '10px', fontWeight: 900, letterSpacing: '0.6px',
           }}>
-            Ingresa el PIN de obra (4 dígitos). Modo kiosk para personal de campo.
-          </p>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#34d399' }} />
+            PROYECTO TERMINADO
+          </span>
         )}
-        <button onClick={() => { setModoPin(!modoPin); setPin(''); setErrorPin(''); }} style={{
-          marginTop: '10px',
-          background: 'rgba(255,255,255,0.08)',
-          border: `1px solid ${BASE.gold}88`,
-          color: BASE.gold,
-          padding: '6px 15px', borderRadius: '999px',
-          fontSize: '11px', fontWeight: 800, letterSpacing: '0.6px',
-          cursor: 'pointer',
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: '7px',
+          background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.16)',
+          backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+          color: 'rgba(255,255,255,0.82)', padding: '6px 13px', borderRadius: '999px',
+          fontSize: '11px', fontWeight: 700, maxWidth: 'min(260px, 42vw)',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>
-          {modoPin ? '◄ Volver al selector' : 'Acceso por PIN de obra'}
+          <Icon name="user" size={13} color={BASE.gold} strokeWidth={2.2} />
+          {user?.email || 'sesión activa'}
+        </span>
+        <button
+          onClick={() => logout?.()}
+          aria-label="Cerrar sesión y volver al login"
+          style={{
+            background: 'rgba(220,38,38,0.20)', border: '1px solid rgba(220,38,38,0.55)',
+            color: '#fecaca', padding: '7px 15px', borderRadius: '999px',
+            fontSize: '11px', fontWeight: 900, letterSpacing: '0.6px', cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', gap: '6px',
+            backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(220,38,38,0.34)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(220,38,38,0.20)'; }}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          SALIR
         </button>
       </div>
 
-      {/* Barra de contexto con la MARCA del cliente activo + selección */}
-      {!modoPin && (
-        <div style={{
-          position: 'relative', zIndex: 1,
-          width: '100%', maxWidth: '1180px',
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))',
-          backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
-          border: `1px solid ${BASE.gold}44`,
-          borderRadius: '16px', padding: '14px 18px', marginBottom: '16px',
-          display: 'flex', alignItems: 'center', gap: '18px', flexWrap: 'wrap',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 14px 34px -22px rgba(0,0,0,0.8)',
-        }}>
-          {/* Identidad del cliente — logo real si lo subieron, o monograma de respaldo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '13px', flex: '0 1 auto', minWidth: 0 }}>
-            <div style={{
-              width: '60px', height: '60px', borderRadius: '15px', background: '#fff',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3px',
-              position: 'relative', overflow: 'hidden', flexShrink: 0,
-              boxShadow: `0 10px 24px -10px rgba(0,0,0,0.6), 0 0 0 1px ${BASE.gold}33`,
-            }}>
-              <span style={{
-                position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '23px', fontWeight: 900, color: BASE.navy, letterSpacing: '0.5px',
-              }}>{monogramaCliente(clienteActivo)}</span>
-              {logoClienteUrl && (
-                <img src={logoClienteUrl} alt={clienteActivo || 'Cliente'}
-                  onError={(e) => { e.currentTarget.style.opacity = '0'; }}
-                  style={{ position: 'relative', width: '100%', height: '100%', objectFit: 'contain', background: '#fff' }} />
-              )}
-            </div>
-            <div style={{ minWidth: 0 }}>
-              <p style={{ fontSize: '9px', fontWeight: 900, letterSpacing: '1.6px', color: BASE.gold, textTransform: 'uppercase', margin: 0 }}>
-                Cliente
-              </p>
-              <p style={{ fontSize: '16px', fontWeight: 900, color: '#fff', margin: '2px 0 0', lineHeight: 1.15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '240px' }}>
-                {clienteActivo || 'Sin cliente'}
-              </p>
-              <p style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.6)', margin: '1px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '240px' }}>
-                {proyectoActivo?.nombre || proyectoActivo?.codigo || '— sin proyecto —'}
-              </p>
-              {/* Estado TERMINADO: badge sobrio cuando el proyecto activo está
-                  marcado como `completado` en el editor de proyecto (reusa el
-                  campo `estado` existente; no hay data nueva). */}
-              {proyectoActivo?.estado === 'completado' && (
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '5px',
-                  marginTop: '6px',
-                  background: `${BASE.green}1f`,
-                  border: `1px solid ${BASE.green}66`,
-                  color: '#34d399',
-                  padding: '2px 9px 2px 7px', borderRadius: '999px',
-                  fontSize: '9px', fontWeight: 900, letterSpacing: '0.8px',
-                }}>
-                  <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#34d399' }} />
-                  PROYECTO TERMINADO
-                </span>
-              )}
-            </div>
-          </div>
+      {/* ══════════ PANEL CENTRAL ══════════ */}
+      {/* zIndex 3: por encima del scan y las partículas del fondo (z-index 2), que
+          si no cruzaban una línea dorada por encima de las tarjetas. */}
+      <div className="vdc-card" style={{ position: 'relative', zIndex: 3, animation: 'anim-fade-in 0.35s ease-out' }}>
 
-          {/* Separador */}
-          <div style={{ width: '1px', alignSelf: 'stretch', minHeight: '48px', background: 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
-
-          {/* Selectores CLIENTE + PROYECTO */}
-          <div style={{ flex: '1 1 360px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '14px' }}>
-            <div>
-              <label style={lblKiosk}>🏢 CLIENTE</label>
-              <SelectPremium
-                title="Cliente" isMobile={isMobile}
-                value={clienteActivo}
-                onChange={v => cambiarCliente(v)}
-                placeholder="— Selecciona cliente —"
-                options={clientes.map(c => ({ value: c, label: c }))}
-              />
-            </div>
-            <div>
-              <label style={lblKiosk}>🏗️ PROYECTO</label>
-              <SelectPremium
-                title="Proyecto" isMobile={isMobile}
-                value={proyectoActivoId || ''}
-                onChange={v => setProyectoActivoId(v)}
-                placeholder="— Selecciona proyecto —"
-                options={proyectosFiltrados.map(p => ({ value: p.id, label: p.nombre || p.codigo || p.id }))}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modo PIN: teclado numérico */}
-      {modoPin && (
-        <div style={{
-          position: 'relative', zIndex: 1,
-          background: 'rgba(255,255,255,0.05)',
-          backdropFilter: 'blur(8px)',
-          border: `1px solid ${BASE.gold}44`,
-          borderRadius: '20px',
-          padding: '24px',
-          width: '100%', maxWidth: '320px',
-          textAlign: 'center',
-        }}>
+        {/* ── Cabecera navy con la marca ── */}
+        <div className="vdc-head">
           <div style={{
-            display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '18px',
+            width: '78px', height: '78px', margin: '0 auto 10px',
+            background: 'linear-gradient(150deg, #ffffff 0%, #eef3f9 100%)',
+            borderRadius: '18px', padding: '2px', overflow: 'hidden',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: `0 13px 30px -16px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.5), 0 0 0 1.5px ${BASE.gold}40`,
           }}>
-            {[0, 1, 2, 3].map(i => (
-              <div key={i} style={{
-                width: '52px', height: '64px',
-                borderRadius: '12px',
-                border: `2px solid ${pin.length > i ? BASE.gold : 'rgba(255,255,255,0.18)'}`,
-                background: pin.length > i ? `${BASE.gold}33` : 'transparent',
-                color: '#fff', fontSize: '28px', fontWeight: 900,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all 0.2s',
-              }}>
-                {pin[i] ? '●' : ''}
-              </div>
-            ))}
+            <img
+              src={LOGO} alt="GRAPCO"
+              onError={(e) => { if (!e.target.dataset.fallback) { e.target.dataset.fallback = '1'; e.target.src = LOGO_FALLBACK; } }}
+              style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '14px' }}
+            />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '10px' }}>
-            {['1','2','3','4','5','6','7','8','9','','0','⌫'].map((d, i) => (
-              d === '' ? <div key={i} /> : (
-                <button key={i} disabled={pinBloqueado} onClick={() => {
-                  if (pinBloqueado) return;
-                  if (d === '⌫') setPin(pin.slice(0, -1));
-                  else if (pin.length < 4) setPin(pin + d);
-                }} style={{
-                  height: '54px',
-                  background: 'rgba(255,255,255,0.08)',
-                  border: `1px solid rgba(255,255,255,0.15)`,
-                  borderRadius: '12px',
-                  color: '#fff',
-                  fontSize: '20px', fontWeight: 800,
-                  cursor: pinBloqueado ? 'not-allowed' : 'pointer',
-                  opacity: pinBloqueado ? 0.45 : 1,
-                  transition: 'all 0.15s',
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}>
-                  {d}
-                </button>
-              )
-            ))}
-          </div>
-          {errorPin && (
-            <p style={{ color: '#fecaca', fontSize: '12px', fontWeight: 800, marginTop: '12px' }}>
-              ❌ {errorPin}
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Saludo personalizado + acceso a Registro de Personal · Facial a la derecha
-          (movido aquí desde el grid: queda al extremo derecho, bajo el selector de proyecto) */}
-      {!modoPin && (
-        <div style={{
-          position: 'relative', zIndex: 1,
-          width: '100%', maxWidth: '1180px', marginBottom: '18px',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          gap: '16px', flexWrap: 'wrap',
-          animation: 'anim-fade-in 0.4s ease-out',
-        }}>
-          {/* Izquierda — saludo + fecha + semana */}
-          <div style={{ textAlign: 'left', minWidth: 0 }}>
-            {/* Saludo = contexto suave (no héroe): no debe competir con el logo ni con
-                las tarjetas de área. Jerarquía: GRAPCO S.A.C. >> áreas >> saludo. */}
-            <p style={{
-              margin: 0, color: '#fff',
-              fontSize: '18px', fontWeight: 800,
-              letterSpacing: '0.4px', textTransform: 'uppercase', lineHeight: 1.25,
-            }}>
-              {saludo}{nombreUsuario ? <>, <span style={{ color: '#E5A82F' }}>{nombreUsuario}</span></> : null}
-            </p>
-            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginTop: '7px' }}>
-              <span style={{ fontSize: '12.5px', color: 'rgba(255,255,255,0.65)', fontWeight: 600 }}>
-                {fechaLarga}
-              </span>
-              <span style={{ fontSize: '12.5px', color: 'rgba(255,255,255,0.65)', fontWeight: 600 }}>·</span>
-              <span style={{
-                border: '1px solid rgba(229,168,47,0.4)', color: '#E5A82F',
-                borderRadius: '999px', padding: '3px 12px',
-                fontSize: '11.5px', fontWeight: 800, letterSpacing: '0.3px',
-              }}>
-                Semana {semanaProyecto} del proyecto
-              </span>
-            </div>
-          </div>
-
-          {/* Derecha — Registro de Personal · Facial (abre el kiosko de marcación) */}
-          <button
-            onClick={() => setModoMarcador(true)}
-            style={{
-              cursor: 'pointer', flexShrink: 0,
-              display: 'flex', alignItems: 'center', gap: '12px',
-              background: 'linear-gradient(135deg, rgba(229,168,47,0.18), rgba(229,168,47,0.05))',
-              border: `1px solid ${BASE.gold}77`, borderRadius: '14px', padding: '11px 14px',
-              backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
-              boxShadow: `inset 0 1px 0 rgba(255,255,255,0.12), 0 12px 30px -18px ${BASE.gold}`,
-              transition: 'all 0.2s ease',
-            }}
-            onMouseEnter={(e) => { if (!prefiereMenosMovimiento) e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = BASE.gold; e.currentTarget.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.16), 0 16px 36px -16px ${BASE.gold}`; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = `${BASE.gold}77`; e.currentTarget.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.12), 0 12px 30px -18px ${BASE.gold}`; }}
-          >
-            <span style={{
-              width: '40px', height: '40px', borderRadius: '12px',
-              background: `linear-gradient(145deg, ${BASE.gold}33, ${BASE.gold}11)`, border: `1px solid ${BASE.gold}55`,
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              <Icon name="user" size={20} color={BASE.gold} strokeWidth={2} />
+          <h1 style={{
+            margin: 0, color: '#fff', fontSize: '25px', fontWeight: 900, letterSpacing: '2.5px',
+          }}>
+            GRAPCO <span style={{ color: BASE.gold }}>SAC</span>
+          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginTop: '7px' }}>
+            <span style={{ height: '1px', width: '30px', background: `linear-gradient(90deg, transparent, ${BASE.gold}aa)` }} />
+            <span style={{ color: BASE.gold, fontSize: '10px', fontWeight: 800, letterSpacing: '2.6px', textTransform: 'uppercase' }}>
+              Gestión de Proyectos VDC
             </span>
-            <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
-              <span style={{ fontSize: '8.5px', fontWeight: 900, letterSpacing: '1.1px', textTransform: 'uppercase', color: BASE.gold, opacity: 0.9 }}>
-                Registro de Personal · Facial
-              </span>
-              <span style={{ fontSize: '14px', fontWeight: 800, color: '#fff', lineHeight: 1.2, marginTop: '2px' }}>
-                Marcar Entrada / Salida
-              </span>
-            </span>
-            <span style={{
-              width: '28px', height: '28px', borderRadius: '999px',
-              background: `linear-gradient(145deg, ${BASE.gold}, ${BASE.goldDark})`, color: '#fff',
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '14px', fontWeight: 900, boxShadow: `0 4px 10px -3px ${BASE.gold}88`, marginLeft: '2px',
-            }}>→</span>
-          </button>
+            <span style={{ height: '1px', width: '30px', background: `linear-gradient(90deg, ${BASE.gold}aa, transparent)` }} />
+          </div>
         </div>
-      )}
 
-      {/* Grid de las 4 áreas (solo cuando NO está en modo PIN) — una fila, en orden:
-          Producción · Oficina Técnica · Administración · Administración del Sistema.
-          El orden lo fija el campo `orden` de cada perfil (no el array). Las columnas
-          las fija la clase grapco-perfil-grid (responsive por media query). */}
-      {/* Estado vacío: rol sin áreas mapeadas (p.ej. rol legacy migrado a otra app). */}
-      {!modoPin && perfilesFiltrados.length === 0 && (
-        <div style={{
-          position: 'relative', zIndex: 1, width: '100%', maxWidth: '1180px', margin: '24px auto 0',
-          background: 'rgba(255,255,255,0.05)', border: `1px solid ${BASE.gold}33`, borderRadius: '16px',
-          padding: '30px 22px', textAlign: 'center',
-        }}>
-          <p style={{ color: '#fff', fontSize: '15px', fontWeight: 800, margin: 0 }}>Sin áreas asignadas</p>
-          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12.5px', margin: '6px 0 0', lineHeight: 1.5 }}>
-            Tu usuario aún no tiene áreas habilitadas en este proyecto.<br />Contacta al administrador del sistema.
-          </p>
-        </div>
-      )}
+        {/* ── Cuerpo claro ── */}
+        <div className="vdc-body">
 
-      {!modoPin && perfilesFiltrados.length > 0 && (
-      <div className="grapco-perfil-grid" style={{
-        position: 'relative', zIndex: 1,
-        gap: '16px',
-        width: '100%',
-        maxWidth: '1180px',
-        margin: '0 auto',
-        marginTop: '24px',   // separación header/contexto → tarjetas; el saludo más chico
-                             // libera altura, así no hace falta un margen tan grande.
-      }}>
-        {perfilesFiltrados.map((p) => {
-          const acento = p.destacado ? BASE.gold : p.color;
-          // Sombra por capas + brillo interior superior (look "vidrio premium").
-          const sombraBase = p.destacado
-            ? `inset 0 1px 0 rgba(255,255,255,0.9), 0 20px 46px -22px rgba(229,168,47,0.45), 0 6px 16px -10px rgba(7,16,30,0.5)`
-            : `inset 0 1px 0 rgba(255,255,255,0.9), 0 20px 46px -24px rgba(7,16,30,0.75), 0 5px 14px -10px rgba(7,16,30,0.45)`;
-          return (
-          <button
-            key={p.rol}
-            onClick={() => entrarComoRol(p.rol)}
-            style={{
-              cursor: 'pointer',
-              position: 'relative',
-              overflow: 'hidden',
-              background: 'linear-gradient(180deg, #ffffff 0%, #f5f8fc 100%)',
-              border: `1px solid ${p.destacado ? BASE.gold + '88' : 'rgba(15,42,71,0.07)'}`,
-              borderRadius: '16px',
-              padding: '14px 15px 12px',
-              textAlign: 'left',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px',
-              transition: 'transform 0.24s cubic-bezier(0.34,1.4,0.64,1), box-shadow 0.24s ease, border-color 0.24s ease',
-              boxShadow: sombraBase,
-              minHeight: '0',
-            }}
-            onMouseEnter={(e) => {
-              if (!prefiereMenosMovimiento) e.currentTarget.style.transform = 'translateY(-6px)';
-              e.currentTarget.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.9), 0 30px 60px -20px ${acento}5C, 0 0 0 1.5px ${acento}`;
-              e.currentTarget.style.borderColor = acento;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = sombraBase;
-              e.currentTarget.style.borderColor = p.destacado ? BASE.gold + '88' : 'rgba(15,42,71,0.07)';
-            }}
-          >
-            {/* Barra de acento superior con glow — identidad del área */}
-            <span style={{
-              position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
-              background: `linear-gradient(90deg, transparent, ${acento}, transparent)`,
-              boxShadow: `0 0 12px ${acento}99`,
-              zIndex: 2,
-            }} />
-
-            {/* Cabecera con banda tintada del color del área: da "enfoque" de color a
-                cada tarjeta y aloja el kicker/insignia EN FLUJO (nunca encima del título). */}
-            <div style={{
-              margin: '-14px -15px 0',
-              padding: '14px 15px 12px',
-              background: `linear-gradient(135deg, ${acento}10 0%, ${acento}04 60%, transparent 100%)`,
-              borderBottom: `1px solid ${acento}14`,
-              display: 'flex', flexDirection: 'column', gap: '9px',
-            }}>
-              {/* Fila kicker / insignia — presente en TODAS las tarjetas para que los
-                  títulos queden a la misma altura; la destacada luce ACCESO TOTAL en oro. */}
-              <div style={{ minHeight: '16px', display: 'flex', alignItems: 'center' }}>
-                {p.destacado ? (
-                  <span style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '4px',
-                    background: `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`, color: '#fff',
-                    padding: '3px 11px', borderRadius: '999px',
-                    fontSize: '8.5px', fontWeight: 900, letterSpacing: '0.9px',
-                    boxShadow: `0 3px 10px ${BASE.gold}55`,
-                  }}>★ ACCESO TOTAL</span>
-                ) : (
-                  <span style={{
-                    fontSize: '8.5px', fontWeight: 900, letterSpacing: '1.2px',
-                    textTransform: 'uppercase', color: acento, opacity: 0.85,
-                  }}>{p.kicker}</span>
-                )}
-              </div>
-
-              {/* Icono + título — tile más grande y título más presente */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
-                <span style={{
-                  width: '44px', height: '44px',
-                  borderRadius: '13px',
-                  background: `linear-gradient(145deg, ${acento}26, ${acento}0D)`,
-                  border: `1px solid ${acento}3d`,
-                  boxShadow: `inset 0 1px 0 rgba(255,255,255,0.7), 0 5px 12px -5px ${acento}66`,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}>
-                  <Icon name={p.iconName} size={22} color={acento} strokeWidth={2} />
-                </span>
-                <span style={{
-                  fontSize: '14.5px', fontWeight: 800,
-                  color: BASE.navy, lineHeight: 1.18,
-                  letterSpacing: '-0.015em',
-                }}>
-                  {p.titulo}
-                </span>
-              </div>
-            </div>
-
-            {/* Accesos directos: cada etiqueta ENTRA a esa sección del módulo (deep-link). */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
-              <span style={eyebrowAccesos(acento)}>Ir directo a</span>
-              {/* Una sola columna: cada etiqueta va en su propia fila (uno debajo del
-                  otro) y todas con el MISMO ancho (full-width vía fill). Esto alarga la
-                  tarjeta hacia abajo y deja los accesos como una lista pareja. */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '6px', alignContent: 'flex-start' }}>
-                {p.accesos.map(a => (
-                  <ChipAcceso key={a.go} label={a.l} acento={acento} fill onClick={() => irA(p.rol, a.go)} />
+          {/* Modo PIN: teclado numérico centrado dentro del panel */}
+          {modoPin ? (
+            <div style={{ maxWidth: '340px', margin: '4px auto 8px', textAlign: 'center' }}>
+              <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 900, color: BASE.navy }}>Acceso por PIN de obra</h2>
+              <p style={{ margin: '6px 0 16px', fontSize: '12px', color: BASE.muted, lineHeight: 1.45 }}>
+                Ingresa el PIN de 4 dígitos. Modo kiosko para personal de campo.
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '16px' }}>
+                {[0, 1, 2, 3].map(i => (
+                  <div key={i} style={{
+                    width: '52px', height: '62px', borderRadius: '12px',
+                    border: `2px solid ${pin.length > i ? BASE.gold : 'rgba(15,42,71,0.16)'}`,
+                    background: pin.length > i ? `${BASE.gold}1f` : '#fff',
+                    color: BASE.navy, fontSize: '26px', fontWeight: 900,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all 0.2s',
+                  }}>
+                    {pin[i] ? '●' : ''}
+                  </div>
                 ))}
               </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '9px' }}>
+                {['1','2','3','4','5','6','7','8','9','','0','⌫'].map((d, i) => (
+                  d === '' ? <div key={i} /> : (
+                    <button key={i} disabled={pinBloqueado} onClick={() => {
+                      if (pinBloqueado) return;
+                      if (d === '⌫') setPin(pin.slice(0, -1));
+                      else if (pin.length < 4) setPin(pin + d);
+                    }} style={{
+                      height: '52px', background: '#fff',
+                      border: '1px solid rgba(15,42,71,0.14)', borderRadius: '12px',
+                      color: BASE.navy, fontSize: '19px', fontWeight: 800,
+                      cursor: pinBloqueado ? 'not-allowed' : 'pointer',
+                      opacity: pinBloqueado ? 0.45 : 1,
+                      boxShadow: '0 2px 8px -5px rgba(15,42,71,0.4)',
+                      transition: 'all 0.15s',
+                    }}
+                    onMouseEnter={(e) => { if (!pinBloqueado) { e.currentTarget.style.background = `${BASE.gold}14`; e.currentTarget.style.borderColor = `${BASE.gold}88`; } }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = 'rgba(15,42,71,0.14)'; }}>
+                      {d}
+                    </button>
+                  )
+                ))}
+              </div>
+              {errorPin && (
+                <p style={{ color: '#dc2626', fontSize: '12px', fontWeight: 800, marginTop: '12px' }}>❌ {errorPin}</p>
+              )}
+              <button onClick={() => { setModoPin(false); setPin(''); setErrorPin(''); }} style={{
+                marginTop: '16px', background: 'transparent', border: `1px solid ${BASE.navy}33`,
+                color: BASE.navy, padding: '8px 18px', borderRadius: '999px',
+                fontSize: '11px', fontWeight: 900, letterSpacing: '0.5px', cursor: 'pointer',
+              }}>◄ Volver al inicio</button>
             </div>
-
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              borderTop: `1px solid ${BASE.borderSoft}`,
-              paddingTop: '9px', marginTop: '1px',
-            }}>
-              <span style={{
-                fontSize: '10.5px', fontWeight: 900, color: acento,
-                letterSpacing: '1px', textTransform: 'uppercase',
+          ) : (
+          <>
+            {/* Saludo */}
+            <div style={{ textAlign: 'center', marginBottom: '14px' }}>
+              <h2 style={{ margin: 0, fontSize: '21px', fontWeight: 900, color: BASE.navy, letterSpacing: '-0.01em' }}>
+                {saludo}{nombreUsuario ? <>, {nombreUsuario}</> : null} <span style={{ fontSize: '19px' }}>👋</span>
+              </h2>
+              <p style={{ margin: '5px 0 0', fontSize: '13px', fontWeight: 600, color: BASE.muted }}>
+                ¿Qué deseas hacer hoy?
+              </p>
+              {/* Fila de contexto: fecha · semana · cliente (equivale a los KPIs de Presupuestos) */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                gap: '8px', flexWrap: 'wrap', marginTop: '11px',
+                fontSize: '11.5px', fontWeight: 700, color: '#64748b',
               }}>
-                Entrar
-              </span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                {/* Abrir esta área en OTRA pestaña → multi-pestaña (ej. Calidad + Planeamiento) */}
-                <span
-                  role="button" tabIndex={0}
-                  aria-label={`Abrir ${p.titulo} en una pestaña nueva`}
-                  title="Abrir esta área en una pestaña nueva"
-                  onClick={(e) => { e.stopPropagation(); window.open(`${window.location.pathname}#/${p.rol}`, '_blank'); }}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); window.open(`${window.location.pathname}#/${p.rol}`, '_blank'); } }}
-                  style={{
-                    width: '30px', height: '30px', borderRadius: '999px',
-                    border: `1.5px solid ${acento}55`, background: '#fff',
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    color: acento, fontSize: '13px', fontWeight: 900, cursor: 'alias',
-                  }}>⧉</span>
-                <span aria-hidden="true" style={{
-                  width: '30px', height: '30px', borderRadius: '999px',
-                  background: `linear-gradient(145deg, ${acento}, ${acento}cc)`,
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', fontSize: '14px', fontWeight: 900,
-                  boxShadow: `0 4px 10px -3px ${acento}88`,
-                }}>→</span>
-              </span>
+                <span>{fechaLarga}</span>
+                <span style={{ opacity: 0.4 }}>·</span>
+                <span style={{
+                  border: `1px solid ${BASE.gold}66`, color: '#b8801a',
+                  background: `${BASE.gold}12`,
+                  borderRadius: '999px', padding: '3px 11px', fontWeight: 800,
+                }}>
+                  Semana {semanaProyecto} del proyecto
+                </span>
+                {clienteActivo && (
+                  <>
+                    {/* El separador viaja DENTRO del span del cliente: si la fila
+                        se parte en móvil, no queda un "·" huérfano al final. */}
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ opacity: 0.4, marginRight: '2px' }}>·</span>
+                      {logoClienteUrl ? (
+                        <img src={logoClienteUrl} alt={clienteActivo}
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          style={{ width: '18px', height: '18px', objectFit: 'contain', borderRadius: '4px', background: '#fff' }} />
+                      ) : (
+                        <span style={{
+                          width: '18px', height: '18px', borderRadius: '5px', background: BASE.navy, color: '#fff',
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '8px', fontWeight: 900,
+                        }}>{monogramaCliente(clienteActivo)}</span>
+                      )}
+                      <b style={{ color: BASE.navy }}>{clienteActivo}</b>
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
-          </button>
-          );
-        })}
-      </div>
-      )}
 
-      <div style={{ position: 'relative', zIndex: 1, marginTop: '18px', textAlign: 'center' }}>
-        <img
-          src="/brand/valtana-logo.png"
-          alt="Valtana Consultoría & Construcción"
-          style={{
-            width: '150px', height: 'auto', display: 'block', margin: '0 auto',
-            filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.35))',
-          }}
-        />
+            {/* Selectores CLIENTE + PROYECTO */}
+            <div style={{
+              background: '#f1f5fa', border: '1px solid rgba(15,42,71,0.09)',
+              borderRadius: '14px', padding: '12px 14px', marginBottom: '6px',
+              display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '12px',
+            }}>
+              <div>
+                <label style={lblCtx}>🏢 CLIENTE</label>
+                <SelectPremium
+                  title="Cliente" isMobile={isMobile}
+                  value={clienteActivo}
+                  onChange={v => cambiarCliente(v)}
+                  placeholder="— Selecciona cliente —"
+                  options={clientes.map(c => ({ value: c, label: c }))}
+                />
+              </div>
+              <div>
+                <label style={lblCtx}>🏗️ PROYECTO</label>
+                <SelectPremium
+                  title="Proyecto" isMobile={isMobile}
+                  value={proyectoActivoId || ''}
+                  onChange={v => setProyectoActivoId(v)}
+                  placeholder="— Selecciona proyecto —"
+                  options={proyectosFiltrados.map(p => ({ value: p.id, label: p.nombre || p.codigo || p.id }))}
+                />
+              </div>
+            </div>
+
+            {/* HERO: registro de personal facial + acceso por PIN */}
+            <div className="vdc-grid dos" style={{ marginTop: '14px' }}>
+              <button
+                className="vdc-tile hero"
+                onClick={() => setModoMarcador(true)}
+                style={{
+                  '--vdc-acento': BASE.gold,
+                  '--vdc-sombra': `${BASE.gold}88`,
+                  '--vdc-ic-bg': `linear-gradient(145deg, ${BASE.gold}2e, ${BASE.gold}0f)`,
+                  '--vdc-ic-bd': `${BASE.gold}55`,
+                  borderColor: `${BASE.gold}66`,
+                  background: `linear-gradient(160deg, #fffdf7 0%, #ffffff 60%)`,
+                }}
+              >
+                <span className="vdc-tile-ic"><Icon name="user" size={22} color={BASE.gold} strokeWidth={2} /></span>
+                <span className="vdc-tile-t">Marcar Entrada / Salida</span>
+                <span className="vdc-tile-s">Registro de personal por reconocimiento facial</span>
+              </button>
+              <button
+                className="vdc-tile hero"
+                onClick={() => { setModoPin(true); setPin(''); setErrorPin(''); }}
+                style={{
+                  '--vdc-acento': BASE.navy,
+                  '--vdc-sombra': `${BASE.navy}88`,
+                  '--vdc-ic-bg': `linear-gradient(145deg, ${BASE.navy}22, ${BASE.navy}0a)`,
+                  '--vdc-ic-bd': `${BASE.navy}33`,
+                }}
+              >
+                <span className="vdc-tile-ic"><Icon name="shield" size={22} color={BASE.navy} strokeWidth={2} /></span>
+                <span className="vdc-tile-t">Acceso por PIN de obra</span>
+                <span className="vdc-tile-s">Entrada rápida del personal de campo</span>
+              </button>
+            </div>
+
+            {/* Estado vacío: rol sin áreas mapeadas */}
+            {perfilesFiltrados.length === 0 && (
+              <div style={{
+                marginTop: '18px', background: '#f1f5fa', border: '1px solid rgba(15,42,71,0.09)',
+                borderRadius: '14px', padding: '28px 20px', textAlign: 'center',
+              }}>
+                <p style={{ color: BASE.navy, fontSize: '14.5px', fontWeight: 800, margin: 0 }}>Sin áreas asignadas</p>
+                <p style={{ color: BASE.muted, fontSize: '12.5px', margin: '6px 0 0', lineHeight: 1.5 }}>
+                  Tu usuario aún no tiene áreas habilitadas en este proyecto.<br />Contacta al administrador del sistema.
+                </p>
+              </div>
+            )}
+
+            {/* ── Un bloque por área: encabezado + botón ENTRAR + tiles de acceso directo ── */}
+            {perfilesFiltrados.map((p) => {
+              const acento = p.destacado ? BASE.gold : p.color;
+              return (
+                <section key={p.rol}>
+                  <div className="vdc-sec">
+                    <span style={{
+                      width: '30px', height: '30px', borderRadius: '9px', flexShrink: 0,
+                      background: `linear-gradient(145deg, ${acento}26, ${acento}0d)`,
+                      border: `1px solid ${acento}3d`,
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <Icon name={p.iconName} size={16} color={acento} strokeWidth={2.2} />
+                    </span>
+                    <span className="vdc-sec-t" style={{ color: acento }}>{p.titulo}</span>
+                    {p.kicker && (
+                      <span className="vdc-sec-k">{p.kicker}</span>
+                    )}
+                    <span className="vdc-sec-line" />
+                    {/* Abrir el área en otra pestaña (multi-pestaña) */}
+                    <span
+                      role="button" tabIndex={0}
+                      aria-label={`Abrir ${p.titulo} en una pestaña nueva`}
+                      title="Abrir esta área en una pestaña nueva"
+                      onClick={() => window.open(`${window.location.pathname}#/${p.rol}`, '_blank')}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); window.open(`${window.location.pathname}#/${p.rol}`, '_blank'); } }}
+                      style={{
+                        width: '26px', height: '26px', borderRadius: '999px', flexShrink: 0,
+                        border: `1.5px solid ${acento}55`, background: '#fff', color: acento,
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '12px', fontWeight: 900, cursor: 'alias',
+                      }}>⧉</span>
+                    <button
+                      className="vdc-sec-btn"
+                      onClick={() => entrarComoRol(p.rol)}
+                      style={{ color: acento, flexShrink: 0 }}
+                      title={`Entrar a ${p.titulo}`}
+                    >
+                      <span className="vdc-sec-btn-l">ENTRAR →</span>
+                    </button>
+                  </div>
+                  <div className="vdc-grid">
+                    {p.accesos.map(a => (
+                      <button
+                        key={a.go}
+                        className="vdc-tile"
+                        onClick={() => irA(p.rol, a.go)}
+                        title={`Ir directo a ${a.l}`}
+                        style={{
+                          '--vdc-acento': acento,
+                          '--vdc-sombra': `${acento}77`,
+                          '--vdc-ic-bg': `linear-gradient(145deg, ${acento}22, ${acento}0a)`,
+                          '--vdc-ic-bd': `${acento}33`,
+                        }}
+                      >
+                        <span className="vdc-tile-ic"><Icon name={a.ic || 'fileText'} size={20} color={acento} strokeWidth={2} /></span>
+                        <span className="vdc-tile-t">{a.l}</span>
+                        {a.d && <span className="vdc-tile-s">{a.d}</span>}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
+          </>
+          )}
+        </div>
+
+        {/* ── Pie: firma Valtana ── */}
+        <div style={{
+          borderTop: '1px solid rgba(15,42,71,0.08)',
+          padding: '13px 20px 15px', textAlign: 'center',
+          background: '#f6f8fc',
+        }}>
+          <img
+            src="/brand/valtana-logo.png"
+            alt="Valtana Consultoría & Construcción"
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            style={{ width: '118px', height: 'auto', display: 'block', margin: '0 auto 7px', opacity: 0.9 }}
+          />
+          <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#94a3b8' }}>
+            © {new Date().getFullYear()} · Una solución de <b style={{ color: BASE.navy }}>VALTANA</b> Consultoría &amp; Construcción S.A.C.
+          </span>
+        </div>
       </div>
     </div>
   );
