@@ -81,17 +81,9 @@ export default defineConfig({
           // TensorFlow + face-api → mismo chunk AISLADO (~0.6 MB). Solo se descarga al
           // abrir asistencia/reconocimiento facial (lazy), NO en el arranque.
           if (id.includes('face-api.js') || id.includes('@tensorflow') || id.includes('tfjs') || id.includes('seedrandom')) return 'vendor-faceapi';
-          // @react-pdf/renderer + motor PDF (pdfkit/fontkit/yoga ~1.5 MB): NO los
-          // forzamos a un chunk nombrado. Hacerlo creaba una arista ESTATICA
-          // entry→vendor-pdf y se descargaban ~418 KB gz en el arranque pese a ser
-          // 100% lazy (solo se alcanzan via await import desde ProtocoloPreVaciadoPDF).
-          // Con undefined, Rolldown los aisla como chunk DINAMICO. Verificar: 0 imports
-          // de ese chunk en index-*.js tras el build.
-          if (id.includes('@react-pdf') || id.includes('yoga-layout') || id.includes('fontkit')
-            || id.includes('pdfkit') || id.includes('restructure') || id.includes('bidi-js')
-            || id.includes('png-js') || id.includes('linebreak') || id.includes('unicode-properties')
-            || id.includes('unicode-trie') || id.includes('tiny-inflate') || id.includes('/brotli')
-            || id.includes('/dfa/')) return;
+          // (Regla de @react-pdf/renderer retirada: la dependencia se quitó junto con
+          //  TareoPDF.jsx y ProtocoloPreVaciadoPDF.jsx, sus únicos consumidores.
+          //  Los PDF vivos se generan con jsPDF/html2canvas, cubiertos más arriba.)
           // model-viewer + three (~1 MB, visor AR de BIM): 100% lazy, solo se alcanza
           // vía await import desde BimVisorAR. Igual que @react-pdf: undefined → chunk
           // DINÁMICO sin arista eager al arranque.
