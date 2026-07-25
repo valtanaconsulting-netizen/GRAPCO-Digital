@@ -385,7 +385,7 @@ export default function SelectorPerfil({ onIrASeccion }) {
       alignItems: 'center',
       justifyContent: 'flex-start',
       // Safe-areas Capacitor: respeta notch/barra de gestos para no recortar el panel.
-      padding: 'max(64px, calc(env(safe-area-inset-top) + 56px)) max(18px, env(safe-area-inset-right)) calc(30px + env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left))',
+      padding: 'max(56px, calc(env(safe-area-inset-top) + 48px)) max(14px, env(safe-area-inset-right)) calc(22px + env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left))',
       background: '#0a1628',
       fontFamily: BASE.font,
       position: 'relative',
@@ -490,9 +490,9 @@ export default function SelectorPerfil({ onIrASeccion }) {
         {/* ── Cabecera navy con la marca ── */}
         <div className="vdc-head">
           <div style={{
-            width: '78px', height: '78px', margin: '0 auto 10px',
+            width: '58px', height: '58px', margin: '0 auto 8px',
             background: 'linear-gradient(150deg, #ffffff 0%, #eef3f9 100%)',
-            borderRadius: '18px', padding: '2px', overflow: 'hidden',
+            borderRadius: '15px', padding: '2px', overflow: 'hidden',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: `0 13px 30px -16px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.5), 0 0 0 1.5px ${BASE.gold}40`,
           }}>
@@ -503,7 +503,7 @@ export default function SelectorPerfil({ onIrASeccion }) {
             />
           </div>
           <h1 style={{
-            margin: 0, color: '#fff', fontSize: '25px', fontWeight: 900, letterSpacing: '2.5px',
+            margin: 0, color: '#fff', fontSize: '21px', fontWeight: 900, letterSpacing: '2.2px',
           }}>
             GRAPCO <span style={{ color: BASE.gold }}>SAC</span>
           </h1>
@@ -575,8 +575,8 @@ export default function SelectorPerfil({ onIrASeccion }) {
           ) : (
           <>
             {/* Saludo */}
-            <div style={{ textAlign: 'center', marginBottom: '14px' }}>
-              <h2 style={{ margin: 0, fontSize: '21px', fontWeight: 900, color: BASE.navy, letterSpacing: '-0.01em' }}>
+            <div style={{ textAlign: 'center', marginBottom: '11px' }}>
+              <h2 style={{ margin: 0, fontSize: '19px', fontWeight: 900, color: BASE.navy, letterSpacing: '-0.01em' }}>
                 {saludo}{nombreUsuario ? <>, {nombreUsuario}</> : null} <span style={{ fontSize: '19px' }}>👋</span>
               </h2>
               <p style={{ margin: '5px 0 0', fontSize: '13px', fontWeight: 600, color: BASE.muted }}>
@@ -585,7 +585,7 @@ export default function SelectorPerfil({ onIrASeccion }) {
               {/* Fila de contexto: fecha · semana · cliente (equivale a los KPIs de Presupuestos) */}
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                gap: '8px', flexWrap: 'wrap', marginTop: '11px',
+                gap: '8px', flexWrap: 'wrap', marginTop: '9px',
                 fontSize: '11.5px', fontWeight: 700, color: '#64748b',
               }}>
                 <span>{fechaLarga}</span>
@@ -624,7 +624,7 @@ export default function SelectorPerfil({ onIrASeccion }) {
             {/* Selectores CLIENTE + PROYECTO */}
             <div style={{
               background: '#f1f5fa', border: '1px solid rgba(15,42,71,0.09)',
-              borderRadius: '14px', padding: '12px 14px', marginBottom: '6px',
+              borderRadius: '14px', padding: '10px 13px', marginBottom: '4px',
               display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '12px',
             }}>
               <div>
@@ -649,10 +649,10 @@ export default function SelectorPerfil({ onIrASeccion }) {
               </div>
             </div>
 
-            {/* HERO: registro de personal facial + acceso por PIN */}
-            <div className="vdc-grid dos" style={{ marginTop: '14px' }}>
+            {/* Accesos destacados: kiosko facial + PIN de obra */}
+            <div className="vdc-hero" style={{ marginTop: '12px' }}>
               <button
-                className="vdc-tile hero"
+                className="vdc-tile"
                 onClick={() => setModoMarcador(true)}
                 style={{
                   '--vdc-acento': BASE.gold,
@@ -660,15 +660,17 @@ export default function SelectorPerfil({ onIrASeccion }) {
                   '--vdc-ic-bg': `linear-gradient(145deg, ${BASE.gold}2e, ${BASE.gold}0f)`,
                   '--vdc-ic-bd': `${BASE.gold}55`,
                   borderColor: `${BASE.gold}66`,
-                  background: `linear-gradient(160deg, #fffdf7 0%, #ffffff 60%)`,
+                  background: 'linear-gradient(160deg, #fffdf7 0%, #ffffff 60%)',
                 }}
               >
-                <span className="vdc-tile-ic"><Icon name="user" size={22} color={BASE.gold} strokeWidth={2} /></span>
-                <span className="vdc-tile-t">Marcar Entrada / Salida</span>
-                <span className="vdc-tile-s">Registro de personal por reconocimiento facial</span>
+                <span className="vdc-tile-ic"><Icon name="user" size={21} color={BASE.gold} strokeWidth={2} /></span>
+                <span className="vdc-tile-txt">
+                  <span className="vdc-tile-t">Marcar Entrada / Salida</span>
+                  <span className="vdc-tile-s">Registro de personal por reconocimiento facial</span>
+                </span>
               </button>
               <button
-                className="vdc-tile hero"
+                className="vdc-tile"
                 onClick={() => { setModoPin(true); setPin(''); setErrorPin(''); }}
                 style={{
                   '--vdc-acento': BASE.navy,
@@ -677,17 +679,19 @@ export default function SelectorPerfil({ onIrASeccion }) {
                   '--vdc-ic-bd': `${BASE.navy}33`,
                 }}
               >
-                <span className="vdc-tile-ic"><Icon name="shield" size={22} color={BASE.navy} strokeWidth={2} /></span>
-                <span className="vdc-tile-t">Acceso por PIN de obra</span>
-                <span className="vdc-tile-s">Entrada rápida del personal de campo</span>
+                <span className="vdc-tile-ic"><Icon name="shield" size={21} color={BASE.navy} strokeWidth={2} /></span>
+                <span className="vdc-tile-txt">
+                  <span className="vdc-tile-t">Acceso por PIN de obra</span>
+                  <span className="vdc-tile-s">Entrada rápida del personal de campo</span>
+                </span>
               </button>
             </div>
 
             {/* Estado vacío: rol sin áreas mapeadas */}
             {perfilesFiltrados.length === 0 && (
               <div style={{
-                marginTop: '18px', background: '#f1f5fa', border: '1px solid rgba(15,42,71,0.09)',
-                borderRadius: '14px', padding: '28px 20px', textAlign: 'center',
+                marginTop: '16px', background: '#f1f5fa', border: '1px solid rgba(15,42,71,0.09)',
+                borderRadius: '14px', padding: '26px 20px', textAlign: 'center',
               }}>
                 <p style={{ color: BASE.navy, fontSize: '14.5px', fontWeight: 800, margin: 0 }}>Sin áreas asignadas</p>
                 <p style={{ color: BASE.muted, fontSize: '12.5px', margin: '6px 0 0', lineHeight: 1.5 }}>
@@ -696,70 +700,74 @@ export default function SelectorPerfil({ onIrASeccion }) {
               </div>
             )}
 
-            {/* ── Un bloque por área: encabezado + botón ENTRAR + tiles de acceso directo ── */}
-            {perfilesFiltrados.map((p) => {
-              const acento = p.destacado ? BASE.gold : p.color;
-              return (
-                <section key={p.rol}>
-                  <div className="vdc-sec">
-                    <span style={{
-                      width: '30px', height: '30px', borderRadius: '9px', flexShrink: 0,
-                      background: `linear-gradient(145deg, ${acento}26, ${acento}0d)`,
-                      border: `1px solid ${acento}3d`,
-                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      <Icon name={p.iconName} size={16} color={acento} strokeWidth={2.2} />
-                    </span>
-                    <span className="vdc-sec-t" style={{ color: acento }}>{p.titulo}</span>
-                    {p.kicker && (
-                      <span className="vdc-sec-k">{p.kicker}</span>
-                    )}
-                    <span className="vdc-sec-line" />
-                    {/* Abrir el área en otra pestaña (multi-pestaña) */}
-                    <span
-                      role="button" tabIndex={0}
-                      aria-label={`Abrir ${p.titulo} en una pestaña nueva`}
-                      title="Abrir esta área en una pestaña nueva"
-                      onClick={() => window.open(`${window.location.pathname}#/${p.rol}`, '_blank')}
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); window.open(`${window.location.pathname}#/${p.rol}`, '_blank'); } }}
-                      style={{
-                        width: '26px', height: '26px', borderRadius: '999px', flexShrink: 0,
-                        border: `1.5px solid ${acento}55`, background: '#fff', color: acento,
+            {/* ── Las áreas, una por COLUMNA: así todo cabe en pantalla sin
+                   scroll largo y se aprovecha el ancho del monitor. ── */}
+            <div className="vdc-areas">
+              {perfilesFiltrados.map((p) => {
+                const acento = p.destacado ? BASE.gold : p.color;
+                return (
+                  <section key={p.rol} className="vdc-area">
+                    <div className="vdc-area-head">
+                      <span style={{
+                        width: '32px', height: '32px', borderRadius: '9px', flexShrink: 0,
+                        background: `linear-gradient(145deg, ${acento}26, ${acento}0d)`,
+                        border: `1px solid ${acento}3d`,
                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '12px', fontWeight: 900, cursor: 'alias',
-                      }}>⧉</span>
-                    <button
-                      className="vdc-sec-btn"
-                      onClick={() => entrarComoRol(p.rol)}
-                      style={{ color: acento, flexShrink: 0 }}
-                      title={`Entrar a ${p.titulo}`}
-                    >
-                      <span className="vdc-sec-btn-l">ENTRAR →</span>
-                    </button>
-                  </div>
-                  <div className="vdc-grid">
-                    {p.accesos.map(a => (
-                      <button
-                        key={a.go}
-                        className="vdc-tile"
-                        onClick={() => irA(p.rol, a.go)}
-                        title={`Ir directo a ${a.l}`}
+                      }}>
+                        <Icon name={p.iconName} size={17} color={acento} strokeWidth={2.2} />
+                      </span>
+                      <span className="vdc-area-t" style={{ color: acento }}>
+                        {p.titulo}
+                        {p.kicker && <span className="vdc-area-k">{p.kicker}</span>}
+                      </span>
+                      {/* Abrir el área en otra pestaña (multi-pestaña) */}
+                      <span
+                        role="button" tabIndex={0}
+                        aria-label={`Abrir ${p.titulo} en una pestaña nueva`}
+                        title="Abrir esta área en una pestaña nueva"
+                        onClick={() => window.open(`${window.location.pathname}#/${p.rol}`, '_blank')}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); window.open(`${window.location.pathname}#/${p.rol}`, '_blank'); } }}
                         style={{
-                          '--vdc-acento': acento,
-                          '--vdc-sombra': `${acento}77`,
-                          '--vdc-ic-bg': `linear-gradient(145deg, ${acento}22, ${acento}0a)`,
-                          '--vdc-ic-bd': `${acento}33`,
-                        }}
+                          width: '24px', height: '24px', borderRadius: '999px', flexShrink: 0,
+                          border: `1.5px solid ${acento}55`, background: '#fff', color: acento,
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '11px', fontWeight: 900, cursor: 'alias',
+                        }}>⧉</span>
+                      <button
+                        className="vdc-enter"
+                        onClick={() => entrarComoRol(p.rol)}
+                        style={{ color: acento }}
+                        title={`Entrar a ${p.titulo}`}
                       >
-                        <span className="vdc-tile-ic"><Icon name={a.ic || 'fileText'} size={20} color={acento} strokeWidth={2} /></span>
-                        <span className="vdc-tile-t">{a.l}</span>
-                        {a.d && <span className="vdc-tile-s">{a.d}</span>}
+                        <span className="vdc-enter-l">ENTRAR →</span>
                       </button>
-                    ))}
-                  </div>
-                </section>
-              );
-            })}
+                    </div>
+                    <div className="vdc-area-list">
+                      {p.accesos.map(a => (
+                        <button
+                          key={a.go}
+                          className="vdc-row"
+                          onClick={() => irA(p.rol, a.go)}
+                          title={`Ir directo a ${a.l}`}
+                          style={{
+                            '--vdc-acento': acento,
+                            '--vdc-sombra': `${acento}77`,
+                            '--vdc-ic-bg': `linear-gradient(145deg, ${acento}22, ${acento}0a)`,
+                            '--vdc-ic-bd': `${acento}33`,
+                          }}
+                        >
+                          <span className="vdc-row-ic"><Icon name={a.ic || 'fileText'} size={17} color={acento} strokeWidth={2} /></span>
+                          <span className="vdc-row-txt">
+                            <span className="vdc-row-t">{a.l}</span>
+                            {a.d && <span className="vdc-row-s">{a.d}</span>}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                );
+              })}
+            </div>
           </>
           )}
         </div>
@@ -767,14 +775,14 @@ export default function SelectorPerfil({ onIrASeccion }) {
         {/* ── Pie: firma Valtana ── */}
         <div style={{
           borderTop: '1px solid rgba(15,42,71,0.08)',
-          padding: '13px 20px 15px', textAlign: 'center',
+          padding: '10px 18px 11px', textAlign: 'center',
           background: '#f6f8fc',
         }}>
           <img
             src="/brand/valtana-logo.png"
             alt="Valtana Consultoría & Construcción"
             onError={(e) => { e.currentTarget.style.display = 'none'; }}
-            style={{ width: '118px', height: 'auto', display: 'block', margin: '0 auto 7px', opacity: 0.9 }}
+            style={{ width: '96px', height: 'auto', display: 'block', margin: '0 auto 5px', opacity: 0.9 }}
           />
           <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#94a3b8' }}>
             © {new Date().getFullYear()} · Una solución de <b style={{ color: BASE.navy }}>VALTANA</b> Consultoría &amp; Construcción S.A.C.

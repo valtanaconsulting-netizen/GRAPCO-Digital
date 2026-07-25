@@ -190,26 +190,26 @@
 
 /* ══════════════════════════════════════════════════════════════════════
  * PANTALLA DE ENTRADA — formato unificado con la app de Presupuestos:
- * un panel central (cabecera navy + cuerpo claro) con tiles en cuadrícula.
+ * un panel central (cabecera navy + cuerpo claro) con las áreas en
+ * columnas, pensado para que TODO entre en pantalla sin scroll largo.
  * ══════════════════════════════════════════════════════════════════════ */
 
-/* Panel central que contiene toda la pantalla */
+/* Panel central: se adapta al ancho de la pantalla en la que se abre. */
 .vdc-card {
   width: 100%;
-  max-width: 1120px;
+  max-width: min(1560px, 96vw);
   margin: 0 auto;
-  border-radius: 22px;
+  border-radius: 20px;
   overflow: hidden;
   background: #fbfcfe;
   border: 1px solid rgba(229,168,47,0.28);
   box-shadow: 0 40px 90px -30px rgba(3,10,22,0.85), 0 0 0 1px rgba(255,255,255,0.05);
 }
-@media (prefers-color-scheme: dark) { .vdc-card { background: #f7f9fc; } }
 
 /* Cabecera navy con la marca */
 .vdc-head {
   position: relative;
-  padding: 26px 24px 20px;
+  padding: 13px 22px 11px;
   text-align: center;
   background: linear-gradient(170deg, #12294a 0%, #0d1f3a 60%, #0b1b32 100%);
   border-bottom: 3px solid #E5A82F;
@@ -226,23 +226,99 @@
 .vdc-head > * { position: relative; z-index: 1; }
 
 /* Cuerpo claro */
-.vdc-body { padding: 22px 24px 20px; }
+.vdc-body { padding: 13px 18px 14px; }
 
-/* Cuadrícula de tiles: 3 columnas → 2 → 1 */
-.vdc-grid {
+/* ── Fila de accesos destacados (kiosko facial + PIN) ── */
+.vdc-hero {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 700px) { .vdc-hero { grid-template-columns: 1fr; } }
+
+/* ── Las ÁREAS, una por columna, lado a lado ── */
+.vdc-areas {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
+  align-items: start;
+  margin-top: 12px;
 }
-.vdc-grid.dos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-@media (max-width: 900px) { .vdc-grid, .vdc-grid.dos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 600px) { .vdc-grid, .vdc-grid.dos { grid-template-columns: 1fr; } }
+@media (max-width: 1100px) { .vdc-areas { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 720px)  { .vdc-areas { grid-template-columns: 1fr; } }
 
-/* Tile: mismo lenguaje visual que los de Presupuestos */
-.vdc-tile {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+/* Columna de un área */
+.vdc-area {
+  background: #fff;
+  border: 1px solid rgba(15,42,71,0.10);
+  border-radius: 15px;
+  padding: 11px 11px 12px;
+  box-shadow: 0 2px 10px -6px rgba(15,42,71,0.35);
+  display: flex; flex-direction: column; gap: 9px;
+  min-width: 0;
+}
+.vdc-area-head {
+  display: flex; align-items: center; gap: 9px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(15,42,71,0.08);
+}
+.vdc-area-t {
+  flex: 1; min-width: 0;
+  font-size: 12px; font-weight: 900; letter-spacing: 0.6px; text-transform: uppercase;
+  line-height: 1.2; overflow-wrap: anywhere;
+}
+.vdc-area-k {
+  display: block;
+  font-size: 9.5px; font-weight: 600; letter-spacing: 0.2px; text-transform: none;
+  color: #94a3b8; margin-top: 2px;
+}
+.vdc-area-list { display: flex; flex-direction: column; gap: 5px; }
+
+/* Botón ENTRAR del área */
+.vdc-enter {
+  display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;
+  padding: 5px 11px; border-radius: 999px; cursor: pointer;
+  font-size: 9.5px; font-weight: 900; letter-spacing: 0.5px;
+  border: 1px solid currentColor; background: transparent;
+  transition: all 0.16s ease;
+}
+.vdc-enter:hover { background: currentColor; }
+.vdc-enter:hover .vdc-enter-l { color: #fff; }
+
+/* ── Accesos: fila compacta (icono a la izquierda) para ahorrar altura ── */
+.vdc-row {
+  display: flex; align-items: center; gap: 9px;
   width: 100%; box-sizing: border-box;
-  padding: 14px 15px;
+  padding: 7px 9px;
+  text-align: left; cursor: pointer;
+  background: #fbfcfe;
+  border: 1px solid rgba(15,42,71,0.08);
+  border-radius: 11px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.vdc-row:hover, .vdc-row:focus-visible {
+  transform: translateX(2px);
+  background: #fff;
+  border-color: var(--vdc-acento, #E5A82F);
+  box-shadow: 0 8px 18px -12px var(--vdc-sombra, rgba(229,168,47,0.7));
+  outline: none;
+}
+.vdc-row:focus-visible { outline: 2px solid rgba(229,168,47,0.8); outline-offset: 2px; }
+.vdc-row-ic {
+  width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--vdc-ic-bg, rgba(229,168,47,0.12));
+  border: 1px solid var(--vdc-ic-bd, rgba(229,168,47,0.28));
+}
+.vdc-row-txt { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.vdc-row-t { font-size: 12px; font-weight: 800; color: #0F2A47; line-height: 1.2; overflow-wrap: anywhere; }
+.vdc-row-s { font-size: 10px; font-weight: 600; color: #7c8ba1; line-height: 1.25; overflow-wrap: anywhere; }
+
+/* ── Tile grande (solo la fila destacada) ── */
+.vdc-tile {
+  display: flex; align-items: center; gap: 11px;
+  width: 100%; box-sizing: border-box;
+  padding: 10px 13px;
   text-align: left; cursor: pointer;
   background: #fff;
   border: 1px solid rgba(15,42,71,0.10);
@@ -251,57 +327,29 @@
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 .vdc-tile:hover, .vdc-tile:focus-visible {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   border-color: var(--vdc-acento, #E5A82F);
   box-shadow: 0 16px 30px -16px var(--vdc-sombra, rgba(229,168,47,0.55));
   outline: none;
 }
 .vdc-tile:focus-visible { outline: 2px solid rgba(229,168,47,0.8); outline-offset: 2px; }
 .vdc-tile-ic {
-  width: 42px; height: 42px; border-radius: 12px; margin-bottom: 6px;
+  width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--vdc-ic-bg, rgba(229,168,47,0.12));
   border: 1px solid var(--vdc-ic-bd, rgba(229,168,47,0.28));
 }
-.vdc-tile-t { font-size: 13.5px; font-weight: 800; color: #0F2A47; line-height: 1.25; overflow-wrap: anywhere; }
-.vdc-tile-s { font-size: 11px; font-weight: 600; color: #64748b; line-height: 1.35; overflow-wrap: anywhere; }
+.vdc-tile-txt { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.vdc-tile-t { font-size: 14px; font-weight: 800; color: #0F2A47; line-height: 1.2; overflow-wrap: anywhere; }
+.vdc-tile-s { font-size: 11px; font-weight: 600; color: #64748b; line-height: 1.3; overflow-wrap: anywhere; }
 
-/* Cabecera y cuerpo más compactos en móvil */
+/* Compactar en pantallas chicas */
 @media (max-width: 560px) {
-  .vdc-card { border-radius: 18px; }
-  .vdc-head { padding: 20px 16px 16px; }
-  .vdc-body { padding: 18px 14px 16px; }
+  .vdc-card { border-radius: 16px; max-width: 100%; }
+  .vdc-head { padding: 16px 14px 12px; }
+  .vdc-body { padding: 14px 12px 14px; }
+  .vdc-area-k { display: none; }
 }
-
-/* Tile destacado (hero): un poco más grande y con acento */
-.vdc-tile.hero { padding: 17px 17px; border-width: 1.5px; }
-.vdc-tile.hero .vdc-tile-ic { width: 48px; height: 48px; border-radius: 14px; }
-.vdc-tile.hero .vdc-tile-t { font-size: 15.5px; }
-.vdc-tile.hero .vdc-tile-s { font-size: 11.5px; }
-
-/* Encabezado de cada bloque de área */
-.vdc-sec {
-  display: flex; align-items: center; gap: 10px;
-  margin: 20px 2px 10px;
-  flex-wrap: wrap;   /* en pantallas angostas baja a la línea siguiente en vez de desbordar */
-}
-.vdc-sec-line { flex: 1; min-width: 12px; height: 1px; background: rgba(15,42,71,0.10); }
-.vdc-sec-t {
-  font-size: 10.5px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase;
-  min-width: 0; overflow-wrap: anywhere;
-}
-.vdc-sec-k { font-size: 10.5px; font-weight: 600; color: #94a3b8; white-space: nowrap; }
-/* Móvil: el kicker del área sobra — el título ya identifica el bloque. */
-@media (max-width: 560px) { .vdc-sec-k { display: none; } }
-.vdc-sec-btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 5px 12px; border-radius: 999px; cursor: pointer;
-  font-size: 10.5px; font-weight: 900; letter-spacing: 0.5px;
-  border: 1px solid currentColor; background: transparent;
-  transition: all 0.16s ease;
-}
-.vdc-sec-btn:hover { background: currentColor; }
-.vdc-sec-btn:hover .vdc-sec-btn-l { color: #fff; }
 
 /* Grilla del selector de perfil — 3 columnas en escritorio (3 arriba / 3 abajo
  * para los 6 accesos), 2 en tablet y 1 en móvil. Va por clase (no inline) para
