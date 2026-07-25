@@ -732,14 +732,6 @@ export default function SelectorPerfil({ onIrASeccion }) {
                           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                           fontSize: '11px', fontWeight: 900, cursor: 'alias',
                         }}>⧉</span>
-                      <button
-                        className="vdc-enter"
-                        onClick={() => entrarComoRol(p.rol)}
-                        style={{ color: acento }}
-                        title={`Entrar a ${p.titulo}`}
-                      >
-                        <span className="vdc-enter-l">ENTRAR →</span>
-                      </button>
                     </div>
                     <div className="vdc-area-list">
                       {p.accesos.map(a => (
@@ -763,6 +755,15 @@ export default function SelectorPerfil({ onIrASeccion }) {
                         </button>
                       ))}
                     </div>
+                    {/* CTA al pie de la columna: entra al área completa. */}
+                    <button
+                      className="vdc-enter"
+                      onClick={() => entrarComoRol(p.rol)}
+                      style={{ color: acento }}
+                      title={`Entrar a ${p.titulo}`}
+                    >
+                      <span className="vdc-enter-l">ENTRAR AL ÁREA →</span>
+                    </button>
                   </section>
                 );
               })}
