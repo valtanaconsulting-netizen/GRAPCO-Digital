@@ -18,7 +18,6 @@ import {
   calcularReporteTareos, calcularControlHHVariaciones, calcularMatrizIP,
   fmtMoney, fmt1, fmtCPIPct, COSTO_HORA_DEFAULT, COSTO_HORA_PROMEDIO, codigoCortoPartida,
 } from '../utils/helpers';
-import CostoRealCR from './modulos/resultadoOperativo/CostoRealCR';
 
 // Tono "frío / ahorro" institucional: BASE no define un azul (la marca es navy),
 // así que reutilizamos navyLight como acento frío y su rgba para tintes. De este modo
@@ -46,6 +45,18 @@ export default function ControlGerencial({ historial, wbs, personalDB, configura
   const tarifaPromedio = COSTO_HORA_PROMEDIO;
 
   const numTrabajadores = useMemo(() => (personalDB || []).length, [personalDB]);
+
+  // Partida/subpartida CANÓNICAS (el mismo cruce al catálogo que usa el ISP) antes
+  // de cualquier reporte. Así el Reporte de Tareos habla el MISMO idioma que
+  // Producción y que el CPI: una sola verdad, no dos tablas con distinta reparto.
+  const historialCanonico = useMemo(
+    () => (historial || []).map(r => ({
+      ...r,
+      partida: r._partidaCanonica || r.partida,
+      subpartida: r._subpartidaCanonica || r.subpartida,
+    })),
+    [historial],
+  );
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -77,7 +88,7 @@ export default function ControlGerencial({ historial, wbs, personalDB, configura
         boxShadow: '0 2px 6px rgba(15,23,42,0.04)',
       }}>
         {[
-          { id: 'tareosCR',     l: 'Reporte de Tareos y Costo Real', desc: 'Tareos + CR por partida (HH × S/25.5), lado a lado · misma data' },
+          { id: 'tareosCR',     l: 'Tareos y Costo Real', desc: 'HH y costo por partida · COSTO = HH × S/25.5' },
           { id: 'variaciones',  l: 'Control HH Variaciones', desc: 'Real vs meta + heatmap' },
           { id: 'ip',           l: 'Control de IP',          desc: 'IP por actividad y semana' },
         ].map(t => {
@@ -113,25 +124,19 @@ export default function ControlGerencial({ historial, wbs, personalDB, configura
       </div>
 
       {/* CONTENIDO */}
-      {/* Tareos + CR lado a lado (50/50). Ambos cuelgan de los MISMOS tareos y se agrupan
-          por la misma partida canónica → la información «conversa»: la columna izquierda son
-          las HH/costos jerárquicos y la derecha el CR por partida (HH × S/25.5). En pantalla
-          angosta se apilan automáticamente. */}
+      {/* UNA SOLA TABLA. Antes había dos paneles lado a lado —«Reporte de Tareos» y
+          «CR · Costo Real»— con el mismo total pero distinto reparto por partida,
+          porque uno agrupaba por el nombre CRUDO y el otro por el canónico. Eran
+          dos verdades del mismo dato. El Costo Real no es otro informe: es esa
+          misma tabla (COSTO = HH × S/25.5), así que se muestra una vez. */}
       {tab === 'tareosCR' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 440px), 1fr))', gap: '12px', alignItems: 'start' }}>
-          <div style={{ minWidth: 0 }}>
-            <ReporteTareos
-              historial={historial}
-              tarifaPromedio={tarifaPromedio}
-              partidaExpandida={partidaExpandida}
-              setPartidaExpandida={setPartidaExpandida}
-              isMobile={isMobile}
-            />
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <CostoRealCR historial={historial} wbs={wbs} />
-          </div>
-        </div>
+        <ReporteTareos
+          historial={historialCanonico}
+          tarifaPromedio={tarifaPromedio}
+          partidaExpandida={partidaExpandida}
+          setPartidaExpandida={setPartidaExpandida}
+          isMobile={isMobile}
+        />
       )}
       {tab === 'variaciones' && (
         <ControlVariaciones
@@ -251,9 +256,9 @@ function ReporteTareos({ historial, tarifaPromedio, partidaExpandida, setPartida
         background: BASE.white, borderBottom: `1px solid ${BASE.border}`,
         borderLeft: `4px solid ${BASE.gold}`, padding: '8px 14px',
       }}>
-        <span style={{ fontSize: '12.5px', fontWeight: 900, color: BASE.navy, letterSpacing: '0.3px' }}>Reporte de Tareos</span>
+        <span style={{ fontSize: '12.5px', fontWeight: 900, color: BASE.navy, letterSpacing: '0.3px' }}>Tareos y Costo Real</span>
         <span style={{ fontSize: '11px', color: BASE.muted, fontWeight: 600 }}>
-          Costo MO <strong style={{ color: BASE.navy, fontFamily: MONO }}>{fmtMoney(tarifaPromedio)}/h</strong>
+          COSTO = HH × <strong style={{ color: BASE.navy, fontFamily: MONO }}>{fmtMoney(tarifaPromedio)}/h</strong>
         </span>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           <input

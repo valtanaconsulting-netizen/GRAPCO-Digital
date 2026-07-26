@@ -1073,9 +1073,33 @@ export const PARTIDA_CODIGOS_CORTOS = {
   'GASTOS GENERALES':           'GG',
 };
 
+// Nombre "de pantalla" por código: gana la PRIMERA grafía declarada arriba.
+// PARTIDA_CODIGOS_CORTOS ya declara qué nombres son la MISMA partida
+// ('VARIOS ESTRUCTURA' y 'VARIOS ESTRUCTURAS' → VAE; 'IMPERMEABILIZACION' e
+// 'IMPERMEABILIZACIÓN' → IMP), así que este índice inverso convierte esa
+// declaración en UNA fila de reporte en vez de dos.
+export const NOMBRE_PARTIDA_POR_CODIGO = Object.entries(PARTIDA_CODIGOS_CORTOS)
+  .reduce((acc, [nombre, cod]) => { if (!acc[cod]) acc[cod] = nombre; return acc; }, {});
+
+// Limpieza previa al lookup: mayúsculas, espacios colapsados y sin puntuación
+// final. Es lo que hace que 'TRABAJOS PRELIMINARES.' (con punto) deje de contarse
+// como una partida distinta de 'TRABAJOS PRELIMINARES'.
+export const limpiarNombrePartida = (nombre) => String(nombre || '')
+  .toUpperCase().replace(/\s+/g, ' ').trim().replace(/[.,;:·\-–—]+$/, '').trim();
+
+// Clave canónica para AGRUPAR reportes. Agrupar por el nombre crudo era lo que
+// partía una misma partida en varias filas y hacía que dos reportes del mismo
+// dato no cuadraran entre sí.
+export const partidaCanonicaNombre = (nombre) => {
+  const limpio = limpiarNombrePartida(nombre);
+  if (!limpio) return 'SIN_PARTIDA';
+  const cod = PARTIDA_CODIGOS_CORTOS[limpio];
+  return cod ? (NOMBRE_PARTIDA_POR_CODIGO[cod] || limpio) : limpio;
+};
+
 export const codigoCortoPartida = (nombre) => {
   if (!nombre) return '???';
-  const upper = String(nombre).toUpperCase().trim();
+  const upper = limpiarNombrePartida(nombre);
   if (PARTIDA_CODIGOS_CORTOS[upper]) return PARTIDA_CODIGOS_CORTOS[upper];
   // Fallback: primeras 3 letras significativas
   const limpio = upper.replace(/[^A-Z]/g, '');
@@ -1093,8 +1117,11 @@ export const calcularReporteTareos = (registros, tarifaPromedio = 25.50) => {
 
   (registros || []).forEach(r => {
     if (!r) return;
-    const partida = (r.partida || 'SIN_PARTIDA').toUpperCase().trim();
-    const subpartida = (r.subpartida || 'SIN_SUBPARTIDA').toUpperCase().trim();
+    // Agrupa por partida CANÓNICA: las variantes declaradas del mismo nombre
+    // (plural, tilde, punto final) caen en una sola fila. Antes se agrupaba por el
+    // nombre crudo y la misma partida aparecía dos veces con las HH partidas.
+    const partida = partidaCanonicaNombre(r.partida);
+    const subpartida = limpiarNombrePartida(r.subpartida) || 'SIN_SUBPARTIDA';
 
     // HH desde r.totalHH (MISMA fuente que el ISP: wbs.hhR y grafData.bySem usan
     // parseFloat(r.totalHH)). Antes se sumaba el detalleTareo (hn+he) y el acumulado
