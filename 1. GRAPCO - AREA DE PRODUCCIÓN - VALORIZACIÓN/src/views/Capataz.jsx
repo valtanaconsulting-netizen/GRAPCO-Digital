@@ -690,7 +690,10 @@ export default function Capataz({
     if (!capataz) return showToast('Selecciona un capataz primero', 'warning');
     if (miembrosCuadrilla.length === 0) return showToast('La cuadrilla no tiene miembros', 'warning');
     const nueva = crearActividadConMiembros();
-    setActividades(prev => [...prev, nueva]);
+    // La nueva entra por DELANTE: la fila de actividades se desplaza a la derecha
+    // y la recién creada queda siempre a la vista, sin tener que buscarla al
+    // final ni desplazar la fila a mano.
+    setActividades(prev => [nueva, ...prev]);
     setActActivaId(nueva.id);
   };
 
@@ -854,7 +857,7 @@ export default function Capataz({
         return showToast('Selecciona un capataz primero', 'warning');
       }
       const nueva = { ...crearActividadConMiembros(), partida, subpartida, actividad, unidad: info.un || 'UND' };
-      setActividades(prev => [...prev, nueva]);
+      setActividades(prev => [nueva, ...prev]);   // igual que agregarActividad: por delante
       setActActivaId(nueva.id);
     } else {
       setActividades(prev => prev.map(a =>

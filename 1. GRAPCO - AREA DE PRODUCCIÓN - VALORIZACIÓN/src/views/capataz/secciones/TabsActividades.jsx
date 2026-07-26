@@ -74,11 +74,18 @@ export default function TabsActividades({
         }}>{actividades.length}</span>
       </div>
       <div style={{
-        display: 'grid',
-        // Cuadros que se reacomodan al ancho: ~140px mínimo → 2 en móvil, más en
-        // tablet/desktop. Sin scroll horizontal, todo a la vista.
-        gridTemplateColumns: `repeat(auto-fill, minmax(${isMobile ? '132px' : '150px'}, 1fr))`,
+        // UNA SOLA FILA que se desliza en horizontal. Antes era una rejilla que
+        // bajaba de línea: con 6-8 actividades el bloque crecía hacia abajo y
+        // empujaba el tareo fuera de la pantalla. Ahora las actividades caben a
+        // lo ancho —la fila se arrastra con el dedo— y el alto no cambia nunca.
+        display: 'flex',
         gap: '8px',
+        overflowX: 'auto',
+        overflowY: 'hidden',
+        // Anclaje suave: al soltar, la tarjeta queda alineada y no a medias.
+        scrollSnapType: 'x proximity',
+        WebkitOverflowScrolling: 'touch',
+        paddingBottom: '4px',
       }}>
         {actividades.map((a, i) => {
           const esActiva = a.id === actActivaId;
@@ -87,56 +94,65 @@ export default function TabsActividades({
           return (
             <button key={a.id} type="button" onClick={() => onSetActActivaId(a.id)} style={{
               position: 'relative',
-              padding: '10px 11px', borderRadius: '12px',
+              padding: '9px 9px', borderRadius: '12px',
               border: esActiva ? `2px solid ${BASE.gold}` : `1.5px solid ${BASE.border}`,
               background: esActiva ? BASE.navy : BASE.white,
               color: esActiva ? '#fff' : BASE.text,
               cursor: 'pointer',
-              display: 'flex', flexDirection: 'column', gap: '8px',
-              width: '100%', boxSizing: 'border-box', textAlign: 'left',
+              display: 'flex', flexDirection: 'column', gap: '7px',
+              // Mitad de ancho que antes → caben el doble de actividades a la
+              // vista. El nombre ya no va en una tira: se parte en varias líneas
+              // («COLOCADO / DE / ACERO»), que es como se lee de un vistazo.
+              flex: `0 0 ${isMobile ? '92px' : '108px'}`,
+              scrollSnapAlign: 'start',
+              boxSizing: 'border-box', textAlign: 'left',
               transition: 'all 0.15s',
               boxShadow: esActiva ? '0 4px 14px -3px rgba(15,42,71,0.35)' : BASE.shadowSm,
-              minHeight: '78px',
+              minHeight: '104px',
             }}>
-              {/* Fila superior: nº de orden, sello «PLAN» y check de subido */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', minWidth: 0 }}>
+              {/* Fila superior: nº de orden, sello «PLAN» y check de subido.
+                  Todo reducido para caber en la tarjeta estrecha sin apretarse. */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', minWidth: 0 }}>
                   <span style={{
-                    fontSize: '10px', fontWeight: '800',
+                    fontSize: '9px', fontWeight: '800', flexShrink: 0,
                     background: esActiva ? BASE.gold : BASE.bgSoft,
                     color: esActiva ? BASE.navy : BASE.muted,
-                    padding: '2px 8px', borderRadius: '6px',
+                    padding: '1px 6px', borderRadius: '5px',
                   }}>{i + 1}</span>
                   {/* Deja claro que la actividad la programó el ingeniero y no
                       hay que volver a crearla: solo completar sus horas. */}
                   {a._delPlan && (
                     <span title="Programada por el ingeniero en el Plan Diario" style={{
-                      fontSize: '8.5px', fontWeight: '800', letterSpacing: '0.4px',
+                      fontSize: '7.5px', fontWeight: '800', letterSpacing: '0.2px', flexShrink: 0,
                       background: esActiva ? 'rgba(255,255,255,0.20)' : BASE.goldLight,
                       color: esActiva ? '#fff' : BASE.goldDark,
-                      padding: '2px 6px', borderRadius: '5px', whiteSpace: 'nowrap',
+                      padding: '1px 4px', borderRadius: '4px', whiteSpace: 'nowrap',
                     }}>PLAN</span>
                   )}
                 </span>
                 {a._registroExistenteId
-                  ? <span title="Ya subido" style={{ fontSize: '13px' }}>✅</span>
-                  : !definida && <span title="Falta definir" style={{ fontSize: '13px' }}>✏️</span>}
+                  ? <span title="Ya subido" style={{ fontSize: '11px', flexShrink: 0 }}>✅</span>
+                  : !definida && <span title="Falta definir" style={{ fontSize: '11px', flexShrink: 0 }}>✏️</span>}
               </div>
-              {/* Nombre en dos líneas (no una tira con elipsis) */}
+              {/* Nombre repartido en hasta 4 líneas. `anywhere` parte también una
+                  palabra sola muy larga (p. ej. IMPERMEABILIZACIÓN), que en una
+                  tarjeta estrecha no cabría de otro modo. */}
               <span style={{
-                flex: 1, fontSize: '11.5px', fontWeight: '700', lineHeight: 1.25,
+                flex: 1, fontSize: '10.5px', fontWeight: '700', lineHeight: 1.22,
                 color: esActiva ? '#fff' : (definida ? BASE.text : BASE.mutedSoft),
-                display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-              }}>
+                display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                overflowWrap: 'anywhere',
+              }} title={a.actividad || 'Sin definir'}>
                 {a.actividad || 'Sin definir'}
               </span>
               {/* HH del día */}
               <span style={{
                 alignSelf: 'flex-start',
-                fontSize: '10px', fontWeight: '800',
+                fontSize: '9.5px', fontWeight: '800', whiteSpace: 'nowrap',
                 background: esActiva ? 'rgba(255,255,255,0.18)' : BASE.bgSoft,
                 color: esActiva ? '#fff' : BASE.navy,
-                padding: '3px 9px', borderRadius: '999px',
+                padding: '2px 7px', borderRadius: '999px',
               }}>{totalHHAct.toFixed(1)} h</span>
             </button>
           );
