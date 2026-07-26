@@ -7,8 +7,7 @@
 // El modelo de datos es el mismo `actividad`; solo cambia qué secciones se ven.
 import React, { useState, useDeferredValue } from 'react';
 import { BASE, inp } from '../../../utils/styles';
-import { CATALOGO_MASTER, INFO_MAP, JORNADA_LEGAL, JORNADA_HORARIO, rangoCargo } from '../../../utils/constants';
-import { normalizeText } from '../../../utils/helpers';
+import { CATALOGO_MASTER, INFO_MAP, rangoCargo } from '../../../utils/constants';
 import FotoUploader from '../../../components/FotoUploader';
 import SelectPremium from '../../../components/SelectPremium';
 import TrabajadorCard from './TrabajadorCard';
@@ -27,7 +26,9 @@ export default function EditorActividad({
   onImportarFacial,
   onUpdTareo,
   modo = 'tareo',
-  actividadesPermitidas = null,
+  // Contador que sube cada vez que el capataz toca la tarjeta azul de una
+  // actividad ya activa: es la señal para abrir los selectores y cambiarla.
+  abrirSelectorToken = 0,
 }) {
   const esTareo = modo === 'tareo';
   const esMetrado = modo === 'metrado';
@@ -55,25 +56,31 @@ export default function EditorActividad({
   // Capataz.jsx monta este editor con `key={actividadActiva.id}`, así que el
   // estado inicial se recalcula al cambiar de actividad. Sin efectos.
   const [identAbierta, setIdentAbierta] = useState(!actividadActiva.actividad);
-  // Solo subpartidas/actividades CON opciones reales: el catálogo tiene
-  // subpartidas vacías (p. ej. "DISEÑO": []) que, si se ofrecieran, dejarían la
-  // actividad sin poder completarse y bloquearían la subida del tareo.
-  // Gating por plan diario: si el capataz tiene actividades asignadas hoy, los
-  // selectores se limitan a esas; sin asignación, el catálogo completo.
-  const gated = !!(actividadesPermitidas && actividadesPermitidas.size);
-  const permite = (act) => !gated || actividadesPermitidas.has(normalizeText(act));
-  // Conserva SIEMPRE la selección actual del capataz aunque el gating llegue a media
-  // sesión (borrador previo), para no dejar el selector con un valor huérfano.
+  // Abrir los selectores cuando el capataz vuelve a tocar la tarjeta ya activa.
+  // Se ajusta durante el render comparando el token con el último visto (patrón
+  // de React para reaccionar a un cambio de props) en lugar de un efecto, que
+  // provocaría un render extra.
+  const [tokenVisto, setTokenVisto] = useState(abrirSelectorToken);
+  if (tokenVisto !== abrirSelectorToken) {
+    setTokenVisto(abrirSelectorToken);
+    setIdentAbierta(true);
+  }
+  // CATÁLOGO COMPLETO. Antes, si el capataz tenía plan asignado, los selectores
+  // se limitaban a las actividades de ese plan; ahora las del plan no se tocan
+  // (no son editables) y las que él añade a mano pueden ser CUALQUIER partida:
+  // en obra aparece trabajo no programado y hay que poder registrarlo.
+  // Solo se descartan las subpartidas vacías del catálogo (p. ej. "DISEÑO": []),
+  // que dejarían la actividad sin poder completarse y bloquearían la subida.
+  // `conActual` conserva SIEMPRE la selección ya guardada aunque no esté en la
+  // lista, para no dejar el selector con un valor huérfano.
   const conActual = (lista, actual) => (actual && !lista.includes(actual)) ? [actual, ...lista] : lista;
-  const partidaOptions = gated
-    ? conActual(Object.keys(CATALOGO_MASTER).filter(pt => Object.values(CATALOGO_MASTER[pt] || {}).some(acts => (acts || []).some(permite))), actividadActiva.partida)
-    : Object.keys(CATALOGO_MASTER);
+  const partidaOptions = Object.keys(CATALOGO_MASTER);
   const subpartidasDisponibles = actividadActiva.partida
     ? conActual(Object.keys(CATALOGO_MASTER[actividadActiva.partida] || {})
-        .filter(sp => (CATALOGO_MASTER[actividadActiva.partida][sp] || []).some(permite)), actividadActiva.subpartida)
+        .filter(sp => (CATALOGO_MASTER[actividadActiva.partida][sp] || []).length > 0), actividadActiva.subpartida)
     : [];
   const actividadesDisponibles = (actividadActiva.partida && actividadActiva.subpartida)
-    ? conActual((CATALOGO_MASTER[actividadActiva.partida]?.[actividadActiva.subpartida] || []).filter(permite), actividadActiva.actividad)
+    ? conActual(CATALOGO_MASTER[actividadActiva.partida]?.[actividadActiva.subpartida] || [], actividadActiva.actividad)
     : [];
   return (
     <div style={{
@@ -85,33 +92,16 @@ export default function EditorActividad({
     }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {/* ── IDENTIFICACIÓN (solo en TAREO; en metrado va fija) ──
-            SIN cabecera de sección. Antes había una caja «📋 ACTIVIDAD · Toca
-            para definir la actividad» que repetía el nombre que ya se lee en la
-            tarjeta de arriba y ocupaba una fila entera. Ahora:
-              · Actividad sin definir → los 3 selectores salen directos.
-              · Actividad ya definida → solo un enlace discreto para cambiarla.
-            La cadena sigue igual: al elegir Partida se abre sola Subpartida, y
-            luego Actividad; al elegir Actividad los selectores se recogen. */}
+            SIN cabecera ni enlaces. La actividad se cambia TOCANDO SU TARJETA
+            azul en la fila de arriba: si ya está activa, ese toque abre estos
+            selectores. Las que vienen del Plan Diario no se pueden cambiar —
+            las programó el ingeniero— y por eso su tarjeta no responde.
+            Los selectores aparecen cuando la actividad aún no está definida, o
+            cuando se pide el cambio desde la tarjeta. La cadena sigue igual: al
+            elegir Partida se abre sola Subpartida, y luego Actividad; al elegir
+            Actividad los selectores se recogen. */}
         {esTareo && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: identAbierta ? '12px' : 0 }}>
-            {/* Enlace discreto: abrir para cambiar, o recoger si ya está resuelta. */}
-            {(!identAbierta || actividadActiva.actividad) && (
-              <button
-                type="button"
-                onClick={() => setIdentAbierta(o => !o)}
-                aria-expanded={identAbierta}
-                style={{
-                  alignSelf: 'flex-start', background: 'transparent', border: 'none',
-                  padding: '2px 0', marginBottom: identAbierta ? '2px' : 0,
-                  color: BASE.muted, fontSize: '11.5px', fontWeight: 700,
-                  cursor: 'pointer', fontFamily: BASE.font,
-                  display: 'inline-flex', alignItems: 'center', gap: '6px',
-                }}
-              >
-                {identAbierta ? '✕ Cerrar' : '✏️ Cambiar actividad'}
-              </button>
-            )}
-
             {/* Los 3 selectores */}
             {identAbierta && (
               <>
@@ -301,33 +291,11 @@ export default function EditorActividad({
           padding: isMobile ? '20px 0 0' : '14px',
           margin: 0,
         }}>
-          {/* Sin rótulo «TAREO DE PERSONAL»: debajo vienen las tarjetas con nombre
-              y cargo de cada obrero, así que nombrar la sección no añadía nada.
-              Se conserva SOLO el aviso de jornada, que sí es información (avisa
-              de que hoy no corren horas normales). El recuento de trabajadores
-              aparece únicamente mientras hay una búsqueda activa, junto al
-              buscador, que es donde importa. */}
-          <div style={{
-            display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
-            marginBottom: '12px', flexWrap: 'wrap', gap: '6px',
-          }}>
-            <span style={{
-              fontSize: '9px', fontWeight: '700',
-              color: limiteHN <= 0 ? BASE.goldDark : BASE.muted,
-              background: limiteHN <= 0 ? BASE.goldSoft : BASE.bgSoft,
-              border: `1px solid ${limiteHN <= 0 ? BASE.gold + '55' : BASE.border}`,
-              padding: '3px 9px', borderRadius: '999px', whiteSpace: 'nowrap',
-            }}>
-              {limiteHN <= 0
-                ? '🟡 Domingo · solo HE'
-                /* En jornada completa se muestra el horario del que sale el tope:
-                   07:30–17:00 menos 1 h de refrigerio = 8.5 h. El sábado es media
-                   jornada y no le corresponde ese horario. */
-                : limiteHN === JORNADA_LEGAL
-                  ? `${JORNADA_HORARIO} · tope HN ${limiteHN}h · luego HE`
-                  : `Media jornada · tope HN ${limiteHN}h · luego HE`}
-            </span>
-          </div>
+          {/* Encima de la lista va SOLO el buscador. Se quitaron el rótulo
+              «TAREO DE PERSONAL» (las tarjetas de abajo ya llevan nombre y cargo)
+              y la píldora de jornada: ese mismo aviso —«Domingo · solo HE» o el
+              tope de HN— ya sale dentro de la tarjeta de cada trabajador, que es
+              donde se escriben las horas. Aquí solo era ruido repetido. */}
 
           {/* Buscador de trabajador, JUNTO a la lista que filtra. En el móvil el
               buscador del panel lateral queda detrás del botón «Opciones»: con

@@ -188,25 +188,11 @@ export default function Capataz({
 
   // Set (normalizado, validado contra el catálogo real) de actividades que este
   // capataz puede tarear hoy; null = sin gating (picker completo).
-  const actividadesPermitidas = useMemo(() => {
-    const porCapataz = asignacionTareo?.porCapataz;
-    if (!porCapataz || !capataz) return null;
-    let lista = porCapataz[capataz] || (capatazVinculado ? porCapataz[capatazVinculado] : null);
-    if (!lista) {
-      const objetivo = normalizeText(capataz);
-      const k = Object.keys(porCapataz).find(key => normalizeText(key) === objetivo);
-      lista = k ? porCapataz[k] : null;
-    }
-    if (!Array.isArray(lista) || !lista.length) return null;
-    const asignadas = new Set(lista.map(normalizeText).filter(Boolean));
-    // Intersecta con el catálogo real: si los nombres del plan no calzan con el
-    // catálogo, NO gateamos (evita dejar al capataz sin actividades por un nombre).
-    const set = new Set();
-    Object.values(CATALOGO_MASTER).forEach(subs =>
-      Object.values(subs || {}).forEach(acts =>
-        (acts || []).forEach(a => { const n = normalizeText(a); if (asignadas.has(n)) set.add(n); })));
-    return set.size ? set : null;
-  }, [asignacionTareo, capataz, capatazVinculado]);
+  // Antes existía aquí `actividadesPermitidas`: si el capataz tenía plan
+  // asignado, su catálogo se limitaba a las actividades de ese plan. Se retiró
+  // (2026-07): las del plan ya no se editan —vienen fijas del ingeniero— y las
+  // que el capataz añade a mano deben poder ser CUALQUIER partida, porque en
+  // obra sale trabajo no programado y tiene que quedar registrado.
 
   // Plan del día de ESTE capataz, para MOSTRÁRSELO como resumen. Solo lectura:
   // no toca lo que puede tarear. Empareja el nombre del capataz igual que el
@@ -686,6 +672,15 @@ export default function Capataz({
   // En metrado la actividad activa debe pertenecer a la lista derivada del tareo.
   const actividadActiva = actividades.find(a => a.id === actActivaId);
 
+  // Tocar la tarjeta azul (la que ya está activa) pide cambiar su actividad.
+  // Se sube un contador que EditorActividad usa para abrir los selectores.
+  // Las del Plan Diario no llegan aquí: TabsActividades no lo ofrece en ellas.
+  const [abrirSelectorToken, setAbrirSelectorToken] = useState(0);
+  const pedirCambiarActividad = (id) => {
+    setActActivaId(id);
+    setAbrirSelectorToken(n => n + 1);
+  };
+
   const agregarActividad = () => {
     if (!capataz) return showToast('Selecciona un capataz primero', 'warning');
     if (miembrosCuadrilla.length === 0) return showToast('La cuadrilla no tiene miembros', 'warning');
@@ -882,6 +877,7 @@ export default function Capataz({
         actividad: a.actividad, unidad: a.unidad, metrado: a.metrado,
         observacion: a.observacion,
         _registroExistenteId: a._registroExistenteId || null,
+        _delPlan: a._delPlan === true,
         fotos: a.fotos || [],
         detalleTareo: (a.detalleTareo || []).filter(t => (t.hn + t.he) > 0).map(t => ({
           nombre: t.nombre, cargo: t.cargo || 'Operario', dni: t.dni || '',
@@ -908,6 +904,9 @@ export default function Capataz({
           actividad: a.actividad, unidad: a.unidad, metrado: a.metrado,
           observacion: a.observacion,
           _registroExistenteId: a._registroExistenteId || null,
+          // Se persiste para que las actividades del Plan Diario sigan siendo
+          // no editables al recargar el día (si no, volverían a poder cambiarse).
+          _delPlan: a._delPlan === true,
           fotos: a.fotos || [],  // el borrador conserva las fotos del avance
           detalleTareo: a.detalleTareo.filter(t => (t.hn + t.he) > 0).map(t => ({
             nombre: t.nombre, cargo: t.cargo || 'Operario', dni: t.dni || '',
@@ -1017,6 +1016,7 @@ export default function Capataz({
               actividad: a.actividad, unidad: a.unidad, metrado: a.metrado,
               observacion: a.observacion,
               _registroExistenteId: a._registroExistenteId || null,
+              _delPlan: a._delPlan === true,
               fotos: a.fotos || [],  // el borrador conserva las fotos del avance
               detalleTareo: a.detalleTareo,
             })),
@@ -1329,7 +1329,6 @@ export default function Capataz({
           onClose={() => setShowWbs(false)}
           onSelect={aplicarSeleccionWbs}
           isMobile={isMobile}
-          actividadesPermitidas={actividadesPermitidas}
         />
       )}
 
@@ -1430,6 +1429,7 @@ export default function Capataz({
                 isMobile={isMobile}
                 onSetActActivaId={setActActivaId}
                 onAgregarActividad={agregarActividad}
+                onCambiarActividad={vista === 'tareo' ? pedirCambiarActividad : null}
               />
 
               {actividadActiva && actividadesVista.some(a => a.id === actividadActiva.id) && (
@@ -1448,7 +1448,7 @@ export default function Capataz({
                   onUpdActividad={updActividad}
                   onImportarFacial={importarDesdeAsistenciaFacial}
                   onUpdTareo={updTareo}
-                  actividadesPermitidas={actividadesPermitidas}
+                  abrirSelectorToken={abrirSelectorToken}
                 />
               )}
             </>

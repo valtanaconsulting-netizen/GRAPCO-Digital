@@ -13,6 +13,9 @@ export default function TabsActividades({
   isMobile,
   onSetActActivaId,
   onAgregarActividad,
+  // Tocar la tarjeta YA activa pide cambiar su actividad. No se ofrece en las
+  // que vienen del Plan Diario: esas las programó el ingeniero.
+  onCambiarActividad = null,
 }) {
   if (actividades.length === 0) {
     return (
@@ -91,8 +94,18 @@ export default function TabsActividades({
           const esActiva = a.id === actActivaId;
           const totalHHAct = a.detalleTareo.reduce((s, t) => s + (t.hn || 0) + (t.he || 0), 0);
           const definida = !!a.actividad;
+          // Editable = la añadió el capataz. Las del Plan Diario quedan fijas.
+          const editable = !a._delPlan && !!onCambiarActividad;
           return (
-            <button key={a.id} type="button" onClick={() => onSetActActivaId(a.id)} style={{
+            <button key={a.id} type="button"
+              title={esActiva && editable ? 'Tocar otra vez para cambiar la actividad' : (a.actividad || 'Sin definir')}
+              onClick={() => {
+                // Primer toque: la selecciona. Segundo toque sobre la que ya está
+                // activa: abre los selectores para cambiarla.
+                if (esActiva && editable) onCambiarActividad(a.id);
+                else onSetActActivaId(a.id);
+              }}
+              style={{
               position: 'relative',
               padding: '9px 9px', borderRadius: '12px',
               border: esActiva ? `2px solid ${BASE.gold}` : `1.5px solid ${BASE.border}`,
@@ -131,9 +144,14 @@ export default function TabsActividades({
                     }}>PLAN</span>
                   )}
                 </span>
+                {/* El lápiz también aparece en la tarjeta activa y editable: es
+                    la pista de que otro toque permite cambiar la actividad. */}
                 {a._registroExistenteId
                   ? <span title="Ya subido" style={{ fontSize: '11px', flexShrink: 0 }}>✅</span>
-                  : !definida && <span title="Falta definir" style={{ fontSize: '11px', flexShrink: 0 }}>✏️</span>}
+                  : (!definida || (esActiva && editable))
+                    ? <span title={definida ? 'Tocar otra vez para cambiarla' : 'Falta definir'}
+                        style={{ fontSize: '11px', flexShrink: 0 }}>✏️</span>
+                    : null}
               </div>
               {/* Nombre repartido en hasta 4 líneas. `anywhere` parte también una
                   palabra sola muy larga (p. ej. IMPERMEABILIZACIÓN), que en una
@@ -143,7 +161,7 @@ export default function TabsActividades({
                 color: esActiva ? '#fff' : (definida ? BASE.text : BASE.mutedSoft),
                 display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden',
                 overflowWrap: 'anywhere',
-              }} title={a.actividad || 'Sin definir'}>
+              }}>
                 {a.actividad || 'Sin definir'}
               </span>
               {/* HH del día */}
