@@ -85,65 +85,34 @@ export default function EditorActividad({
     }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {/* ── IDENTIFICACIÓN (solo en TAREO; en metrado va fija) ──
-            Toda la sección Partida/Subpartida/Actividad va PLEGADA tras una
-            cabecera. El capataz la despliega con un toque y desde ahí corre la
-            cadena (al elegir Partida se abre sola Subpartida, y luego Actividad).
-            Al elegir la Actividad la sección se pliega mostrando el resumen. */}
+            SIN cabecera de sección. Antes había una caja «📋 ACTIVIDAD · Toca
+            para definir la actividad» que repetía el nombre que ya se lee en la
+            tarjeta de arriba y ocupaba una fila entera. Ahora:
+              · Actividad sin definir → los 3 selectores salen directos.
+              · Actividad ya definida → solo un enlace discreto para cambiarla.
+            La cadena sigue igual: al elegir Partida se abre sola Subpartida, y
+            luego Actividad; al elegir Actividad los selectores se recogen. */}
         {esTareo && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: identAbierta ? '12px' : 0 }}>
-            {/* Cabecera plegable */}
-            <button
-              type="button"
-              onClick={() => setIdentAbierta(o => !o)}
-              aria-expanded={identAbierta}
-              style={{
-                width: '100%', boxSizing: 'border-box', textAlign: 'left',
-                display: 'flex', alignItems: 'center', gap: '9px',
-                padding: isMobile ? '9px 11px' : '10px 13px',
-                borderRadius: '12px',
-                border: `1.5px solid ${identAbierta ? BASE.gold : BASE.border}`,
-                background: identAbierta ? BASE.goldSoft : BASE.bgSoft,
-                boxShadow: identAbierta ? BASE.shadowFocus : 'none',
-                cursor: 'pointer', fontFamily: BASE.font,
-                transition: 'border-color .15s, background .15s, box-shadow .15s',
-              }}
-            >
-              <span style={{ fontSize: '14px', flexShrink: 0 }}>📋</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: 'block', fontSize: '9px', fontWeight: 800, color: BASE.muted, letterSpacing: '0.6px' }}>
-                  ACTIVIDAD
-                </span>
-                <span style={{
-                  display: 'block', marginTop: '1px',
-                  fontSize: '11.5px',
-                  fontWeight: actividadActiva.actividad ? 700 : 600,
-                  color: actividadActiva.actividad ? BASE.navy : BASE.mutedSoft,
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                }}>
-                  {actividadActiva.actividad
-                    || (actividadActiva.partida
-                        ? `${actividadActiva.partida}${actividadActiva.subpartida ? ' › ' + actividadActiva.subpartida : ''}`
-                        : (identAbierta ? 'Elige partida, subpartida y actividad' : 'Toca para definir la actividad'))}
-                </span>
-              </div>
-              {/* Chip de estado a la derecha (flexShrink:0 → nunca lo trunca la elipsis). */}
-              {actividadActiva.partida && !actividadActiva.actividad && (
-                <span style={{
-                  flexShrink: 0, fontSize: '9.5px', fontWeight: 800, letterSpacing: '0.3px',
-                  color: BASE.navy, background: BASE.goldSoft,
-                  border: `1px solid ${BASE.gold}`,
-                  padding: '3px 8px', borderRadius: '10px',
-                }}>FALTA</span>
-              )}
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                stroke={identAbierta ? BASE.gold : BASE.muted} strokeWidth="2.5"
-                strokeLinecap="round" strokeLinejoin="round"
-                style={{ transform: identAbierta ? 'rotate(180deg)' : 'none', transition: 'transform .18s', flexShrink: 0 }}>
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </button>
+            {/* Enlace discreto: abrir para cambiar, o recoger si ya está resuelta. */}
+            {(!identAbierta || actividadActiva.actividad) && (
+              <button
+                type="button"
+                onClick={() => setIdentAbierta(o => !o)}
+                aria-expanded={identAbierta}
+                style={{
+                  alignSelf: 'flex-start', background: 'transparent', border: 'none',
+                  padding: '2px 0', marginBottom: identAbierta ? '2px' : 0,
+                  color: BASE.muted, fontSize: '11.5px', fontWeight: 700,
+                  cursor: 'pointer', fontFamily: BASE.font,
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                }}
+              >
+                {identAbierta ? '✕ Cerrar' : '✏️ Cambiar actividad'}
+              </button>
+            )}
 
-            {/* Cuerpo: los 3 selectores (solo desplegado) */}
+            {/* Los 3 selectores */}
             {identAbierta && (
               <>
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
@@ -332,25 +301,16 @@ export default function EditorActividad({
           padding: isMobile ? '20px 0 0' : '14px',
           margin: 0,
         }}>
+          {/* Sin rótulo «TAREO DE PERSONAL»: debajo vienen las tarjetas con nombre
+              y cargo de cada obrero, así que nombrar la sección no añadía nada.
+              Se conserva SOLO el aviso de jornada, que sí es información (avisa
+              de que hoy no corren horas normales). El recuento de trabajadores
+              aparece únicamente mientras hay una búsqueda activa, junto al
+              buscador, que es donde importa. */}
           <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
             marginBottom: '12px', flexWrap: 'wrap', gap: '6px',
           }}>
-            <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.navy, letterSpacing: '0.6px', display: 'inline-flex', alignItems: 'center', gap: '6px', margin: 0 }}>
-              👷 TAREO DE PERSONAL
-              <span style={{
-                fontSize: '9px', fontWeight: '800', color: BASE.navy,
-                background: BASE.navySoft, padding: '2px 8px', borderRadius: '999px',
-              }}>
-                {(() => {
-                  const q = buscarTrabDiferido.trim().toLowerCase();
-                  const tot = actividadActiva.detalleTareo.length;
-                  if (!q) return tot;
-                  const f = actividadActiva.detalleTareo.filter(t => (t.nombre || '').toLowerCase().includes(q)).length;
-                  return `${f} de ${tot}`;
-                })()}
-              </span>
-            </p>
             <span style={{
               fontSize: '9px', fontWeight: '700',
               color: limiteHN <= 0 ? BASE.goldDark : BASE.muted,
@@ -376,8 +336,10 @@ export default function EditorActividad({
               panel lateral ya lo tiene siempre visible, así que no se duplica. */}
           {isMobile && onBuscarTrab && actividadActiva.detalleTareo.length > 4 && (
             <div style={{ position: 'relative', marginBottom: '12px' }}>
+              {/* Posición fija, no centrada al 50%: bajo el campo puede aparecer
+                  el recuento de coincidencias y el centro del contenedor cambia. */}
               <span style={{
-                position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)',
+                position: 'absolute', left: '11px', top: '12px',
                 fontSize: '13px', opacity: 0.55, pointerEvents: 'none',
               }}>🔎</span>
               <input
@@ -401,11 +363,18 @@ export default function EditorActividad({
                   onClick={() => onBuscarTrab('')}
                   aria-label="Limpiar búsqueda"
                   style={{
-                    position: 'absolute', right: '6px', top: '50%', transform: 'translateY(-50%)',
+                    position: 'absolute', right: '6px', top: '9px',
                     width: '24px', height: '24px', borderRadius: '50%', border: 'none',
                     background: 'transparent', color: BASE.muted, cursor: 'pointer',
                     fontSize: '15px', lineHeight: 1,
                   }}>×</button>
+              )}
+              {/* Cuántos coinciden — solo mientras se busca. */}
+              {buscarTrab.trim() && (
+                <p style={{ margin: '5px 0 0 2px', fontSize: '10.5px', fontWeight: 700, color: BASE.muted }}>
+                  {actividadActiva.detalleTareo.filter(t => (t.nombre || '').toLowerCase().includes(buscarTrabDiferido.trim().toLowerCase())).length}
+                  {' de '}{actividadActiva.detalleTareo.length} trabajadores
+                </p>
               )}
             </div>
           )}
