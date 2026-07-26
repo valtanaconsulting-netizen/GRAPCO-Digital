@@ -94,8 +94,12 @@ export default function TabsActividades({
           const esActiva = a.id === actActivaId;
           const totalHHAct = a.detalleTareo.reduce((s, t) => s + (t.hn || 0) + (t.he || 0), 0);
           const definida = !!a.actividad;
-          // Editable = la añadió el capataz. Las del Plan Diario quedan fijas.
-          const editable = !a._delPlan && !!onCambiarActividad;
+          // Editable = la añadió el capataz. Las del Plan Diario quedan fijas…
+          // SALVO que les falte la clasificación (partida o subpartida): sin
+          // ella el envío se bloquea, y si además no se pudieran tocar, el día
+          // quedaría sin salida. En ese caso se permite corregirla.
+          const incompleta = !a.partida || !a.subpartida;
+          const editable = (!a._delPlan || incompleta) && !!onCambiarActividad;
           return (
             <button key={a.id} type="button"
               title={esActiva && editable ? 'Tocar otra vez para cambiar la actividad' : (a.actividad || 'Sin definir')}

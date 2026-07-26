@@ -34,6 +34,23 @@ import ConfirmModal from '../components/ConfirmModal';
 import { useAuth } from '../contexts/AuthContext';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 
+// Dado el NOMBRE de una actividad, encuentra su PARTIDA y SUBPARTIDA en el
+// catálogo. El plan diario solo transporta el nombre de la actividad, así que
+// sin esto las actividades sembradas desde el plan quedaban sin clasificar y el
+// envío se bloqueaba con «Falta definir la actividad» — y, al no ser editables,
+// no había forma de arreglarlo desde la app. Devuelve el par completo (no mezcla
+// una partida de un sitio con una subpartida de otro).
+const resolverWbsPorActividad = (nombre) => {
+  const n = normalizeText(nombre || '');
+  if (!n) return null;
+  for (const [partida, subs] of Object.entries(CATALOGO_MASTER || {})) {
+    for (const [subpartida, acts] of Object.entries(subs || {})) {
+      if ((acts || []).some(a => normalizeText(a) === n)) return { partida, subpartida };
+    }
+  }
+  return null;
+};
+
 const newActividadItem = () => ({
   id: `act_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
   partida: '', subpartida: '', actividad: '',
@@ -430,8 +447,17 @@ export default function Capataz({
           } catch (e) { console.warn('[borrador: lookup fotos]', e); }
           const acts = (data.actividades || []).map(a => {
             const reg = fotosPorAct[(a.actividad || '').trim().toUpperCase()];
+            // Reparación: borradores guardados antes de resolver la WBS (o con
+            // la clasificación incompleta por cualquier motivo) recuperan aquí
+            // su partida y subpartida a partir del nombre de la actividad. Sin
+            // ellas el envío se bloquea con «Falta definir la actividad».
+            const wbs = (a.actividad && (!a.partida || !a.subpartida))
+              ? resolverWbsPorActividad(a.actividad)
+              : null;
             return {
               ...newActividadItem(), ...a,
+              partida: a.partida || wbs?.partida || '',
+              subpartida: a.subpartida || wbs?.subpartida || '',
               // Si el borrador ya trae fotos (array), se respetan —incluso vacío
               // = borrado intencional—. Si no, se toman del registro subido.
               fotos: Array.isArray(a.fotos) ? a.fotos : (reg?.fotos || []),
@@ -528,18 +554,25 @@ export default function Capataz({
     if (planSembradoRef.current === clave) return;
     planSembradoRef.current = clave;
 
-    const acts = planDelDia.map((p, i) => ({
-      ...crearActividadConMiembros(),
-      id: `plan_${Date.now()}_${i}`,
-      actividad: (p.actividad || '').trim(),
-      partida: p.partida || '',
-      unidad: p.und || 'UND',
-      // Lo programado viaja como REFERENCIA, nunca como ejecutado: el metrado y
-      // las horas los llena el capataz con lo que de verdad pasó en campo.
-      _hhProg: Number(p.hhProg) || 0,
-      _metradoProg: Number(p.metrado) || 0,
-      _delPlan: true,
-    }));
+    const acts = planDelDia.map((p, i) => {
+      // El plan solo trae el NOMBRE de la actividad: la partida y la subpartida
+      // se resuelven contra el catálogo para que la actividad nazca clasificada
+      // y se pueda subir. Sin esto el envío queda bloqueado.
+      const wbs = resolverWbsPorActividad(p.actividad);
+      return {
+        ...crearActividadConMiembros(),
+        id: `plan_${Date.now()}_${i}`,
+        actividad: (p.actividad || '').trim(),
+        partida: wbs?.partida || p.partida || '',
+        subpartida: wbs?.subpartida || '',
+        unidad: p.und || 'UND',
+        // Lo programado viaja como REFERENCIA, nunca como ejecutado: el metrado
+        // y las horas los llena el capataz con lo que de verdad pasó en campo.
+        _hhProg: Number(p.hhProg) || 0,
+        _metradoProg: Number(p.metrado) || 0,
+        _delPlan: true,
+      };
+    });
     setActividades(acts);
     setActActivaId(acts[0]?.id || null);
     showToast(

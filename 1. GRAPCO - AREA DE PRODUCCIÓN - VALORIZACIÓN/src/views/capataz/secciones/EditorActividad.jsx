@@ -164,53 +164,10 @@ export default function EditorActividad({
           </Modal>
         )}
 
-        {/* ── IDENTIFICACIÓN FIJA (solo en METRADO, viene del tareo) ──
-            El capataz NO elige aquí qué metrar: ya quedó fijado en el tareo. Esta
-            ficha responde "¿qué estoy midiendo?" sin preguntarlo, así que muestra
-            la ACTIVIDAD completa (el elemento concreto), no solo su ruta, más la
-            unidad y el metrado contractual como referencia de formato. */}
-        {esMetrado && (
-          <div style={{
-            background: BASE.bgSoft, border: `1px solid ${BASE.border}`,
-            borderRadius: '10px', padding: '11px 13px',
-            display: 'flex', flexDirection: 'column', gap: '5px',
-          }}>
-            <p style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.5px' }}>
-              ESTÁS METRANDO
-            </p>
-            {/* El elemento concreto: es el dato que identifica qué se mide. */}
-            <p style={{ fontSize: '14px', fontWeight: '800', color: BASE.navy, lineHeight: 1.3 }}>
-              {actividadActiva.actividad || 'Actividad sin definir'}
-            </p>
-            {/* Ruta de la WBS en segundo plano: ubica sin competir con el elemento. */}
-            <p style={{ fontSize: '11px', fontWeight: '600', color: BASE.mutedSoft, lineHeight: 1.35 }}>
-              {actividadActiva.partida || '—'} › {actividadActiva.subpartida || '—'}
-            </p>
-            {(unidadActiva || infoActiva.metP > 0) && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '2px' }}>
-                {unidadActiva && (
-                  <span style={{
-                    fontSize: '10px', fontWeight: '800', letterSpacing: '0.3px',
-                    color: BASE.navy, background: BASE.navySoft,
-                    padding: '3px 9px', borderRadius: '999px',
-                  }}>
-                    Se mide en {unidadActiva}
-                  </span>
-                )}
-                {infoActiva.metP > 0 && (
-                  <span style={{
-                    fontSize: '10px', fontWeight: '700',
-                    color: BASE.muted, background: BASE.white,
-                    border: `1px solid ${BASE.border}`,
-                    padding: '3px 9px', borderRadius: '999px',
-                  }}>
-                    Contractual: {infoActiva.metP.toLocaleString('es-PE')} {unidadActiva}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+        {/* La ficha «ESTÁS METRANDO» se retiró: repetía el nombre de la actividad
+            que ya se lee en su tarjeta, justo encima, y ocupaba media pantalla
+            en el móvil. La unidad y el metrado contractual siguen a la vista en
+            la propia caja del metrado («METRADO AVANZADO EN <unidad>»). */}
 
         {/* ── METRADO + OBSERVACIONES + FOTOS (solo en METRADO) ── */}
         {esMetrado && (<>
