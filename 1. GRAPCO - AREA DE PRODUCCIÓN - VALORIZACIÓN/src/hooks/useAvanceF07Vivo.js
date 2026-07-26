@@ -40,6 +40,14 @@ const r2 = (x) => Math.round(x * 100) / 100;
 // fantasma. Sumar kilos sobre una partida global no es un cruce: es un error.
 const und = (u) => String(u || '').toUpperCase().replace('²', '2').replace('³', '3').replace(/[^A-Z0-9]/g, '');
 const undCompatible = (a, b) => { const x = und(a), y = und(b); return !x || !y || x === y; };
+// Versión ESTRICTA: exige que ambas unidades existan y sean iguales. Se usa solo
+// en el cruce por prefijo/familia, que es el más difuso de los tres. Sin esto, un
+// registro SIN unidad (los hay: "CORDÓN BENTONÍTICO", "VIGÍA", "SALIDA SINDICAL",
+// "PERFILADO DE TALUD"…) pasaba el filtro permisivo y caía en la partida GLB de su
+// familia. Medido: 250,75 "unidades" cayeron sobre 2.1.1 MOVILIZACIÓN Y
+// DESMOVILIZACIÓN —contratada en 1 GLB a S/16.685— y produjeron S/4,1 MILLONES de
+// exceso fantasma. Adivinar la partida de un registro sin unidad no es cruzar.
+const undEstricta = (a, b) => { const x = und(a), y = und(b); return !!x && !!y && x === y; };
 
 export default function useAvanceF07Vivo({ proyId, presu, enabled = true }) {
   const [registros, setRegistros] = useState([]);
@@ -166,9 +174,12 @@ export default function useAvanceF07Vivo({ proyId, presu, enabled = true }) {
       if (pv && undCompatible(r.unidad, pv.und)) { if (add(valN, pv.mkey, q)) contarCD(pv.mkey, q, pv.pu); return; }
       const p = porDesc[norm(r.actividad)];
       if (p && undCompatible(r.unidad, p.und)) { if (add(valN, p.mkey, q)) contarCD(p.mkey, q, p.pu); return; }
+      // Cruce por familia: el más difuso de los tres, así que aquí la unidad se
+      // exige ESTRICTA (ambas presentes e iguales). Lo que no la cumple cae a
+      // "sin cruzar", donde se ve y se resuelve vinculándolo a mano.
       const pref = prefDeReg(r.actividad, r.partida);
       const unico = pref && unicoItemDePref[pref];
-      if (unico && undCompatible(r.unidad, unico.und)) { if (add(valN, unico.mkey, q)) contarCD(unico.mkey, q, unico.pu); return; }
+      if (unico && undEstricta(r.unidad, unico.und)) { if (add(valN, unico.mkey, q)) contarCD(unico.mkey, q, unico.pu); return; }
       contarUnmapped(q, r.actividad || '(sin actividad)', pref);
     });
     // 2) SustentoMetrados → ítem por codigoPartida (preciso) o descripción; fallback prefijo único.
