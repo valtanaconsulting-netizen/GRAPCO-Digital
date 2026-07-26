@@ -384,7 +384,11 @@ export default function SelectorPerfil({ onIrASeccion }) {
       alignItems: 'center',
       justifyContent: 'flex-start',
       // Safe-areas Capacitor: respeta notch/barra de gestos para no recortar el panel.
-      padding: 'max(56px, calc(env(safe-area-inset-top) + 48px)) max(14px, env(safe-area-inset-right)) calc(22px + env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left))',
+      // El padding superior ya no reserva sitio para la barra de sesión (antes
+      // flotaba encima y necesitaba 56px de hueco fijo): ahora la barra está en
+      // el flujo y ocupa su propio espacio, así que arriba solo queda el margen
+      // del notch.
+      padding: 'max(16px, calc(env(safe-area-inset-top) + 12px)) max(14px, env(safe-area-inset-right)) calc(22px + env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left))',
       background: '#0a1628',
       fontFamily: BASE.font,
       position: 'relative',
@@ -431,11 +435,20 @@ export default function SelectorPerfil({ onIrASeccion }) {
       </div>
       <div className="grapco-scan" />
 
-      {/* === BARRA SUPERIOR FLOTANTE: identidad de sesión + salir === */}
+      {/* === BARRA SUPERIOR: identidad de sesión + salir ===
+          Va en el FLUJO NORMAL, no en `position: absolute`. Flotando se montaba
+          encima del panel: el hueco que le dejaba el padding superior era fijo,
+          así que en cuanto la barra crecía —pantalla estrecha, correo largo, o
+          con el chip «PROYECTO TERMINADO» delante— se partía en dos líneas y
+          pisaba la cabecera de la tarjeta. En el flujo empuja al panel hacia
+          abajo y el solapamiento no puede ocurrir a ningún ancho.
+          Mismo ancho máximo que `.vdc-card` → los bordes derechos se alinean. */}
       <div style={{
-        position: 'absolute', top: '16px', right: '18px', zIndex: 10,
+        position: 'relative', zIndex: 10,
+        width: '100%', maxWidth: 'min(1010px, 94vw)',
+        margin: '0 auto 14px',
         display: 'flex', alignItems: 'center', gap: '9px', flexWrap: 'wrap',
-        justifyContent: 'flex-end', maxWidth: 'calc(100% - 36px)',
+        justifyContent: 'flex-end', rowGap: '8px',
       }}>
         {proyectoActivo?.estado === 'completado' && (
           <span style={{
@@ -453,7 +466,11 @@ export default function SelectorPerfil({ onIrASeccion }) {
           background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.16)',
           backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
           color: 'rgba(255,255,255,0.82)', padding: '6px 13px', borderRadius: '999px',
-          fontSize: '11px', fontWeight: 700, maxWidth: 'min(260px, 42vw)',
+          fontSize: '11px', fontWeight: 700,
+          // Antes se recortaba a 42vw para no empujar al botón fuera de la
+          // pantalla. Ahora la barra puede pasar a dos líneas, así que el correo
+          // se muestra más entero y solo se recorta en pantallas muy estrechas.
+          maxWidth: 'min(320px, 72vw)', minWidth: 0,
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>
           <Icon name="user" size={13} color={BASE.gold} strokeWidth={2.2} />
@@ -467,6 +484,7 @@ export default function SelectorPerfil({ onIrASeccion }) {
             color: '#fecaca', padding: '7px 15px', borderRadius: '999px',
             fontSize: '11px', fontWeight: 900, letterSpacing: '0.6px', cursor: 'pointer',
             display: 'inline-flex', alignItems: 'center', gap: '6px',
+            flexShrink: 0, whiteSpace: 'nowrap',   // nunca se comprime ni parte
             backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
           }}
           onMouseEnter={e => { e.currentTarget.style.background = 'rgba(220,38,38,0.34)'; }}
