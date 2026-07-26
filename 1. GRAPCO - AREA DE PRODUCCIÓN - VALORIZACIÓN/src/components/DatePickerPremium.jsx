@@ -16,7 +16,8 @@
 //   · value:    cadena ISO (YYYY-MM-DD) o '' .
 //   · onChange: recibe la ISO seleccionada, o '' al limpiar.
 //   · getSemana(iso) → número de semana (solo variant rich; pinta badge + subtítulo).
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { BASE } from '../utils/styles';
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -50,9 +51,14 @@ export default function DatePickerPremium({
   disabled = false, variant = 'compact', label = null, getSemana = null, large = false,
 }) {
   const [open, setOpen] = useState(false);
-  // Hacia dónde se abre el popover para no salirse de la pantalla (se calcula al abrir).
-  const [placement, setPlacement] = useState({ drop: 'down', align: 'left' });
+  // Posición del calendario EN COORDENADAS DE PANTALLA. Antes se posicionaba en
+  // `absolute` dentro del campo: en la barra lateral del capataz (más estrecha
+  // que los 288px del calendario) el contenedor con scroll lo RECORTABA — se
+  // perdían la columna del domingo y el botón «Hoy». Ahora se dibuja en una capa
+  // propia sobre la página (portal) y se ancla siempre dentro de la pantalla.
+  const [pos, setPos] = useState(null);
   const rootRef = useRef(null);
+  const popRef = useRef(null);
   const rich = variant === 'rich';
 
   // Mes/año visibles en el calendario: arrancan en el valor seleccionado o en hoy.
@@ -60,34 +66,73 @@ export default function DatePickerPremium({
   const sel = parseISO(value);
   const [cursor, setCursor] = useState(() => new Date((sel || hoy).getFullYear(), (sel || hoy).getMonth(), 1));
 
-  // Al abrir: reposiciona el mes en el valor seleccionado y decide la dirección de
-  // apertura según el espacio disponible (evita que el calendario se tape/recorte).
-  useEffect(() => {
+  // Calcula dónde dibujar el calendario para que SIEMPRE quepa entero en pantalla:
+  // debajo del campo si hay sitio, arriba si no; alineado al campo pero empujado
+  // hacia dentro si se saldría por un borde. Si no cabe ni arriba ni abajo, se
+  // limita el alto y el calendario hace scroll por dentro.
+  const CAL_ANCHO = 288;
+  const CAL_ALTO = 372;
+  const MARGEN = 8;
+
+  const calcularPos = useCallback(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const vw = window.innerWidth || document.documentElement.clientWidth;
+    const vh = window.innerHeight || document.documentElement.clientHeight;
+
+    const width = Math.min(CAL_ANCHO, vw - MARGEN * 2);
+    const espacioAbajo = vh - rect.bottom - MARGEN - 6;
+    const espacioArriba = rect.top - MARGEN - 6;
+    const abajo = espacioAbajo >= CAL_ALTO || espacioAbajo >= espacioArriba;
+    const maxHeight = Math.max(240, Math.min(CAL_ALTO, abajo ? espacioAbajo : espacioArriba));
+
+    // Alineado al borde izquierdo del campo; si se sale, se ancla a su derecha;
+    // y en cualquier caso nunca sobrepasa los bordes de la pantalla.
+    let left = rect.left;
+    if (left + width > vw - MARGEN) left = rect.right - width;
+    left = Math.min(Math.max(MARGEN, left), Math.max(MARGEN, vw - width - MARGEN));
+
+    const top = abajo
+      ? rect.bottom + 6
+      : Math.max(MARGEN, rect.top - 6 - maxHeight);
+
+    setPos({ top, left, width, maxHeight });
+  }, []);
+
+  // Al abrir: reposiciona el mes en el valor seleccionado y calcula la posición
+  // ANTES de pintar (useLayoutEffect) para que no se vea un salto.
+  useLayoutEffect(() => {
     if (!open) return;
     const base = parseISO(value) || new Date();
     setCursor(new Date(base.getFullYear(), base.getMonth(), 1));
-
-    const el = rootRef.current;
-    if (el) {
-      const rect = el.getBoundingClientRect();
-      const vh = window.innerHeight || document.documentElement.clientHeight;
-      const vw = window.innerWidth || document.documentElement.clientWidth;
-      const CAL_H = 372;                          // alto aprox. del calendario
-      const CAL_W = Math.min(288, vw * 0.9);      // ancho real del popover
-      const espacioAbajo = vh - rect.bottom;
-      const espacioArriba = rect.top;
-      // Si abajo no cabe y arriba hay más sitio, se abre hacia arriba.
-      const drop = espacioAbajo < CAL_H + 12 && espacioArriba > espacioAbajo ? 'up' : 'down';
-      // Si alineado a la izquierda se sale por la derecha, se ancla a la derecha.
-      const align = rect.left + CAL_W > vw - 8 ? 'right' : 'left';
-      setPlacement({ drop, align });
-    }
+    calcularPos();
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Cerrar al hacer click fuera.
+  // Mientras está abierto, seguir al campo si la página o un panel hace scroll,
+  // o si cambia el tamaño de la ventana. El `true` captura también el scroll de
+  // contenedores internos (la barra lateral del capataz es uno de ellos).
   useEffect(() => {
     if (!open) return;
-    const onDoc = (e) => { if (rootRef.current && !rootRef.current.contains(e.target)) setOpen(false); };
+    const recalcular = () => calcularPos();
+    window.addEventListener('scroll', recalcular, true);
+    window.addEventListener('resize', recalcular);
+    return () => {
+      window.removeEventListener('scroll', recalcular, true);
+      window.removeEventListener('resize', recalcular);
+    };
+  }, [open, calcularPos]);
+
+  // Cerrar al hacer click fuera. Se comprueban el campo Y el calendario: al vivir
+  // en una capa aparte, el calendario ya no está dentro del campo, y sin esto
+  // pulsar «‹ mes anterior» lo cerraría.
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e) => {
+      const dentroCampo = rootRef.current && rootRef.current.contains(e.target);
+      const dentroCal   = popRef.current && popRef.current.contains(e.target);
+      if (!dentroCampo && !dentroCal) setOpen(false);
+    };
     const onEsc = (e) => { if (e.key === 'Escape') setOpen(false); };
     document.addEventListener('mousedown', onDoc);
     document.addEventListener('keydown', onEsc);
@@ -199,16 +244,15 @@ export default function DatePickerPremium({
     <div ref={rootRef} style={{ position: 'relative', width: '100%' }}>
       {trigger}
 
-      {open && (
-        <div style={{
-          position: 'absolute', zIndex: 1000,
-          ...(placement.drop === 'up' ? { bottom: 'calc(100% + 6px)' } : { top: 'calc(100% + 6px)' }),
-          ...(placement.align === 'right' ? { right: 0 } : { left: 0 }),
-          width: '288px', maxWidth: '90vw',
+      {open && pos && createPortal(
+        <div ref={popRef} style={{
+          position: 'fixed', zIndex: 9999,
+          top: `${pos.top}px`, left: `${pos.left}px`, width: `${pos.width}px`,
+          maxHeight: `${pos.maxHeight}px`, overflowY: 'auto',
           background: BASE.white, borderRadius: '14px',
           border: `1px solid ${BASE.border}`, borderTop: `3px solid ${BASE.navy}`,
           boxShadow: '0 16px 40px rgba(15,23,42,0.22)',
-          padding: '14px', userSelect: 'none',
+          padding: '14px', userSelect: 'none', boxSizing: 'border-box',
         }}>
           {/* Cabecera: mes/año + navegación */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
@@ -265,7 +309,8 @@ export default function DatePickerPremium({
               Hoy
             </button>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
