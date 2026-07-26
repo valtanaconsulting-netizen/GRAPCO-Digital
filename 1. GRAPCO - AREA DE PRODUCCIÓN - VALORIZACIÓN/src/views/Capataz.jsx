@@ -512,6 +512,54 @@ export default function Capataz({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fecha, capataz, miembrosCuadrilla.length]);
 
+  // ── SIEMBRA DEL PLAN DEL DÍA ─────────────────────────────────────────────
+  // El ingeniero programa el día en «Plan Diario» y pulsa «Asignar al tareo».
+  // Hasta aquí ese plan SOLO se mostraba en la barra lateral: la pantalla
+  // seguía diciendo «Aún no hay actividades» y obligaba a escribir a mano lo
+  // que ya estaba programado. Ahora las actividades del plan se crean solas,
+  // con la cuadrilla ya cargada y las horas en 0 — solo hay que completar lo
+  // que realmente se ejecutó.
+  //
+  // Condiciones estrictas para no destruir trabajo:
+  //   · borradorDocId != null  → la carga del día YA terminó (evita la carrera
+  //     con el efecto de arriba, cuyo estado inicial también es 'vacio').
+  //   · estadoBorrador === 'vacio' → no hay borrador ni registros subidos.
+  //   · actividades.length === 0   → la pantalla está realmente vacía.
+  // El ref evita re-sembrar si el capataz borra a propósito lo sembrado; se
+  // re-arma si cambia la cuadrilla (p. ej. los miembros llegan después).
+  const planSembradoRef = useRef('');
+  useEffect(() => {
+    if (!fecha || !capataz) return;
+    if (!borradorDocId) return;
+    if (estadoBorrador !== 'vacio') return;
+    if (actividades.length) return;
+    if (!planDelDia || !planDelDia.length) return;
+
+    const clave = `${fecha}|${capataz}|${miembrosCuadrilla.length}`;
+    if (planSembradoRef.current === clave) return;
+    planSembradoRef.current = clave;
+
+    const acts = planDelDia.map((p, i) => ({
+      ...crearActividadConMiembros(),
+      id: `plan_${Date.now()}_${i}`,
+      actividad: (p.actividad || '').trim(),
+      partida: p.partida || '',
+      unidad: p.und || 'UND',
+      // Lo programado viaja como REFERENCIA, nunca como ejecutado: el metrado y
+      // las horas los llena el capataz con lo que de verdad pasó en campo.
+      _hhProg: Number(p.hhProg) || 0,
+      _metradoProg: Number(p.metrado) || 0,
+      _delPlan: true,
+    }));
+    setActividades(acts);
+    setActActivaId(acts[0]?.id || null);
+    showToast(
+      `📋 ${acts.length} actividad${acts.length === 1 ? '' : 'es'} del plan del día · completa las horas trabajadas`,
+      'info',
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fecha, capataz, borradorDocId, estadoBorrador, actividades.length, planDelDia, miembrosCuadrilla.length]);
+
   // ── Guardado LOCAL (WIP): espeja el estado de trabajo en localStorage ─────
   // Solo se activa DESPUÉS de restaurar (wipListo), para no pisar el snapshot
   // antes de leerlo. Debounce 400ms: instantáneo para el usuario, barato.

@@ -123,7 +123,7 @@ function normalizarGrupos(plan) {
   return [];
 }
 
-export default function PlanDiario({ planesDiarios, cuadrillasActivas, historial, isMobile, showToast }) {
+export default function PlanDiario({ planesDiarios, cuadrillasActivas, isMobile, showToast }) {
   const { filtrarPorContexto, proyectoActivoId, proyectoActivo, frenteActivoId, modoTodosFrentes } = useProyectoActivo();
   const [pdFecha, setPdFecha] = useState(hoy());
   const [pdObra, setPdObra] = useState('');
@@ -323,36 +323,6 @@ export default function PlanDiario({ planesDiarios, cuadrillasActivas, historial
     }
   };
 
-  // Autocompletar EJECUTADO desde Registros_Campo del mismo día (match difuso por actividad)
-  const autocompletarEjecutado = () => {
-    let llenados = 0;
-    setGrupos(prev => prev.map(g => ({
-      ...g,
-      items: g.items.map(it => {
-        if (!it.actividad) return it;
-        const reg = (historial || []).find(r => {
-          if (r.fecha !== pdFecha) return false;
-          const actReg = r._actividadCanonica || r.actividad || '';
-          if (!actReg) return false;
-          return actReg.toUpperCase() === it.actividad.toUpperCase() || mismaActividad(it.actividad, actReg);
-        });
-        if (!reg) return it;
-        llenados++;
-        // El "ejecutado" del plan = lo que el capataz reportó en el tareo: metrado,
-        // HH reales y su observación de campo → la causa de no cumplimiento se
-        // rellena sola. No se pisa una causa ya escrita a mano si el capataz no
-        // dejó observación.
-        return {
-          ...it,
-          ejMetrado: num(reg.metradoReportado ?? reg.metrado),
-          ejHH: num(reg.totalHH),
-          causas: reg.observacion || it.causas || '',
-        };
-      }),
-    })));
-    showToast(llenados ? `✅ ${llenados} actividad(es) autocompletadas desde registros` : 'No se encontraron registros del día que coincidan', llenados ? 'success' : 'warning');
-  };
-
   const stats = useMemo(() => {
     let nItems = 0, totObr = 0, hhP = 0, hhE = 0, metP = 0, metE = 0;
     grupos.forEach(g => g.items.forEach(it => {
@@ -422,10 +392,15 @@ export default function PlanDiario({ planesDiarios, cuadrillasActivas, historial
           const nombre = (it.actividad || '').trim();
           if (!nombre) return;
           porCapataz[cap] = [...new Set([...(porCapataz[cap] || []), nombre])];
+          // La partida se resuelve aquí (contra el catálogo del proyecto) y viaja
+          // con el plan: así el tareo del capataz puede crear la actividad ya
+          // clasificada, sin obligarlo a buscarla otra vez en el catálogo.
+          const cat = resolverCat(nombre);
           (planPorCapataz[cap] = planPorCapataz[cap] || []).push({
             actividad: nombre,
+            partida: it.fases || cat?.partida || '',
             metrado: num(it.metrado),
-            und: it.und || 'UND',
+            und: it.und || cat?.und || 'UND',
             hhProg: hhProg(it),
             obreros: obrerosNec(it),
             horario: it.horario || '',
@@ -544,25 +519,6 @@ export default function PlanDiario({ planesDiarios, cuadrillasActivas, historial
     const { exportarPDF } = await import('../utils/pdfExport');
     const r = await exportarPDF(args);
     showToast(r.ok ? '✅ PDF generado' : `Error PDF: ${r.error}`, r.ok ? 'success' : 'error');
-  };
-
-  // Compartir el PDF del Plan Diario por WhatsApp (mobile: nativo; desktop: WA Web).
-  const compartirWhatsAppPlan = async () => {
-    if (!grupos.length) return showToast('No hay items', 'warning');
-    const args = construirArgsPDF();
-    const { exportarPDF, compartirWhatsApp } = await import('../utils/pdfExport');
-    const r = await exportarPDF({ ...args, soloBlob: true });
-    if (!r.ok || !r.blob) { showToast('Error generando PDF', 'error'); return; }
-    const mensaje =
-`📋 *PROGRAMACIÓN DIARIA · GRAPCO*
-Obra: ${pdObra}
-Semana ${obtenerSemana(pdFecha)} · ${fmtFecha(pdFecha)}
-Residente: ${pdResidente || '—'}
-HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${Math.round(stats.avanceGlobal)}%`;
-    const s = await compartirWhatsApp({ blob: r.blob, nombre: args.nombreArchivo, mensaje });
-    if (s.ok) {
-      showToast(s.modo === 'share-api' ? '✅ Compartido' : '✅ PDF descargado · WhatsApp Web abierto', 'success');
-    } else { showToast('Error: ' + s.error, 'error'); }
   };
 
   const colsVis = COLS.filter(c => !c.grp || cols[c.grp]);
@@ -861,11 +817,20 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${Mat
         </>
       )}
 
-      {/* Acciones */}
+      {/* Acciones — JERARQUÍA por color, no un color por botón.
+          Antes había seis botones de seis colores distintos (verde, navy, navy,
+          rojo, verde WhatsApp, naranja): todos gritaban igual y no se veía cuál
+          era el paso siguiente. Ahora:
+            · GUARDAR PLAN   → navy sólido = la acción principal del día.
+            · ASIGNAR TAREO  → dorado (firma GRAPCO) = el paso siguiente natural.
+            · PDF y EXCEL    → neutros, agrupados: son salidas, no decisiones.
+            · ELIMINAR       → discreto y al final, separado del resto.
+          Texto navy sobre el dorado (no blanco): el dorado #E5A82F con blanco
+          no llega al contraste mínimo legible. */}
       {grupos.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
           <button onClick={guardarPlan} disabled={pdGuardando}
-            style={{ flex: '2 1 200px', padding: '13px', background: pdGuardando ? BASE.mutedSoft : pdEditingId ? BASE.navyLight : BASE.green, color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '800', cursor: pdGuardando ? 'not-allowed' : 'pointer', fontSize: '13.5px' }}>
+            style={{ flex: '2 1 220px', padding: '13px', background: pdGuardando ? BASE.mutedSoft : BASE.navy, color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '800', cursor: pdGuardando ? 'not-allowed' : 'pointer', fontSize: '13.5px', boxShadow: pdGuardando ? 'none' : '0 4px 14px -5px rgba(15,42,71,0.8)' }}>
             {pdGuardando ? '⏳ Guardando...' : pdEditingId ? '✏️ ACTUALIZAR PLAN' : '💾 GUARDAR PLAN'}
           </button>
           <button
@@ -879,24 +844,17 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${Mat
             }}
             disabled={pdAsignando}
             title="Envía las actividades de cada capataz a su tareo del día"
-            style={{ flex: '1 1 180px', padding: '13px', background: pdAsignando ? BASE.mutedSoft : BASE.navy, color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '800', cursor: pdAsignando ? 'not-allowed' : 'pointer', fontSize: '12.5px' }}>
+            style={{ flex: '1 1 190px', padding: '13px', background: pdAsignando ? BASE.mutedSoft : `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`, color: pdAsignando ? '#fff' : BASE.navy, border: 'none', borderRadius: '10px', fontWeight: '800', cursor: pdAsignando ? 'not-allowed' : 'pointer', fontSize: '12.5px', boxShadow: pdAsignando ? 'none' : `0 4px 14px -5px ${BASE.goldDark}` }}>
             {pdAsignando ? '⏳ Asignando...' : '📨 ASIGNAR AL TAREO'}
           </button>
-          <button onClick={autocompletarEjecutado}
-            style={{ flex: '1 1 160px', padding: '13px', background: BASE.navy, color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '800', cursor: 'pointer', fontSize: '12.5px' }}>
-            ↻ AUTOCOMPLETAR
-          </button>
           <button onClick={exportarPDFPlan}
-            style={{ flex: '1 1 150px', padding: '13px', background: 'linear-gradient(135deg,#dc2626,#b91c1c)', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '800', cursor: 'pointer', fontSize: '12.5px' }}>
+            title="Descarga la programación del día en PDF"
+            style={{ flex: '1 1 150px', padding: '13px', background: BASE.white, color: BASE.navy, border: `1.5px solid ${BASE.border}`, borderRadius: '10px', fontWeight: '700', cursor: 'pointer', fontSize: '12.5px' }}>
             📄 EXPORTAR PDF
           </button>
-          <button onClick={compartirWhatsAppPlan}
-            title="Comparte el PDF del plan por WhatsApp"
-            style={{ flex: '1 1 150px', padding: '13px', background: 'linear-gradient(135deg,#25D366,#128C7E)', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '800', cursor: 'pointer', fontSize: '12.5px' }}>
-            💬 WHATSAPP
-          </button>
           <button onClick={exportarPlan}
-            style={{ flex: '1 1 150px', padding: '13px', background: BASE.orange, color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '800', cursor: 'pointer', fontSize: '12.5px' }}>
+            title="Descarga la programación del día en Excel"
+            style={{ flex: '1 1 150px', padding: '13px', background: BASE.white, color: BASE.navy, border: `1.5px solid ${BASE.border}`, borderRadius: '10px', fontWeight: '700', cursor: 'pointer', fontSize: '12.5px' }}>
             ⬇️ EXPORTAR EXCEL
           </button>
           {pdEditingId && (
@@ -905,7 +863,7 @@ HH Programadas: ${stats.hhP}  ·  HH Ejecutadas: ${stats.hhE}  ·  Avance: ${Mat
                 mensaje: `¿Eliminar el plan del ${fmtFecha(pdFecha)}?`,
                 onOk: eliminarPlan,
               })}
-              style={{ flex: '1 1 120px', padding: '13px', background: '#fef2f2', color: '#dc2626', border: '1.5px solid #fca5a5', borderRadius: '10px', fontWeight: '700', cursor: 'pointer', fontSize: '12.5px' }}>
+              style={{ flex: '0 1 130px', padding: '13px', background: 'transparent', color: BASE.red, border: `1.5px solid ${BASE.red}55`, borderRadius: '10px', fontWeight: '700', cursor: 'pointer', fontSize: '12.5px' }}>
               🗑️ ELIMINAR
             </button>
           )}

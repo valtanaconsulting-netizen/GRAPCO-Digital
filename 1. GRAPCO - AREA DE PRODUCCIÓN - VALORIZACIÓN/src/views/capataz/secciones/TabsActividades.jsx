@@ -36,7 +36,9 @@ export default function TabsActividades({
           Aún no hay actividades
         </p>
         <p style={{ fontSize: '12px', color: BASE.muted, marginBottom: '20px', lineHeight: 1.5 }}>
-          Usa el botón <strong>➕ Nueva actividad</strong> {isMobile ? 'arriba' : 'del panel lateral'} o explora el catálogo
+          Si el ingeniero te asignó el plan del día, sus actividades aparecen aquí solas.
+          <br />
+          Si no, usa <strong>➕ Añadir otra actividad</strong> {isMobile ? 'arriba' : 'del panel lateral'} o busca en el catálogo.
         </p>
         <button type="button" onClick={onAgregarActividad} style={{
           padding: '12px 24px',
@@ -96,14 +98,26 @@ export default function TabsActividades({
               boxShadow: esActiva ? '0 4px 14px -3px rgba(15,42,71,0.35)' : BASE.shadowSm,
               minHeight: '78px',
             }}>
-              {/* Fila superior: nº de orden y check de subido */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{
-                  fontSize: '10px', fontWeight: '800',
-                  background: esActiva ? BASE.gold : BASE.bgSoft,
-                  color: esActiva ? BASE.navy : BASE.muted,
-                  padding: '2px 8px', borderRadius: '6px',
-                }}>{i + 1}</span>
+              {/* Fila superior: nº de orden, sello «PLAN» y check de subido */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', minWidth: 0 }}>
+                  <span style={{
+                    fontSize: '10px', fontWeight: '800',
+                    background: esActiva ? BASE.gold : BASE.bgSoft,
+                    color: esActiva ? BASE.navy : BASE.muted,
+                    padding: '2px 8px', borderRadius: '6px',
+                  }}>{i + 1}</span>
+                  {/* Deja claro que la actividad la programó el ingeniero y no
+                      hay que volver a crearla: solo completar sus horas. */}
+                  {a._delPlan && (
+                    <span title="Programada por el ingeniero en el Plan Diario" style={{
+                      fontSize: '8.5px', fontWeight: '800', letterSpacing: '0.4px',
+                      background: esActiva ? 'rgba(255,255,255,0.20)' : BASE.goldLight,
+                      color: esActiva ? '#fff' : BASE.goldDark,
+                      padding: '2px 6px', borderRadius: '5px', whiteSpace: 'nowrap',
+                    }}>PLAN</span>
+                  )}
+                </span>
                 {a._registroExistenteId
                   ? <span title="Ya subido" style={{ fontSize: '13px' }}>✅</span>
                   : !definida && <span title="Falta definir" style={{ fontSize: '13px' }}>✏️</span>}
