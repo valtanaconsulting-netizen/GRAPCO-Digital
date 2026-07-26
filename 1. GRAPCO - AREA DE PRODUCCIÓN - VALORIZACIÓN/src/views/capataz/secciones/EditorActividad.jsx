@@ -10,6 +10,7 @@ import { BASE, inp } from '../../../utils/styles';
 import { CATALOGO_MASTER, INFO_MAP, rangoCargo } from '../../../utils/constants';
 import FotoUploader from '../../../components/FotoUploader';
 import SelectPremium from '../../../components/SelectPremium';
+import Modal from '../../../components/Modal';
 import TrabajadorCard from './TrabajadorCard';
 
 export default function EditorActividad({
@@ -55,7 +56,9 @@ export default function EditorActividad({
   // cabecera solo sirve para cambiarla, y el nombre ya se ve en la tarjeta.
   // Capataz.jsx monta este editor con `key={actividadActiva.id}`, así que el
   // estado inicial se recalcula al cambiar de actividad. Sin efectos.
-  const [identAbierta, setIdentAbierta] = useState(!actividadActiva.actividad);
+  // Arranca CERRADO siempre: el diálogo solo se abre cuando el capataz toca la
+  // tarjeta azul. Nada de selectores ocupando la pantalla por su cuenta.
+  const [identAbierta, setIdentAbierta] = useState(false);
   // Abrir los selectores cuando el capataz vuelve a tocar la tarjeta ya activa.
   // Se ajusta durante el render comparando el token con el último visto (patrón
   // de React para reaccionar a un cambio de props) en lugar de un efecto, que
@@ -92,81 +95,73 @@ export default function EditorActividad({
     }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {/* ── IDENTIFICACIÓN (solo en TAREO; en metrado va fija) ──
-            SIN cabecera ni enlaces. La actividad se cambia TOCANDO SU TARJETA
-            azul en la fila de arriba: si ya está activa, ese toque abre estos
-            selectores. Las que vienen del Plan Diario no se pueden cambiar —
-            las programó el ingeniero— y por eso su tarjeta no responde.
-            Los selectores aparecen cuando la actividad aún no está definida, o
-            cuando se pide el cambio desde la tarjeta. La cadena sigue igual: al
-            elegir Partida se abre sola Subpartida, y luego Actividad; al elegir
-            Actividad los selectores se recogen. */}
-        {esTareo && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: identAbierta ? '12px' : 0 }}>
-            {/* Los 3 selectores */}
-            {identAbierta && (
-              <>
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
-                  <div>
-                    <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', display: 'block', marginBottom: '5px' }}>PARTIDA</label>
-                    <SelectPremium
-                      value={actividadActiva.partida}
-                      onChange={v => {
-                        onUpdActividad(actividadActiva.id, 'partida', v);
-                        // Abrir sola la Subpartida si la partida elegida tiene subpartidas con opciones.
-                        if (Object.keys(CATALOGO_MASTER[v] || {}).filter(sp => (CATALOGO_MASTER[v][sp] || []).length > 0).length > 0) {
-                          setOpenSubToken(n => n + 1);
-                        }
-                      }}
-                      options={partidaOptions}
-                      isMobile={isMobile}
-                      title="Partida"
-                      fontSize="12px"
-                      openOnMount={!actividadActiva.partida}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', display: 'block', marginBottom: '5px' }}>SUBPARTIDA</label>
-                    <SelectPremium
-                      value={actividadActiva.subpartida}
-                      onChange={v => {
-                        onUpdActividad(actividadActiva.id, 'subpartida', v);
-                        // Abrir sola la Actividad si la subpartida elegida tiene opciones.
-                        if ((CATALOGO_MASTER[actividadActiva.partida]?.[v] || []).length > 0) {
-                          setOpenActToken(n => n + 1);
-                        }
-                      }}
-                      options={subpartidasDisponibles}
-                      disabled={!actividadActiva.partida}
-                      isMobile={isMobile}
-                      title="Subpartida"
-                      fontSize="12px"
-                      openToken={openSubToken}
-                      openOnMount={!!actividadActiva.partida && !actividadActiva.subpartida}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', display: 'block', marginBottom: '5px' }}>ACTIVIDAD</label>
-                  <SelectPremium
-                    value={actividadActiva.actividad}
-                    onChange={v => {
-                      onUpdActividad(actividadActiva.id, 'actividad', v);
-                      // Al elegir la actividad, la sección se pliega y muestra el resumen.
-                      setIdentAbierta(false);
-                    }}
-                    options={actividadesDisponibles}
-                    disabled={!actividadActiva.subpartida || actividadesDisponibles.length === 0}
-                    isMobile={isMobile}
-                    title="Actividad"
-                    fontSize="12px"
-                    openToken={openActToken}
-                    openOnMount={!!actividadActiva.subpartida && !actividadActiva.actividad}
-                  />
-                </div>
-              </>
-            )}
-          </div>
+            Partida, Subpartida y Actividad YA NO OCUPAN SITIO EN LA PANTALLA:
+            salen en un diálogo que se abre al tocar la tarjeta azul de la
+            actividad. Las que vienen del Plan Diario no lo abren: las programó
+            el ingeniero y no se cambian.
+            La cadena se mantiene: al elegir Partida se abre sola Subpartida, y
+            luego Actividad; al elegir Actividad el diálogo se cierra solo. */}
+        {esTareo && identAbierta && (
+          <Modal title="Elegir actividad" onClose={() => setIdentAbierta(false)} maxW="520px">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', display: 'block', marginBottom: '5px' }}>PARTIDA</label>
+                <SelectPremium
+                  value={actividadActiva.partida}
+                  onChange={v => {
+                    onUpdActividad(actividadActiva.id, 'partida', v);
+                    // Abrir sola la Subpartida si la partida elegida tiene subpartidas con opciones.
+                    if (Object.keys(CATALOGO_MASTER[v] || {}).filter(sp => (CATALOGO_MASTER[v][sp] || []).length > 0).length > 0) {
+                      setOpenSubToken(n => n + 1);
+                    }
+                  }}
+                  options={partidaOptions}
+                  isMobile={isMobile}
+                  title="Partida"
+                  fontSize="13px"
+                  openOnMount={!actividadActiva.partida}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', display: 'block', marginBottom: '5px' }}>SUBPARTIDA</label>
+                <SelectPremium
+                  value={actividadActiva.subpartida}
+                  onChange={v => {
+                    onUpdActividad(actividadActiva.id, 'subpartida', v);
+                    // Abrir sola la Actividad si la subpartida elegida tiene opciones.
+                    if ((CATALOGO_MASTER[actividadActiva.partida]?.[v] || []).length > 0) {
+                      setOpenActToken(n => n + 1);
+                    }
+                  }}
+                  options={subpartidasDisponibles}
+                  disabled={!actividadActiva.partida}
+                  isMobile={isMobile}
+                  title="Subpartida"
+                  fontSize="13px"
+                  openToken={openSubToken}
+                  openOnMount={!!actividadActiva.partida && !actividadActiva.subpartida}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: BASE.muted, letterSpacing: '0.6px', display: 'block', marginBottom: '5px' }}>ACTIVIDAD</label>
+                <SelectPremium
+                  value={actividadActiva.actividad}
+                  onChange={v => {
+                    onUpdActividad(actividadActiva.id, 'actividad', v);
+                    // Elegida la actividad, el diálogo ya cumplió: se cierra.
+                    setIdentAbierta(false);
+                  }}
+                  options={actividadesDisponibles}
+                  disabled={!actividadActiva.subpartida || actividadesDisponibles.length === 0}
+                  isMobile={isMobile}
+                  title="Actividad"
+                  fontSize="13px"
+                  openToken={openActToken}
+                  openOnMount={!!actividadActiva.subpartida && !actividadActiva.actividad}
+                />
+              </div>
+            </div>
+          </Modal>
         )}
 
         {/* ── IDENTIFICACIÓN FIJA (solo en METRADO, viene del tareo) ──
