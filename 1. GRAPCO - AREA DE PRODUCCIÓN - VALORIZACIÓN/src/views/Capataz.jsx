@@ -521,17 +521,20 @@ export default function Capataz({
   // que realmente se ejecutó.
   //
   // Condiciones estrictas para no destruir trabajo:
-  //   · borradorDocId != null  → la carga del día YA terminó (evita la carrera
+  //   · borradorDocId != null    → la carga del día YA terminó (evita la carrera
   //     con el efecto de arriba, cuyo estado inicial también es 'vacio').
-  //   · estadoBorrador === 'vacio' → no hay borrador ni registros subidos.
-  //   · actividades.length === 0   → la pantalla está realmente vacía.
+  //   · estado != 'cargando'     → no estamos a mitad de un cambio de día.
+  //   · actividades.length === 0 → la pantalla está realmente vacía.
+  // Se comprueba la LISTA vacía, no el estado 'vacio': si quedara un borrador
+  // guardado sin actividades dentro, el estado sería 'cargado' y el plan nunca
+  // se sembraría. Lista vacía = no hay trabajo que destruir.
   // El ref evita re-sembrar si el capataz borra a propósito lo sembrado; se
   // re-arma si cambia la cuadrilla (p. ej. los miembros llegan después).
   const planSembradoRef = useRef('');
   useEffect(() => {
     if (!fecha || !capataz) return;
     if (!borradorDocId) return;
-    if (estadoBorrador !== 'vacio') return;
+    if (estadoBorrador === 'cargando') return;
     if (actividades.length) return;
     if (!planDelDia || !planDelDia.length) return;
 
