@@ -1436,6 +1436,7 @@ export default function Capataz({
                   actividadActiva={actividadActiva}
                   isMobile={isMobile}
                   buscarTrab={buscarTrab}
+                  onBuscarTrab={setBuscarTrab}
                   limiteHN={limiteHN}
                   importandoFacial={importandoFacial}
                   fecha={fecha}

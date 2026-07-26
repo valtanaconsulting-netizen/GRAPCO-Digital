@@ -17,6 +17,7 @@ export default function EditorActividad({
   actividadActiva,
   isMobile,
   buscarTrab,
+  onBuscarTrab = null,
   limiteHN,
   importandoFacial,
   fecha,
@@ -44,9 +45,16 @@ export default function EditorActividad({
   // sola la Subpartida; al elegir Subpartida se abre sola la Actividad.
   const [openSubToken, setOpenSubToken] = useState(0);
   const [openActToken, setOpenActToken] = useState(0);
-  // La sección Partida/Subpartida/Actividad va plegada; el capataz la despliega
-  // con un toque y desde ahí corre la cadena de selectores.
-  const [identAbierta, setIdentAbierta] = useState(false);
+  // La sección Partida/Subpartida/Actividad se abre SOLA cuando la actividad aún
+  // no está definida: al pulsar «Agregar otra actividad» y tocar la tarjeta «Sin
+  // definir», el capataz cae directamente en los selectores de partida →
+  // subpartida → actividad. Antes hacían falta dos toques (la tarjeta y luego
+  // esta cabecera), y el segundo no se adivinaba.
+  // Si la actividad YA está definida, la sección arranca plegada: ahí la
+  // cabecera solo sirve para cambiarla, y el nombre ya se ve en la tarjeta.
+  // Capataz.jsx monta este editor con `key={actividadActiva.id}`, así que el
+  // estado inicial se recalcula al cambiar de actividad. Sin efectos.
+  const [identAbierta, setIdentAbierta] = useState(!actividadActiva.actividad);
   // Solo subpartidas/actividades CON opciones reales: el catálogo tiene
   // subpartidas vacías (p. ej. "DISEÑO": []) que, si se ofrecieran, dejarían la
   // actividad sin poder completarse y bloquearían la subida del tareo.
@@ -360,6 +368,47 @@ export default function EditorActividad({
                   : `Media jornada · tope HN ${limiteHN}h · luego HE`}
             </span>
           </div>
+
+          {/* Buscador de trabajador, JUNTO a la lista que filtra. En el móvil el
+              buscador del panel lateral queda detrás del botón «Opciones»: con
+              una cuadrilla de 8 personas había que abrir el cajón para buscar a
+              uno. Aquí está a la vista, sobre la propia lista. En escritorio el
+              panel lateral ya lo tiene siempre visible, así que no se duplica. */}
+          {isMobile && onBuscarTrab && actividadActiva.detalleTareo.length > 4 && (
+            <div style={{ position: 'relative', marginBottom: '12px' }}>
+              <span style={{
+                position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)',
+                fontSize: '13px', opacity: 0.55, pointerEvents: 'none',
+              }}>🔎</span>
+              <input
+                type="text"
+                value={buscarTrab}
+                onChange={e => onBuscarTrab(e.target.value)}
+                placeholder="Buscar trabajador..."
+                aria-label="Buscar trabajador en la cuadrilla"
+                style={{
+                  width: '100%', boxSizing: 'border-box',
+                  padding: '10px 34px 10px 32px', borderRadius: '10px',
+                  border: `1.5px solid ${buscarTrab ? BASE.gold : BASE.border}`,
+                  background: buscarTrab ? BASE.goldSoft : BASE.white,
+                  fontSize: '13px', fontWeight: 600, color: BASE.text,
+                  fontFamily: BASE.font, outline: 'none',
+                }}
+              />
+              {buscarTrab && (
+                <button
+                  type="button"
+                  onClick={() => onBuscarTrab('')}
+                  aria-label="Limpiar búsqueda"
+                  style={{
+                    position: 'absolute', right: '6px', top: '50%', transform: 'translateY(-50%)',
+                    width: '24px', height: '24px', borderRadius: '50%', border: 'none',
+                    background: 'transparent', color: BASE.muted, cursor: 'pointer',
+                    fontSize: '15px', lineHeight: 1,
+                  }}>×</button>
+              )}
+            </div>
+          )}
 
           {(() => {
             const q = buscarTrabDiferido.trim().toLowerCase();
