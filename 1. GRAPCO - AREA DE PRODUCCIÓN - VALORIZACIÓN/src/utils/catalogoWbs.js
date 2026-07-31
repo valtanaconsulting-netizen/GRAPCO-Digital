@@ -37,7 +37,14 @@ export function calcActividad(a) {
   cHH += hhFuente(a && a.adicional);
   cHH = +cHH.toFixed(2);
   const ipMeta = num(a && a.ipMeta);
-  const metaMet = cMet;                          // el metrado meta copia al contractual
+  // El CONTRACTUAL es la línea base del F07: se calcula de ofertas + adicionales y
+  // no se negocia. La META es el objetivo que la obra se fija, y sí se mueve.
+  // Por defecto la meta sigue al contractual —que es el comportamiento histórico y
+  // lo que hace que al sumar un adicional suban metrado meta y HH meta en el mismo
+  // acto—, pero si la actividad trae `metaMet` guardado, ese valor manda.
+  // Un doc sin el campo se comporta exactamente igual que antes.
+  const ovr = a && a.metaMet;
+  const metaMet = (ovr === null || ovr === undefined || ovr === '') ? cMet : num(ovr);
   const metaHH = +(metaMet * ipMeta).toFixed(2); // HH meta se recalcula con el IP fijo
   return {
     contractualMet: cMet,

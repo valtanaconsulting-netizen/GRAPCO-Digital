@@ -369,7 +369,20 @@ export default function CpiEac({ wbs, historial = [], filtrados = null, infoMap,
       : overActual
         ? act.met + sm
         : Math.max(act.met, aMetRef);
-    return { aMetRef, aIpRef, terminada, overActual, sm, metFinal };
+    // ── IP del SALDO: manda el acumulado ──
+    // Lo que queda por ejecutar se proyecta con el rendimiento que la obra está
+    // logrando DE VERDAD, no con el que se prometió en el catálogo. Solo cuando la
+    // actividad todavía no tiene HH cargadas se cae al IP de referencia (meta o
+    // presupuesto, según la vista).
+    // El guard sobre hhR es el que faltaba: antes bastaba con met > 0 para dividir,
+    // así que una actividad con metrado reportado pero aún sin HH daba IP 0 y el
+    // saldo salía con cero horas pendientes — trabajo por hacer que desaparecía
+    // del forecast.
+    const ipSaldo = (act.met > 0 && act.hhR > 0)
+      ? +(act.hhR / act.met).toFixed(4)
+      : aIpRef;
+    const hhSaldo = +(sm * ipSaldo).toFixed(2);
+    return { aMetRef, aIpRef, ipSaldo, hhSaldo, terminada, overActual, sm, metFinal };
   };
 
   // Celda numérica: alineada a la DERECHA (estándar para datos), monoespaciada tabular.
@@ -483,12 +496,11 @@ export default function CpiEac({ wbs, historial = [], filtrados = null, infoMap,
       Object.keys(p.subs).forEach(sN => Object.keys(p.subs[sN].acts).forEach(aN => {
         const act = p.subs[sN].acts[aN];
         const ad = obtenerDatosActividad(aN, act.met);
-        const { aIpRef: ipRef, sm, metFinal } = calcSaldo(act, ad);
-        const ipReal = act.met > 0 ? act.hhR / act.met : ipRef;
+        const { aIpRef: ipRef, ipSaldo, hhSaldo, sm, metFinal } = calcSaldo(act, ad);
         saldoMet    += sm;
-        hhSaldoRef  += sm * ipRef;
-        hhSaldoReal += sm * ipReal;
-        hhEAC       += act.hhR + sm * ipReal;
+        hhSaldoRef  += sm * ipRef;   // referencia del catálogo — se conserva para comparar
+        hhSaldoReal += hhSaldo;      // lo que de verdad falta según el rendimiento real
+        hhEAC       += act.hhR + hhSaldo;
         hhRefTotal  += metFinal * ipRef;
         hhP += hhPptDe(aN);
         hhM += hhMetaDe(aN);
@@ -722,9 +734,9 @@ export default function CpiEac({ wbs, historial = [], filtrados = null, infoMap,
                 {td(fmt1(totalSaldo.hhRefAct), TT())}
                 {td(fmtVar(totalSaldo.hhRefAct - totalSaldo.hhReal), TT({ color: vcD(totalSaldo.hhRefAct - totalSaldo.hhReal) }))}
                 {td(fmtCPIPct(calcCPI(totalSaldo.hhRefAct, totalSaldo.hhReal)), TT({ ...sepRight }))}
-                {td('—', TT({ color:'rgba(255,255,255,0.45)' }))}
-                {td(fmt1(totalSaldo.hhSaldoRef), TT())}
-                {td('—', TT({ color:'rgba(255,255,255,0.45)', ...sepRight }))}
+                {td(fmt2(totalSaldo.saldoMet), TT())}
+                {td(fmt1(totalSaldo.hhSaldoReal), TT())}
+                {td(totalSaldo.saldoMet > 0 ? (totalSaldo.hhSaldoReal / totalSaldo.saldoMet).toFixed(3) : '—', TT({ ...sepRight }))}
                 {td('—', TT({ color:'rgba(255,255,255,0.45)' }))}
                 {td(fmt1(totalSaldo.hhEAC), TT())}
                 {td('—', TT({ color:'rgba(255,255,255,0.45)', ...sepRight }))}
@@ -744,12 +756,11 @@ export default function CpiEac({ wbs, historial = [], filtrados = null, infoMap,
                 Object.keys(p.subs).forEach(sN=>Object.keys(p.subs[sN].acts).forEach(aN=>{
                   const act=p.subs[sN].acts[aN];
                   const ad = obtenerDatosActividad(aN, act.met);
-                  const { aIpRef: ipRef, sm, metFinal } = calcSaldo(act, ad);
-                  const ipReal = act.met > 0 ? act.hhR/act.met : ipRef;
+                  const { aIpRef: ipRef, hhSaldo, sm, metFinal } = calcSaldo(act, ad);
                   pSaldoMet  += sm;
                   pSaldoRef  += sm * ipRef;
-                  pSaldoReal += sm * ipReal;
-                  pEAC    += act.hhR + sm * ipReal;
+                  pSaldoReal += hhSaldo;
+                  pEAC    += act.hhR + hhSaldo;
                   pRefTot += metFinal * ipRef;
                   pMetTot += metFinal;
                   // Chips
@@ -814,9 +825,9 @@ export default function CpiEac({ wbs, historial = [], filtrados = null, infoMap,
                       {pCell(fmt1(hhRef))}
                       {pCell(fmtVar(diff),{color:colorVar(diff),fontWeight:'800'})}
                       {pCell(fmtCPIPct(cpiV),{color:cc.color,fontWeight:'800',background:`${cc.color}10`,...sepRight})}
-                      {pCell('—',{background:SEC.saldo.bgCell,color:BASE.muted})}
-                      {pCell(fmt1(pSaldoRef),{background:SEC.saldo.bgCell,color:SEC.saldo.text})}
-                      {pCell('—',{background:SEC.saldo.bgCell,color:BASE.muted,...sepRight})}
+                      {pCell(pSaldoMet>0?fmt2(pSaldoMet):'✓',{background:SEC.saldo.bgCell,color:SEC.saldo.text})}
+                      {pCell(fmt1(pSaldoReal),{background:SEC.saldo.bgCell,color:SEC.saldo.text})}
+                      {pCell(pSaldoMet>0?(pSaldoReal/pSaldoMet).toFixed(3):'—',{background:SEC.saldo.bgCell,color:SEC.saldo.text,...sepRight})}
                       {pCell('—',{background:SEC.estimado.bgCell,color:BASE.muted})}
                       {pCell(fmt1(pEAC),{background:SEC.estimado.bgCell,color:SEC.estimado.text})}
                       {pCell('—',{background:SEC.estimado.bgCell,color:BASE.muted,...sepRight})}
@@ -840,12 +851,11 @@ export default function CpiEac({ wbs, historial = [], filtrados = null, infoMap,
                       Object.keys(sub.acts).forEach(aN=>{
                         const act = sub.acts[aN];
                         const ad = obtenerDatosActividad(aN, act.met);
-                        const { aIpRef: ipRef, sm, metFinal } = calcSaldo(act, ad);
-                        const ipReal = act.met > 0 ? act.hhR/act.met : ipRef;
+                        const { aIpRef: ipRef, hhSaldo, sm, metFinal } = calcSaldo(act, ad);
                         spSaldoMet  += sm;
                         spSaldoRef  += sm * ipRef;
-                        spSaldoReal += sm * ipReal;
-                        spEAC    += act.hhR + sm * ipReal;
+                        spSaldoReal += hhSaldo;
+                        spEAC    += act.hhR + hhSaldo;
                         spRefTot += metFinal * ipRef;
                         spMetTot += metFinal;
                         spMetP_tot += (ad.metP || 0);
@@ -903,9 +913,9 @@ export default function CpiEac({ wbs, historial = [], filtrados = null, infoMap,
                             {sCell(fmt1(sHhRef))}
                             {sCell(fmtVar(sdiff),{color:colorVar(sdiff),fontWeight:'700'})}
                             {sCell(fmtCPIPct(scpi),{color:scc.color,fontWeight:'700',background:`${scc.color}10`,...sepRight})}
-                            {sCell('—',{background:SEC.saldo.bgCell,color:BASE.muted})}
-                            {sCell(fmt1(spSaldoRef),{background:SEC.saldo.bgCell,color:SEC.saldo.text})}
-                            {sCell('—',{background:SEC.saldo.bgCell,color:BASE.muted,...sepRight})}
+                            {sCell(spSaldoMet>0?fmt2(spSaldoMet):'✓',{background:SEC.saldo.bgCell,color:SEC.saldo.text})}
+                            {sCell(fmt1(spSaldoReal),{background:SEC.saldo.bgCell,color:SEC.saldo.text})}
+                            {sCell(spSaldoMet>0?(spSaldoReal/spSaldoMet).toFixed(3):'—',{background:SEC.saldo.bgCell,color:SEC.saldo.text,...sepRight})}
                             {sCell('—',{background:SEC.estimado.bgCell,color:BASE.muted})}
                             {sCell(fmt1(spEAC),{background:SEC.estimado.bgCell,color:SEC.estimado.text})}
                             {sCell('—',{background:SEC.estimado.bgCell,color:BASE.muted,...sepRight})}
@@ -930,11 +940,14 @@ export default function CpiEac({ wbs, historial = [], filtrados = null, infoMap,
                             if (!mostrarVacias && act.hhR === 0 && act.met === 0) return null;
                             const ad = obtenerDatosActividad(aN, act.met);
                             const aHhRef = act[REF.hhKey];
-                            const { aMetRef, aIpRef, terminada, overActual, sm, metFinal } = calcSaldo(act, ad);
+                            const { aMetRef, aIpRef, ipSaldo, hhSaldo, terminada, overActual, sm, metFinal } = calcSaldo(act, ad);
                             const acpi=calcCPI(aHhRef, act.hhR), acc=getEstado(acpi);
-                            const ipReal = act.met > 0 ? act.hhR/act.met : aIpRef;
+                            // IP REAL del ACUMULADO: es un hecho sobre lo ya ejecutado, así
+                            // que aquí sí vale 0 cuando hay metrado sin HH. No confundir con
+                            // ipSaldo, que proyecta lo que FALTA y por eso no admite el 0.
+                            const ipReal = act.met > 0 ? act.hhR / act.met : 0;
                             const hhSRef = sm * aIpRef;
-                            const hhSReal = sm * ipReal;
+                            const hhSReal = hhSaldo;
                             const hhEAC = act.hhR + hhSReal;
                             const hhRefTot = metFinal * aIpRef;
                             const cpiEACa = hhEAC > 0 ? hhRefTot / hhEAC : null;
@@ -1039,8 +1052,15 @@ export default function CpiEac({ wbs, historial = [], filtrados = null, infoMap,
                                 {td(fmtVar(adiff),{color:colorVar(adiff),fontWeight:'700'})}
                                 {td(fmtCPIPct(acpi),{color:acc.color,fontWeight:'700',background:`${acc.color}10`,...sepRight})}
                                 {td(sm>0?fmt2(sm):'✓',{background:SEC.saldo.bgCell,color:SEC.saldo.text})}
-                                {td(hhSRef>0?fmt1(hhSRef):'✓',{background:SEC.saldo.bgCell,color:SEC.saldo.text})}
-                                {td(sm>0?aIpRef.toFixed(2):'—',{background:SEC.saldo.bgCell,color:SEC.saldo.text,...sepRight})}
+                                {td(hhSReal>0?fmt1(hhSReal):'✓',{background:SEC.saldo.bgCell,color:SEC.saldo.text})}
+                                {td(sm>0?ipSaldo.toFixed(3):'—',{
+                                  background:SEC.saldo.bgCell,
+                                  color:SEC.saldo.text,
+                                  // En negrita cuando el saldo se proyecta con rendimiento REAL
+                                  // (hay avance) y no con el IP de catálogo: avisa de un vistazo
+                                  // de qué está hecho el pronóstico de cada fila.
+                                  fontWeight: (act.met > 0 && act.hhR > 0) ? 800 : 500,
+                                  ...sepRight})}
                                 {td(fmt2(metFinal),{background:SEC.estimado.bgCell,color:SEC.estimado.text})}
                                 {td(fmt1(hhEAC),{background:SEC.estimado.bgCell,color:SEC.estimado.text})}
                                 {td(metFinal>0?aEstIP.toFixed(3):'—',{background:SEC.estimado.bgCell,color:SEC.estimado.text,...sepRight})}

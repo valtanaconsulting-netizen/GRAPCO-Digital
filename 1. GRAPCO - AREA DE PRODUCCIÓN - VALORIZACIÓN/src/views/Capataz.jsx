@@ -1038,6 +1038,33 @@ export default function Capataz({
         }
       }
 
+      // Cierra el ciclo: lo que se ejecutó vuelve al Plan Diario del ingeniero.
+      // Va DESPUÉS del commit y sin await bloqueante sobre el resultado del envío:
+      // el registro de campo ya está a salvo y esto no puede ponerlo en riesgo.
+      if (exitos > 0) {
+        try {
+          const { retroalimentarPlanDiario } = await import('../utils/retroPlanDiario');
+          const eco = await retroalimentarPlanDiario({
+            fecha, capataz, proyectoId: proyectoIdParaRegistro,
+            ejecutado: listaParaSubir.map(a => ({
+              actividad: a.actividad,
+              metrado: parseFloat(a.metrado) || 0,
+              totalHH: (a.detalleTareo || []).reduce((s, t) => s + (t.hn || 0) + (t.he || 0), 0),
+            })),
+          });
+          if (eco.items > 0) {
+            showToast(`📋 Plan Diario actualizado — ${eco.items} actividad${eco.items === 1 ? '' : 'es'} con avance real`, 'info');
+          }
+          if (eco.sinCruce.length) {
+            // Trabajo ejecutado que nadie programó: no es un error, pero el ingeniero
+            // tiene que enterarse en vez de que se pierda en silencio.
+            console.info('[retroPlanDiario] ejecutado sin fila en el plan:', eco.sinCruce);
+          }
+        } catch (e) {
+          console.warn('[retroPlanDiario] omitido:', e?.message || e);
+        }
+      }
+
       const ts = Date.now();
       try {
         await setDoc(
