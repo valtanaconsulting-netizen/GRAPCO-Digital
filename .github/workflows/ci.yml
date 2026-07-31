@@ -1,0 +1,82 @@
+# ============================================================================
+# GRAPCO — CI: compila (y lintea) cada área, solo cuando esa área cambió.
+# Corre en la nube en cada push a main; no requiere nada instalado localmente.
+# ============================================================================
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cambios:
+    runs-on: ubuntu-latest
+    outputs:
+      areas: ${{ steps.filtro.outputs.changes }}
+    steps:
+      - uses: actions/checkout@v4
+      # Patrones "N.*/**" a propósito: los nombres reales llevan espacios,
+      # acentos y paréntesis — "(SIGMA)" sería un grupo regex para picomatch
+      # y ese filtro no coincidiría nunca.
+      - id: filtro
+        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.3
+        with:
+          filters: |
+            produccion:
+              - '1.*/**'
+            planeamiento:
+              - '2.*/**'
+            calidad:
+              - '3.*/**'
+            ssoma:
+              - '4.*/**'
+
+  build:
+    needs: cambios
+    if: needs.cambios.outputs.areas != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        area: ${{ fromJSON(needs.cambios.outputs.areas) }}
+    name: build (${{ matrix.area }})
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolver carpeta del área
+        id: dir
+        run: |
+          case "${{ matrix.area }}" in
+            produccion)   d="1. GRAPCO - AREA DE PRODUCCIÓN - VALORIZACIÓN" ;;
+            planeamiento) d="2. GRAPCO - ÁREA DE PLANEAMIENTO" ;;
+            calidad)      d="3. GRAPCO - ÁREA DE CALIDAD" ;;
+            ssoma)        d="4. GRAPCO - ÁREA DE SSOMA (SIGMA)" ;;
+            *) echo "Área sin mapeo: ${{ matrix.area }}"; exit 1 ;;
+          esac
+          echo "dir=$d" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ${{ steps.dir.outputs.dir }}/package-lock.json
+
+      - name: Instalar dependencias
+        working-directory: ${{ steps.dir.outputs.dir }}
+        run: npm ci
+
+      # Informativo, no bloquea: producción arrastra ~395 errores de lint
+      # preexistentes (deuda aparte). El build sí es bloqueante.
+      - name: Lint (informativo)
+        working-directory: ${{ steps.dir.outputs.dir }}
+        run: npm run lint --if-present
+        continue-on-error: true
+
+      - name: Build
+        working-directory: ${{ steps.dir.outputs.dir }}
+        run: npm run build
