@@ -54,6 +54,11 @@ export function prepararDatosTareo(registrosPorDia, personalDB) {
             // El F13 no usa comas: "AVILA DOMINGUEZ, LUIS" → "AVILA DOMINGUEZ LUIS"
             nombre: nomKey.replace(/\s*,\s*/g, ' '),
             dni: ficha.dni || '',
+            // id y firma viajan hasta el PDF: el id cruza contra Asistencia_Diaria
+            // para sacar la hora real de marcaje, y la firma se estampa en las
+            // columnas FIRMA INGRESO / FIRMA SALIDA del F13.
+            id: ficha.id || '',
+            firma: ficha.firmaDataUrl || '',
             cargo,
             car: CAR_MAP[cargo] || cargo.slice(0, 2).toUpperCase(),
             ocupacion: cargo === 'Capataz'

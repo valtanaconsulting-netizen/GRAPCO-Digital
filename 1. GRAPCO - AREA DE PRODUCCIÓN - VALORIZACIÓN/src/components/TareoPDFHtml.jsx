@@ -44,8 +44,22 @@ async function cargarLogo() {
 const td = (content, { cs = 1, bg = '', bold = false, align = 'center', fs = 8, pad = '3px 4px', h = '' } = {}) =>
   `<td colspan="${cs}" style="border:1px solid #000;${bg ? `background:${bg};` : ''}font-size:${fs}px;${bold ? 'font-weight:bold;' : ''}text-align:${align};padding:${pad};${h ? `height:${h}px;` : ''}vertical-align:middle;letter-spacing:0;">${content}</td>`;
 
-function paginaHTML({ fecha, capataz, trabajadores, actividades, totales, supervisor, ruc, logo, esUltima }) {
+function paginaHTML({ fecha, capataz, trabajadores, actividades, totales, supervisor, ruc, logo, esUltima, asistencia = {} }) {
   const fechaLarga = fmtFechaLargaF13(fecha);
+
+  // ── Horas del marcador biométrico ──
+  // Si el obrero no marcó ese día caemos al horario estándar que el F13 en papel
+  // ya traía impreso: una jornada sin biometría sigue saliendo legible en vez de
+  // dejar la celda en blanco.
+  const horaIng = (t) => asistencia[t.id]?.entrada || '7:30';
+  const horaSal = (t) => asistencia[t.id]?.salida || '17:00';
+  // La firma se estampa SOLO si esa marca existe de verdad. Firmar una entrada que
+  // nunca se registró convertiría el tareo en un documento falso, y este PDF se
+  // imprime y se archiva como sustento de pago.
+  const celdaFirma = (t, marca) =>
+    (t.firma && asistencia[t.id]?.[marca])
+      ? td(`<img src="${t.firma}" style="height:19px;max-width:96%;object-fit:contain;display:block;margin:0 auto;" />`, { pad: '1px 2px' })
+      : td('');
 
   // ── Filas de actividades (Act.1-7 | Act.8-14) ──
   const filasActs = [0, 1, 2, 3, 4, 5, 6].map(i => `
@@ -65,10 +79,10 @@ function paginaHTML({ fecha, capataz, trabajadores, actividades, totales, superv
       ${td(esc(t.ocupacion), { bold: true, fs: 6.5 })}
       ${td(esc(t.dni), { bold: true, fs: 7 })}
       ${td(esc(t.nombre), { align: 'left', bold: true, fs: 7 })}
-      ${td('7:30', { fs: 7.5 })}
-      ${td('')}
-      ${td('17:00', { fs: 7.5 })}
-      ${td('')}
+      ${td(horaIng(t), { fs: 7.5 })}
+      ${celdaFirma(t, 'entrada')}
+      ${td(horaSal(t), { fs: 7.5 })}
+      ${celdaFirma(t, 'salida')}
       ${[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => {
         const act = actividades[n];
         const v = act ? (t.actividades[act] || 0) : 0;
@@ -211,14 +225,19 @@ function paginaHTML({ fecha, capataz, trabajadores, actividades, totales, superv
 // con html2canvas (mide el tamaño REAL → nunca se recorta) y la inserta
 // CENTRADA horizontal y verticalmente en una hoja A4 landscape con jsPDF.
 // Lo comparten la DESCARGA (generarPDFTareoHtml) y la VISTA (verPDFTareoHtml).
-async function construirPDFTareo(registrosPorDia, personalDB, ruc, supervisor = 'DIRAC') {
+// asistenciaPorFecha: { '2026-07-31': { personalId: { entrada, salida } } }. Va por
+// fecha porque un mismo PDF puede abarcar varios días y cada uno tiene sus marcas.
+// Opcional: sin él el PDF sale con el horario estándar impreso, como siempre.
+async function construirPDFTareo(registrosPorDia, personalDB, ruc, supervisor = 'DIRAC', asistenciaPorFecha = {}) {
   const datos = prepararDatosTareo(registrosPorDia, personalDB);
   if (!datos.length) throw new Error('Sin registros para exportar');
 
   const logo = await cargarLogo();
 
   const container = document.createElement('div');
-  container.innerHTML = datos.map(d => paginaHTML({ ...d, supervisor, ruc, logo })).join('');
+  container.innerHTML = datos
+    .map(d => paginaHTML({ ...d, supervisor, ruc, logo, asistencia: asistenciaPorFecha[d.fecha] || {} }))
+    .join('');
   // Montado fuera de pantalla: html2canvas necesita layout real para medir
   container.style.position = 'fixed';
   container.style.left = '-99999px';
@@ -256,8 +275,8 @@ async function construirPDFTareo(registrosPorDia, personalDB, ruc, supervisor = 
 }
 
 // Descarga el PDF (botón de Gestión → Tareo).
-export async function generarPDFTareoHtml(registrosPorDia, personalDB, ruc, supervisor = 'DIRAC') {
-  const { pdf, nombre, numPaginas } = await construirPDFTareo(registrosPorDia, personalDB, ruc, supervisor);
+export async function generarPDFTareoHtml(registrosPorDia, personalDB, ruc, supervisor = 'DIRAC', asistenciaPorFecha = {}) {
+  const { pdf, nombre, numPaginas } = await construirPDFTareo(registrosPorDia, personalDB, ruc, supervisor, asistenciaPorFecha);
   pdf.save(nombre);
   return numPaginas;
 }
@@ -265,8 +284,8 @@ export async function generarPDFTareoHtml(registrosPorDia, personalDB, ruc, supe
 // VISUALIZA el PDF en una pestaña nueva (vista del capataz: verificar las
 // horas de su gente antes de imprimir/firmar). Si el navegador bloquea la
 // pestaña, cae a descarga directa.
-export async function verPDFTareoHtml(registrosPorDia, personalDB, ruc, supervisor = 'DIRAC') {
-  const { pdf, nombre, numPaginas } = await construirPDFTareo(registrosPorDia, personalDB, ruc, supervisor);
+export async function verPDFTareoHtml(registrosPorDia, personalDB, ruc, supervisor = 'DIRAC', asistenciaPorFecha = {}) {
+  const { pdf, nombre, numPaginas } = await construirPDFTareo(registrosPorDia, personalDB, ruc, supervisor, asistenciaPorFecha);
   const url = URL.createObjectURL(pdf.output('blob'));
   const win = window.open(url, '_blank');
   if (!win) {

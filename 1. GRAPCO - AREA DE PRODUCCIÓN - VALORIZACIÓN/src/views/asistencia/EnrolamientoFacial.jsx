@@ -1,5 +1,5 @@
 // src/views/asistencia/EnrolamientoFacial.jsx
-// Enrolamiento facial 1× por obrero: tomamos 3 fotos de referencia, calculamos
+// Enrolamiento facial 1× por obrero: tomamos N_FOTOS de referencia, calculamos
 // descriptores (128 floats c/u) y los guardamos en /Personal/{id}.faceDescriptors.
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -12,9 +12,12 @@ import { cargarModelos, obtenerDescriptor, descriptorToArray, promediarDescripto
 import { CARGOS_STAFF } from '../../utils/styles';
 import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
 
-// Nº de fotos de referencia por obrero. Subido de 3 → 5: más capturas desde ángulos
-// distintos = huella biométrica más rica → reconoce MEJOR y a la persona correcta.
-const N_FOTOS = 5;
+// Nº de fotos de referencia por obrero. Subido 3 → 5 → 10: en obra la cara cambia
+// con casco, sol de frente, polvo y barba de la semana. Diez capturas desde
+// ángulos y luces distintas cubren esa variación, y con el banco más rico el
+// marcador acierta al primer frame en vez de pedir tres — que es lo que se
+// sentía "lento" en el kiosko. Enrolar cuesta un minuto más, una sola vez.
+const N_FOTOS = 10;
 
 export default function EnrolamientoFacial({ showToast }) {
   const personalDB = usePersonal();
@@ -119,7 +122,7 @@ export default function EnrolamientoFacial({ showToast }) {
     }
     setBusy(true);
     try {
-      // 1. Subir las 3 fotos de referencia a Storage
+      // 1. Subir las fotos de referencia a Storage
       const fotosUrls = [];
       for (let i = 0; i < capturas.length; i++) {
         const blob = await (await fetch(capturas[i].dataUrl)).blob();

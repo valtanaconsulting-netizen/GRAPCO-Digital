@@ -3,14 +3,21 @@
 // Una sola toma reconoce y marca a 10+ personas a la vez (detectAllFaces).
 //
 // Reglas de hora (pedido de gerencia):
-//  • ENTRADA con TOLERANCIA hasta 07:45:
-//      - llega ≤ 07:30        → tareo 07:30 (PUNTUAL)
-//      - llega 07:31–07:45    → tareo 07:30, pero marcado TARDE (dentro de tolerancia)
-//      - llega  > 07:45 (8,9,10,11:10…) → esa HORA REAL es su entrada del tareo
-//        (las HH se cuentan desde su llegada real, no desde 07:30).
+//  • VENTANA DE ENTRADA 06:00–15:00. Fuera de ella la cámara NO abre jornada:
+//    ese caso lo corrige un administrador en Asistencia Diaria.
+//  • ENTRADA — la hora que va al tareo y la etiqueta de puntualidad son cosas
+//    distintas a propósito: el tareo paga, la etiqueta informa a RRHH.
+//      - llega 06:00–07:15  → tareo 07:30, PUNTUAL (temprano)
+//      - llega 07:16–07:45  → tareo 07:30, marcado TARDE pero cobra jornada
+//        completa (llegó antes del arranque oficial o dentro de tolerancia)
+//      - llega 07:46–15:00  → TARDE fuera de tolerancia; esa HORA REAL es su
+//        entrada del tareo (las HH cuentan desde su llegada, no desde 07:30).
 //    Siempre se guarda entradaReal (hora exacta) para el registro de puntualidad.
 //  • SALIDA: el TAREO usa la hora EN PUNTO hacia abajo (piso). 17:00–17:59→17:00,
-//    18:35→18:00, 19:35→19:00. Se guarda también la hora REAL (salidaReal).
+//    18:35→18:00, 20:37→20:00. SIN TOPE: los minutos sueltos son el tiempo de
+//    aseo/cambio, no se pagan, pero las horas cumplidas sí — todas.
+//    Se guarda también la hora REAL (salidaReal). Una salida anticipada con
+//    permiso (p. ej. 14:00) se registra tal cual: 14:00.
 //  • horasTrabajadas = salida-piso − entrada DEL TAREO (07:30 o la real si llegó
 //    pasada la tolerancia) − refrigerio, así el tareo del capataz hereda HH coherentes.
 
@@ -38,11 +45,20 @@ const minutos = (hhmm) => {
 
 // ── Normalización de horas para el TAREO ──
 const ENTRADA_TAREO = '07:30';        // entrada oficial cuando se llega a tiempo / dentro de tolerancia
+const PUNTUAL_HASTA = '07:15';        // 06:00–07:15 = TEMPRANO / PUNTUAL
 const TOLERANCIA_ENTRADA = '07:45';   // tope de tolerancia: hasta aquí el tareo cuenta 07:30
+const VENTANA_ENTRADA_DESDE = '06:00';// antes de esto la cámara no abre jornada
+const VENTANA_ENTRADA_HASTA = '15:00';// después de esto tampoco: lo corrige el admin
 const DESCANSO_MIN  = 60;             // refrigerio (min)
 // Entrada que va al TAREO según la hora REAL de llegada (regla de tolerancia 07:45).
 const entradaTareoDe = (horaReal) =>
   minutos(horaReal) <= minutos(TOLERANCIA_ENTRADA) ? ENTRADA_TAREO : horaReal;
+// ¿Esta hora puede abrir jornada? Fuera de la ventana no marcamos entrada: es
+// preferible que falte el registro y lo cargue el admin, a inventar una jornada
+// que después arrastre HH falsas hasta la valorización.
+const enVentanaEntrada = (hhmm) =>
+  minutos(hhmm) >= minutos(VENTANA_ENTRADA_DESDE) &&
+  minutos(hhmm) <= minutos(VENTANA_ENTRADA_HASTA);
 // Salida del tareo = hora EN PUNTO hacia abajo (piso). Salen a esa hora pero se
 // cambian/asean; el tareo cuenta hasta la hora cumplida. 17:35→17:00, 19:35→19:00.
 const salidaTareoDe = (hhmm) => {
@@ -128,6 +144,7 @@ export default function MarcadorAsistencia({ showToast }) {
   const [detectados, setDetectados] = useState(0);   // caras vistas en el último frame
   const [reconocidos, setReconocidos] = useState(0); // de esas, cuántas superan el piso
   const [hintCandidato, setHintCandidato] = useState(null); // { nombre, sim } mejor parecido bajo el piso
+  const [avisoVentana, setAvisoVentana] = useState(null);   // nombre reconocido fuera de la ventana de entrada
   const [recientes, setRecientes] = useState([]);    // [{ nombre, accion, hora, ts }] feedback
   const videoRef = useRef(null);
   const rachaRef = useRef(new Map());     // personalId → { hits, t, dist }
@@ -162,7 +179,7 @@ export default function MarcadorAsistencia({ showToast }) {
   const cerrarCamara = () => {
     if (stream) stream.getTracks().forEach(t => t.stop());
     setStream(null);
-    setDetectados(0); setReconocidos(0); setHintCandidato(null);
+    setDetectados(0); setReconocidos(0); setHintCandidato(null); setAvisoVentana(null);
     rachaRef.current.clear();
   };
 
@@ -204,13 +221,16 @@ export default function MarcadorAsistencia({ showToast }) {
         };
         if (mt.accion === 'entrada') {
           const entradaT = entradaTareoDe(hora);             // 07:30 si ≤07:45; si no, la hora real
-          const tarde = minutos(hora) > minutos(ENTRADA_TAREO);
+          // TARDE se mide contra 07:15 (fin del tramo puntual), NO contra el
+          // arranque oficial: entre 07:16 y 07:45 el obrero cobra jornada
+          // completa pero queda registrado como tarde para RRHH.
+          const tarde = minutos(hora) > minutos(PUNTUAL_HASTA);
           batch.set(docRef, {
             ...base,
             entrada: entradaT,                                // TAREO (con tolerancia 07:45)
             entradaReal: hora,                                // hora REAL de llegada (puntualidad)
-            tarde,                                            // llegó después de 07:30
-            minTarde: Math.max(0, minutos(hora) - minutos(ENTRADA_TAREO)),
+            tarde,                                            // llegó después de 07:15
+            minTarde: Math.max(0, minutos(hora) - minutos(PUNTUAL_HASTA)),
             fueraTolerancia: minutos(hora) > minutos(TOLERANCIA_ENTRADA),
             descanso: DESCANSO_MIN,
             fotoEvidencia: fotoUrl,
@@ -265,6 +285,7 @@ export default function MarcadorAsistencia({ showToast }) {
 
         let reconoc = 0;
         let mejorGlobal = { dist: Infinity, nombre: null };  // mejor parecido del frame (para feedback)
+        let fueraVentana = null;                             // nombre de quien intentó marcar fuera de horario
         const lote = [];
         const enLote = new Set();
         for (const det of dets) {
@@ -283,15 +304,26 @@ export default function MarcadorAsistencia({ showToast }) {
           if (cd && now - cd < COOLDOWN_MS) continue;
 
           // Racha: exige verlo en varios frames antes de marcar (anti-falso positivo).
-          // ≥80% similitud → 2 frames bastan; 75–80% → 3 (más evidencia).
+          // Con 10 fotos de referencia el banco biométrico es lo bastante rico como
+          // para confiar en UN solo frame a ≥80% de similitud — y ese match ya pasó
+          // el filtro MARGEN_MIN, que descarta a la 2ª persona más parecida. En la
+          // banda 75–80% seguimos pidiendo 2 frames. Antes eran 2 y 3: esa espera
+          // es lo que se sentía lento frente a la cámara.
           const prev = rachaRef.current.get(id) || { hits: 0 };
           const hits = prev.hits + 1;
           rachaRef.current.set(id, { hits, t: now, dist: best.distancia });
-          const need = best.distancia <= DIST_AUTO ? 2 : 3;
+          const need = best.distancia <= DIST_AUTO ? 1 : 2;
           if (hits < need) continue;
 
           const accion = estadoDe(id);
           if (accion === 'completo') continue;
+          // Fuera de la ventana 06:00–15:00 no abrimos jornada: se reconoce a la
+          // persona (por eso avisamos con su nombre) pero el registro lo carga el
+          // administrador, que es quien puede justificar el caso.
+          if (accion === 'entrada' && !enVentanaEntrada(horaStr())) {
+            fueraVentana = best.obrero.nombre;
+            continue;
+          }
           if (accion === 'salida') {
             const er = hoy[id]?.entradaReal || hoy[id]?.entrada;
             if (er && (minutos(horaStr()) - minutos(er)) < JORNADA_MIN_MIN) continue; // demasiado pronto
@@ -302,6 +334,7 @@ export default function MarcadorAsistencia({ showToast }) {
         }
         setDetectados(dets.length);
         setReconocidos(reconoc);
+        setAvisoVentana(fueraVentana);
         // Feedback: si hay caras pero NINGUNA superó el piso, mostramos al más parecido
         // con su % real ("te veo como X al 68%") para que se acerque/mejore la luz en vez
         // de quedarse sin saber por qué no marca.
@@ -317,7 +350,9 @@ export default function MarcadorAsistencia({ showToast }) {
         }
       } catch { /* reintenta */ }
       setAnalizando(false);
-      if (!cancel) setTimeout(tick, 260);
+      // 180 ms en vez de 260: los frames se acumulan más rápido, así la racha que
+      // aún se exige en la banda 75–80% se completa casi al instante.
+      if (!cancel) setTimeout(tick, 180);
     };
     tick();
     return () => { cancel = true; };
@@ -363,7 +398,7 @@ export default function MarcadorAsistencia({ showToast }) {
       )}
       {personalEnrolado.length === 0 && modelosOK && (
         <div style={{ ...cardBox, background: '#fffbeb', color: '#92400e', border: '1px solid #fcd34d' }}>
-          ⚠️ <strong>Aún no hay personal enrolado.</strong> Un administrador debe registrar los rostros en <strong>Admin → Enrolamiento Facial</strong> (3 fotos por persona, 1 sola vez).
+          ⚠️ <strong>Aún no hay personal enrolado.</strong> Un administrador debe registrar los rostros en <strong>Admin → Enrolamiento Facial</strong> (10 fotos por persona, 1 sola vez).
         </div>
       )}
 
@@ -413,6 +448,13 @@ export default function MarcadorAsistencia({ showToast }) {
                   <span style={{ background: 'rgba(217,119,6,0.92)', color: '#fff', padding: '6px 13px', borderRadius: '999px', fontSize: '12px', fontWeight: 800 }}
                     title={`Acércate, mira de frente y mejora la luz para superar el ${SIMILITUD_MIN}% mínimo`}>
                     ≈ {hintCandidato.nombre} · {hintCandidato.sim}% (acércate / +luz)
+                  </span>
+                )}
+                {/* Reconocido, pero fuera de 06:00–15:00: no abrimos jornada aquí */}
+                {avisoVentana && (
+                  <span style={{ background: 'rgba(185,28,28,0.92)', color: '#fff', padding: '6px 13px', borderRadius: '999px', fontSize: '12px', fontWeight: 800 }}
+                    title={`Fuera de la ventana de entrada (${VENTANA_ENTRADA_DESDE}–${VENTANA_ENTRADA_HASTA}). El administrador debe cargar esta jornada a mano.`}>
+                    ⛔ {avisoVentana} · fuera de horario de entrada
                   </span>
                 )}
               </div>
@@ -515,7 +557,10 @@ export default function MarcadorAsistencia({ showToast }) {
             })}
           </div>
           <p style={{ fontSize: '10.5px', color: BASE.muted, marginTop: '10px', textAlign: 'center', fontStyle: 'italic' }}>
-            Reconoce hasta 10+ personas a la vez. 1ª marca = ENTRADA, 2ª = SALIDA (hora en punto). Tolerancia 07:45: si llega hasta 07:45 el tareo cuenta 07:30 (tarde si pasó de 07:30); si llega después, esa hora real es su entrada. Solo se acepta con similitud ≥ {SIMILITUD_MIN}%.
+            Reconoce hasta 10+ personas a la vez. 1ª marca = ENTRADA, 2ª = SALIDA (hora en punto hacia abajo, sin tope de horas extras).
+            Entrada {VENTANA_ENTRADA_DESDE}–{PUNTUAL_HASTA} = puntual; {PUNTUAL_HASTA}–{TOLERANCIA_ENTRADA} = tarde pero cobra jornada completa ({ENTRADA_TAREO});
+            después de {TOLERANCIA_ENTRADA} su hora real es la entrada. Fuera de {VENTANA_ENTRADA_DESDE}–{VENTANA_ENTRADA_HASTA} lo carga el administrador.
+            Solo se acepta con similitud ≥ {SIMILITUD_MIN}%.
           </p>
         </div>
       </div>
