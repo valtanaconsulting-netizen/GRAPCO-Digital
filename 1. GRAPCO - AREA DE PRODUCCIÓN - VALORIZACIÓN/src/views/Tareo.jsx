@@ -177,7 +177,12 @@ export default function Tareo({ historial, filtrados, personalDB, cuadrillasActi
       });
 
       const { generarPDFTareoHtml } = await import('../components/TareoPDFHtml');
-      await generarPDFTareoHtml(registrosPorDia, personalDB, '20203071702', tareoSupervisor || 'DIRAC');
+      // Marcas del kiosko biométrico para las columnas de hora y firma del F13.
+      // Aquí el PDF puede abarcar varios días, por eso van todas las fechas.
+      const { cargarAsistenciaPorFecha } = await import('../utils/asistenciaTareo');
+      const asistencia = await cargarAsistenciaPorFecha(
+        Object.keys(registrosPorDia).map(k => k.split('__')[0]));
+      await generarPDFTareoHtml(registrosPorDia, personalDB, '20203071702', tareoSupervisor || 'DIRAC', asistencia);
 
       showToast(`✅ PDF generado — ${Object.keys(registrosPorDia).length} páginas en landscape A4`, 'success');
     } catch (err) {

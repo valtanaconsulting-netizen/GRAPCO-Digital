@@ -23,6 +23,21 @@ import DateInput from '../components/DateInput';
 import SelectPremium from '../components/SelectPremium';
 import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 
+// Plan Diario PROGRAMA trabajo: tiene que dejar cargar el día siguiente. El shim
+// DateInput topa en HOY por defecto —regla heredada de los formularios de registro,
+// donde una fecha futura no significa nada— y eso bloqueaba planificar mañana.
+// Abrimos una semana: cubre la programación real de obra y a la vez frena el dedazo
+// que crearía un plan en 2027. Se calcula en cada render, no al cargar el módulo,
+// para que la app abierta toda la noche no se quede con el límite de ayer.
+const DIAS_PROGRAMABLES = 7;
+const limiteProgramacion = () => {
+  const d = new Date();
+  d.setDate(d.getDate() + DIAS_PROGRAMABLES);
+  // Fecha LOCAL, no toISOString(): en Perú (UTC-5) el ISO en UTC adelanta un día
+  // toda la tarde y el tope quedaría corrido.
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
 // Catálogo base del proyecto (estático) → { ACTIVIDAD: { ip, und, partida } }
 const CAT_BASE = (() => {
   const m = {};
@@ -677,7 +692,7 @@ export default function PlanDiario({ planesDiarios, cuadrillasActivas, isMobile,
           CABECERA · PROGRAMACIÓN DIARIA
         </h4>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%, 190px),1fr))', gap: '12px' }}>
-          <DateInput label="DÍA DE PROGRAMACIÓN" value={pdFecha} onChange={setPdFecha} getSemana={obtenerSemana} />
+          <DateInput label="DÍA DE PROGRAMACIÓN" value={pdFecha} onChange={setPdFecha} getSemana={obtenerSemana} max={limiteProgramacion()} />
           <Campo label="OBRA"><input type="text" value={pdObra} onChange={e => setPdObra(e.target.value)} style={inp({ fontWeight: '600' })} /></Campo>
           <Campo label="SEMANA"><input type="text" value={obtenerSemana(pdFecha)} disabled style={inp({ background: '#f1f5f9', fontWeight: '700' })} /></Campo>
           <Campo label="RESIDENTE"><input type="text" value={pdResidente} onChange={e => setPdResidente(e.target.value)} style={inp()} /></Campo>

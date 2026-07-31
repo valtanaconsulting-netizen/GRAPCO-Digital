@@ -11,6 +11,7 @@ import { usePersonal } from '../../hooks/useFirebaseData';
 import { cargarModelos, obtenerDescriptor, descriptorToArray, promediarDescriptores } from '../../utils/faceapi';
 import { CARGOS_STAFF } from '../../utils/styles';
 import { useProyectoActivo } from '../../contexts/ProyectoActivoContext';
+import FirmaUploader from '../../components/FirmaUploader';
 
 // Nº de fotos de referencia por obrero. Subido 3 → 5 → 10: en obra la cara cambia
 // con casco, sol de frente, polvo y barba de la semana. Diez capturas desde
@@ -283,6 +284,11 @@ export default function EnrolamientoFacial({ showToast }) {
               )}
             </div>
           </div>
+
+          {/* La firma va aparte del flujo de fotos a propósito: se guarda sola, sin
+              esperar a completar las N_FOTOS. Un obrero ya enrolado puede venir solo
+              a que le carguen la firma. */}
+          <FirmaUploader persona={seleccionado} showToast={showToast} />
 
           <div style={{ background: BASE.bgSoft, padding: '10px 14px', borderRadius: RADIUS.md, fontSize: '11px', color: BASE.muted }}>
             💡 <strong>Tip:</strong> toma las {N_FOTOS} fotos desde ángulos distintos (frontal, izquierda, derecha, un poco arriba, un poco abajo). Mantén la pose <strong>~1 segundo</strong> tras pulsar: cada captura promedia 5 lecturas nítidas. Más ángulos = reconoce mejor y a la persona correcta.

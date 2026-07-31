@@ -1272,7 +1272,11 @@ export default function Capataz({
       };
       // Import dinámico: html2pdf solo se carga cuando el capataz lo pide
       const { verPDFTareoHtml } = await import('../components/TareoPDFHtml');
-      await verPDFTareoHtml(registrosPorDia, personalDB, '20203071702');
+      // Marcas del kiosko biométrico: dan la hora real de ingreso/salida y habilitan
+      // la firma en el F13. Si no hay marcaje, el PDF cae al horario estándar.
+      const { cargarAsistenciaPorFecha } = await import('../utils/asistenciaTareo');
+      const asistencia = await cargarAsistenciaPorFecha([fecha], proyectoActivoId);
+      await verPDFTareoHtml(registrosPorDia, personalDB, '20203071702', 'DIRAC', asistencia);
     } catch (err) {
       console.error('[verTareoPDF]', err);
       showToast(`Error generando el tareo: ${err.message}`, 'error');
