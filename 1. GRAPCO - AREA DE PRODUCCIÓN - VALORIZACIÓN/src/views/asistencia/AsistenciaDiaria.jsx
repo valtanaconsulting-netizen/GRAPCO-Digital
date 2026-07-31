@@ -16,6 +16,18 @@ import DatePickerPremium from '../../components/DatePickerPremium';
 
 const fmt2 = (n) => Math.round(n * 100) / 100;
 
+// El capataz escribe el nombre a mano y el padrón lo trae con coma y acentos, así
+// que cruzarlos tal cual nunca calza. Normalizamos igual que el resto del sistema:
+// sin tildes, sin comas, sin dobles espacios.
+const normNombre = (s) => (s || '')
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/,/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase();
+
+// Margen de tolerancia de la conciliación. Por debajo de 15 min de diferencia no
+// alertamos: es redondeo del capataz al repartir horas entre actividades, no un
+// error de fondo.
+const TOLERANCIA_HH = 0.25;
+
 // Convierte 'HH:MM' a horas decimales
 function timeToHours(t) {
   if (!t || !/^\d{2}:\d{2}$/.test(t)) return null;
@@ -59,7 +71,23 @@ export default function AsistenciaDiaria({ showToast }) {
 
   const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 10));
   const [registros, setRegistros] = useState({}); // { personalId: { entrada, salida, descanso } }
+  const [registrosCampo, setRegistrosCampo] = useState([]); // tareo del capataz de esa fecha
   const [guardando, setGuardando] = useState(false);
+
+  // Tareo del capataz del día: es el otro lado de la conciliación de HH.
+  useEffect(() => {
+    if (!proyectoActivoId) { setRegistrosCampo([]); return; }
+    const q = query(
+      collection(db, 'Registros_Campo'),
+      where('fecha', '==', fecha),
+    );
+    const unsub = onSnapshot(q,
+      (snap) => setRegistrosCampo(filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })))),
+      // Sin tareo la pantalla sigue sirviendo para capturar marcaje: la columna de
+      // conciliación simplemente queda vacía en vez de romper la vista.
+      err => { console.warn('[Registros_Campo onSnapshot]', err); setRegistrosCampo([]); });
+    return unsub;
+  }, [fecha, proyectoActivoId, filtrarPorContexto]);
 
   // Suscribirse a la asistencia de la fecha seleccionada
   useEffect(() => {
@@ -151,6 +179,32 @@ export default function AsistenciaDiaria({ showToast }) {
     return { hn: fmt2(hn), he: fmt2(he), total: fmt2(total), asistieron, total_obreros: personalFrente.length };
   }, [registros, personalFrente]);
 
+  // ── Conciliación con el tareo del capataz ──
+  // Las HH que el capataz reparte entre actividades tienen que cuadrar con las que
+  // el obrero estuvo realmente en obra según su marcaje. Si no cuadran, una de las
+  // dos miente: o se pagaron horas que nadie trabajó, o se ejecutó trabajo que no
+  // se está valorizando. Este panel es donde eso se ve antes de que llegue a la
+  // valorización.
+  const hhTareoPorNombre = useMemo(() => {
+    const m = {};
+    registrosCampo.forEach(reg => {
+      (reg.detalleTareo || []).forEach(t => {
+        if (!t?.nombre) return;
+        const k = normNombre(t.nombre);
+        m[k] = (m[k] || 0) + (parseFloat(t.hn) || 0) + (parseFloat(t.he) || 0);
+      });
+    });
+    return m;
+  }, [registrosCampo]);
+
+  const hhTareoDe = (p) => hhTareoPorNombre[normNombre(p.nombre)] ?? null;
+
+  const totalTareo = useMemo(
+    () => fmt2(personalFrente.reduce((s, p) => s + (hhTareoDe(p) || 0), 0)),
+    [personalFrente, hhTareoPorNombre],
+  );
+  const brechaTotal = fmt2(totalTareo - kpis.total);
+
   // ── Estilos ──
   const card = {
     background: BASE.white,
@@ -196,10 +250,23 @@ export default function AsistenciaDiaria({ showToast }) {
           { l: 'HH Normales', v: kpis.hn },
           { l: 'HH Extras', v: kpis.he, color: BASE.gold },
           { l: 'HH Total día', v: kpis.total, color: BASE.green },
+          // La brecha es el número que importa: si el capataz repartió más HH de las
+          // que la gente estuvo en obra, se está por pagar trabajo que nadie hizo.
+          {
+            l: 'HH Tareo capataz',
+            v: totalTareo,
+            color: Math.abs(brechaTotal) > TOLERANCIA_HH ? '#b91c1c' : BASE.navy,
+            pie: Math.abs(brechaTotal) > TOLERANCIA_HH
+              ? `${brechaTotal > 0 ? '+' : ''}${brechaTotal} vs marcaje`
+              : 'cuadra con el marcaje',
+          },
         ].map((k, i) => (
           <div key={i} style={card}>
             <p style={{ fontSize: '9px', fontWeight: '900', color: BASE.muted, letterSpacing: '0.8px' }}>{k.l}</p>
             <p style={{ fontSize: '22px', fontWeight: '900', color: k.color || BASE.navy, marginTop: '4px' }}>{k.v}</p>
+            {k.pie && (
+              <p style={{ fontSize: '10px', fontWeight: 800, color: k.color || BASE.muted, marginTop: '2px' }}>{k.pie}</p>
+            )}
           </div>
         ))}
       </div>
@@ -225,6 +292,7 @@ export default function AsistenciaDiaria({ showToast }) {
                   <th style={th}>HN</th>
                   <th style={th}>HE</th>
                   <th style={th}>TOTAL</th>
+                  <th style={th}>TAREO<br/><span style={{ fontWeight: 600, opacity: 0.7 }}>(capataz)</span></th>
                   <th style={{ ...th, textAlign: 'left' }}>OBSERVACIÓN</th>
                 </tr>
               </thead>
@@ -275,6 +343,30 @@ export default function AsistenciaDiaria({ showToast }) {
                       <td style={{ ...tdC, fontWeight: '800', color: BASE.green }}>{calc.hn || '—'}</td>
                       <td style={{ ...tdC, fontWeight: '800', color: BASE.gold }}>{calc.he || '—'}</td>
                       <td style={{ ...tdC, fontWeight: '900', color: BASE.navy }}>{calc.total || '—'}</td>
+                      {(() => {
+                        // Conciliación por obrero: HH que le repartió el capataz entre
+                        // actividades vs HH que estuvo realmente en obra según marcaje.
+                        const hhT = hhTareoDe(p);
+                        if (hhT === null) return <td style={{ ...tdC, color: BASE.mutedSoft }}>—</td>;
+                        const d = fmt2(hhT - calc.total);
+                        const desvia = Math.abs(d) > TOLERANCIA_HH;
+                        return (
+                          <td style={{ ...tdC, fontWeight: '800', color: desvia ? '#b91c1c' : BASE.navy }}>
+                            {fmt2(hhT)}
+                            {desvia && (
+                              <span style={{
+                                display: 'block', fontSize: '9.5px', fontWeight: 900,
+                                color: '#fff', background: d > 0 ? '#b91c1c' : '#b45309',
+                                borderRadius: '5px', padding: '1px 5px', marginTop: '2px',
+                              }} title={d > 0
+                                ? 'El capataz repartió más HH de las que el obrero estuvo en obra'
+                                : 'El obrero estuvo más horas de las que el capataz repartió entre actividades'}>
+                                {d > 0 ? '+' : ''}{d}
+                              </span>
+                            )}
+                          </td>
+                        );
+                      })()}
                       <td style={tdL}>
                         <input type="text" placeholder="—" value={r.observacion || ''}
                           onChange={e => actualizar(p.id, 'observacion', e.target.value)}
