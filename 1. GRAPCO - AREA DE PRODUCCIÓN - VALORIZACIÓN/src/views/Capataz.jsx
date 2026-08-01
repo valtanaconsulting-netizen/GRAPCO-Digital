@@ -1050,6 +1050,7 @@ export default function Capataz({
               actividad: a.actividad,
               metrado: parseFloat(a.metrado) || 0,
               totalHH: (a.detalleTareo || []).reduce((s, t) => s + (t.hn || 0) + (t.he || 0), 0),
+              observacion: a.observacion || '',
             })),
           });
           if (eco.items > 0) {

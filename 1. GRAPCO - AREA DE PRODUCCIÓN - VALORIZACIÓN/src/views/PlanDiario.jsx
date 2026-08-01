@@ -14,7 +14,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { loadXLSX } from '../utils/xlsxLazy';
 import { db } from '../firebaseConfig';
 import { doc, setDoc, deleteDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { onSnapshot, collection, query } from 'firebase/firestore';
+import { onSnapshot, collection, query, where, getDocs } from 'firebase/firestore';
 import ConfirmModal from '../components/ConfirmModal';
 import { FECHA_INICIO_PROYECTO, CATALOGO_MASTER, INFO_MAP } from '../utils/constants';
 import { BASE, inp } from '../utils/styles';
@@ -29,6 +29,12 @@ import { useProyectoActivo } from '../contexts/ProyectoActivoContext';
 // Abrimos una semana: cubre la programación real de obra y a la vez frena el dedazo
 // que crearía un plan en 2027. Se calcula en cada render, no al cargar el módulo,
 // para que la app abierta toda la noche no se quede con el límite de ayer.
+// El capataz teclea los nombres a mano y el catálogo los trae con otro formato,
+// así que cruzarlos tal cual nunca calza. Mismo criterio que el resto del sistema.
+const normNom = (s) => (s || '')
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/,/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase();
+
 const DIAS_PROGRAMABLES = 7;
 const limiteProgramacion = () => {
   const d = new Date();
@@ -149,6 +155,7 @@ export default function PlanDiario({ planesDiarios, cuadrillasActivas, isMobile,
   const [nuevoTitulo, setNuevoTitulo] = useState('');
   const [pdGuardando, setPdGuardando] = useState(false);
   const [pdAsignando, setPdAsignando] = useState(false);
+  const [pdJalando, setPdJalando] = useState(false);
   const [confirmCfg, setConfirmCfg] = useState(null);   // modal centrado (reemplaza window.confirm)
   const pedirConfirm = (cfg) => setConfirmCfg(cfg);
   // Visibilidad de columnas (los cálculos siguen corriendo aunque se oculten)
@@ -384,6 +391,90 @@ export default function PlanDiario({ planesDiarios, cuadrillasActivas, isMobile,
       setPdEditingId(null); setGrupos([]);
       showToast('Plan eliminado', 'info');
     } catch (err) { showToast(`Error: ${err.message}`, 'error'); }
+  };
+
+  // ── JALAR EJECUTADO ──
+  // La retroalimentación automática solo dispara cuando el capataz ENVÍA su tareo.
+  // Todo lo que se cargó antes de que ese ciclo existiera —y cualquier tareo que se
+  // corrija por fuera— quedaría fuera del plan para siempre. Este botón hace la
+  // misma lectura a demanda, sobre la fecha que esté abierta.
+  //
+  // Escribe en el estado, NO en Firestore: el ingeniero ve los números, los revisa
+  // y decide si guarda. Un botón que toca la base sin que veas qué cambió es
+  // exactamente lo que hace desconfiar de un sistema.
+  const jalarEjecutado = async () => {
+    if (!grupos.length) return showToast('No hay grupos en el plan', 'warning');
+    setPdJalando(true);
+    try {
+      const snap = await getDocs(query(
+        collection(db, 'Registros_Campo'),
+        where('fecha', '==', pdFecha),
+      ));
+      const regs = filtrarPorContexto(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      if (!regs.length) {
+        showToast(`No hay tareo cargado para el ${fmtFecha(pdFecha)}`, 'warning');
+        return;
+      }
+
+      // Índice capataz→actividad. Un capataz puede partir la misma actividad en
+      // varias filas del tareo y el plan tiene una sola: se suman antes de escribir.
+      const idx = {};
+      regs.forEach(r => {
+        const k = `${normNom(r.capataz)}||${normNom(r.actividad)}`;
+        if (!idx[k]) idx[k] = { hh: 0, met: 0, obs: [] };
+        idx[k].hh += Number(r.totalHH) || 0;
+        // metradoValidado manda si la oficina técnica ya lo revisó; si no, el
+        // reportado por el capataz.
+        idx[k].met += Number(r.metradoValidado ?? r.metradoReportado ?? r.metrado) || 0;
+        if (r.observacion) idx[k].obs.push(r.observacion);
+      });
+
+      let tocados = 0;
+      const usadas = new Set();
+      const nuevos = grupos.map(g => {
+        const capK = normNom(capatazDeGrupo(g));
+        return {
+          ...g,
+          items: (g.items || []).map(it => {
+            const k = `${capK}||${normNom(it.actividad)}`;
+            const e = idx[k];
+            if (!e) return it;
+            usadas.add(k);
+            tocados++;
+            return {
+              ...it,
+              ejHH: +e.hh.toFixed(2),
+              ejMetrado: +e.met.toFixed(2),
+              // Las observaciones del capataz caen en CAUSAS. Si el ingeniero ya
+              // escribió algo ahí, se respeta: su análisis vale más que el volcado.
+              causas: (it.causas && it.causas.trim())
+                ? it.causas
+                : [...new Set(e.obs)].join(' · '),
+            };
+          }),
+        };
+      });
+
+      const huerfanas = Object.keys(idx)
+        .filter(k => !usadas.has(k))
+        .map(k => k.split('||')[1]);
+
+      setGrupos(nuevos);
+      if (tocados === 0) {
+        showToast(`Hay tareo del ${fmtFecha(pdFecha)} pero ninguna actividad calzó con el plan`, 'warning');
+      } else {
+        showToast(`✅ ${tocados} actividad${tocados === 1 ? '' : 'es'} con avance real — pulsa ACTUALIZAR PLAN para guardar`, 'success');
+      }
+      if (huerfanas.length) {
+        // Trabajo ejecutado que el plan no tenía. No se inventan filas: se avisa,
+        // porque suele ser trabajo no programado que alguien debe decidir si entra.
+        showToast(`⚠️ ${huerfanas.length} actividad${huerfanas.length === 1 ? '' : 'es'} del tareo sin fila en el plan: ${huerfanas.slice(0, 3).join(', ')}${huerfanas.length > 3 ? '…' : ''}`, 'warning');
+        console.info('[jalarEjecutado] ejecutado sin fila en el plan:', huerfanas);
+      }
+    } catch (err) {
+      console.error('[jalarEjecutado]', err);
+      showToast(`Error jalando el tareo: ${err.message}`, 'error');
+    } finally { setPdJalando(false); }
   };
 
   // Envía las actividades de cada capataz a su TAREO del día (doc Asignacion_Tareo/{proy}_{fecha}).
@@ -861,6 +952,11 @@ export default function PlanDiario({ planesDiarios, cuadrillasActivas, isMobile,
             title="Envía las actividades de cada capataz a su tareo del día"
             style={{ flex: '1 1 190px', padding: '13px', background: pdAsignando ? BASE.mutedSoft : `linear-gradient(135deg, ${BASE.gold}, ${BASE.goldDark})`, color: pdAsignando ? '#fff' : BASE.navy, border: 'none', borderRadius: '10px', fontWeight: '800', cursor: pdAsignando ? 'not-allowed' : 'pointer', fontSize: '12.5px', boxShadow: pdAsignando ? 'none' : `0 4px 14px -5px ${BASE.goldDark}` }}>
             {pdAsignando ? '⏳ Asignando...' : '📨 ASIGNAR AL TAREO'}
+          </button>
+          <button onClick={jalarEjecutado} disabled={pdJalando}
+            title="Lee el tareo que los capataces ya subieron para esta fecha y llena HH EJEC, MET.EJEC y CAUSAS"
+            style={{ flex: '1 1 190px', padding: '13px', background: pdJalando ? BASE.mutedSoft : BASE.green, color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '800', cursor: pdJalando ? 'not-allowed' : 'pointer', fontSize: '12.5px', boxShadow: pdJalando ? 'none' : '0 4px 14px -5px rgba(22,163,74,0.8)' }}>
+            {pdJalando ? '⏳ Jalando...' : '⟳ JALAR EJECUTADO'}
           </button>
           <button onClick={exportarPDFPlan}
             title="Descarga la programación del día en PDF"

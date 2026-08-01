@@ -41,9 +41,10 @@ export async function retroalimentarPlanDiario({ fecha, capataz, proyectoId, eje
   ejecutado.forEach(e => {
     const k = norm(e.actividad);
     if (!k) return;
-    if (!porAct[k]) porAct[k] = { hh: 0, met: 0 };
+    if (!porAct[k]) porAct[k] = { hh: 0, met: 0, obs: [] };
     porAct[k].hh  += Number(e.totalHH) || 0;
     porAct[k].met += Number(e.metrado) || 0;
+    if (e.observacion) porAct[k].obs.push(e.observacion);
   });
 
   try {
@@ -76,6 +77,11 @@ export async function retroalimentarPlanDiario({ fecha, capataz, proyectoId, eje
             ...it,
             ejHH: +eje.hh.toFixed(2),
             ejMetrado: +eje.met.toFixed(2),
+            // Lo que el capataz observó en campo cae en CAUSAS. Si el ingeniero ya
+            // escribió ahí su análisis, se respeta: vale más que el volcado crudo.
+            causas: (it.causas && it.causas.trim())
+              ? it.causas
+              : [...new Set(eje.obs)].join(' · '),
             // Deja rastro de quién llenó la celda: si el ingeniero ve un número que
             // no tecleó, tiene que poder saber de dónde salió.
             ejFuente: 'tareo-capataz',
