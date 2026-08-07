@@ -20,6 +20,7 @@ const FEATURES = [
 ];
 
 export default function LandingVDC({ onEntrar }) {
+  const [verPriv, setVerPriv] = React.useState(false);
   return (
     <div className="vdclz">
       <div className="landing">
@@ -33,10 +34,6 @@ export default function LandingVDC({ onEntrar }) {
           <div className="vlogo">
             <span className="vlogo-chip">
               <img src="/brand/valtana-montana.png" alt="Valtana" />
-            </span>
-            <span className="vlogo-word-wrap">
-              <span className="vlogo-word">GRAPCO<em className="vlogo-tag">&nbsp;S.A.C.</em></span>
-              <span className="vlogo-sub">Gestión VDC</span>
             </span>
           </div>
           <button className="btn gold" onClick={onEntrar}>Ingresar</button>
@@ -66,8 +63,26 @@ export default function LandingVDC({ onEntrar }) {
           </div>
         </main>
 
-        <footer className="lnd-foot">© {new Date().getFullYear()} · <span className="vmark"><b className="c1">VAL</b><b className="c2">TA</b><b className="c3">NA</b></span> Consultoría &amp; Construcción S.A.C.</footer>
+        <footer className="lnd-foot">© {new Date().getFullYear()} · <span className="vmark"><b className="c1">VAL</b><b className="c2">TA</b><b className="c3">NA</b></span> Consultoría &amp; Construcción S.A.C. · <button type="button" className="lnd-foot-link" onClick={() => setVerPriv(true)}>Política de privacidad</button></footer>
       </div>
+
+      {verPriv && (
+        <div className="modal-ov" onClick={() => setVerPriv(false)}>
+          <div className="priv-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Política de privacidad">
+            <div className="modal-h"><h3>Política de privacidad</h3><button className="modal-x" onClick={() => setVerPriv(false)} aria-label="Cerrar">✕</button></div>
+            <div className="priv-body">
+              <p><b>Responsable del tratamiento.</b> Valtana Consultoría &amp; Construcción S.A.C. («Valtana»), con contacto en comercial@valtana.pe.</p>
+              <p><b>Datos que recopilamos.</b> Nombre y apellido, empresa, cargo, correo electrónico y, opcionalmente, teléfono y el mensaje que nos escribas. Solo los que ingresas al contactarnos.</p>
+              <p><b>Finalidad.</b> Contactarte para coordinar una reunión o demostración de GRAPCO Gestión VDC y enviarte información comercial relacionada con nuestros servicios. No usamos tus datos para otros fines ni los vendemos.</p>
+              <p><b>Base legal y conservación.</b> Tratamos tus datos con tu consentimiento, conforme a la <b>Ley N.° 29733</b> de Protección de Datos Personales del Perú y su reglamento. Los conservamos mientras exista interés comercial o hasta que solicites su eliminación.</p>
+              <p><b>Encargado.</b> La información se almacena en la infraestructura de Google Firebase (Google LLC), que actúa como encargado del tratamiento con medidas de seguridad estándar de la industria.</p>
+              <p><b>Tus derechos.</b> Puedes ejercer tus derechos de acceso, rectificación, cancelación y oposición (ARCO) escribiendo a comercial@valtana.pe. Atenderemos tu solicitud en los plazos que fija la ley.</p>
+              <p className="priv-foot">Al enviar cualquier formulario de contacto, declaras haber leído esta política y autorizas el tratamiento de tus datos para las finalidades descritas.</p>
+              <button className="btn gold" onClick={() => setVerPriv(false)}>Entendido</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         .vdclz {
@@ -105,6 +120,21 @@ export default function LandingVDC({ onEntrar }) {
         .vdclz .lnd-feat > span:last-child { font-size:12px; line-height:1.5; color:#c7d2e6; }
         .vdclz .lnd-foot { text-align:center; padding:16px; color:#aebbd2; font-size:12px; }
         .vdclz .lnd-foot .vmark .c1 { color:#fff; }
+        .vdclz .lnd-foot-link { background:none; border:none; padding:0; color:inherit; text-decoration:underline; cursor:pointer; font:inherit; }
+        .vdclz .lnd-foot-link:hover { color:#fff; }
+
+        /* Modal Política de privacidad */
+        .vdclz .modal-ov { position:fixed; inset:0; z-index:60; background:rgba(6,12,24,.66); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; padding:20px; }
+        .vdclz .priv-modal { width:100%; max-width:520px; max-height:82vh; display:flex; flex-direction:column; background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 30px 80px rgba(0,0,0,.55); }
+        .vdclz .modal-h { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:15px 20px; background:linear-gradient(120deg, var(--navy-deep), var(--navy-3)); color:#fff; }
+        .vdclz .modal-h h3 { margin:0; font-family:var(--serif); font-size:19px; font-weight:800; }
+        .vdclz .modal-x { background:rgba(255,255,255,.12); border:none; color:#fff; width:30px; height:30px; border-radius:8px; cursor:pointer; font-size:14px; line-height:1; }
+        .vdclz .modal-x:hover { background:rgba(255,255,255,.22); }
+        .vdclz .priv-body { padding:18px 20px; overflow-y:auto; color:#334155; font-size:13px; line-height:1.55; }
+        .vdclz .priv-body p { margin:0 0 10px; }
+        .vdclz .priv-body b { color: var(--navy); }
+        .vdclz .priv-foot { font-size:11.5px; color:#64748b; }
+        .vdclz .priv-body .btn { margin-top:4px; }
 
         .vdclz .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:8px 14px; border-radius:9px; border:1px solid var(--line); background:#fff; cursor:pointer; font-family:inherit; font-weight:600; font-size:12.5px; color:var(--navy); transition: border-color .15s, box-shadow .15s, transform .12s, background .15s; text-decoration:none; }
         .vdclz .btn:hover { border-color: var(--orange); box-shadow:0 3px 10px rgba(16,31,61,.1); transform: translateY(-1px); }
@@ -115,11 +145,10 @@ export default function LandingVDC({ onEntrar }) {
         .vdclz .btn.lg { padding:12px 26px; font-size:15px; border-radius:11px; font-weight:700; }
 
         .vdclz .vlogo { display:flex; align-items:center; gap:13px; }
-        /* Logo Valtana (montaña) sobre fondo NEÓN AMARILLO */
-        .vdclz .vlogo-chip { display:inline-flex; align-items:center; justify-content:center; padding:10px 13px; border-radius:14px;
-          background: radial-gradient(circle at 50% 56%, rgba(248,197,32,.55) 0%, rgba(248,197,32,.16) 46%, transparent 70%), rgba(10,18,32,.5); }
-        .vdclz .vlogo-chip img { width:48px; height:auto; object-fit:contain; display:block;
-          filter: drop-shadow(0 0 7px rgba(248,197,32,.95)) drop-shadow(0 0 18px rgba(248,197,32,.55)); }
+        /* Logo Valtana (montaña) — mismo tamaño y brillo sutil que la app de cabidas */
+        .vdclz .vlogo-chip { display:inline-flex; align-items:center; justify-content:center; padding:0; background:transparent; }
+        .vdclz .vlogo-chip img { width:auto; height:40px; object-fit:contain; display:block;
+          filter: drop-shadow(0 0 7px rgba(248,197,32,.8)) drop-shadow(0 0 16px rgba(248,197,32,.45)); }
         .vdclz .vlogo-word-wrap { display:flex; flex-direction:column; line-height:1.05; }
         .vdclz .vlogo-word { font-weight:800; letter-spacing:2.5px; font-size:22px; color:#fff; display:inline-flex; align-items:baseline; gap:2px; white-space:nowrap; }
         .vdclz .vlogo-tag { font-style:normal; font-weight:800; font-size:22px; letter-spacing:2.5px; color: var(--yellow); }
