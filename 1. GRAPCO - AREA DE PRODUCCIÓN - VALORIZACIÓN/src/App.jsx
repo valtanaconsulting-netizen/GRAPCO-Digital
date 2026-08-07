@@ -78,6 +78,7 @@ import {
 
 // Login y SelectorPerfil son la puerta de entrada → carga eager.
 import Login from './views/Login';
+import LandingVDC from './views/LandingVDC';
 import SelectorPerfil from './views/SelectorPerfil';
 // ── LAZY: todos los paneles/módulos cargan SOLO cuando se abren ───────────
 // Esto baja el bundle inicial del app: el usuario solo descarga el módulo en
@@ -190,6 +191,9 @@ function AppInner() {
   // Deep-link: el módulo inicial puede venir en la URL (#/area/modulo) —
   // así una pestaña nueva abre DIRECTO donde se le pidió (multi-pestaña).
   const [moduloIngeniero, setModuloIngeniero] = useState(() => leerRutaHash()?.modulo || 'planDiario');
+  // Landing de entrada: se muestra antes del login. Si la URL trae un área (deep-link),
+  // saltamos la landing y vamos directo al login para no estorbar el flujo.
+  const [entrar, setEntrar] = useState(() => !!leerRutaHash()?.area);
   const [moduloOT, setModuloOT] = useState('ot.valoriz'); // sub-módulo activo del área Oficina Técnica (menú lateral)
   // Pestaña inicial de paneles con tabs internos, para que el SelectorPerfil pueda
   // hacer deep-link a una sección concreta (ej. Admin→Usuarios, Calidad→PETs).
@@ -470,8 +474,9 @@ function AppInner() {
     );
   }
 
-  // ── Sin usuario → Login ──
+  // ── Sin usuario → Landing (puerta de entrada) → Login ──
   if (!user) {
+    if (!entrar) return <LandingVDC onEntrar={() => setEntrar(true)} />;
     return <Login />;
   }
   // ── Con usuario pero sin rol ──
